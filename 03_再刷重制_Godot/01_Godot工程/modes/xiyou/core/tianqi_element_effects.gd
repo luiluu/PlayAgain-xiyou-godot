@@ -32,20 +32,21 @@ const STOP_STATES := [ST_PARALYZE, ST_FREEZE]
 const KEY_STATE := {"burn": ST_BURN, "slow": ST_SLOW, "freeze": ST_FREEZE, "shatter": ST_SHATTER, "paralyze": ST_PARALYZE, "parasite": ST_PARASITE,
 	"soak": ST_SOAK, "gust": ST_GUST, "arcane": ST_ARCANE, "holy": ST_HOLY, "veil": ST_VEIL, "shock": ST_SHOCK}
 
-## 状态记录规格：[名字, 图标, BuffType, 特性, 说明草稿（待小A 审）, 自动解除时机]
+## 状态记录规格：[名字, 图标, BuffType, 特性模板, 说明草稿（待小A 审；{v} 换成表里的百分数）, 自动解除时机, 数值读 element_effects 哪一系（"" 不读）, 读 boss 段]
+## 特性模板里的 value 是占位：state_rec 按 elements_table.json 的 element_effects.<系>.value 生成（R2 P2-1：C 卡改表即生效）
 const SPECS := {
-	ST_BURN: ["灼烧", 1072, "灼伤", [], "回合末受到火焰伤害", 2],
-	ST_SLOW: ["迟缓", 420, "减益", [{"code": 21, "dataId": 6, "value": 0.78}], "敏捷-22%", 2],
-	ST_FREEZE: ["冰冻", 0, "冰冻", [], "跳过下一次行动", 0],
-	ST_SHATTER: ["碎甲", 706, "破甲", [{"code": 21, "dataId": 3, "value": 0.85}], "物理防御-15%", 2],
-	ST_PARALYZE: ["麻痹", 1029, "麻痹", [], "跳过下一次行动", 0],
-	ST_PARASITE: ["寄生", 1072, "减益", [], "回合末受到自然伤害，施放者一方生命比例最低的人回复同样多", 2],
-	ST_SOAK: ["浸湿", 0, "减益", [], "造成的伤害-11%", 2],
-	ST_GUST: ["乱流", 921, "减益", [{"code": 22, "dataId": 0, "value": -0.15}, {"code": 22, "dataId": 1, "value": -0.15}], "命中-15%，闪避-15%", 2],
-	ST_ARCANE: ["魔蚀", 706, "破甲", [{"code": 21, "dataId": 5, "value": 0.85}], "魔法防御-15%", 2],
-	ST_HOLY: ["圣护", 0, "增益", [], "挡下下一次可解除的减益", 2],
-	ST_VEIL: ["遮蔽锋芒", 921, "减益", [], "暴击多出的伤害-33%", 2],
-	ST_SHOCK: ["感电", 1029, "减益", [], "受到的伤害+11%", 2],
+	ST_BURN: ["灼烧", 1072, "灼伤", [], "回合结束受到火焰持续伤害", 2, "", false],
+	ST_SLOW: ["迟缓", 420, "减益", [{"code": 21, "dataId": 6, "mode": "rate"}], "敏捷 −{v}%", 2, "3", false],
+	ST_FREEZE: ["冰冻", 0, "冰冻", [], "跳过下一次行动", 0, "", false],
+	ST_SHATTER: ["碎甲", 706, "破甲", [{"code": 21, "dataId": 3, "mode": "rate"}], "物理防御 −{v}%", 2, "4", false],
+	ST_PARALYZE: ["麻痹", 1029, "麻痹", [], "跳过下一次行动", 0, "", false],
+	ST_PARASITE: ["寄生", 1072, "减益", [], "回合结束受自然伤害，为施加方血量最低者回等量血", 2, "", false],
+	ST_SOAK: ["浸湿", 0, "减益", [], "造成伤害 −{v}%", 2, "14", false],
+	ST_GUST: ["乱流", 921, "减益", [{"code": 22, "dataId": 0, "mode": "minus"}, {"code": 22, "dataId": 1, "mode": "minus"}], "命中 −{v}%，闪避 −{v}%", 2, "15", false],
+	ST_ARCANE: ["魔蚀", 706, "破甲", [{"code": 21, "dataId": 5, "mode": "rate"}], "魔法防御 −{v}%", 2, "7", false],
+	ST_HOLY: ["圣护", 0, "增益", [], "抵挡下一次可净化的负面状态，不挡伤害（1次）", 2, "", false],
+	ST_VEIL: ["遮蔽锋芒", 921, "减益", [], "暴击多出的伤害 −{v}%", 2, "9", false],
+	ST_SHOCK: ["感电", 1029, "减益", [], "受到的伤害 +{v}%（与弱点暴露、破绽取高）", 2, "5", true],
 }
 
 static var _recs: Dictionary = {}
@@ -68,14 +69,35 @@ static func state_rec(id: int) -> Dictionary:
 		return {}
 	if not _recs.has(id):
 		var sp: Array = SPECS[id]
-		var note := "<BuffType:%s>\n<StateNote>\n%s\n</StateNote>" % [sp[2], sp[4]]
-		_recs[id] = {"id": id, "name": sp[0], "iconIndex": int(sp[1]), "note": note, "traits": (sp[3] as Array).duplicate(true),
+		var v := spec_value(id)
+		var traits := []
+		for tr in sp[3]:
+			var val := (1.0 - v) if str(tr.mode) == "rate" else -v
+			traits.append({"code": int(tr.code), "dataId": int(tr.dataId), "value": val})
+		var desc := str(sp[4]).replace("{v}", "%d" % roundi(v * 100.0))
+		var note := "<BuffType:%s>\n<StateNote>\n%s\n</StateNote>" % [sp[2], desc]
+		_recs[id] = {"id": id, "name": sp[0], "iconIndex": int(sp[1]), "note": note, "traits": traits,
 			"restriction": 0, "autoRemovalTiming": int(sp[5]), "minTurns": 1, "maxTurns": 1, "priority": 60,
 			"removeAtBattleEnd": true, "removeByDamage": false, "removeByRestriction": false, "removeByWalking": false,
 			"chanceByDamage": 100, "stepsToRemove": 100, "motion": 0, "overlay": 0, "messageType": 1,
 			"message1": "", "message2": "", "message3": "", "message4": "", "effects": [],
 			"meta": {"BuffType": sp[2], "StateNote": true, "/StateNote": true, "TianqiElemEffect": true}}
 	return _recs[id]
+
+
+## 状态数值（比例，如 0.22）：读 element_effects.<系>.value（感电读麻痹的 boss.value）；表缺时 0
+static func spec_value(id: int) -> float:
+	if not SPECS.has(id) or str(SPECS[id][6]) == "":
+		return 0.0
+	var sp := _spec(int(SPECS[id][6]))
+	if bool(SPECS[id][7]):
+		sp = sp.get("boss", {})
+	return float(sp.get("value", 0.0))
+
+
+## XTianqiElements.reload_table 时调：状态记录按新表重建
+static func clear_cache() -> void:
+	_recs = {}
 
 
 # ---- 开关与数据 ----
@@ -262,28 +284,52 @@ static func note_hit(logic, u, skill: Dictionary, t, r: Dictionary) -> void:
 		return
 	if bool(r.get("missed", false)) or bool(r.get("evaded", false)) or bool(r.get("unused", false)):
 		return
+	if bool(r.get("reflected", false)) or bool(logic.get("_reflecting")):
+		return  # 反射回出手者自己的结算（R2 P1-2）：既不是合格伤害段（§3.1 只认 origin skill），也不走神圣己方入口
 	var dtype := int(skill.get("damage", {}).get("type", 0))
 	var hit_t = r.get("hit_target", t)
 	var row: Dictionary = r.get("best_row", {})
 	if dtype in [1, 5] and not row.is_empty() and _side_ok(u, hit_t):
 		var hp_loss := float(r.get("hp_loss", 0.0))
 		var e := int(row.get("element", 0))
-		var origin := "reflect" if bool(r.get("reflected", false)) else "skill"
 		_frame_for(fx, u).segs.append({"hit_target": hit_t, "settled_element": e, "element_kind": str(row.get("tianqiKind", "")),
-			"hp_loss": hp_loss, "origin": origin})
+			"hp_loss": hp_loss, "origin": "skill"})
 		return
-	# 神圣对己方用（§3.5 己方目标入口）：技能（不是道具）带神圣、目标是自己人、结算了（活着）
-	if u is XActor and _same_side(u, t) and not XBattleLogic.is_item(skill) and t.is_alive() and _skill_has_holy(skill, u):
+	# 神圣对己方用（§3.5 己方目标入口）：非伤害技能（不是道具）算神圣己方技、目标是自己人、结算了（活着）
+	if dtype in [1, 5]:
+		return  # 伤害技打到自己人（混乱、反射已在上面拦）不走己方入口
+	if u is XActor and _same_side(u, t) and not XBattleLogic.is_item(skill) and t.is_alive() and holy_ally_skill(skill):
 		var f := _frame_for(fx, u)
 		if not (f.holy_allies as Array).has(t):
 			f.holy_allies.append(t)
 
 
-static func _skill_has_holy(skill: Dictionary, u) -> bool:
-	for e in XTianqiElements.map_elements(XDamage.action_elements(skill, u)):
-		if int(e) == 8:
-			return true
-	return false
+## 哪些己方技算神圣（R2 P1-1，协调定丙案）：真实库里己方目标技没有一个带神圣元素（全是治疗 10／无属性 0），所以不看技能元素——
+## 转换书、转属只管攻击，碰不到这里。口径＝elements_table.holy_ally：
+##   skills 白名单（非神圣体质角色的圣光类技能）→ 算；exclude 排除名单 → 不算（先于其它两条）；
+##   否则技能卡（skill_rework.skills）归属角色的自然体质（actor_nature.json，T484 R2 表）含神圣 → 算。
+static func holy_ally_skill(skill: Dictionary) -> bool:
+	var id := int(skill.get("id", 0))
+	var cfg: Dictionary = data().get("holy_ally", {})
+	if _int_list(cfg.get("exclude", [])).has(id):
+		return false
+	if _int_list(cfg.get("skills", [])).has(id):
+		return true
+	if not bool(cfg.get("by_nature", true)):
+		return false
+	var card: Dictionary = XTianqiSkills.data().get("skills", {}).get(str(id), {})
+	if not card.has("actor"):
+		return false
+	var row: Dictionary = XTianqiNature.actor_table().get("actors", {}).get(str(int(card.actor)), {})
+	return _int_list(row.get("natures", [])).has(8)
+
+
+static func _int_list(a) -> Array:
+	var out := []
+	if a is Array:
+		for v in a:
+			out.append(int(v))
+	return out
 
 
 ## act 收尾：零散段（没开帧的 apply、反击外的直接结算）按出手者各掷；记「完成的行动」（§3.6）
@@ -491,7 +537,7 @@ static func _try_apply(logic, src, t, elem: int, base_hp: float) -> void:
 		if key == "burn":
 			tick = floorf(tick * _boost(t, elem))  # 自然体质受灼烧 ×1.5，仍受每跳上限
 		un.dot[key] = {"tick": minf(tick, floorf(cap)), "src": src, "elem": elem}
-	_say(fx, "%s陷入【%s】" % [t.display_name(), str(SPECS[sid][0])])
+	_say(fx, "%s 陷入了%s！" % [t.display_name(), str(SPECS[sid][0])])
 
 
 ## 用效果子流挂状态（持续回合不吃战斗主流），挂上后把回合数写成最终值（首领版不再减半，§4.3）
@@ -529,11 +575,16 @@ static func _try_holy(logic, src, allies: Array, holy_hit: bool) -> void:
 		return
 	var turns := int(_spec(8).get("turns", 2))
 	for b in ready:
-		_dispel_one(logic, src, b)
+		var gone := _dispel_one(logic, src, b)
 		if _add(logic, src, b, ST_HOLY, turns):
 			_unit(fx, b).active["holy"] = ST_HOLY
 			_stat(fx, 8, "applied")
-			_say(fx, "%s得到【圣护】" % b.display_name())
+			if gone != "":
+				_say(fx, "%s 净化了%s并获得了%s！" % [b.display_name(), gone, str(SPECS[ST_HOLY][0])])
+			else:
+				_say(fx, "%s 获得了%s！" % [b.display_name(), str(SPECS[ST_HOLY][0])])
+		elif gone != "":
+			_say(fx, "%s 净化了%s！" % [b.display_name(), gone])
 
 
 static func removable_debuff(id: int) -> bool:
@@ -547,37 +598,42 @@ static func removable_debuff(id: int) -> bool:
 	return XBossStatus.kind_of(rec) == "Debuff"
 
 
-## 驱散 1 个可解除减益（按状态排序取第一个；保留瘟疫异化「净化可能失败」等原判定，被拦就换下一个）
-static func _dispel_one(logic, src, b) -> void:
+## 驱散 1 个可解除减益（按状态排序取第一个；保留瘟疫异化「净化可能失败」等原判定）；返回驱散掉的状态名，没驱散返回 ""
+static func _dispel_one(logic, src, b) -> String:
 	for s in b.states():
 		var id := int(s.get("id", 0))
 		if not removable_debuff(id):
 			continue
 		if XTianqiPlagueAlien.purge_blocked(logic, src, b, id):
-			return
+			return ""
 		logic._state_remove(b, id)
 		if not b.state_ids.has(id):
-			_say(_fx(logic), "%s的%s被驱散" % [b.display_name(), str(s.get("name", ""))])
-			return
+			return str(s.get("name", ""))
+	return ""
 
 
 ## XBattler.add_state 入口（_add_state 之前）：持圣护盾的单位挡下一次对方施加的可解除减益，盾碎
+## 目标身上已有这个减益时，对方重施（续回合）照样挡（R2 P2-3①）；带 removeByRestriction 的减益在目标受限时本来就加不上，不耗盾（P2-3③）
 static func shield_blocks(b, id: int) -> bool:
-	if _logic_ref == null or not b.state_ids.has(ST_HOLY) or b.state_ids.has(id):
+	if _logic_ref == null or not b.state_ids.has(ST_HOLY):
 		return false
 	var lg = _cur()
 	if lg == null:
 		return false
 	if not removable_debuff(id) or b.traits_set(XBattler.TRAIT_STATE_RESIST).has(id):
 		return false
-	var src = XImportedBalance.acting_battler()
-	if src == null or _same_side(src, b):
-		return false  # 没有出手者（脚本、阶段状态、剧情锁）或自己人上的：不挡
+	if bool(XDB.rec("States", id).get("removeByRestriction", false)) and b.is_restricted():
+		return false
 	var fx := _fx(lg)
 	if fx.is_empty():
 		return false
+	# 出手者：先看元素效果最里层的行动帧（反击单独开帧，帧主是反击者，R2 P2-2），没有帧才看 acting_battler；
+	# 不在反击里切 acting_battler，免得连带改反击挂上状态的来源（持续伤害归属）
+	var src = fx.frames.back().src if not (fx.frames as Array).is_empty() else XImportedBalance.acting_battler()
+	if src == null or _same_side(src, b):
+		return false  # 没有出手者（脚本、阶段状态、剧情锁）或自己人上的：不挡
 	b.remove_state(ST_HOLY)
-	_say(fx, "【圣护】挡下了%s" % str(XDB.rec("States", id).get("name", "")))
+	_say(fx, "%s 的%s抵挡了%s！" % [b.display_name(), str(SPECS[ST_HOLY][0]), str(XDB.rec("States", id).get("name", ""))])
 	return true
 
 
@@ -631,7 +687,7 @@ static func take_skip(logic, u, restricted: bool) -> String:
 			un.stop_need = int(_rules().get("stun_shared_cooldown", 5))
 			un.skips = int(un.skips) + 1
 			_sync_unit(logic, u)
-			return "%s【%s】，这次无法行动" % [u.display_name(), str(SPECS[sid][0])]
+			return "%s 因%s跳过了本次行动！" % [u.display_name(), str(SPECS[sid][0])]
 	return ""
 
 
@@ -697,14 +753,14 @@ static func _parasite_heal(logic, src, amount: float, logs: Array) -> void:
 static func out_mult(a) -> float:
 	if a == null or not a.state_ids.has(ST_SOAK):
 		return 1.0
-	return 1.0 - float(data().get("element_effects", {}).get("14", {}).get("value", 0.11))
+	return 1.0 - spec_value(ST_SOAK)
 
 
 ## 遮蔽锋芒：暴击多出来的那部分 −33%
 static func crit_mult(a, mult: float) -> float:
 	if a == null or mult <= 1.0 or not a.state_ids.has(ST_VEIL):
 		return mult
-	return 1.0 + (mult - 1.0) * (1.0 - float(data().get("element_effects", {}).get("9", {}).get("value", 0.33)))
+	return 1.0 + (mult - 1.0) * (1.0 - spec_value(ST_VEIL))
 
 
 ## 感电（首领版麻痹）：受伤 +11%，走弱点暴露那一格（与弱点暴露、破绽取高不叠）

@@ -70,6 +70,7 @@ static func reload_table() -> void:
 	_data = {}
 	_load_failed = false
 	_recs = {}
+	XTianqiElementEffects.clear_cache()  # T480 R2 P2-1：元素效果状态的数值读表，改表后重建
 	_synthetic = {}
 	_knight_clamp_warned = false
 	_last_knight_clamp_error = ""
@@ -745,9 +746,12 @@ static func has_weak_exposure(logic, target) -> bool:
 
 ## 返回与词条「破绽」取 max 后的有效增伤百分数（如 11.0 或 affix_pct）
 static func combined_exposure_pct(logic, target, affix_pct: float) -> float:
-	if has_weak_exposure(logic, target) or (logic != null and XTianqiElementEffects.has_shock(target)):  # T480 感电（首领版麻痹）走同一格，取高不叠
-		return maxf(affix_pct, float(data().get("rates", {}).get("weak_exposure", 0.11)) * 100.0)
-	return affix_pct
+	var out := affix_pct
+	if has_weak_exposure(logic, target):
+		out = maxf(out, float(data().get("rates", {}).get("weak_exposure", 0.11)) * 100.0)
+	if logic != null and XTianqiElementEffects.has_shock(target):  # T480 感电（首领版麻痹）走同一格，取高不叠；数值读 element_effects.5.boss.value（R2 P2-1）
+		out = maxf(out, XTianqiElementEffects.spec_value(XTianqiElementEffects.ST_SHOCK) * 100.0)
+	return out
 
 
 static func has_void_engulfed(logic, target) -> bool:

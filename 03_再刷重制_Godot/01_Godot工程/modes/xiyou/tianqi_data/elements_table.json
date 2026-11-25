@@ -135,7 +135,7 @@
   "_effects_doc": "T480 元素独特效果（设计稿 天启篇_元素独特效果_v0.3 第 3～6 节，B 卡：我方打敌＋神圣对己方）。数字全是试测参数，C 卡校准；effect_tier_of 是 v0.7 估算的人数档（C 卡按当前数据重数后改），神圣按 D285 补「群体己方人人都给」降一档到 many。enemy_effect_rules 给 B2 卡留口，本卡不读。名字是草稿，待小A 审。",
   "element_effects": {
     "2": {"key": "burn", "name": "灼烧", "category": "dot", "turns": 3, "value": 0.11, "borrow": 17, "boss": {"turns": 2}},
-    "3": {"key": "slow", "name": "迟缓", "category": "debuff", "turns": 2, "value": 0.22, "borrow": 61, "freeze": {"key": "freeze", "name": "冰冻", "category": "stop", "borrow": 1082}, "boss": {"turns": 1, "no_freeze": true}},
+    "3": {"key": "slow", "name": "迟缓", "category": "debuff", "turns": 2, "value": 0.22, "freeze": {"key": "freeze", "name": "冰冻", "category": "stop", "borrow": 1082}, "boss": {"turns": 1, "no_freeze": true}},
     "4": {"key": "shatter", "name": "碎甲", "category": "debuff", "turns": 2, "value": 0.15, "borrow": 12, "boss": {"turns": 1}},
     "5": {"key": "paralyze", "name": "麻痹", "category": "stop", "borrow": 100, "boss": {"key": "shock", "name": "感电", "turns": 1, "value": 0.11}},
     "6": {"key": "parasite", "name": "寄生", "category": "dot", "turns": 3, "value": 0.08, "boss": {"turns": 2}},
@@ -151,6 +151,8 @@
     "few": {"min": 0, "chance": 0.22}
   },
   "effect_tier_of": {"2": "many", "3": "many", "4": "few", "5": "mid", "6": "mid", "7": "mid", "8": "many", "9": "mid", "14": "few", "15": "few"},
+  "_holy_ally_doc": "T480 R2（协调定丙案）：哪些己方目标技算神圣（§3.5 己方入口）。真实库里己方技没有带神圣元素的，不看技能元素：exclude 先排除；skills 白名单直接算（非神圣体质角色的圣光类技能）；by_nature 为真时，技能卡归属角色的自然体质（actor_nature.json）含神圣也算。转换书只管攻击，不进这个入口。迟缓不借原版 61 停滞查抵抗（61 是封印类控制，R2 P2-4）。",
+  "holy_ally": {"by_nature": true, "skills": [5571, 5779, 5782, 2095, 2099, 6274], "exclude": [749]},
   "effect_rules": {"cooldown": 1, "boss_cooldown": 2, "stun_shared_cooldown": 5, "boss_chance_rate": 0.5, "dot_tick_cap": 0.05, "freeze_per_battle": 1, "freeze_on_slow_count": 2, "holy_boss_per_battle": 3},
   "effect_immunity": {
     "2": {"constitution": [2, 4, 14], "race": [], "boost": {"6": 1.5}},

@@ -116,6 +116,8 @@ func _run() -> void:
 	_test_boss_table()
 	_test_higher_regression()
 	_test_holy()
+	_test_holy_real_db()
+	_test_r2_table_and_shield()
 	_test_stream_and_switch()
 	XTianqiElements.EFFECTS = true
 	XTianqiElements.reload_table()
@@ -467,6 +469,7 @@ func _test_holy() -> void:
 	var lg := _normal_logic(s)
 	var e: XEnemy = lg.enemies[0]
 	_natures({})
+	(XTianqiElements.data().holy_ally.skills as Array).append_array([98560, 98561])  # 夹具技能进白名单（只改缓存，_reset 重读）
 	# 己方单体：先驱散 1 个可解除减益，再给盾（给技能目标）
 	var b: XActor = mem[1]
 	lg._state_add(b, 12)
@@ -559,3 +562,114 @@ func _test_stream_and_switch() -> void:
 	lw.execute(w.battle_members()[0], _stub(98581, 2, "100"), we)
 	_check("west_save_untouched", not lw.has_meta(XTianqiElementEffects.META) and not XTianqiElementEffects.STATE_IDS.any(func(id): return we.state_ids.has(id))
 		and is_equal_approx(XTianqiElementEffects.out_mult(we), 1.0))
+
+
+## R2 P1-1：真实库神圣己方技（体质口径＋白名单＋排除），转换书不误触发；P1-2：神圣攻击被反射打回自己不挂圣护
+func _test_holy_real_db() -> void:
+	_reset()
+	_force()
+	var s := _tq_state()
+	var mem: Array = s.battle_members()
+	var a: XActor = mem[0]
+	var H := XTianqiElementEffects.ST_HOLY
+	_natures({})
+	var yes := [2317, 2318, 2320, 5511, 5571, 5779, 6274]  # 拉尔／阿语按体质；云霄、绯红蔷薇、伊莉雅按白名单
+	var no := [749, 357, 73, 306, 1]  # 窃格瓦拉冷血（排除）、治疗波、PUA、痛饮、普攻
+	var bad := []
+	for id in yes:
+		if not XTianqiElementEffects.holy_ally_skill(XDB.rec("Skills", id)):
+			bad.append(id)
+	for id in no:
+		if XTianqiElementEffects.holy_ally_skill(XDB.rec("Skills", id)):
+			bad.append(-id)
+	_check("holy_ally_real_skill_list", bad.is_empty(), bad)
+	XTianqiElements.data().holy_ally.by_nature = false
+	var off_nature := not XTianqiElementEffects.holy_ally_skill(XDB.rec("Skills", 2318)) and XTianqiElementEffects.holy_ally_skill(XDB.rec("Skills", 5571))
+	XTianqiElements.data().holy_ally.by_nature = true
+	_check("holy_ally_by_nature_switch", off_nature)
+	# 实战：拉尔 2318 圣光净化（体质口径）、云霄 5571 黄庭圣经（白名单）、拉尔 2320 天堂光辉（无伤害类型的增益）对队友各给圣护
+	var got := []
+	var i := 1
+	for id in [2318, 5571, 2320]:
+		var lg := _normal_logic(s)
+		var b: XActor = mem[i % mem.size()]
+		i += 1
+		b.remove_state(H)
+		_hit(lg, a, XDB.rec("Skills", id), b)
+		got.append(b.state_ids.has(H))
+		b.remove_state(H)
+	_check("holy_ally_real_skills_give_shield", got == [true, true, true], got)
+	# 转换书（被动缓存 damageElement＝神圣）放非神圣治疗：不给圣护
+	var c: XActor = mem[mem.size() - 1]
+	c.remove_state(H)
+	var lc := _normal_logic(s)
+	var pc: Dictionary = a.passive_cache()
+	var old_conv := int(pc.get("damageElement", 0))
+	pc["damageElement"] = 8
+	var conv_on := XDamage.action_elements(XDB.rec("Skills", 357), a) == [8]  # 前提：转换书确实把这招读成神圣
+	_hit(lc, a, XDB.rec("Skills", 357), c)
+	a.passive_cache()["damageElement"] = old_conv
+	_check("holy_convert_book_no_ally_shield", conv_on and not c.state_ids.has(H) and _st(lc, 8, "eligible") == 0, [conv_on, XTianqiElementEffects.stats(lc)])
+	# 反射反例（全路径 _invoke）：神圣魔法伤害被敌人魔法反射打回自己，不挂圣护、不记合格段
+	var lr := _normal_logic(s)
+	var foe: XEnemy = lr.enemies[0]
+	var st: Array = XDB.table("States")
+	var mrf_id := st.size()
+	st.append({"id": mrf_id, "name": "T480反射", "traits": [{"code": 22, "dataId": 5, "value": 1.0}], "note": "", "meta": {},
+		"iconIndex": 0, "restriction": 0, "autoRemovalTiming": 0, "removeAtBattleEnd": true})
+	foe.add_state(mrf_id)
+	a.remove_state(H)
+	a.hp = a.mhp
+	XTianqiElementEffects.frame_begin(lr, a)
+	var rs := lr._invoke(a, _stub(98590, 8, "50", 1, 1), foe)
+	XTianqiElementEffects.frame_end(lr, a)
+	XTianqiElementEffects.flush(lr)
+	var reflected := rs.any(func(x): return str(x.get("type", "")) == "reflect")
+	_check("holy_reflected_no_shield_no_segment", reflected and not a.state_ids.has(H) and not foe.state_ids.has(H) and _st(lr, 8, "eligible") == 0,
+		[reflected, XTianqiElementEffects.stats(lr)])
+
+
+## R2 P2-1（数值读表）、P2-2（反击帧的出手者）、P2-3（续回合也挡、受限时 removeByRestriction 不耗盾）、P2-4（迟缓不借 61）
+func _test_r2_table_and_shield() -> void:
+	_reset()
+	var d := XTianqiElements.data()
+	d.element_effects["3"].value = 0.30
+	d.element_effects["15"].value = 0.2
+	XTianqiElementEffects.clear_cache()
+	var slow := XTianqiElementEffects.state_rec(XTianqiElementEffects.ST_SLOW)
+	var gust := XTianqiElementEffects.state_rec(XTianqiElementEffects.ST_GUST)
+	_check("state_values_from_table", is_equal_approx(float(slow.traits[0].value), 0.7) and str(slow.note).contains("敏捷 −30%")
+		and is_equal_approx(float(gust.traits[1].value), -0.2), [slow.traits, gust.traits])
+	_reset()
+	_check("reload_rebuilds_state_rec", is_equal_approx(float(XTianqiElementEffects.state_rec(XTianqiElementEffects.ST_SLOW).traits[0].value), 0.78))
+	_check("slow_no_borrow_61", not XTianqiElements.data().element_effects["3"].has("borrow"))
+	var s := _tq_state()
+	var mem: Array = s.battle_members()
+	var a: XActor = mem[0]
+	var H := XTianqiElementEffects.ST_HOLY
+	var lg := _normal_logic(s)
+	var e: XEnemy = lg.enemies[0]
+	XTianqiElements.data().element_effects["5"].boss.value = 0.2
+	lg._state_add(e, XTianqiElementEffects.ST_SHOCK)
+	_check("shock_pct_from_table", is_equal_approx(XTianqiElements.combined_exposure_pct(lg, e, 5.0), 20.0), XTianqiElements.combined_exposure_pct(lg, e, 5.0))
+	_reset()
+	# 反击：我方出手（acting＝a）中敌人反击开帧，反击附带的减益算对方施加，盾挡
+	lg._state_add(a, H)
+	XImportedBalance.set_acting(a)
+	XTianqiElementEffects.frame_begin(lg, e)
+	a.add_state(12)
+	XTianqiElementEffects.frame_end(lg, e)
+	XImportedBalance.set_acting(null)
+	_check("shield_blocks_enemy_counter_debuff", not a.state_ids.has(12) and not a.state_ids.has(H))
+	# 已挂着的减益被对方重施（续回合）：照样挡
+	var b: XActor = mem[1]
+	b.add_state(12)
+	lg._state_add(b, H)
+	XImportedBalance.set_acting(e)
+	b.add_state(12)
+	XImportedBalance.set_acting(null)
+	_check("shield_blocks_refresh_of_existing_debuff", b.state_ids.has(12) and not b.state_ids.has(H))
+	# 盾碎日志带持盾者名字
+	var logs := XTianqiElementEffects.flush(lg)
+	_check("shield_log_names_holder", logs.any(func(l): return str(l.get("text", "")).begins_with(b.display_name() + " 的")), logs)
+
