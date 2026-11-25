@@ -33,7 +33,10 @@
 
 ## 动了的共用函数和开关
 
-无（仅修改天启篇数据表 `modes/xiyou/tianqi_data/skill_rework.json` 与测试／探针脚本，未改动 `core/`、`battle/`、`skin/` 下任何已有函数或开关）。
+| 函数／开关 | 调用方 N 处（附 grep 命令） | 逐处结论 |
+| --- | --- | --- |
+| `XTianqiSkills.cap_hits` | 12 处调用＋1 处定义（`git grep -nE '[^[:alnum:]_]cap_hits[[:space:]]*\(' -- '*.gd'`） | 调用方 12 处逐处结论：新增可选参数 `item: Dictionary = {}`，不传 `item` 或非屠苏分段技时行为与原版 100% 相同。① `tianqi_general_books.gd:249-250`（2 处）通用书均非屠苏技，不传 `item` 保持原值；② `tianqi_skills.gd:980`（1 处）传入 `item` 使屠苏分段武装技按实际段数 `XTusu.segments(item)` 封顶；③ `k_calibrate.gd:845,882(×2),1041,1042`（5 处）同步传 `sk`/`sk_rec` 与 `_formula` 同口径；④ `xiyou_tianqi_phase4.gd:347,367`（2 处）不传 `item` 查表值，测试全通；⑤ `xiyou_tianqi_skills.gd:1263,1273,1284`（3 处）为 R2 新增的屠苏有环／无环／未满 60 级实战断言。 |
+| `XTianqiSkills._formula` | 1 处本体调用（`git grep -nE '[^[:alnum:]_]_formula[[:space:]]*\(' -- '*.gd'`，其余 14 处为 `liuying_help.gd` 与 6 个专项里的同名私有函数） | 调用方 1 处（`tianqi_skills.gd:940` `formula()`）逐处结论：仅在单段上限判断把 `cap_hits(d)` 改为 `cap_hits(d, item)`，只影响天启篇下表写 `cap_hits > 1` 且属于 `XTusu.SEGMENTS` 的技能（现仅 `10315 贯日`），60 级起装备止戈环仍为 3 段额度不变，未满 60 级或无环时正确按 1 段上限 11 封顶；西游档不走此路径。 |
 
 ## 一、口径、两种量法与设计理由
 
@@ -57,10 +60,10 @@
 
 ## 二、D287 改了什么（含卡面文字同步）
 
-| 技能 | D209 原值 | D287 改后（附则 E 整数／整数百分比） | 同步卡面文字（已自审，无小数、无内部术语） |
+| 技能 | D209 原值 | D287 改后（附则 E 整数／整数百分比） | 同步卡面文字（已由 `XHelpCard.content()` 实机核对，无小数、无冲突旧行） |
 | --- | --- | --- | --- |
-| `10315 贯日`（176 屠苏，第 13） | `atk: 10, mhp: 0.01, coef: 1` | `atk: 23, mhp: 0, coef: 1, cap_hits: 3`（单段 7.67≤11） | `伤害：三段合计 物理攻击×23；锁定目标 +10%` |
-| `10337 棱光`（177 璇，第 14） | `两段 × mat: 10` | `两段 × (mat: 6, mhp: 0.01), coef: 1`（单段约 6.25≤11） | `伤害：两段，每段 魔法攻击×6＋生命上限×1%；目标双防降低；列星时每个星影再打一遍（每个 +20%，最多 +60%）` |
+| `10315 贯日`（176 屠苏，第 13） | `atk: 10, mhp: 0.01, coef: 1` | `atk: 23, mhp: 0, coef: 1, cap_hits: 3`（有环 3 段 7.67≤11；无环／<60 级 1 段按 11 封顶） | `伤害：60级起装备止戈环时分三段，合计造成物理攻击×23的伤害，只消耗一次；未满60级或未装备止戈环时打一段，受单段上限限制最高为物理攻击×11` ／ `效果：对锁定目标伤害提高10%` |
+| `10337 棱光`（177 璇，第 14） | `两段 × mat: 10` | `两段 × (mat: 6, mhp: 0.01), coef: 1`（单段约 6.25≤11） | `伤害：主动施放打两段，每段造成魔法攻击×6＋生命上限×1%的伤害` ／ `效果：列星时，每个星影再打两段，使本次棱光的伤害倍率提高20%，最多提高60%，伤害按段分摊` ／ `效果：每次命中降低目标物防和魔防，持续2回合` |
 
 - 关联技能／被动核查：全表检索 `skill_rework.json` 与 `Skills.json` 中 `10301～10359`，无任何其他技能、心法或被动写死贯日／棱光伤害系数，无需补改额外卡面。
 - 回退：`XTianqiBase.TUNE_D287 = false`＋`XTianqiSkills.reload_table()` 精确退回 D209 原值（已由 `xiyou_tianqi_skills` `p7_d287_table` 验证）。
@@ -164,6 +167,23 @@ done
 - 探针实测：改前 3×2 行、改后第 1 轮 `seed=1` 全量 23 行＋`seed=2/3` 各 5 行（176/177＋强弱锚点），全部 `violations=0`、`invalid=false`。
 - 云端选测：提交 `10ed44522`（`ci/luiluu/t502`，基准 `4a9dcf0f9f`），整轮 813 个场景、16 片，`gh run watch 45632656214 --exit-status` 前台等到跑完，**全部通过**。[云端选测 45632656214](https://github.com/luiluu/PlayAgain-xiyou-godot/actions/runs/45632656214)
 
+## 返修 R2（小o 换家核 `T502_小o核.md` P1-1／P2-1／P2-2）
+
+- **P1-1（贯日未满 60 级或无止戈环时按实际段数封顶）**：
+  - `modes/xiyou/core/tianqi_skills.gd` 的 `cap_hits(d, item = {})` 在传入技能记录 `item` 且属于屠苏分段武装技（`XTusu.SEGMENTS`）时，取 `minf(表 cap_hits, XTusu.segments(item))`；`_formula` 与 `tests/virtual_player/k_calibrate.gd` 同步传入 `item`/`sk`（与 `battle_logic.gd` 拆段共用 `XTusu.segments` 同源判断，不改 `tusu.gd`，西游档零影响）。
+  - 60 级起戴止戈环打 3 段，仍按 3 段额度结算 `atk×23`（有环 `seed=2` 编组探针复跑 `74,414 × 3 = 223,242`，逐位不变）；未满 60 级或卸下止戈环只打 1 段时自动按 1 段封顶，系数压回单段上限 `11`（不再把 `atk×23` 打在一段里）。
+  - `tests/xiyou_tianqi_skills.gd` 新增实战断言 `p7_d287_tusu_cap_hits`，覆盖 81 级有环（3 段、`atk×23`）、81 级无环（1 段、`atk×11`）、50 级有环（1 段、`atk×11`）三条路径。
+- **P2-1／P2-2（两张卡面清洗冲突旧行，对齐实战）**：
+  - `modes/xiyou/tianqi_data/skill_rework.json` 的 `tune.D287.skills["10315"]` 扩展 `note_sub` 清掉原版「攻击次数：1」「60级装备进化法宝时分为3段，合计120%伤害」「锁定倍率」旧行，更新 `desc` 说明 60 级戴止戈环三段合计 `物理攻击×23` 与未满 60 级／无环单段上限 `物理攻击×11` 及锁定 `+10%`。
+  - `tune.D287.skills["10337"]` 扩展 `note_sub` 清掉原版「多命中一次」与重复减防旧行，按报告建议合并为「主动施放打两段」「列星时每个星影再打两段，倍率提高20%，最多60%，按段分摊」「每次命中降双防2回合」。
+  - `tests/xiyou_tianqi_skills.gd` 新增 `p7_d287_tusu_xuan_cards`，经游戏真实 `XHelpCard.content()` 逐行断言两张卡无冲突旧行、内容齐全，并已打印两张卡完整显示行目检确认。
+- **R2 验证**：
+  - `天启篇数据校验.py` 0、`语法检查.py` 0（1228 脚本）、`发行空壳.py check` 0（84 脚本 829 函数）。
+  - 本机（`--audio-driver Dummy`、临时 HOME）：`xiyou_tianqi_skills` `248/248`、`xiyou_tianqi_phase4` `176/176`、`xiyou_tianqi_balance` `99/99`；有环编组探针 `seed=2` 复跑 176 屠苏 `223,242`（74,414×3）、177 璇 `213,464`（自律物理 `48,997`／火 `97,993`），`violations=0`、`invalid=false`。
+  - 云端选测：提交 `114f9baa2`（`ci/luiluu/t502`，基准 `0f354a1260`），77 个场景、3 片，最长一片 11.3 分钟，`云端选测.py wait` 前台等到跑完（`gh run watch` 遇 GitHub REST API 小时限额 403，改由 `云端选测.py wait` 经 `git ls-remote` 等待远端 `report` 结果），**全部通过**。[云端选测 45642572379](https://github.com/luiluu/PlayAgain-xiyou-godot/actions/runs/45642572379)
+
 ## 本分支提交
 
 - `10ed44522` T502：璇、屠苏绑定编组探针与 D287 系数落表（10315 贯日／10337 棱光）
+- `0f354a126` T502：补交付单 luiluu_t502.md（含云端选测 45632656214 全部通过）
+- `114f9baa2` T502 R2：修贯日无环按实际段数封顶（P1-1）并清两张卡面旧行（P2-1/P2-2）
