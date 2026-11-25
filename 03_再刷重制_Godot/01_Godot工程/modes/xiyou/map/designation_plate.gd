@@ -120,6 +120,6 @@ func _flow_line(c: XMVCanvas, f: Font, s: String, y: float, size: int, style: St
 	var n := s.length()
 	for i in range(n):
 		var ch := s.substr(i, 1)
-		c.draw_string(f, Vector2(x, 0.0), ch, HORIZONTAL_ALIGNMENT_LEFT, -1, size, XHonghuangTitles.flow_color(style, i, n, t))
+		XUiSkin.ds(c, f, Vector2(x, 0.0), ch, HORIZONTAL_ALIGNMENT_LEFT, -1, size, XHonghuangTitles.flow_color(style, i, n, t))
 		x += f.get_string_size(ch, HORIZONTAL_ALIGNMENT_LEFT, -1, size).x
 	c.draw_set_transform(Vector2.ZERO)

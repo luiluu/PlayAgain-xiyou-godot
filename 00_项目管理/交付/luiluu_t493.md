@@ -33,9 +33,9 @@
 
 ## 截图
 
-- 名牌三款（新界面，每款放大 3 倍；首证、阿夜各两帧看流光）：[t493_plates_new_skin.png](../归档/交付截图/luiluu_t493/t493_plates_new_skin.png)
-- 名牌三款（旧界面）：[t493_plates_old_skin.png](../归档/交付截图/luiluu_t493/t493_plates_old_skin.png)
-- 别的存档看到的称号列表（洪荒证道已解锁、首证 ???、阿夜专属不可获得）：[t493_choice_list_other_save.png](../归档/交付截图/luiluu_t493/t493_choice_list_other_save.png)
+- 名牌三款（新界面，每款放大 3 倍；首证、阿夜各两帧看流光）：`00_项目管理/归档/交付截图/luiluu_t493/t493_plates_new_skin.png`
+- 名牌三款（旧界面）：`00_项目管理/归档/交付截图/luiluu_t493/t493_plates_old_skin.png`
+- 别的存档看到的称号列表（洪荒证道已解锁、首证 ???、阿夜专属不可获得）：`00_项目管理/归档/交付截图/luiluu_t493/t493_choice_list_other_save.png`
 
 ## 测试
 
