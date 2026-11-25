@@ -112,7 +112,10 @@ func _run() -> void:
 	_check("book_legacy_no_six", not _has_op(legacy, "radar") and not _all_text(legacy).contains("六维"))
 	_tianqi(true)
 	XTianqiSixDim.ENABLED = false
+	var fx_prev := XTianqiElements.ENABLED
+	XTianqiElements.ENABLED = false  # T482：元素效果开着时旧窗口多一行「角色属性」，这条只比六维开关，所以关着元素效果比
 	var off := XActorBook.status_ops(180, func(s, size): return XActorBook.js_width(s, size))
+	XTianqiElements.ENABLED = fx_prev
 	_check("book_disabled_equals_legacy", off == legacy)
 	XTianqiSixDim.ENABLED = true
 	# 四、状态页（新界面）
