@@ -1,0 +1,5 @@
+## ✓ 云端选测通过
+
+- 提交 cbbaabe84a（ci/main），选测（基准 10de8afd20768b66ff816b98f5dcd07a84144141），608 个场景、16 片，最长一片 17.2 分钟
+- 偶发（并行时失败、单跑通过，算通过）：xiyou_fabao_rework.tscn
+- 运行页：https://github.com/luiluu/PlayAgain-xiyou-godot/actions/runs/45702259055
