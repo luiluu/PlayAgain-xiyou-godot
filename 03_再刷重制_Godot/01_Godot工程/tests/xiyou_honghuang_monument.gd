@@ -1,10 +1,10 @@
 extends Node
 ## 【小A·未经审查】T460 专项测试＋实机截图：
-## 1. 配置文件读取：默认从 honghuang_first_clear.json 读出「阿夜」，支持空串／空白留空分支；
+## 1. 配置文件读取：默认从 honghuang_first_clear.json 读出「大手子」，支持空串／空白留空分支；
 ## 2. 西游大厅洪荒碑：Map004 EV82 立于上方红毯楼梯右侧原花盆／烛台位 (18, 9)（Kyo 11-25 拍板），
 ##    不挡楼梯通行 (12..16, 7..10)，清除原 (18, 8..9) 花盆／烛台图块与蓝地垫、隐藏三阶 north_table_e / north_candle_e、
 ##    并在三阶整图底图上以运行时干净墙面／地砖无缝覆盖原花盆（平时／庆典一致）；
-##    调查输出「首位洪荒证道者：阿夜」，配置留空时不显示名字也不出空冒号；
+##    调查输出「首位洪荒证道者：大手子」，配置留空时不显示名字也不出空冒号；
 ## 3. 进西游档一次性播报：真写盘老存档读入＋arm_entry() 后在正式地图空闲时自动弹一次（Kyo 定稿文字），写入 s.flags 已弹标记；
 ##    同局切图、存档再读不再重复弹；另一份未弹过的西游存档仍独立弹一次；开局三图 (1/2/221) 不打断开局，到厅后弹；
 ##    配置留空时不弹也不写已弹标记；
@@ -233,15 +233,15 @@ func _run() -> void:
 	XHonghuangMonument.ENABLED = true
 	XHonghuangMonument.NAME_OVERRIDE = null
 	XHonghuangMonument.reload_config()
-	check("cfg.default_name", XHonghuangMonument.winner_name() == "阿夜", XHonghuangMonument.winner_name())
-	check("cfg.monument_lines_with_name", "\n".join(XHonghuangMonument.monument_lines()).contains("首位洪荒证道者：阿夜"), XHonghuangMonument.monument_lines())
+	check("cfg.default_name", XHonghuangMonument.winner_name() == "大手子", XHonghuangMonument.winner_name())
+	check("cfg.monument_lines_with_name", "\n".join(XHonghuangMonument.monument_lines()).contains("首位洪荒证道者：大手子"), XHonghuangMonument.monument_lines())
 	var bc_joined := "\n".join(XHonghuangMonument.broadcast_lines())
-	check("cfg.broadcast_lines_with_name", bc_joined.contains("阿夜") and bc_joined.contains("这个名字已经刻在大厅的洪荒碑上，有空可以去看看。"), XHonghuangMonument.broadcast_lines())
+	check("cfg.broadcast_lines_with_name", bc_joined.contains("大手子") and bc_joined.contains("这个名字已经刻在大厅的洪荒碑上，有空可以去看看。"), XHonghuangMonument.broadcast_lines())
 
 	XHonghuangMonument.NAME_OVERRIDE = "   "
 	check("cfg.blank_is_empty", XHonghuangMonument.winner_name() == "", XHonghuangMonument.winner_name())
 	var blank_mon := "\n".join(XHonghuangMonument.monument_lines())
-	check("cfg.blank_monument_no_name", not blank_mon.contains("阿夜") and not blank_mon.contains("首位洪荒证道者："), blank_mon)
+	check("cfg.blank_monument_no_name", not blank_mon.contains("大手子") and not blank_mon.contains("首位洪荒证道者："), blank_mon)
 	check("cfg.blank_broadcast_empty", XHonghuangMonument.broadcast_lines().is_empty(), XHonghuangMonument.broadcast_lines())
 
 	XHonghuangMonument.NAME_OVERRIDE = null
@@ -295,12 +295,12 @@ func _run() -> void:
 	check("monument.inspect_spot_open", not map.is_blocked(Vector2i(18, 10), map.player))
 
 	var t_named := _join(await _inspect(map))
-	check("monument.inspect_named", t_named.contains("首位洪荒证道者：阿夜"), t_named)
+	check("monument.inspect_named", t_named.contains("首位洪荒证道者：大手子"), t_named)
 
 	# 名字留空时调查不显示名字
 	XHonghuangMonument.NAME_OVERRIDE = ""
 	var t_empty := _join(await _inspect(map))
-	check("monument.inspect_blank_no_name", not t_empty.contains("阿夜") and not t_empty.contains("首位洪荒证道者：") and t_empty.contains("洪荒碑"), t_empty)
+	check("monument.inspect_blank_no_name", not t_empty.contains("大手子") and not t_empty.contains("首位洪荒证道者：") and t_empty.contains("洪荒碑"), t_empty)
 	XHonghuangMonument.NAME_OVERRIDE = null
 	await _close(map)
 
@@ -324,7 +324,7 @@ func _run() -> void:
 			var want_l := 2 if fest_on else 4
 			check("monument.%s.decay_pot_hidden" % tag, m_stg.lobby_fx.decay_furniture_count() == want_f and m_stg.lobby_fx.decay_lamp_count() == want_l,
 				[m_stg.lobby_fx.decay_furniture_count(), m_stg.lobby_fx.decay_lamp_count()])
-		check("monument.%s.inspect" % tag, _join(await _inspect(m_stg)).contains("首位洪荒证道者：阿夜"))
+		check("monument.%s.inspect" % tag, _join(await _inspect(m_stg)).contains("首位洪荒证道者：大手子"))
 		await _close(m_stg)
 	XLobbyCorruption.STAGE_OVERRIDE = 0
 	XFest.ENABLED = false
@@ -344,7 +344,7 @@ func _run() -> void:
 	var m1 := await _open_map(XState.current, true)
 	await frames(6)
 	var bc_text := _join(XMessageBox.transcript)
-	check("bc.fires_once_on_entry", bc_text.contains("阿夜") and bc_text.contains("这个名字已经刻在大厅的洪荒碑上"), bc_text)
+	check("bc.fires_once_on_entry", bc_text.contains("大手子") and bc_text.contains("这个名字已经刻在大厅的洪荒碑上"), bc_text)
 	check("bc.marked_seen", XHonghuangMonument.broadcast_seen(XState.current))
 	check("bc.disarmed_after", not XHonghuangMonument.is_entry_armed())
 
@@ -378,7 +378,7 @@ func _run() -> void:
 	XHonghuangMonument.arm_entry()
 	var m3 := await _open_map(XState.current, true)
 	await frames(6)
-	check("bc.slot2_fires_independently", _join(XMessageBox.transcript).contains("阿夜") and XHonghuangMonument.broadcast_seen(XState.current), XMessageBox.transcript)
+	check("bc.slot2_fires_independently", _join(XMessageBox.transcript).contains("大手子") and XHonghuangMonument.broadcast_seen(XState.current), XMessageBox.transcript)
 	await _close(m3)
 
 	# 3e. 西游新开局过场图（Map001 / Map002 / Map221）不消耗武装、不打断开局，到 Map004 后弹一次
@@ -387,7 +387,7 @@ func _run() -> void:
 	check("bc.opening_map_defers", XHonghuangMonument.consume_broadcast(s_open, 1).is_empty() and XHonghuangMonument.is_entry_armed())
 	check("bc.opening_map221_defers", XHonghuangMonument.consume_broadcast(s_open, 221).is_empty() and XHonghuangMonument.is_entry_armed())
 	var after_open := XHonghuangMonument.consume_broadcast(s_open, 4)
-	check("bc.hall_after_opening_fires", "\n".join(after_open).contains("阿夜") and XHonghuangMonument.broadcast_seen(s_open) and not XHonghuangMonument.is_entry_armed())
+	check("bc.hall_after_opening_fires", "\n".join(after_open).contains("大手子") and XHonghuangMonument.broadcast_seen(s_open) and not XHonghuangMonument.is_entry_armed())
 
 	# 3f. 配置留空时不弹播报也不写 broadcast_seen
 	var s_blank := _make_save(false, 4, 14, 22)
@@ -421,7 +421,7 @@ func _run() -> void:
 	check("tianqi.no_broadcast", not _join(XMessageBox.transcript).contains("洪荒首通播报") and not XHonghuangMonument.is_entry_armed())
 	check("tianqi.flags_clean", not s_tq.flags.has(XHonghuangMonument.FLAG_KEY))
 	var t_tq_inspect := _join(await _inspect(m_tq))
-	check("tianqi.inspect_nothing", not t_tq_inspect.contains("洪荒碑") and not t_tq_inspect.contains("阿夜"), t_tq_inspect)
+	check("tianqi.inspect_nothing", not t_tq_inspect.contains("洪荒碑") and not t_tq_inspect.contains("大手子"), t_tq_inspect)
 	await _close(m_tq)
 
 	# ==== 5. 回退开关 ENABLED = false：无碑、原花盆与三阶程序件完整恢复、不弹播报 ====
