@@ -16,7 +16,6 @@ func check(tag: String, ok: bool, detail = null) -> void:
 
 
 func _ready() -> void:
-	XTianqiBalance.data()["combat_rules"]["enemy_hp_pct"] = 100  # T501 R2：本测试按表断言敌人血量（或按血量缩的估伤），测公式本身；天启篇敌人生命统一 ×40% 在 xiyou_tianqi_phase4 测
 	_run.call_deferred()
 
 
@@ -363,12 +362,16 @@ func pills() -> void:
 ## 守层者重算（O-402）：天启篇存档里按层的出伤倍率、伤害抵抗；原版档、关开关照旧
 ## T239 第 6 轮起 balance_table 写了 guardian_phase4：这一节测的是代码里的老表常量（ATK_SCALE／RESIST_TABLE／HP_BASE），先拿掉新表、测完放回
 func guardian() -> void:
+	# T501 R2（小A 核 P3-2）：只在这一段钉 enemy_hp_pct=100（下面按表断言守层者血量），段末还原
+	var keep_hp_pct = XTianqiBalance.data().combat_rules.get("enemy_hp_pct", 100)
+	XTianqiBalance.data().combat_rules["enemy_hp_pct"] = 100
 	var bal: Dictionary = XTianqiBalance.data()
 	var real = bal.get("guardian_phase4")
 	bal.erase("guardian_phase4")
 	_guardian_old_tables()
 	if real != null:
 		bal["guardian_phase4"] = real
+	XTianqiBalance.data().combat_rules["enemy_hp_pct"] = keep_hp_pct
 
 
 func _guardian_old_tables() -> void:
@@ -431,6 +434,13 @@ func _guardian_old_tables() -> void:
 	gl.setup(XGuardianRework.TROOPS[24], s)
 	check("guardian.hp", absf(gl.enemies.reduce(func(t, x): return t + x.mhp, 0.0) - 3000000.0 * 8 * XTianqiNoX6.hp_unit()) < 10.0 and gl.enemies.all(func(x): return x.hp == x.mhp),
 		gl.enemies.map(func(x): return [x.hp, x.mhp]))
+	# T501 R2（小A 核 P2-2）：enemy_hp_pct=40 时层总血重标读折算前生命（mhp_raw），结果正好是目标的 40%（读 mhp 会把 40% 约掉）
+	XTianqiBalance.data().combat_rules["enemy_hp_pct"] = 40
+	var gl40 := XBattleLogic.new()
+	gl40.setup(XGuardianRework.TROOPS[24], s)
+	var t40: float = gl40.enemies.reduce(func(t, x): return t + x.mhp, 0.0)
+	check("guardian.hp_pct40", absf(t40 - 3000000.0 * 8 * XTianqiNoX6.hp_unit() * 0.4) <= float(gl40.enemies.size()) + 10.0, [t40, gl40.enemies.size()])
+	XTianqiBalance.data().combat_rules["enemy_hp_pct"] = 100
 	XGuardianRework.HP = false
 	var gl2 := XBattleLogic.new()
 	gl2.setup(XGuardianRework.TROOPS[24], s)

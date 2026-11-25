@@ -703,7 +703,7 @@ static func xinmo_setup(logic, s: XState) -> void:
 	for e in logic.enemies:
 		if not HP:
 			e.recover_all()
-		elif xinmo_floor(e) > 0 and float(e.mhp) > 0.0:
+		elif xinmo_floor(e) > 0 and e.mhp_raw() > 0.0:  # T501 R2 小A 核 P3-1：判正和除数用同一个值
 			_scale_hp(e, xinmo_hp(f, gid, s) / e.mhp_raw())  # T501 R2：同上，读折算前
 	xinmo_traits(logic, s)  # HP 开关关着也调（T315 r2 P2-1）
 
@@ -788,7 +788,7 @@ static func steal_cap(u, item: Dictionary, damage: float, steal: float) -> float
 	var pct = (row.get("pct", {}) as Dictionary).get(key)
 	if pct == null:
 		return steal
-	return minf(steal, floorf(maxf(0.0, damage) * int(pct) / 100.0))
+	return minf(steal, floorf(maxf(0.0, damage) * int(pct) / 100.0 * XTianqiBase.enemy_hp_mult()))  # T501 R2 小A 核 P2-1：封顶按敌人打我方的伤害（没缩）算，守层者血量 ×40% 后封顶也 ×40%，占血条比例不变
 
 
 ## T402（D257，Kyo 11-22）：守层者挂的常数持续伤害按层单列比例。表 balance_table.guardian_phase4.dot_pct ＝ {"层号": {"状态号": 整数%}}：

@@ -29,8 +29,10 @@ func _run() -> void:
 	_check("table_five_tiers", pct.size() == 5 and XTianqiBalance.difficulty_keys().all(func(k): return pct.has(k) and int(pct[k]) == float(pct[k])), pct)
 	# 一、五档各一次
 	for key in XTianqiBalance.difficulty_keys():
-		var r := _gain(_tianqi(key), item)
-		_check("cap_" + key, r.size() == 2 and is_equal_approx(r[0], floorf(DMG * int(pct.get(key, 0)) / 100.0)) and r[0] < r[1], r)
+		var st := _tianqi(key)
+		var r := _gain(st, item)
+		var hm := XTianqiBase.enemy_hp_mult(st)  # T501 R2 小A 核 P2-1：封顶跟守层者血量同缩（开着 0.4）
+		_check("cap_" + key, r.size() == 2 and is_equal_approx(r[0], floorf(DMG * int(pct.get(key, 0)) / 100.0 * hm)) and r[0] < r[1] and is_equal_approx(hm, 0.4), [r, hm])
 	# 二、没列的招、我方角色
 	var other := item.duplicate(true)
 	other["id"] = 999991

@@ -105,7 +105,8 @@ static func heal_scale(e, with_k := false) -> float:
 static func enemy_heal(item: Dictionary, a, b) -> float:
 	if not a is XEnemy or not b is XEnemy:
 		return 1.0
-	if str(item.get("damage", {}).get("formula", "")).contains("mhp"):
+	var fm := str(item.get("damage", {}).get("formula", ""))
+	if fm.contains("mhp") or fm.contains("a.hp") or fm.contains("b.hp"):  # T501 R2 小A 核：读当前生命的（如 10524 a.hp×0.2）同样已跟着血量缩，不再乘
 		return 1.0
 	return heal_scale(b, true)
 
