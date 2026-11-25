@@ -305,3 +305,4 @@ done
 - **P2-2**：`tune.D287` 新增 `5692 小魔炮` 卡面（厄临星爆「两段」→「四段」，D198 卡面遗留）；米拉 `10151` 卡面「所以再 +50%」→「伤害 +50%」。
 - **P3-1**：`tianqi_base.gd` 开关注释「收拢进 8～11」改实落口径；`xiyou_tianqi_phase4.gd` 注释去掉误写的 10315／10337。
 - 验证：`天启篇数据校验.py` 全部通过；`xiyou_tianqi_skills` 246/246、`xiyou_tianqi_balance` 99/99（`--audio-driver Dummy`、临时 HOME）；炼狱探针 3×23 行如上；云端选测见下。
+- 云端选测：提交 `4ef68677f`（`ci/luiluu/t496`，基准 `0b55508a7`），48 个场景、9 片，`gh run watch 45607947370 --exit-status` 前台等到跑完，**全部通过**。[云端选测 45607947370](https://github.com/luiluu/PlayAgain-xiyou-godot/actions/runs/45607947370)
