@@ -22,6 +22,9 @@ extends Node2D
 ## false＝v0.28 的范围（只认插件名单）；换源（v0.62.12）集成分支已翻成 true（O-203，回退＝改回 false）。
 static var RANGE_V037 := true
 static var REBUILD := true
+## T498 顶部首领血条显示异化前缀（O-待定）：西游档在血条名字前加上异化前缀（漩涡异化「侵染·／蚀骨·／化形·」、
+## 原版异化「【异化…】」，与下方战斗详情一致）；false＝回退为原版只读 original_name()。仅西游档生效（天启篇零改动）。
+static var ALIEN_PREFIX := true
 
 const LIST_LENGTH := 569
 const SHAKE_FRAMES := 80
@@ -217,7 +220,15 @@ func _read(e) -> Dictionary:
 
 
 func _enemy_name(e) -> String:
-	return e.original_name()
+	var base: String = e.original_name()
+	if not ALIEN_PREFIX or (XState.current != null and XTianqi.active(XState.current)):
+		return base
+	var prefix := ""
+	if e is XEnemy:
+		prefix += XAlienBattle.name_prefix(e)
+	if e is Object and e.has_meta("tianqi_prefix"):
+		prefix += str(e.get_meta("tianqi_prefix"))
+	return prefix + base
 
 
 ## Game_Action.apply：命中 Boss 时记目标、命中前血量、是否掉血（掉血 → 震动 80 帧）
@@ -261,6 +272,10 @@ func step() -> void:
 		_build()
 	if REBUILD and int(battler.enemy_id) != _shown_id:
 		_refresh_identity()
+	elif int(battler.enemy_id) == _shown_id:
+		var nm := _enemy_name(battler)
+		if nm != _name_text:
+			_name_text = nm
 	var speed := _num("流动速度", 4.0)
 	var flowing := str(params().get("生命条是否流动", "true")) == "true"
 	var period := 1392.0 / 3.0 * 2.0 if flowing else 0.0
