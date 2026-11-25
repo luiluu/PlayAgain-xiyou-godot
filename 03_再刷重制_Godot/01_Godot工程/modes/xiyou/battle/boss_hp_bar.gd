@@ -22,7 +22,7 @@ extends Node2D
 ## false＝v0.28 的范围（只认插件名单）；换源（v0.62.12）集成分支已翻成 true（O-203，回退＝改回 false）。
 static var RANGE_V037 := true
 static var REBUILD := true
-## T498 顶部首领血条显示异化前缀（O-待定）：西游档在血条名字前加上异化前缀（漩涡异化「侵染·／蚀骨·／化形·」、
+## T498 顶部首领血条显示异化前缀（O-665）：西游档在血条名字前加上异化前缀（漩涡异化「侵染·／蚀骨·／化形·」、
 ## 原版异化「【异化…】」，与下方战斗详情一致）；false＝回退为原版只读 original_name()。仅西游档生效（天启篇零改动）。
 static var ALIEN_PREFIX := true
 

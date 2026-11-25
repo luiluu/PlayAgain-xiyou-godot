@@ -42,7 +42,7 @@ static var STAGE3_ALIEN := true
 static var ALIGN_LOBBY := true
 ## 发行开关：false＝发行构建（ReleaseEntry.is_release）里一概不建；T455（Kyo 11-24 事项49）改 true，这次三阶段整包对玩家打开
 static var RELEASE_OPEN := true
-## T498 替身守层者异化开关（O-待定）：true＝13～30 层教派替身守层战（XZhenqi.STAND_IN_GUARDIANS）中，
+## T498 替身守层者异化开关（O-665）：true＝13～30 层教派替身守层战（XZhenqi.STAND_IN_GUARDIANS）中，
 ## 本场无原生【守层者】时【求道者】按守层者类异化；联合战（798～814，已有原生【守层者】）不提升【求道者】。
 ## false＝回退到只认 rift_alien.json classes（【求道者】不异化）。仅西游档生效（on(s) 已含 not XTianqi.active(s)）。
 static var STAND_IN_GUARDIAN := true
