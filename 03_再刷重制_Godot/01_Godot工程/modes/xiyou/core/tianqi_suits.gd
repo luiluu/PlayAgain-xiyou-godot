@@ -14,9 +14,9 @@ extends RefCounted
 ## 入口：XEquipSuits._active_now（filter_suits）、XTianqiQiyinEffects.live_set_counts（filter_seals）、装备页说明牌（note）。
 ## 只对天启篇存档生效（XTianqi.active）；西游档、开关关时原样。
 
-## 回退开关（O-待定）：false＝天启篇也不限套数（回到 T513 之前：原版套装与七印各自全部生效）
+## 回退开关（O-669）：false＝天启篇也不限套数（回到 T513 之前：原版套装与七印各自全部生效）
 static var ENABLED := true
-## 回退开关（O-待定，同号）：false＝同件数时原版套装号小的优先（T513 首版口径）
+## 回退开关（O-669，同号）：false＝同件数时原版套装号小的优先（T513 首版口径）
 static var NEWER_FIRST := true
 ## 一人最多生效几套（养成线 v0.3 第三节第 3 条：一人最多两套）
 const CAP := 2
