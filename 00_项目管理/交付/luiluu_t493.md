@@ -39,7 +39,7 @@
 
 ## 测试
 
-- **返修 R2（小A 核查 P1-1＋P2×4，`00_项目管理/核查/T493_小A核.md`）**：`xiyou_honghuang_titles` 63/63（新增 13 项：封存开着时封存格式导出再导入保留 52／53 与佩戴；旧 v1 明文导出、直接明文存档、只改佩戴三种明文导入都清掉；洪荒证道不受影响；补签 save_3.json 后 .ksv 里没有；封存关着时明文原样；展示侧 worn_ok 三种），xiyou_designation 24/24，xiyou_honghuang_monument 67/67，xiyou_save_seal 127/127，xiyou_designation_plate 2/2；发行空壳 check 0、语法检查 0 问题、发行预设排除检查过、回退开关覆盖无本单缺口。云端选测见下。
+- **返修 R2（小A 核查 P1-1＋P2×4，`00_项目管理/核查/T493_小A核.md`）**：`xiyou_honghuang_titles` 63/63（新增 13 项：封存开着时封存格式导出再导入保留 52／53 与佩戴；旧 v1 明文导出、直接明文存档、只改佩戴三种明文导入都清掉；洪荒证道不受影响；补签 save_3.json 后 .ksv 里没有；封存关着时明文原样；展示侧 worn_ok 三种），xiyou_designation 24/24，xiyou_honghuang_monument 67/67，xiyou_save_seal 127/127，xiyou_designation_plate 2/2；发行空壳 check 0、语法检查 0 问题、发行预设排除检查过、回退开关覆盖无本单缺口。R2 云端选测 192 场景 6 片全过：https://github.com/luiluu/PlayAgain-xiyou-godot/actions/runs/45601149332 （提交 06ea29f5b）。
 - 新专项 `xiyou_honghuang_titles` 50/50（称号表与选项、天启篇与开关、自动解锁含老存档真地图补发、兑换码一次性／换档无效／错码／天启篇／开关关、存档往返、与 Python 工具同一算法的固定向量、仓库配置只有哈希、真地图碑前兑换两次、图标三张 32 互不相同、流光样式与特效关停帧）。
 - 相关专项本机全过：xiyou_designation 24/24（加了一行关 T493 开关，只比原版表）、xiyou_designation_plate 2/2、xiyou_fest_road 66/66、xiyou_fest_lobby 155/155、xiyou_fest_reward 56/56、xiyou_honghuang_monument 67/67、xiyou_quality_icons 7/7、xiyou_ui_skin_4b 123/123、xiyou_airship_view 63/63、xiyou_script_gaps 73/73、xiyou_floor_odds 173/173。
 - 语法检查 0 问题；发行空壳 check 0；回退开关覆盖无新报错。
@@ -99,3 +99,4 @@
 - 9288caf1e T493：三款称号＋兑换码＋T460 P2
 - f2ae47f2c 交付单
 - 8ab3c3b7f 修云端三项、截图改仓内路径
+- 06ea29f5b 返修 R2（P1-1＋P2×4＋文字）
