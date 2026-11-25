@@ -112,6 +112,9 @@
   "XTianqiWeakAffix.guide_targets": "list",
   "已确认空值安全": {
     "XTianqiBrand.cost_names": "T121：只在 guide.detail_rows 的天启篇分支（_tianqi_status_on 为真）且 XTianqiBrand.status_rows 非空时调；发行里天启篇关着、status_rows 空壳返回 []，走不到；即便走到，空表只显示「无」",
+    "XTianqiNature.line_of": "T482：只给图鉴、状态页画「角色属性」一行用；真脚本在西游档本身也返回 \"\"（ui_on 为假），空壳返回 \"\" 与它一致，界面见空串就不画",
+    "XTianqiNature.line_of_actor_id": "T482：同 line_of，人物图鉴按角色号取；西游档真脚本也返回 \"\"",
+    "XTianqiElementEffects.skip_log": "T482：只在 take_skip 返回非空时才调（战斗逻辑 elem_skip != \"\" 分支）；空壳 take_skip 恒返回 \"\"，走不到",
     "XTianqiSixDim.of_actor": "T278：actor_book 与 skin_status_page 都先判 XTianqiSixDim.active()，空壳恒 false 走不到；真脚本在西游档本身也返回 neutral()，只读不写存档",
     "XTianqiSixDim.data": "T279：只在 XBossStatus.six_summary 里读 ai_tier_names，该函数开头先判 XTianqiSixDim.active()，空壳恒 false 提前返回 {}，走不到；真脚本西游档 active 也为 false",
     "XTianqiSixDim.of_battler": "T279：只在 XBossStatus.six_summary（active() 守卫之后）调；空壳走不到，西游档真脚本同样走不到",

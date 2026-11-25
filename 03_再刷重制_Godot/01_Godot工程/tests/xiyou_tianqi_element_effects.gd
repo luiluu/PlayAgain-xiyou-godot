@@ -132,6 +132,7 @@ func _run() -> void:
 	_test_b2_enemy_budgets_and_holy()
 	_test_b2_higher_no_expand_and_guard()
 	_test_stream_and_switch()
+	_test_t482_ui()
 	XTianqiElements.EFFECTS = true
 	XTianqiElements.reload_table()
 	XTianqiNature.reload_table()
@@ -634,6 +635,11 @@ func _test_holy_real_db() -> void:
 		"yep": {"elementReflect": {"8": 1.0}}, "note": "", "meta": {},
 		"iconIndex": 0, "restriction": 0, "autoRemovalTiming": 0, "removeAtBattleEnd": true})
 	foe.add_state(mrf_id)
+	# T485 核 P2-1：施放者挂一个「神圣属性有效度 ×0.02」的垫子，保证被反射打回来后还活着，note_hit 己方入口的 is_alive 提前返回不再替守卫挡刀
+	var pad_id := st.size()
+	st.append({"id": pad_id, "name": "T482垫子", "traits": [{"code": 11, "dataId": 8, "value": 0.02}], "note": "", "meta": {},
+		"iconIndex": 0, "restriction": 0, "autoRemovalTiming": 0, "removeAtBattleEnd": true})
+	a.add_state(pad_id)
 	a.remove_state(H)
 	a.hp = a.mhp
 	XTianqiElementEffects.frame_begin(lr, a)
@@ -641,9 +647,13 @@ func _test_holy_real_db() -> void:
 	XTianqiElementEffects.frame_end(lr, a)
 	XTianqiElementEffects.flush(lr)
 	foe.remove_state(mrf_id)
+	a.remove_state(pad_id)
+	st.pop_back()
 	st.pop_back()
 	var reflected := rs.any(func(x): return str(x.get("type", "")) == "reflect")
-	_check("holy_reflected_no_shield_no_segment", pre_2704 and reflected and not a.state_ids.has(H) and not foe.state_ids.has(H) and _st(lr, 8, "eligible") == 0,
+	var caster_alive: bool = a.is_alive()  # T485 核 P2-1：原来施放者被反射打死，note_hit 己方入口因 is_alive 为假提前走掉，守卫拿掉也不报警
+	_check("holy_reflected_caster_alive", caster_alive and reflected, [a.hp, a.mhp, reflected])
+	_check("holy_reflected_no_shield_no_segment", caster_alive and pre_2704 and reflected and not a.state_ids.has(H) and not foe.state_ids.has(H) and _st(lr, 8, "eligible") == 0,
 		[pre_2704, reflected, XTianqiElementEffects.stats(lr)])
 	# T480 P3-3 补：直接测 note_hit 在 r.reflected 或 logic._reflecting 为真时，跨边合格伤害段也不记账
 	var ld := _normal_logic(s)
@@ -660,6 +670,18 @@ func _test_holy_real_db() -> void:
 	var segs_ctrl: int = (ld.get_meta(XTianqiElementEffects.META).frames.back().segs as Array).size()
 	XTianqiElementEffects.frame_end(ld, fe)
 	_check("reflected_segment_not_recorded", segs_flag == 0 and segs_state == 0 and segs_ctrl == 1, [segs_flag, segs_state, segs_ctrl])
+	# T485 核 P2-1：dtype 守卫——伤害类技能（dtype 1／5）打到自己人（混乱、反射已另拦）不走神圣己方入口；用 2704（holy_ally_skill 为真）直接喂 note_hit，守卫拿掉这里就会记进 holy_allies
+	var lg2 := _normal_logic(s)
+	var ally: XActor = s.battle_members()[1]
+	var sk_dmg := XDB.rec("Skills", 2704)
+	XTianqiElementEffects.frame_begin(lg2, a)
+	XTianqiElementEffects.note_hit(lg2, a, sk_dmg, ally, {"hp_loss": 10.0, "best_row": {}, "hit_target": ally})
+	var n_dmg: int = (lg2.get_meta(XTianqiElementEffects.META).frames.back().holy_allies as Array).size()
+	var sk_heal := XDB.rec("Skills", 5571).duplicate(true)  # 白名单治疗类（dtype 非 1／5）：同一入口要记进去，证明上面不是入口本身坏了
+	XTianqiElementEffects.note_hit(lg2, a, sk_heal, ally, {"hp_loss": 0.0, "best_row": {}, "hit_target": ally})
+	var n_heal: int = (lg2.get_meta(XTianqiElementEffects.META).frames.back().holy_allies as Array).size()
+	XTianqiElementEffects.frame_end(lg2, a)
+	_check("holy_damage_dtype_guard", int(sk_dmg.get("damage", {}).get("type", 0)) in [1, 5] and n_dmg == 0 and n_heal == 1, [int(sk_dmg.get("damage", {}).get("type", 0)), n_dmg, n_heal])
 
 
 ## R2 P2-1（数值读表）、P2-2（反击帧的出手者）、P2-3（续回合也挡、受限时 removeByRestriction 不耗盾）、P2-4（迟缓不借 61）
@@ -1143,3 +1165,92 @@ func _test_b2_higher_no_expand_and_guard() -> void:
 		and not XTianqiElementEffects.STATE_IDS.any(func(id): return wa.state_ids.has(id) or we.state_ids.has(id)))
 
 
+
+
+## T482 D 卡界面：状态图标全有、圣佑改名、头顶跳字（效果名／免疫＋效果名／圣佑抵挡／麻痹冰冻）、「角色属性」一行、西游档不画
+func _pops(logs: Array) -> Array:
+	var out := []
+	for l in logs:
+		if l is Dictionary and l.has("pop"):
+			out.append(str(l.pop.text))
+	return out
+
+
+func _test_t482_ui() -> void:
+	_reset()
+	_force()
+	var S = XTianqiElementEffects.SPECS
+	var no_icon := []
+	for id in XTianqiElementEffects.STATE_IDS:
+		if int(S[id][1]) <= 0:
+			no_icon.append(S[id][0])
+	_check("t482_all_states_have_icon", no_icon.is_empty(), no_icon)
+	var texts := []
+	for id in XTianqiElementEffects.STATE_IDS:
+		texts.append(str(S[id][0]) + str(S[id][4]))
+	_check("t482_holy_renamed_shield_gone", str(S[XTianqiElementEffects.ST_HOLY][0]) == "圣佑" and str(XTianqiElements.data().element_effects["8"].name) == "圣护"
+		and not "".join(texts).contains("圣护盾") and not "".join(texts).contains("4"), texts)
+	var s := _tq_state()
+	var mem: Array = s.battle_members()
+	var a: XActor = mem[0]
+	# 挂上：头顶弹效果名
+	_natures({})
+	_actor_natures({})
+	var lg := _normal_logic(s)
+	var en: XEnemy = lg.enemies[0]
+	a.recover_all()
+	XTianqiElementEffects.frame_begin(lg, en)
+	lg.apply(en, _stub(98701, 2, "200"), a)
+	var logs := XTianqiElementEffects.frame_end(lg, en)
+	_check("t482_apply_popup_effect_name", _pops(logs) == ["灼烧"], _pops(logs))
+	# 免疫：火体质挡灼烧，弹「免疫灼烧」，不弹「免疫」「无效」二字
+	var li := _normal_logic(s)
+	var ei: XEnemy = li.enemies[0]
+	a.recover_all()
+	_actor_natures({a.actor_id: [2]})
+	XTianqiElementEffects.frame_begin(li, ei)
+	li.apply(ei, _stub(98702, 2, "200"), a)
+	var logs_i := XTianqiElementEffects.frame_end(li, ei)
+	var pi := _pops(logs_i)
+	_check("t482_immune_popup_name", pi == ["免疫灼烧"] and not pi.has("免疫") and not pi.has("无效"), pi)
+	# 掷不中不弹（几率 0）
+	_force(0.0)
+	var lz := _normal_logic(s)
+	var ez: XEnemy = lz.enemies[0]
+	a.recover_all()
+	XTianqiElementEffects.frame_begin(lz, ez)
+	lz.apply(ez, _stub(98703, 2, "200"), a)
+	var pz := _pops(XTianqiElementEffects.frame_end(lz, ez))
+	_check("t482_immune_popup_only_when_roll_hits", pz.is_empty(), pz)
+	_force()
+	# 圣佑抵挡：盾挡下对方减益，弹「圣佑抵挡」
+	_actor_natures({})
+	var lh := _normal_logic(s)
+	var eh: XEnemy = lh.enemies[0]
+	a.recover_all()
+	a.add_state(XTianqiElementEffects.ST_HOLY)
+	XTianqiElementEffects.frame_begin(lh, eh)
+	lh.apply(eh, _stub(98704, 2, "200"), a)
+	var ph := _pops(XTianqiElementEffects.frame_end(lh, eh))
+	_check("t482_shield_block_popup", ph.has("圣佑抵挡") and not a.state_ids.has(XTianqiElementEffects.ST_BURN), ph)
+	a.remove_state(XTianqiElementEffects.ST_HOLY)
+	# 麻痹／冰冻吃行动位：skip_log 带跳字
+	var lk := _normal_logic(s)
+	var ek: XEnemy = lk.enemies[0]
+	ek.add_state(XTianqiElementEffects.ST_PARALYZE)
+	var txt := XTianqiElementEffects.take_skip(lk, ek, false)
+	var sl := XTianqiElementEffects.skip_log(lk, ek, txt)
+	_check("t482_skip_popup", txt != "" and sl.has("pop") and str(sl.pop.text) == "麻痹" and sl.pop.target == ek, sl.get("pop", null))
+	# 「角色属性」一行
+	_check("t482_nature_line_format", XTianqiNature.format_line([2]) == "角色属性：火焰" and XTianqiNature.format_line([2, 4]) == "角色属性：火焰、大地"
+		and XTianqiNature.format_line([]) == "角色属性：无", [XTianqiNature.format_line([2, 4])])
+	XState.current = s
+	_actor_natures({a.actor_id: [2]})
+	var on_line := XTianqiNature.line_of(a)
+	var id_line := XTianqiNature.line_of_actor_id(a.actor_id)
+	_check("t482_nature_line_tianqi", on_line == "角色属性：火焰" and id_line == on_line, [on_line, id_line])
+	var west := XState.new()
+	XState.current = west
+	_check("t482_nature_line_west_empty", XTianqiNature.line_of(a) == "" and XTianqiNature.line_of_actor_id(a.actor_id) == "", [XTianqiNature.line_of(a)])
+	XState.current = s
+	_check("t482_floor_help_in_tooltip", XTianqiElements.profile_tooltip({"weak": [2], "resist": [], "immune": [4]}).ends_with(XTianqiNature.FLOOR_HELP))

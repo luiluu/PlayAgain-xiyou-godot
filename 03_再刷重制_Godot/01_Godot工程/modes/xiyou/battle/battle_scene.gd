@@ -2686,6 +2686,8 @@ func _play(logs: Array) -> void:
 					await movie.finished
 			"battle_text":
 				_log_add(str(l.text))  # BattleManager._logWindow.push('addText')（宿傩「发动了神灶：开！」等）
+				if l.has("pop") and sprites.has(l.pop.target):
+					_custom_popup(l.pop.target, str(l.pop.text), int(l.pop.format))  # 天启篇元素效果（T482）：效果名、免疫＋效果名、圣佑抵挡、麻痹／冰冻跳字
 				if l.has("sukuna_fx"):
 					await _sukuna_fx(str(l.sukuna_fx))
 				if l.has("tianqi_fit"):

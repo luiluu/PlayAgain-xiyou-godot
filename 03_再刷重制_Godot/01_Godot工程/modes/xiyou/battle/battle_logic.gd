@@ -1378,7 +1378,7 @@ func act(u: XBattler, skill, target) -> Array:
 	var elem_skip := "" if (skipped and can_move(u)) else XTianqiElementEffects.take_skip(self, u, skipped)  # 天启篇元素停手（T480，§3.6）：只跳这一个行动位；被旧控跳过的记停手计数
 	if elem_skip != "":
 		skipped = true
-		logs.append({"type": "battle_text", "text": elem_skip})
+		logs.append(XTianqiElementEffects.skip_log(self, u, elem_skip))
 	if not skipped:
 		XTianqiXinmoTraits.mirror_note(self, u, skill)  # 天启篇心魔特点【影劫】（T323）：判完能不能行动再记挑战者的招，被控跳过的不记
 	if skipped:

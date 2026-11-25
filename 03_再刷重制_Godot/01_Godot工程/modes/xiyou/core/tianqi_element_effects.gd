@@ -39,14 +39,14 @@ const KEY_STATE := {"burn": ST_BURN, "slow": ST_SLOW, "freeze": ST_FREEZE, "shat
 const SPECS := {
 	ST_BURN: ["灼烧", 1072, "灼伤", [], "回合结束受到火焰持续伤害", 2, "", false],
 	ST_SLOW: ["迟缓", 420, "减益", [{"code": 21, "dataId": 6, "mode": "rate"}], "敏捷 −{v}%", 2, "3", false],
-	ST_FREEZE: ["冰冻", 0, "冰冻", [], "跳过下一次行动", 0, "", false],
+	ST_FREEZE: ["冰冻", 1168, "冰冻", [], "跳过下一次行动", 0, "", false],
 	ST_SHATTER: ["碎甲", 706, "破甲", [{"code": 21, "dataId": 3, "mode": "rate"}], "物理防御 −{v}%", 2, "4", false],
 	ST_PARALYZE: ["麻痹", 1029, "麻痹", [], "跳过下一次行动", 0, "", false],
 	ST_PARASITE: ["寄生", 1072, "减益", [], "回合结束受自然伤害，为施加方血量最低者回等量血", 2, "", false],
-	ST_SOAK: ["浸湿", 0, "减益", [], "造成伤害 −{v}%", 2, "14", false],
+	ST_SOAK: ["浸湿", 955, "减益", [], "造成伤害 −{v}%", 2, "14", false],
 	ST_GUST: ["乱流", 921, "减益", [{"code": 22, "dataId": 0, "mode": "minus"}, {"code": 22, "dataId": 1, "mode": "minus"}], "命中 −{v}%，闪避 −{v}%", 2, "15", false],
 	ST_ARCANE: ["魔蚀", 706, "破甲", [{"code": 21, "dataId": 5, "mode": "rate"}], "魔法防御 −{v}%", 2, "7", false],
-	ST_HOLY: ["圣护", 0, "增益", [], "抵挡下一次可净化的负面状态，不挡伤害（1次）", 2, "", false],
+	ST_HOLY: ["圣佑", 1189, "增益", [], "抵挡下一次可净化的负面状态，不挡伤害（1次）", 2, "", false],
 	ST_VEIL: ["遮蔽锋芒", 921, "减益", [], "暴击多出的伤害 −{v}%", 2, "9", false],
 	ST_SHOCK: ["感电", 1029, "减益", [], "受到的伤害 +{v}%（与弱点暴露、破绽取高）", 2, "5", true],
 }
@@ -159,7 +159,8 @@ static func start(logic) -> void:
 		base_seed = XRandomStream.hex64(XState._fresh_seed())
 	var seed_hex := XRandomStream.derive(base_seed, "elem_effects")
 	logic.set_meta(META, {"seed": seed_hex, "stream": XRandomStream.create(seed_hex, "elem_effects"),
-		"frames": [], "loose": [], "units": {}, "logs": [], "stats": {}, "holy_boss": 0})
+		"frames": [], "loose": [], "units": {}, "logs": [], "stats": {}, "holy_boss": 0,
+		"pop": XRandomStream.create(XRandomStream.derive(seed_hex, "elem_pop"), "elem_pop")})  # T482：免疫跳字的几率骰，单独一条流，不动效果子流
 	_logic_ref = weakref(logic)
 
 
@@ -383,8 +384,25 @@ static func _take_logs(fx: Dictionary) -> Array:
 	return out
 
 
-static func _say(fx: Dictionary, text: String) -> void:
-	fx.logs.append({"type": "battle_text", "text": text})
+## pop（T482）：战斗画面在这条日志旁在 pop_target 头顶弹 pop_text（战斗画面 _play 认 l.pop；无画面的调用方照旧只读 text）。fmt 2＝伤害色、1＝回复色
+static func _say(fx: Dictionary, text: String, pop_target = null, pop_text := "", fmt := 2) -> void:
+	var l := {"type": "battle_text", "text": text}
+	if pop_target != null and pop_text != "":
+		l["pop"] = {"target": pop_target, "text": pop_text, "format": fmt}
+	fx.logs.append(l)
+
+
+## 体质免疫跳字（T482，Kyo 11-25）：只在「本该掷中」时弹「免疫＋效果名」，不弹「免疫」「无效」二字（无效是元素伤害免疫的跳字）；
+## 用单独的跳字流掷同样几率，不动效果子流。几率跟真实一样：敌打我方 base_chance，我方打敌按人数档（首领 ×0.5）
+static func _immune_pop(fx: Dictionary, t, elem: int, sid: int, enemy_src: bool, target_boss: bool) -> void:
+	var chance := float(_enemy_rules().get("base_chance", 0.11)) if enemy_src else tier_chance(elem)
+	if not enemy_src and target_boss:
+		chance *= float(_rules().get("boss_chance_rate", 0.5))
+	var rnd = fx.get("pop", null)
+	if rnd == null or float(rnd.next_float("tianqi_elem_pop", "%d" % elem)) >= chance:
+		return
+	var nm := str(SPECS[sid][0])
+	_say(fx, "%s 免疫了%s！" % [t.display_name(), nm], t, "免疫" + nm)
 
 
 ## 一帧收尾：按（实际扣血对象, 胜出元素）首次出现的顺序各掷一次；神圣整帧最多一次
@@ -571,6 +589,7 @@ static func _try_apply(logic, src, t, elem: int, base_hp: float, budget := {}) -
 			return
 		if _immune(t, elem):
 			_stat(fx, elem, "immune")
+			_immune_pop(fx, t, elem, sid, enemy_src, target_boss)
 			return
 		eff_rate = _actor_state_rate(t, sid, borrow)
 		if eff_rate <= 0.0:
@@ -579,6 +598,7 @@ static func _try_apply(logic, src, t, elem: int, base_hp: float, budget := {}) -
 	else:
 		if _immune(t, elem):
 			_stat(fx, elem, "immune")
+			_immune_pop(fx, t, elem, sid, enemy_src, target_boss)
 			return
 		if _hard_blocked(logic, t, sid, borrow):
 			_stat(fx, elem, "blocked")
@@ -633,7 +653,7 @@ static func _try_apply(logic, src, t, elem: int, base_hp: float, budget := {}) -
 		if key == "burn":
 			tick = floorf(tick * _boost(t, elem))  # 自然体质受灼烧 ×1.5，仍受每跳上限
 		un.dot[key] = {"tick": minf(tick, floorf(cap)), "src": src, "elem": elem}
-	_say(fx, "%s 陷入了%s！" % [t.display_name(), str(SPECS[sid][0])])
+	_say(fx, "%s 陷入了%s！" % [t.display_name(), str(SPECS[sid][0])], t, str(SPECS[sid][0]))
 
 
 ## 用效果子流挂状态（持续回合不吃战斗主流），挂上后把回合数写成最终值（首领版不再减半，§4.3）
@@ -700,9 +720,9 @@ static func _try_holy(logic, src, allies: Array, holy_hit: bool, budget := {}) -
 			if enemy_src:
 				budget["applied"] = int(budget.get("applied", 0)) + 1
 			if gone != "":
-				_say(fx, "%s 净化了%s并获得了%s！" % [b.display_name(), gone, str(SPECS[ST_HOLY][0])])
+				_say(fx, "%s 净化了%s并获得了%s！" % [b.display_name(), gone, str(SPECS[ST_HOLY][0])], b, str(_spec(8).get("name", "圣护")), 1)
 			else:
-				_say(fx, "%s 获得了%s！" % [b.display_name(), str(SPECS[ST_HOLY][0])])
+				_say(fx, "%s 获得了%s！" % [b.display_name(), str(SPECS[ST_HOLY][0])], b, str(_spec(8).get("name", "圣护")), 1)
 		elif gone != "":
 			if boss_side:
 				fx.holy_boss = int(fx.holy_boss) + 1
@@ -757,7 +777,7 @@ static func shield_blocks(b, id: int) -> bool:
 		return false  # 没有出手者（脚本、阶段状态、剧情锁）或自己人上的：不挡
 	b.remove_state(ST_HOLY)
 	_sync_unit(lg, b)  # 盾碎当回合立刻起算圣护冷却（不依赖回合末才同步）
-	_say(fx, "%s 的%s抵挡了%s！" % [b.display_name(), str(SPECS[ST_HOLY][0]), str(XDB.rec("States", id).get("name", ""))])
+	_say(fx, "%s 的%s抵挡了%s！" % [b.display_name(), str(SPECS[ST_HOLY][0]), str(XDB.rec("States", id).get("name", ""))], b, str(SPECS[ST_HOLY][0]) + "抵挡", 1)
 	return true
 
 
@@ -811,8 +831,19 @@ static func take_skip(logic, u, restricted: bool) -> String:
 			un.stop_need = int(_rules().get("stun_shared_cooldown", 5))
 			un.skips = int(un.skips) + 1
 			_sync_unit(logic, u)
+			fx["skip_name"] = str(SPECS[sid][0])
 			return "%s 因%s跳过了本次行动！" % [u.display_name(), str(SPECS[sid][0])]
 	return ""
+
+
+## take_skip 返回非空后，战斗逻辑用它拼那一条日志：带上头顶跳字（麻痹／冰冻），战斗画面 _play 认 pop
+static func skip_log(logic, u, text: String) -> Dictionary:
+	var l := {"type": "battle_text", "text": text}
+	var fx := _fx(logic)
+	if not fx.is_empty() and str(fx.get("skip_name", "")) != "":
+		l["pop"] = {"target": u, "text": str(fx.skip_name), "format": 2}
+		fx.erase("skip_name")
+	return l
 
 
 ## 失去的行动位与完成的行动（C 卡量 17% 判线用）

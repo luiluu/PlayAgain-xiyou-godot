@@ -1214,4 +1214,5 @@ static func profile_tooltip(prof: Dictionary) -> String:
 	lines.append("弱点（+50%% / 转换书+25%%）：%s" % fmt.call(prof.get("weak", [])))
 	lines.append("抗性（-33%%）：%s" % fmt.call(prof.get("resist", [])))
 	lines.append("免疫（无效 0%%）：%s" % fmt.call(prof.get("immune", [])))
+	lines.append(XTianqiNature.FLOOR_HELP)  # T482：楼层免疫是伤害倍率 0，和角色属性（只挡元素效果）两回事
 	return "\n".join(lines)
