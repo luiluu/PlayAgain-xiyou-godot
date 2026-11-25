@@ -167,6 +167,7 @@ static func withdraw_gear(s: XState, rec: Dictionary) -> bool:
 	if XAlienHide.active():
 		XAlienHide.restore(rec)  # 异化隐藏生效：取出的异化装备还原成普通装备（同读档迁移）
 	XXufeng.sync_gear_for_state(s, rec)  # 西游档徐凤年重做（T440）：从星级仓库取出时按本档模式与 REWORK 开关同步 76/129/143，取出即穿正确数值
+	XMagicWeapon.migrate_item(rec, s)  # T476：西游档从跨存档仓库取出老 >99 级法宝时同样按 888→99 折算等级
 	if o_alien_reset and not XAlienation.mark(rec).is_empty():
 		var led := XAlienation.ledger(s)
 		led.sequence = int(led.sequence) + 1

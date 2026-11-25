@@ -432,8 +432,9 @@ static func equipment(item: Dictionary) -> Dictionary:
 	# 缓存键含全部输入：正式版按物品对象缓存，Godot 用一张表，故另加种类与武器／防具类型（_is_weapon、武器类型乘区要用）
 	var eff = XTianqiGear.effective_params(item) if XTianqiGear.applies(item) else null  # 期四装备八项（T104）：关着为 null，签名、八项同原来
 	var scaled := XMagicWeapon.scale_active(item)
+	var cap := XMagicWeapon.level_cap(XState.current) if scaled else 0
 	var sig := JSON.stringify([item.get("kind"), item.get("wtypeId"), item.get("atypeId"), item.get("params") if eff == null else eff, item.get("traits"),
-		item.get("note"), item.get("level"), item.get(XHeartsteel.STACKS), item.get(XHubris.FAME), item.get("base"), scaled])
+		item.get("note"), item.get("level"), item.get(XHeartsteel.STACKS), item.get(XHubris.FAME), item.get("base"), scaled, cap])
 	if _gear_cache.has(sig):
 		return _gear_cache[sig]
 	var s := _empty()
@@ -441,7 +442,7 @@ static func equipment(item: Dictionary) -> Dictionary:
 	for i in range(mini(8, params.size())):
 		_attribute(s, i, float(params[i]), "基础属性 · " + NAMES[i])
 	var magic := RegEx.create_from_string("(?i)<Magic Weapon>").search(str(item.get("note", ""))) != null
-	var level := maxi(0, magic_level(item)) if magic else 0
+	var level := maxi(0, int(XMagicWeapon.effective_level(item))) if (magic and scaled) else (maxi(0, magic_level(item)) if magic else 0)
 	if magic:
 		var plus := magic_growth(item)
 		for i in range(8):
@@ -839,8 +840,9 @@ static func evaluate(actor: XActor, naked: bool) -> Dictionary:
 
 
 static func _signature(a: XActor) -> String:
+	var scaled := XMagicWeapon.scale_active()
 	return JSON.stringify([a.actor_id, a.class_id, a.level, a.skill_ids, a.state_ids, a.equips, XState.current.variable(8) if XState.current else 0,
-		int(a.zhenqi.get("realm", 0)), XRaceBattle.data_of(a), XMagicWeapon.scale_active()])   # 突破改道法缩放而技能表可能不变；种族（含血契开关）；法宝 99→888 折算开关
+		int(a.zhenqi.get("realm", 0)), XRaceBattle.data_of(a), scaled, XMagicWeapon.level_cap(XState.current) if scaled else 0])   # 突破改道法缩放而技能表可能不变；种族（含血契开关）；法宝 99→888 折算与本层上限
 
 
 ## 角色战力 {total, self, gear, gearScore, parts, selfParts, gearParts, equipment[{item, slot, score}], rows, evaluation, ownEvaluation}；关掉时全 0
