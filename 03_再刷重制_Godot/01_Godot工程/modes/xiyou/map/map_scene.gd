@@ -629,6 +629,7 @@ func _place_party(x: int, y: int, d: int) -> void:
 	player.stepped.connect(_on_player_step)
 	player.action_pressed.connect(_on_action)
 	player.touch_target_reached.connect(_on_touch_arrived)
+	player.touch_action.connect(_on_touch_action)
 	# 循环方向不限镜头（Game_Map.setDisplayPos／scrollLeft 在循环地图上不夹边）
 	const FREE := 10000000
 	camera.limit_left = -FREE if lower.loop_x else 0
@@ -848,6 +849,33 @@ func _on_action() -> void:
 		await lobby_fx.on_action(player.grid)
 		return
 	# 天启篇大厅的方桌（面朝桌子按确认键；没有事件时才轮到）
+	if tianqi_table != null and is_instance_valid(tianqi_table) and XTianqiTable.is_table(front):
+		await tianqi_table.on_action(self)
+
+
+## 点按的 D1／D2（MVPlayer.touch_action，照冻结 MV Game_Player.triggerTouchActionD1／D2）：
+## D1 只管脚下——飞艇上下、脚下「确定键、角色下方」事件、大厅可调查格；D2 只管面前一格——同层「确定键／接触」事件、天启篇方桌。
+## 不像确认键（_on_action）那样脚下、面前一起查（P1-3：点脚下却开了面前的 NPC）
+func _on_touch_action(d2: bool) -> void:
+	if busy or _reserved_first():
+		return
+	if not d2:
+		if get_on_off_vehicle() or not can_start_local_events():
+			return
+		for e in events:
+			if e.grid == player.grid and e.trigger() == 0 and not e.is_normal_priority():
+				await _run_action_event(e)
+				return
+		if lobby_fx != null and is_instance_valid(lobby_fx) and lobby_fx.is_investigation(player.grid):
+			await lobby_fx.on_action(player.grid)
+		return
+	if not can_start_local_events():
+		return
+	var front := player.front_cell(player.direction)
+	for e in events:
+		if e.grid == front and [0, 1, 2].has(e.trigger()) and e.is_normal_priority():
+			await _run_action_event(e)
+			return
 	if tianqi_table != null and is_instance_valid(tianqi_table) and XTianqiTable.is_table(front):
 		await tianqi_table.on_action(self)
 

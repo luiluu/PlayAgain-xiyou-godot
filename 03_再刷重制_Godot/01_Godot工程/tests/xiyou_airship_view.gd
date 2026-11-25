@@ -292,7 +292,7 @@ func _run() -> void:
 	_check("slide_into_landable_cell", sliding, [map.player.grid, map.player.is_moving()])
 	map.player.click_cell(map.player.grid)
 	var slide_lands := await _until(func(): return map._vehicle_getting_off)
-	_check("slide_click_lands_without_reclick", slide_lands and not map.player._click_queued, [map._vehicle_getting_off, _airship()])
+	_check("slide_click_lands_without_reclick", slide_lands and not map.player._tap_self_moving and map.player._touch_queued == 0, [map._vehicle_getting_off, _airship()])
 	_check("slide_land_to_walk", await _until(func(): return s.vehicle_type == "walk"), _airship())
 	await _get_on("third")
 	# 物件图（! 开头，不上移 6）：萌物
