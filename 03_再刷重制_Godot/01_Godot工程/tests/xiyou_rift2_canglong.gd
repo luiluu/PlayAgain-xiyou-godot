@@ -26,6 +26,7 @@ func _run() -> void:
 	XConfig.path_override = "user://test_rift2_canglong_options.json"
 	DirAccess.remove_absolute(ProjectSettings.globalize_path(XConfig.path_override))
 	XFestLobby.ENABLED = false  # 冠军庆典期间大厅多 78～81 号事件（原版没有，由 xiyou_fest_lobby 核）；比 Map004 与原图时关掉
+	XHonghuangMonument.ENABLED = false  # T460 大厅洪荒碑多 82 号事件（原版没有，由 xiyou_honghuang_monument 核）；比 Map004 与原图时关掉
 	_rift()
 	_whisper()
 	_canglong_data()

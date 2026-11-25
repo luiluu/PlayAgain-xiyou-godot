@@ -100,6 +100,8 @@ var _bgm_audio = null
 var lobby_fx: XLobbyCorruption
 ## 冠军庆典大厅叠加层（XFestLobby，只在 Map004 且活动期间才建；换图时释放）
 var fest_fx: XFestLobby
+## 西游大厅洪荒碑视觉层（XHonghuangMonumentView，只在 Map004、西游档且开关开着时才建；换图时释放）
+var monument_fx: XHonghuangMonumentView
 ## 天启篇大厅方桌的裂纹（XTianqiTable，只在 Map004、天启篇存档才建；换图时释放）
 var tianqi_table: XTianqiTable
 ## 正在跑的顶层事件号（run_event 期间；没有为 0）：叠加层看是不是漩涡过场
@@ -478,23 +480,24 @@ func load_map(id: int, x: int, y: int, d: int) -> void:
 	XEnemyBook.on_map_setup(s, map_data)  # AB_EnemyBook Game_Map.setup：记遇敌表敌人的出没地图
 	XMapTransfer.on_arrive(s, id)
 	_reset_transfer_button()
+	var tile_data := XHonghuangMonument.tile_map_data(id, map_data, s)
 	lower = MVTilemap.new()
 	lower.z_index = -10
 	add_child(lower)
-	lower.setup(map_data, false)
-	lower.open_cells = MVTilemap.opened_cells(id, map_data)
+	lower.setup(tile_data, false)
+	lower.open_cells = MVTilemap.opened_cells(id, tile_data)
 	chars = Node2D.new()
 	chars.y_sort_enabled = true
 	add_child(chars)
 	upper = MVTilemap.new()
 	upper.z_index = 10
 	add_child(upper)
-	upper.setup(map_data, true)
+	upper.setup(tile_data, true)
 	XLobbyDebugNpc.sync(s)  # installTestGateRuntime：进地图先对齐开关 2501（测试模式 99 级 NPC）
 	var keep_cfg = slice().get("keepEvents", {}).get(str(id), [])
 	var keep: Array = keep_cfg.map(func(v): return int(v)) if keep_cfg is Array else []
 	for ev in map_data.events:
-		if ev == null or (keep_cfg is Array and not keep.has(int(ev.id)) and not XRift.keep_event(id, int(ev.id)) and not XLobbyDebugNpc.keep_event(id, int(ev.id)) and not XFestLobby.keep_event(id, int(ev.id))):
+		if ev == null or (keep_cfg is Array and not keep.has(int(ev.id)) and not XRift.keep_event(id, int(ev.id)) and not XLobbyDebugNpc.keep_event(id, int(ev.id)) and not XFestLobby.keep_event(id, int(ev.id)) and not XHonghuangMonument.keep_event(id, int(ev.id))):
 			continue
 		var e := MVEvent.new()
 		e.tilemap = lower
@@ -519,6 +522,7 @@ func load_map(id: int, x: int, y: int, d: int) -> void:
 	_setup_lobby_fx()
 	_show_current_map_name(true)
 	_setup_fest_fx()
+	_setup_monument_fx()
 	_setup_tianqi_look()
 
 
@@ -561,6 +565,17 @@ func _setup_fest_fx() -> void:
 		fest_fx = XFestLobby.new()
 		add_child(fest_fx)
 		fest_fx.setup(self)
+
+
+## T460 洪荒碑：换图时先拆旧的，到了西游大厅且开关开着时再建（天启档不建）
+func _setup_monument_fx() -> void:
+	if monument_fx != null and is_instance_valid(monument_fx):
+		monument_fx.queue_free()
+	monument_fx = null
+	if map_id == XHonghuangMonument.MAP_ID and XHonghuangMonument.monument_active(XState.current):
+		monument_fx = XHonghuangMonumentView.new()
+		add_child(monument_fx)
+		monument_fx.setup(self)
 
 
 ## 存档时的当前地图事件状态（XState.to_dict 调用）
@@ -684,6 +699,8 @@ func _process(delta: float) -> void:
 			var back := XItemBagReturn.take(XState.current, false)
 			if not back.is_empty():
 				open_menu(back)
+		if not busy and transfer_page == null:
+			_check_honghuang_broadcast()
 		if not busy and transfer_page == null:
 			_check_milestone()
 	if not busy and (Input.is_action_just_pressed("ui_cancel") or Input.is_action_just_pressed("mv_menu")) and not XMessageBox.consumed_input_this_frame() and not XKeyMap.menu_call_blocked(_menu_closed_frame, Engine.get_process_frames()):
@@ -885,6 +902,25 @@ func _tile_events_at(x: int, y: int) -> Array:
 
 ## 修行指引区段里程碑（installNativeGuidanceRuntime 的 Scene_Map.update）：没有事件在跑时每 30 帧查一次，
 ## 修行进度层所在区段没看过就记看过、显示本段说明（每段一次）
+## T460 洪荒首通一次性播报：标题／读档进西游档且地图空闲时弹一次，每档只弹一次（天启档不弹）
+func _check_honghuang_broadcast() -> void:
+	if not XHonghuangMonument.is_entry_armed():
+		return
+	var lines := XHonghuangMonument.consume_broadcast(XState.current, map_id)
+	if lines.is_empty():
+		return
+	_run_honghuang_broadcast(lines)
+
+
+func _run_honghuang_broadcast(lines: Array[String]) -> void:
+	_set_busy(true)
+	await show_text("", 0, lines)
+	if not is_inside_tree():
+		return
+	_set_busy(false)
+	refresh_events()
+
+
 func _check_milestone() -> void:
 	_milestone_tick += 1
 	if _milestone_tick % 30:

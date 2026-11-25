@@ -95,6 +95,8 @@ func _is_hidden_event() -> bool:
 		return true  # 天启篇教派连带内容：大厅两位使者等整件不出（XTianqiSect）
 	if XTianqiHall.hides(map_id, event_id):
 		return true  # 天启篇大厅 NPC 清理：删掉的、并进别人选单的（T079，XTianqiHall）
+	if XHonghuangMonument.hides(map_id, event_id):
+		return true  # T460：西游大厅洪荒碑在天启档或回退开关关闭时隐藏
 	return false
 
 

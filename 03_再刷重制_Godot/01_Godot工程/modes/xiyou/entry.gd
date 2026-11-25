@@ -344,6 +344,7 @@ func _confirm_auto() -> void:
 
 func _load_auto() -> void:
 	if XSave.load_auto():
+		XHonghuangMonument.arm_entry()
 		get_tree().change_scene_to_file(MAP_SCENE)
 	else:
 		_notice("自动存档", (XSaveSeal.FAIL_TEXT + "，这份自动存档无法读取。" + XSaveSeal.FAIL_HINT) if XSave.auto_seal_failed() else "这份自动存档读不出来。")
@@ -586,7 +587,9 @@ func _choose_save() -> void:
 	page.mode = "load"
 	page.use_skin = XTianqiTitle.available() and XTianqiTitle.skin_on()   # T292：天启篇新标题进来用新界面，重制版旧标题保持旧界面（O-467）
 	_layer.add_child(page)
-	page.loaded.connect(func(): get_tree().change_scene_to_file(MAP_SCENE))
+	page.loaded.connect(func():
+		XHonghuangMonument.arm_entry()
+		get_tree().change_scene_to_file(MAP_SCENE))
 	page.closed.connect(_title)
 
 
@@ -765,4 +768,5 @@ func _tq_start(slot: int, key: String, lineup: Array) -> void:
 ## Scene_Title.commandNewGame → DataManager.setupNewGame：空队伍、难度为初始值，站在 Map001 起点，开局事件自动执行
 func _new_game() -> void:
 	XState.new_game_blank()
+	XHonghuangMonument.arm_entry()
 	get_tree().change_scene_to_file(MAP_SCENE)
