@@ -575,8 +575,13 @@ static func _db_items(et: int) -> Array:
 
 
 ## 带缓存的数据库精选装备：按 (actor_id, lv, et, role, min_req, max_req, min_grade, max_grade) 缓存最佳 ID
-static func _pick_db_item(a: XActor, et: int, role: String, w: Dictionary, min_req: int, max_req: int, min_grade: int, max_grade: int, inst_id: String) -> Dictionary:
-	var key := "%d|%d|%d|%s|%d|%d|%d|%d" % [int(a.actor_id), int(a.level), et, role, min_req, max_req, min_grade, max_grade]
+static func _changes_dummy_defense(item: Dictionary) -> bool:
+	var note := str(item.get("note", "")).to_lower()
+	return "pushstate0329:" in note or "pushsubstate0335:" in note
+
+
+static func _pick_db_item(a: XActor, et: int, role: String, w: Dictionary, min_req: int, max_req: int, min_grade: int, max_grade: int, inst_id: String, neutral_dummy := false) -> Dictionary:
+	var key := "%d|%d|%d|%s|%d|%d|%d|%d|%s" % [int(a.actor_id), int(a.level), et, role, min_req, max_req, min_grade, max_grade, neutral_dummy]
 	if _pick_cache.has(key):
 		var cached_id := int(_pick_cache[key])
 		if cached_id <= 0:
@@ -594,6 +599,8 @@ static func _pick_db_item(a: XActor, et: int, role: String, w: Dictionary, min_r
 		var rec: Dictionary = row.rec
 		var item := XGear.template("weapon" if et == 1 else "armor", int(rec.id))
 		if not a.can_equip(item) or not XTianqiGear.applies(item):
+			continue
+		if neutral_dummy and _changes_dummy_defense(item):
 			continue
 		var p := XTianqiGear.effective_params(item)
 		var score := _role_gear_score(p, role, w, et) + float(req) * 2.0 + float(g) * 50.0
@@ -618,7 +625,7 @@ static func _role_gear_score(p: Array, role: String, w: Dictionary, et: int) -> 
 	return K._wscore(p, w) + float(p[0]) * 0.05 + (float(p[3]) + float(p[5])) * 0.2
 
 
-static func _make_legal_qiyin_weapon(a: XActor, seal_prefer: String, lv: int, true_seal: bool, grades: Array, diff: String, qstream: XRandomStream, inst_id: String) -> Dictionary:
+static func _make_legal_qiyin_weapon(a: XActor, seal_prefer: String, lv: int, true_seal: bool, grades: Array, diff: String, qstream: XRandomStream, inst_id: String, preferred_weapon := "") -> Dictionary:
 	var wtypes := a.traits_set(51)
 	var chosen_name := ""
 	var chosen_seal := seal_prefer
@@ -628,20 +635,32 @@ static func _make_legal_qiyin_weapon(a: XActor, seal_prefer: String, lv: int, tr
 		if not wtypes.has(int(t.get("wtype_id", -1))):
 			continue
 		var k := str(t.get("key", ""))
+		if preferred_weapon != "":
+			if k == preferred_weapon:
+				chosen_name = str(t.name)
+				break
+			continue
 		if (not physical and magic_keys.has(k)) or (physical and not magic_keys.has(k)):
 			chosen_name = str(t.name)
 			break
-	if chosen_name == "":
+	if chosen_name == "" and preferred_weapon == "":
 		for t in XTianqiQiyinGear.weapon_types():
 			if wtypes.has(int(t.get("wtype_id", -1))):
 				chosen_name = str(t.name)
 				break
 	if chosen_name == "":
 		return {}
-	for wrec in XTianqiQiyinGear.data().get("weapons", []):
-		if str(wrec.get("type", "")) == chosen_name:
-			chosen_seal = str(wrec.get("seal", seal_prefer))
-			break
+	if preferred_weapon != "":
+		var weapon := XTianqiQiyinGear.weapon_of_type(chosen_name)
+		if weapon.is_empty():
+			return {}
+		chosen_seal = str(weapon.seal)
+	else:
+		# 保留 T438 历史模板取件，便于按原口径复跑旧报告。
+		for wrec in XTianqiQiyinGear.data().get("weapons", []):
+			if str(wrec.get("type", "")) == chosen_name:
+				chosen_seal = str(wrec.get("seal", seal_prefer))
+				break
 	var item := XTianqiQiyinEquip.make({
 		"kind": "weapon", "seal": chosen_seal, "wtype": chosen_name,
 		"true_seal": true_seal, "level": lv, "grades": grades,
@@ -671,7 +690,7 @@ static func _qiyin_part_of(et: int) -> String:
 	return ""
 
 
-func _equip_actor(s: XState, a: XActor, tpl: String, diff: String, role: String, f: int, lv: int, rng: RandomNumberGenerator, qstream: XRandomStream) -> Array:
+func _equip_actor(s: XState, a: XActor, tpl: String, diff: String, role: String, f: int, lv: int, rng: RandomNumberGenerator, qstream: XRandomStream, preferred_weapon := "") -> Array:
 	var slots := a.equip_slots()
 	var w := K.main_weights(a)
 	var aid := int(a.actor_id)
@@ -679,6 +698,8 @@ func _equip_actor(s: XState, a: XActor, tpl: String, diff: String, role: String,
 	var log_rows := []
 	var b_qiyin_etypes := [3, 4, 5, 7] if f <= 33 else [3, 4, 5, 6, 7]
 	var c_true_etypes := [3, 4, 5]
+	var neutral_dummy := preferred_weapon != ""
+	var primary_weapon := true
 
 	for i in slots.size():
 		var et := int(slots[i])
@@ -747,16 +768,17 @@ func _equip_actor(s: XState, a: XActor, tpl: String, diff: String, role: String,
 				if not item.is_empty():
 					item["instanceId"] = inst
 			elif et == 1:
-				var is_true_w := f >= 36
-				item = _make_legal_qiyin_weapon(a, seal, q_lv, is_true_w, fine_grades, diff, qstream, inst)
-			elif et == 9 and f >= 34:
+				var is_true_w := f >= 36 and (not neutral_dummy or primary_weapon)
+				item = _make_legal_qiyin_weapon(a, seal, q_lv, is_true_w, fine_grades, diff, qstream, inst, preferred_weapon)
+				primary_weapon = false
+			elif et == 9 and f >= 34 and not neutral_dummy:
 				item = _pick_db_item(a, 9, role, w, 80, 80, 6, 6, inst)
 			if item.is_empty():
-				item = _pick_db_item(a, et, role, w, 70, mini(lv, 81), 5, 6, inst)
+				item = _pick_db_item(a, et, role, w, 70, mini(lv, 81), 5, 6, inst, neutral_dummy)
 				if item.is_empty():
-					item = _pick_db_item(a, et, role, w, 65, mini(lv, 81), 5, 6, inst)
+					item = _pick_db_item(a, et, role, w, 65, mini(lv, 81), 5, 6, inst, neutral_dummy)
 			if not item.is_empty():
-				_apply_curated_affixes(item, a, role, "C", diff, rng)
+				_apply_curated_affixes(item, a, role, "C", diff, rng, w if neutral_dummy else {})
 
 		elif tpl == "D":
 			var q_lv := 75 if f <= 33 else 80
@@ -807,7 +829,7 @@ static func _roll_normal_qiyin_grades(rng: RandomNumberGenerator) -> Array:
 	return out
 
 
-static func _apply_curated_affixes(item: Dictionary, a: XActor, role: String, tpl: String, diff: String, rng: RandomNumberGenerator) -> void:
+static func _apply_curated_affixes(item: Dictionary, a: XActor, role: String, tpl: String, diff: String, rng: RandomNumberGenerator, weights := {}) -> void:
 	var slot := XTianqiAffixRoll.slot_key(item)
 	if slot == "":
 		return
@@ -819,7 +841,7 @@ static func _apply_curated_affixes(item: Dictionary, a: XActor, role: String, tp
 	var tier := 4
 	var grade := "perfect" if tpl == "D" else "fine"
 	var want_curated := max_slots if tpl == "D" else mini(2, max_slots)
-	var physical := a.param(2) >= a.param(4)
+	var physical := a.param(2) >= a.param(4) if weights.is_empty() else float(weights.get("atk", 0)) >= float(weights.get("mat", 0))
 	var atk_key := "atk" if physical else "mat"
 
 	var pref := []
@@ -983,7 +1005,7 @@ func _equip_fabao_mount_artifact(s: XState, a: XActor, tpl: String, role: String
 	return ""
 
 
-func _apply_growth(s: XState, a: XActor, tpl: String, role: String) -> void:
+func _apply_growth(s: XState, a: XActor, tpl: String, role: String, fill_secrets := true) -> void:
 	var mastery_ratio := 0.0
 	match tpl:
 		"A": mastery_ratio = 0.0
@@ -1018,7 +1040,7 @@ func _apply_growth(s: XState, a: XActor, tpl: String, role: String) -> void:
 		"B": secret_ratio = 0.5
 		"C": secret_ratio = 0.8
 		"D": secret_ratio = 1.0
-	if secret_ratio > 0.0:
+	if fill_secrets and secret_ratio > 0.0:
 		_learn_secrets_cached(a, secret_ratio)
 
 	var brand_pct := 0.0
