@@ -690,6 +690,10 @@ func _xinsu_ready(s: XState) -> void:
 
 
 func _scripted() -> void:
+	# T514：脚本打法「生命低于一半才放反转术式」是按没有境底时的生命调的；守一境底生命 +5% 让第 8 回合正好停在一半线上、
+	# 不放反转，接着被连招打倒（影子出招按本体基础生命算，不跟境底变）。这是脚本阈值，不是变难了：本段按没有境底跑，末尾还原
+	var realm_was := XTianqiBrandRealm.ENABLED
+	XTianqiBrandRealm.ENABLED = false
 	var stats := {"huaiyu_smart": [], "huaiyu_no_purple": [], "xinsu_smart": [], "xinsu_no_domain": []}
 	var awakened := 0
 	for k in range(SEEDS):
@@ -716,6 +720,7 @@ func _scripted() -> void:
 	for key in stats:
 		print("%s rounds=%s won=%s shadow_left=%s" % [key, str(stats[key].map(func(r): return r.rounds)), str(stats[key].map(func(r): return r.won)),
 			str(stats[key].map(func(r): return snappedf(float(r.shadow_hp) / maxf(1.0, float(r.shadow_mhp)), 0.01)))])
+	XTianqiBrandRealm.ENABLED = realm_was
 
 
 ## 假地图：start_battle 照真的建战斗（换不换影子看 XTianqiGojoTrial.setup），按 result 收场
