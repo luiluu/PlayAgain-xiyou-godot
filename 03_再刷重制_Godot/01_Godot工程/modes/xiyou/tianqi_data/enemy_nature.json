@@ -1,0 +1,1809 @@
+{
+ "version": 1,
+ "_doc": "天启篇敌人自然体质（T479，设计稿 元素独特效果 v0.3 4.1）。enemies 键＝敌人号；缺省＝无体质；natures 0～2 个、基础十系元素号。守层者条目 src=guardian 带 floor；鸿钧、骑士走 special（按战斗身份取，不按敌人号）。xiyou_affinity／absorb 只是证据，代码不读。遮蔽锋芒首领线偏高待 Kyo 定：guardian_take 2＝守层者取前 2 个体质，1＝只取第 1 个，改它后重跑生成器。",
+ "guardian_take": 2,
+ "special": {
+  "hongjun": {
+   "natures": [
+    7,
+    8
+   ],
+   "src": "hongjun"
+  },
+  "knight": {
+   "natures": [],
+   "src": "none"
+  }
+ },
+ "enemies": {
+  "12": {
+   "natures": [
+    14
+   ],
+   "src": "keyword",
+   "hit": "鱼",
+   "xiyou_affinity": [
+    14
+   ],
+   "absorb": []
+  },
+  "13": {
+   "natures": [
+    14
+   ],
+   "src": "keyword",
+   "hit": "鱼",
+   "xiyou_affinity": [
+    14
+   ],
+   "absorb": []
+  },
+  "14": {
+   "natures": [
+    14
+   ],
+   "src": "keyword",
+   "hit": "鱼",
+   "xiyou_affinity": [],
+   "absorb": []
+  },
+  "15": {
+   "natures": [
+    14
+   ],
+   "src": "keyword",
+   "hit": "鱼",
+   "xiyou_affinity": [
+    3,
+    14
+   ],
+   "absorb": []
+  },
+  "16": {
+   "natures": [
+    14
+   ],
+   "src": "keyword",
+   "hit": "鱼",
+   "xiyou_affinity": [
+    3
+   ],
+   "absorb": []
+  },
+  "18": {
+   "natures": [
+    14
+   ],
+   "src": "keyword",
+   "hit": "鱼",
+   "xiyou_affinity": [
+    14
+   ],
+   "absorb": []
+  },
+  "21": {
+   "natures": [
+    14
+   ],
+   "src": "guardian",
+   "hit": "",
+   "xiyou_affinity": [
+    14
+   ],
+   "absorb": [],
+   "floor": 4
+  },
+  "28": {
+   "natures": [
+    6,
+    15
+   ],
+   "src": "guardian",
+   "hit": "",
+   "xiyou_affinity": [
+    6
+   ],
+   "absorb": [],
+   "floor": 5
+  },
+  "30": {
+   "natures": [
+    3
+   ],
+   "src": "keyword",
+   "hit": "冰",
+   "xiyou_affinity": [
+    3
+   ],
+   "absorb": []
+  },
+  "31": {
+   "natures": [
+    2
+   ],
+   "src": "keyword",
+   "hit": "火",
+   "xiyou_affinity": [
+    2
+   ],
+   "absorb": []
+  },
+  "34": {
+   "natures": [
+    2
+   ],
+   "src": "keyword",
+   "hit": "焰",
+   "xiyou_affinity": [
+    2
+   ],
+   "absorb": []
+  },
+  "35": {
+   "natures": [
+    3
+   ],
+   "src": "keyword",
+   "hit": "冰",
+   "xiyou_affinity": [
+    3
+   ],
+   "absorb": []
+  },
+  "40": {
+   "natures": [
+    2,
+    3
+   ],
+   "src": "guardian",
+   "hit": "",
+   "xiyou_affinity": [
+    2,
+    3
+   ],
+   "absorb": [],
+   "floor": 6
+  },
+  "54": {
+   "natures": [
+    14
+   ],
+   "src": "keyword",
+   "hit": "海",
+   "xiyou_affinity": [],
+   "absorb": [],
+   "floor": 7
+  },
+  "55": {
+   "natures": [
+    7
+   ],
+   "src": "guardian",
+   "hit": "",
+   "xiyou_affinity": [
+    7
+   ],
+   "absorb": [],
+   "floor": 8
+  },
+  "82": {
+   "natures": [
+    4
+   ],
+   "src": "keyword",
+   "hit": "地底",
+   "xiyou_affinity": [
+    4
+   ],
+   "absorb": []
+  },
+  "83": {
+   "natures": [
+    4
+   ],
+   "src": "keyword",
+   "hit": "石",
+   "xiyou_affinity": [
+    4
+   ],
+   "absorb": []
+  },
+  "90": {
+   "natures": [
+    2
+   ],
+   "src": "keyword",
+   "hit": "火",
+   "xiyou_affinity": [
+    2,
+    6
+   ],
+   "absorb": []
+  },
+  "91": {
+   "natures": [
+    4
+   ],
+   "src": "keyword",
+   "hit": "石",
+   "xiyou_affinity": [
+    4
+   ],
+   "absorb": []
+  },
+  "98": {
+   "natures": [
+    5
+   ],
+   "src": "keyword",
+   "hit": "雷",
+   "xiyou_affinity": [
+    8
+   ],
+   "absorb": []
+  },
+  "100": {
+   "natures": [
+    5
+   ],
+   "src": "keyword",
+   "hit": "雷",
+   "xiyou_affinity": [
+    4
+   ],
+   "absorb": []
+  },
+  "102": {
+   "natures": [
+    3,
+    15
+   ],
+   "src": "keyword",
+   "hit": "冰、风",
+   "xiyou_affinity": [
+    3
+   ],
+   "absorb": []
+  },
+  "103": {
+   "natures": [
+    3,
+    15
+   ],
+   "src": "keyword",
+   "hit": "冰、风",
+   "xiyou_affinity": [
+    3
+   ],
+   "absorb": []
+  },
+  "104": {
+   "natures": [
+    3,
+    15
+   ],
+   "src": "keyword",
+   "hit": "冰、风",
+   "xiyou_affinity": [
+    3
+   ],
+   "absorb": []
+  },
+  "105": {
+   "natures": [
+    3
+   ],
+   "src": "keyword",
+   "hit": "冰",
+   "xiyou_affinity": [
+    3
+   ],
+   "absorb": []
+  },
+  "106": {
+   "natures": [
+    15
+   ],
+   "src": "keyword",
+   "hit": "风",
+   "xiyou_affinity": [
+    3
+   ],
+   "absorb": []
+  },
+  "112": {
+   "natures": [
+    2,
+    4
+   ],
+   "src": "guardian",
+   "hit": "",
+   "xiyou_affinity": [
+    2,
+    4
+   ],
+   "absorb": [],
+   "floor": 11
+  },
+  "113": {
+   "natures": [
+    7
+   ],
+   "src": "guardian",
+   "hit": "",
+   "xiyou_affinity": [
+    7
+   ],
+   "absorb": [],
+   "floor": 12
+  },
+  "114": {
+   "natures": [
+    8
+   ],
+   "src": "guardian",
+   "hit": "",
+   "xiyou_affinity": [
+    8
+   ],
+   "absorb": [],
+   "floor": 13
+  },
+  "117": {
+   "natures": [
+    2
+   ],
+   "src": "keyword",
+   "hit": "焰",
+   "xiyou_affinity": [
+    2,
+    6
+   ],
+   "absorb": []
+  },
+  "128": {
+   "natures": [
+    8
+   ],
+   "src": "guardian",
+   "hit": "",
+   "xiyou_affinity": [
+    8
+   ],
+   "absorb": [],
+   "floor": 15
+  },
+  "129": {
+   "natures": [
+    14
+   ],
+   "src": "guardian",
+   "hit": "",
+   "xiyou_affinity": [
+    14
+   ],
+   "absorb": [],
+   "floor": 16
+  },
+  "132": {
+   "natures": [
+    15
+   ],
+   "src": "keyword",
+   "hit": "风",
+   "xiyou_affinity": [
+    3
+   ],
+   "absorb": []
+  },
+  "133": {
+   "natures": [
+    15
+   ],
+   "src": "keyword",
+   "hit": "风",
+   "xiyou_affinity": [
+    3
+   ],
+   "absorb": []
+  },
+  "136": {
+   "natures": [
+    15
+   ],
+   "src": "keyword",
+   "hit": "风",
+   "xiyou_affinity": [],
+   "absorb": []
+  },
+  "138": {
+   "natures": [
+    14
+   ],
+   "src": "keyword",
+   "hit": "鱼",
+   "xiyou_affinity": [
+    3
+   ],
+   "absorb": []
+  },
+  "139": {
+   "natures": [
+    14
+   ],
+   "src": "keyword",
+   "hit": "鱼",
+   "xiyou_affinity": [
+    3
+   ],
+   "absorb": []
+  },
+  "140": {
+   "natures": [
+    14
+   ],
+   "src": "keyword",
+   "hit": "海",
+   "xiyou_affinity": [
+    2,
+    3
+   ],
+   "absorb": []
+  },
+  "141": {
+   "natures": [
+    14
+   ],
+   "src": "keyword",
+   "hit": "鱼",
+   "xiyou_affinity": [
+    14,
+    3
+   ],
+   "absorb": []
+  },
+  "142": {
+   "natures": [
+    14
+   ],
+   "src": "keyword",
+   "hit": "亚特兰蒂斯",
+   "xiyou_affinity": [
+    3,
+    4
+   ],
+   "absorb": []
+  },
+  "149": {
+   "natures": [
+    4
+   ],
+   "src": "keyword",
+   "hit": "石",
+   "xiyou_affinity": [
+    4
+   ],
+   "absorb": []
+  },
+  "153": {
+   "natures": [
+    4
+   ],
+   "src": "keyword",
+   "hit": "石",
+   "xiyou_affinity": [
+    4
+   ],
+   "absorb": []
+  },
+  "157": {
+   "natures": [
+    14
+   ],
+   "src": "keyword",
+   "hit": "鱼",
+   "xiyou_affinity": [],
+   "absorb": []
+  },
+  "169": {
+   "natures": [
+    14
+   ],
+   "src": "keyword",
+   "hit": "海",
+   "xiyou_affinity": [
+    14
+   ],
+   "absorb": []
+  },
+  "170": {
+   "natures": [
+    14
+   ],
+   "src": "keyword",
+   "hit": "海",
+   "xiyou_affinity": [],
+   "absorb": []
+  },
+  "171": {
+   "natures": [
+    14
+   ],
+   "src": "keyword",
+   "hit": "海",
+   "xiyou_affinity": [
+    3,
+    8
+   ],
+   "absorb": []
+  },
+  "173": {
+   "natures": [
+    14
+   ],
+   "src": "keyword",
+   "hit": "鱼",
+   "xiyou_affinity": [
+    14,
+    9
+   ],
+   "absorb": []
+  },
+  "174": {
+   "natures": [
+    14
+   ],
+   "src": "keyword",
+   "hit": "海",
+   "xiyou_affinity": [
+    2,
+    3
+   ],
+   "absorb": []
+  },
+  "179": {
+   "natures": [
+    2
+   ],
+   "src": "keyword",
+   "hit": "火",
+   "xiyou_affinity": [
+    2,
+    6
+   ],
+   "absorb": []
+  },
+  "181": {
+   "natures": [
+    15,
+    8
+   ],
+   "src": "guardian",
+   "hit": "",
+   "xiyou_affinity": [
+    8,
+    7
+   ],
+   "absorb": [],
+   "floor": 17
+  },
+  "189": {
+   "natures": [
+    4
+   ],
+   "src": "keyword",
+   "hit": "雕像",
+   "xiyou_affinity": [
+    9,
+    15
+   ],
+   "absorb": []
+  },
+  "191": {
+   "natures": [
+    2
+   ],
+   "src": "keyword",
+   "hit": "炎",
+   "xiyou_affinity": [
+    2,
+    9
+   ],
+   "absorb": []
+  },
+  "192": {
+   "natures": [
+    9,
+    15
+   ],
+   "src": "guardian",
+   "hit": "",
+   "xiyou_affinity": [
+    9,
+    6
+   ],
+   "absorb": [],
+   "floor": 18
+  },
+  "202": {
+   "natures": [
+    2,
+    15
+   ],
+   "src": "guardian",
+   "hit": "",
+   "xiyou_affinity": [
+    2
+   ],
+   "absorb": [
+    2
+   ],
+   "floor": 19
+  },
+  "204": {
+   "natures": [
+    15
+   ],
+   "src": "keyword",
+   "hit": "风",
+   "xiyou_affinity": [
+    2,
+    9
+   ],
+   "absorb": []
+  },
+  "205": {
+   "natures": [
+    15,
+    2
+   ],
+   "src": "keyword",
+   "hit": "风、火",
+   "xiyou_affinity": [
+    2,
+    6
+   ],
+   "absorb": [
+    2,
+    6
+   ]
+  },
+  "206": {
+   "natures": [
+    15
+   ],
+   "src": "keyword",
+   "hit": "风",
+   "xiyou_affinity": [
+    6
+   ],
+   "absorb": []
+  },
+  "209": {
+   "natures": [
+    15
+   ],
+   "src": "keyword",
+   "hit": "风",
+   "xiyou_affinity": [
+    6
+   ],
+   "absorb": [
+    6
+   ]
+  },
+  "213": {
+   "natures": [
+    3,
+    4
+   ],
+   "src": "keyword",
+   "hit": "冰、雕像",
+   "xiyou_affinity": [
+    3
+   ],
+   "absorb": [
+    3
+   ]
+  },
+  "214": {
+   "natures": [
+    2,
+    4
+   ],
+   "src": "keyword",
+   "hit": "火、雕像",
+   "xiyou_affinity": [
+    2
+   ],
+   "absorb": [
+    2
+   ]
+  },
+  "227": {
+   "natures": [
+    6
+   ],
+   "src": "keyword",
+   "hit": "树",
+   "xiyou_affinity": [
+    6
+   ],
+   "absorb": [
+    6
+   ]
+  },
+  "230": {
+   "natures": [
+    6
+   ],
+   "src": "keyword",
+   "hit": "树",
+   "xiyou_affinity": [
+    6
+   ],
+   "absorb": [
+    6
+   ]
+  },
+  "270": {
+   "natures": [
+    3
+   ],
+   "src": "keyword",
+   "hit": "雪",
+   "xiyou_affinity": [
+    3
+   ],
+   "absorb": []
+  },
+  "271": {
+   "natures": [
+    3
+   ],
+   "src": "keyword",
+   "hit": "雪",
+   "xiyou_affinity": [
+    3
+   ],
+   "absorb": []
+  },
+  "274": {
+   "natures": [
+    3
+   ],
+   "src": "keyword",
+   "hit": "雪",
+   "xiyou_affinity": [
+    3
+   ],
+   "absorb": []
+  },
+  "280": {
+   "natures": [
+    7,
+    14
+   ],
+   "src": "keyword",
+   "hit": "魔晶、魔晶",
+   "xiyou_affinity": [
+    7
+   ],
+   "absorb": [
+    7
+   ]
+  },
+  "321": {
+   "natures": [
+    2
+   ],
+   "src": "keyword",
+   "hit": "火",
+   "xiyou_affinity": [
+    2
+   ],
+   "absorb": [
+    2
+   ]
+  },
+  "331": {
+   "natures": [
+    5
+   ],
+   "src": "keyword",
+   "hit": "雷",
+   "xiyou_affinity": [],
+   "absorb": []
+  },
+  "338": {
+   "natures": [
+    15
+   ],
+   "src": "keyword",
+   "hit": "风",
+   "xiyou_affinity": [
+    6
+   ],
+   "absorb": []
+  },
+  "339": {
+   "natures": [
+    15
+   ],
+   "src": "keyword",
+   "hit": "风",
+   "xiyou_affinity": [
+    6
+   ],
+   "absorb": []
+  },
+  "340": {
+   "natures": [
+    15
+   ],
+   "src": "keyword",
+   "hit": "风",
+   "xiyou_affinity": [
+    6
+   ],
+   "absorb": []
+  },
+  "341": {
+   "natures": [
+    15
+   ],
+   "src": "keyword",
+   "hit": "风",
+   "xiyou_affinity": [
+    6
+   ],
+   "absorb": []
+  },
+  "342": {
+   "natures": [
+    15
+   ],
+   "src": "keyword",
+   "hit": "风",
+   "xiyou_affinity": [
+    9
+   ],
+   "absorb": []
+  },
+  "354": {
+   "natures": [
+    14
+   ],
+   "src": "keyword",
+   "hit": "水",
+   "xiyou_affinity": [
+    3,
+    4
+   ],
+   "absorb": []
+  },
+  "355": {
+   "natures": [
+    14
+   ],
+   "src": "keyword",
+   "hit": "水",
+   "xiyou_affinity": [
+    3,
+    4
+   ],
+   "absorb": []
+  },
+  "357": {
+   "natures": [
+    14
+   ],
+   "src": "keyword",
+   "hit": "鳄",
+   "xiyou_affinity": [
+    15
+   ],
+   "absorb": []
+  },
+  "374": {
+   "natures": [
+    14
+   ],
+   "src": "keyword",
+   "hit": "水",
+   "xiyou_affinity": [
+    2
+   ],
+   "absorb": [
+    2
+   ]
+  },
+  "378": {
+   "natures": [
+    15
+   ],
+   "src": "keyword",
+   "hit": "羽",
+   "xiyou_affinity": [],
+   "absorb": []
+  },
+  "379": {
+   "natures": [
+    15
+   ],
+   "src": "keyword",
+   "hit": "羽",
+   "xiyou_affinity": [],
+   "absorb": []
+  },
+  "409": {
+   "natures": [
+    14
+   ],
+   "src": "keyword",
+   "hit": "亚特兰蒂斯",
+   "xiyou_affinity": [
+    2,
+    6
+   ],
+   "absorb": [
+    2,
+    6
+   ]
+  },
+  "430": {
+   "natures": [
+    15
+   ],
+   "src": "keyword",
+   "hit": "风",
+   "xiyou_affinity": [
+    9
+   ],
+   "absorb": [
+    9
+   ]
+  },
+  "434": {
+   "natures": [
+    15
+   ],
+   "src": "keyword",
+   "hit": "风",
+   "xiyou_affinity": [
+    9
+   ],
+   "absorb": [
+    9
+   ]
+  },
+  "438": {
+   "natures": [
+    2,
+    4
+   ],
+   "src": "keyword",
+   "hit": "熔岩、熔岩",
+   "xiyou_affinity": [
+    2
+   ],
+   "absorb": [
+    2
+   ]
+  },
+  "439": {
+   "natures": [
+    2,
+    4
+   ],
+   "src": "keyword",
+   "hit": "熔岩、熔岩",
+   "xiyou_affinity": [
+    2
+   ],
+   "absorb": [
+    2
+   ]
+  },
+  "440": {
+   "natures": [
+    2,
+    4
+   ],
+   "src": "keyword",
+   "hit": "熔岩、熔岩",
+   "xiyou_affinity": [
+    2
+   ],
+   "absorb": [
+    2
+   ]
+  },
+  "441": {
+   "natures": [
+    2,
+    4
+   ],
+   "src": "keyword",
+   "hit": "熔岩、熔岩",
+   "xiyou_affinity": [
+    2
+   ],
+   "absorb": [
+    2
+   ]
+  },
+  "454": {
+   "natures": [
+    14
+   ],
+   "src": "keyword",
+   "hit": "海",
+   "xiyou_affinity": [
+    3
+   ],
+   "absorb": [
+    3
+   ]
+  },
+  "455": {
+   "natures": [
+    6
+   ],
+   "src": "keyword",
+   "hit": "树",
+   "xiyou_affinity": [
+    9
+   ],
+   "absorb": [
+    9
+   ]
+  },
+  "463": {
+   "natures": [
+    2
+   ],
+   "src": "keyword",
+   "hit": "火",
+   "xiyou_affinity": [
+    2
+   ],
+   "absorb": [
+    2
+   ]
+  },
+  "478": {
+   "natures": [
+    4
+   ],
+   "src": "keyword",
+   "hit": "土",
+   "xiyou_affinity": [
+    4
+   ],
+   "absorb": []
+  },
+  "494": {
+   "natures": [
+    5
+   ],
+   "src": "keyword",
+   "hit": "雷",
+   "xiyou_affinity": [
+    3,
+    2
+   ],
+   "absorb": []
+  },
+  "523": {
+   "natures": [
+    9
+   ],
+   "src": "guardian",
+   "hit": "",
+   "xiyou_affinity": [
+    9
+   ],
+   "absorb": [],
+   "floor": 20
+  },
+  "525": {
+   "natures": [
+    8,
+    6
+   ],
+   "src": "guardian",
+   "hit": "",
+   "xiyou_affinity": [
+    6,
+    8
+   ],
+   "absorb": [],
+   "floor": 22
+  },
+  "526": {
+   "natures": [
+    2
+   ],
+   "src": "guardian",
+   "hit": "",
+   "xiyou_affinity": [
+    2
+   ],
+   "absorb": [],
+   "floor": 23
+  },
+  "527": {
+   "natures": [
+    9
+   ],
+   "src": "guardian",
+   "hit": "",
+   "xiyou_affinity": [
+    9
+   ],
+   "absorb": [],
+   "floor": 24
+  },
+  "528": {
+   "natures": [
+    3,
+    15
+   ],
+   "src": "guardian",
+   "hit": "",
+   "xiyou_affinity": [
+    3,
+    15
+   ],
+   "absorb": [],
+   "floor": 25
+  },
+  "529": {
+   "natures": [
+    9,
+    4
+   ],
+   "src": "guardian",
+   "hit": "",
+   "xiyou_affinity": [
+    9
+   ],
+   "absorb": [],
+   "floor": 26
+  },
+  "530": {
+   "natures": [
+    9,
+    4
+   ],
+   "src": "guardian",
+   "hit": "",
+   "xiyou_affinity": [
+    4,
+    9
+   ],
+   "absorb": [],
+   "floor": 26
+  },
+  "531": {
+   "natures": [
+    9,
+    15
+   ],
+   "src": "guardian",
+   "hit": "",
+   "xiyou_affinity": [
+    9
+   ],
+   "absorb": [],
+   "floor": 27
+  },
+  "532": {
+   "natures": [
+    9,
+    5
+   ],
+   "src": "guardian",
+   "hit": "",
+   "xiyou_affinity": [
+    9
+   ],
+   "absorb": [
+    9
+   ],
+   "floor": 28
+  },
+  "533": {
+   "natures": [
+    8,
+    9
+   ],
+   "src": "guardian",
+   "hit": "",
+   "xiyou_affinity": [
+    8,
+    3
+   ],
+   "absorb": [
+    1
+   ],
+   "floor": 29
+  },
+  "534": {
+   "natures": [
+    2,
+    8
+   ],
+   "src": "guardian",
+   "hit": "",
+   "xiyou_affinity": [
+    2
+   ],
+   "absorb": [
+    2
+   ],
+   "floor": 30
+  },
+  "535": {
+   "natures": [
+    3,
+    8
+   ],
+   "src": "guardian",
+   "hit": "",
+   "xiyou_affinity": [
+    3
+   ],
+   "absorb": [
+    3
+   ],
+   "floor": 31
+  },
+  "536": {
+   "natures": [
+    4,
+    8
+   ],
+   "src": "guardian",
+   "hit": "",
+   "xiyou_affinity": [
+    4
+   ],
+   "absorb": [
+    4
+   ],
+   "floor": 32
+  },
+  "537": {
+   "natures": [
+    7,
+    8
+   ],
+   "src": "guardian",
+   "hit": "",
+   "xiyou_affinity": [
+    7,
+    8
+   ],
+   "absorb": [
+    7,
+    8
+   ],
+   "floor": 33
+  },
+  "547": {
+   "natures": [
+    14
+   ],
+   "src": "keyword",
+   "hit": "蟹",
+   "xiyou_affinity": [],
+   "absorb": []
+  },
+  "548": {
+   "natures": [
+    14
+   ],
+   "src": "keyword",
+   "hit": "蟹",
+   "xiyou_affinity": [],
+   "absorb": []
+  },
+  "556": {
+   "natures": [
+    9
+   ],
+   "src": "keyword",
+   "hit": "暗",
+   "xiyou_affinity": [
+    9
+   ],
+   "absorb": []
+  },
+  "568": {
+   "natures": [
+    6
+   ],
+   "src": "keyword",
+   "hit": "树",
+   "xiyou_affinity": [],
+   "absorb": []
+  },
+  "569": {
+   "natures": [
+    6
+   ],
+   "src": "keyword",
+   "hit": "树",
+   "xiyou_affinity": [],
+   "absorb": []
+  },
+  "570": {
+   "natures": [
+    6
+   ],
+   "src": "keyword",
+   "hit": "树",
+   "xiyou_affinity": [
+    9
+   ],
+   "absorb": []
+  },
+  "571": {
+   "natures": [
+    6
+   ],
+   "src": "keyword",
+   "hit": "树",
+   "xiyou_affinity": [
+    9
+   ],
+   "absorb": []
+  },
+  "584": {
+   "natures": [
+    9
+   ],
+   "src": "keyword",
+   "hit": "暗",
+   "xiyou_affinity": [
+    9
+   ],
+   "absorb": [
+    9
+   ]
+  },
+  "585": {
+   "natures": [
+    9
+   ],
+   "src": "keyword",
+   "hit": "暗",
+   "xiyou_affinity": [
+    9
+   ],
+   "absorb": [
+    9
+   ]
+  },
+  "586": {
+   "natures": [
+    9
+   ],
+   "src": "keyword",
+   "hit": "暗",
+   "xiyou_affinity": [
+    9
+   ],
+   "absorb": [
+    9
+   ]
+  },
+  "587": {
+   "natures": [
+    9
+   ],
+   "src": "keyword",
+   "hit": "暗",
+   "xiyou_affinity": [
+    9
+   ],
+   "absorb": [
+    9
+   ]
+  },
+  "588": {
+   "natures": [
+    9
+   ],
+   "src": "keyword",
+   "hit": "暗",
+   "xiyou_affinity": [
+    9
+   ],
+   "absorb": [
+    9
+   ]
+  },
+  "593": {
+   "natures": [
+    9
+   ],
+   "src": "keyword",
+   "hit": "暗",
+   "xiyou_affinity": [
+    9
+   ],
+   "absorb": [
+    9
+   ]
+  },
+  "594": {
+   "natures": [
+    2
+   ],
+   "src": "keyword",
+   "hit": "火",
+   "xiyou_affinity": [
+    2
+   ],
+   "absorb": [
+    2
+   ]
+  },
+  "596": {
+   "natures": [
+    14
+   ],
+   "src": "keyword",
+   "hit": "海",
+   "xiyou_affinity": [
+    5
+   ],
+   "absorb": [
+    5
+   ]
+  },
+  "599": {
+   "natures": [
+    2
+   ],
+   "src": "keyword",
+   "hit": "火",
+   "xiyou_affinity": [
+    2
+   ],
+   "absorb": [
+    2
+   ]
+  },
+  "600": {
+   "natures": [
+    14
+   ],
+   "src": "keyword",
+   "hit": "海",
+   "xiyou_affinity": [
+    3
+   ],
+   "absorb": [
+    3
+   ]
+  },
+  "604": {
+   "natures": [
+    14
+   ],
+   "src": "keyword",
+   "hit": "龟",
+   "xiyou_affinity": [
+    3
+   ],
+   "absorb": [
+    1,
+    3
+   ]
+  },
+  "605": {
+   "natures": [
+    14
+   ],
+   "src": "keyword",
+   "hit": "蟹",
+   "xiyou_affinity": [],
+   "absorb": []
+  },
+  "615": {
+   "natures": [
+    6
+   ],
+   "src": "race",
+   "hit": "植物族",
+   "xiyou_affinity": [
+    7,
+    2
+   ],
+   "absorb": []
+  },
+  "629": {
+   "natures": [
+    3
+   ],
+   "src": "keyword",
+   "hit": "冰",
+   "xiyou_affinity": [
+    4,
+    6
+   ],
+   "absorb": []
+  },
+  "631": {
+   "natures": [
+    9
+   ],
+   "src": "keyword",
+   "hit": "冥",
+   "xiyou_affinity": [
+    3
+   ],
+   "absorb": []
+  },
+  "649": {
+   "natures": [
+    4
+   ],
+   "src": "keyword",
+   "hit": "山神",
+   "xiyou_affinity": [
+    4
+   ],
+   "absorb": [
+    4
+   ]
+  },
+  "666": {
+   "natures": [
+    9,
+    6
+   ],
+   "src": "keyword",
+   "hit": "冥、树",
+   "xiyou_affinity": [
+    9
+   ],
+   "absorb": [
+    9
+   ]
+  },
+  "682": {
+   "natures": [
+    15
+   ],
+   "src": "keyword",
+   "hit": "风",
+   "xiyou_affinity": [
+    9
+   ],
+   "absorb": []
+  },
+  "718": {
+   "natures": [
+    15
+   ],
+   "src": "keyword",
+   "hit": "翼",
+   "xiyou_affinity": [
+    6
+   ],
+   "absorb": [
+    6
+   ]
+  },
+  "723": {
+   "natures": [
+    14
+   ],
+   "src": "keyword",
+   "hit": "鱼",
+   "xiyou_affinity": [
+    5,
+    8
+   ],
+   "absorb": []
+  },
+  "748": {
+   "natures": [
+    6
+   ],
+   "src": "race",
+   "hit": "植物族",
+   "xiyou_affinity": [],
+   "absorb": []
+  },
+  "842": {
+   "natures": [
+    4
+   ],
+   "src": "keyword",
+   "hit": "石",
+   "xiyou_affinity": [
+    5,
+    8
+   ],
+   "absorb": []
+  },
+  "853": {
+   "natures": [
+    15
+   ],
+   "src": "keyword",
+   "hit": "风",
+   "xiyou_affinity": [
+    2,
+    3
+   ],
+   "absorb": [
+    1
+   ]
+  },
+  "869": {
+   "natures": [
+    9
+   ],
+   "src": "keyword",
+   "hit": "暗",
+   "xiyou_affinity": [
+    6
+   ],
+   "absorb": []
+  },
+  "880": {
+   "natures": [
+    15
+   ],
+   "src": "keyword",
+   "hit": "羽",
+   "xiyou_affinity": [
+    14
+   ],
+   "absorb": []
+  },
+  "898": {
+   "natures": [
+    2
+   ],
+   "src": "keyword",
+   "hit": "炎",
+   "xiyou_affinity": [
+    2
+   ],
+   "absorb": [
+    2
+   ]
+  },
+  "902": {
+   "natures": [
+    2
+   ],
+   "src": "keyword",
+   "hit": "炎",
+   "xiyou_affinity": [
+    2
+   ],
+   "absorb": [
+    2
+   ]
+  },
+  "906": {
+   "natures": [
+    2
+   ],
+   "src": "keyword",
+   "hit": "炎",
+   "xiyou_affinity": [
+    2
+   ],
+   "absorb": [
+    2
+   ]
+  },
+  "924": {
+   "natures": [
+    14
+   ],
+   "src": "keyword",
+   "hit": "海",
+   "xiyou_affinity": [
+    8,
+    14
+   ],
+   "absorb": []
+  },
+  "931": {
+   "natures": [
+    2
+   ],
+   "src": "keyword",
+   "hit": "炎",
+   "xiyou_affinity": [
+    2
+   ],
+   "absorb": []
+  },
+  "932": {
+   "natures": [
+    6,
+    2
+   ],
+   "src": "keyword",
+   "hit": "草、炎",
+   "xiyou_affinity": [
+    2
+   ],
+   "absorb": []
+  },
+  "933": {
+   "natures": [
+    5
+   ],
+   "src": "keyword",
+   "hit": "雷",
+   "xiyou_affinity": [
+    5
+   ],
+   "absorb": [
+    5
+   ]
+  },
+  "944": {
+   "natures": [
+    5
+   ],
+   "src": "keyword",
+   "hit": "雷",
+   "xiyou_affinity": [
+    5
+   ],
+   "absorb": []
+  },
+  "961": {
+   "natures": [
+    6
+   ],
+   "src": "race",
+   "hit": "植物族",
+   "xiyou_affinity": [
+    9,
+    2
+   ],
+   "absorb": []
+  },
+  "964": {
+   "natures": [
+    2
+   ],
+   "src": "keyword",
+   "hit": "炎",
+   "xiyou_affinity": [
+    8
+   ],
+   "absorb": [
+    8
+   ]
+  },
+  "965": {
+   "natures": [
+    2
+   ],
+   "src": "keyword",
+   "hit": "炎",
+   "xiyou_affinity": [
+    2
+   ],
+   "absorb": [
+    2
+   ]
+  }
+ }
+}

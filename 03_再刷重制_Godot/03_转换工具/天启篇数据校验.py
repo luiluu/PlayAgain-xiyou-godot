@@ -1482,6 +1482,62 @@ def check_elements_table(_args) -> bool:
     return _report('elements_table.json', '规则自检', bad)
 
 
+def enemy_nature_rules(table: dict, elements: dict, enemy_ids=None) -> list:
+    """enemy_nature.json（T479，天启篇敌人自然体质）：号、元素号、来源、守层者／鸿钧／骑士对 elements_table。"""
+    bad = []
+    base = set(elements.get('base_elements', []))
+    srcs = {'guardian', 'hongjun', 'keyword', 'race', 'manual', 'none', 'keyword+race'}
+    take = table.get('guardian_take')
+    if take not in (1, 2):
+        bad.append('guardian_take 应为 1 或 2：%r' % (take,))
+    cons = elements.get('guardian_constitutions', {})
+    for k, e in (table.get('enemies') or {}).items():
+        if not str(k).isdigit():
+            bad.append('敌人号不是整数：%r' % (k,))
+            continue
+        if enemy_ids is not None and int(k) not in enemy_ids:
+            bad.append('%s 号不在 Enemies.json' % k)
+        nat = e.get('natures')
+        if not isinstance(nat, list) or not 1 <= len(nat) <= 2 or len(set(nat)) != len(nat):
+            bad.append('%s 号 natures 应为 1～2 个不重复元素号（没体质的不写条目）：%r' % (k, nat))
+            continue
+        if any(n not in base for n in nat):
+            bad.append('%s 号 natures 含基础十系以外的元素号：%r' % (k, nat))
+        if e.get('src') not in srcs:
+            bad.append('%s 号 src 不认识：%r' % (k, e.get('src')))
+        if e.get('src') == 'manual' and not e.get('verdict'):
+            bad.append('%s 号 src=manual 要有 verdict' % k)
+        if e.get('src') == 'guardian':
+            f = e.get('floor')
+            if not isinstance(f, int) or not 1 <= f <= 33:
+                bad.append('%s 号守层者 floor 应为 1～33：%r' % (k, f))
+            elif nat != [x for x in cons.get(str(f), [])[:take or 2] if x in base]:
+                bad.append('%s 号守层者体质 %r 与 guardian_constitutions 第 %d 层前 %s 个 %r 不一致' % (k, nat, f, take, cons.get(str(f))))
+    sp = table.get('special') or {}
+    if (sp.get('hongjun') or {}).get('natures') != elements.get('fixed_entries', {}).get('hongjun', {}).get('constitutions'):
+        bad.append('special.hongjun 与 elements_table.fixed_entries.hongjun.constitutions 不一致')
+    if (sp.get('knight') or {}).get('natures') != []:
+        bad.append('special.knight 应硬留空（4.3）')
+    return bad
+
+
+def check_enemy_nature(_args) -> bool:
+    path = DATA_DIR / 'enemy_nature.json'
+    if not path.is_file():
+        print('跳过：没有 enemy_nature.json')
+        return True
+    try:
+        elements = json.loads((DATA_DIR / 'elements_table.json').read_text(encoding='utf-8'))
+        ids = None
+        db = PROJECT / 'modes' / 'xiyou' / 'generated' / 'db' / 'Enemies.json'
+        if db.is_file():  # 云端没有转换产物时跳过号核对
+            ids = {x['id'] for x in json.loads(db.read_text(encoding='utf-8')) if x}
+        bad = enemy_nature_rules(json.loads(path.read_text(encoding='utf-8')), elements, ids)
+    except Exception as e:
+        bad = ['能读表并跑完全部检查：%s: %s' % (type(e).__name__, e)]
+    return _report('enemy_nature.json', '规则自检', bad)
+
+
 # ---- 第三批：reforge／alien_gear／abyss_shelves／qiyin_equip／qiyin_show／qiyin_dragon_run（cc/pro-tianqi-datacheck3）----
 # 只查代码真读的字段（读表的模块写在各函数说明里）；字段缺了不查，不认识的键不报错。
 # 跨表引用的那张表不在就跳过那一项（例如没有 qiyin_gear.json 就不查部位、武器类型对不对得上）。
@@ -3880,6 +3936,7 @@ CHECKS = [
     ('qiyin_refs', check_qiyin_refs),
     ('skill_rework', check_skill_rework),
     ('elements_table', check_elements_table),
+    ('enemy_nature', check_enemy_nature),
     ('reforge', check_reforge),
     ('alien_gear', check_alien_gear),
     ('abyss_shelves', check_abyss_shelves),

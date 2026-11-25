@@ -732,6 +732,41 @@ class CoefInteger(unittest.TestCase):
 
 
 
+class EnemyNature(unittest.TestCase):
+    """enemy_nature.json（T479）：敌人体质表的格式与跟 elements_table 的对账。"""
+
+    def setUp(self):
+        self.t = json.loads((chk.DATA_DIR / 'enemy_nature.json').read_text(encoding='utf-8'))
+        self.el = json.loads((chk.DATA_DIR / 'elements_table.json').read_text(encoding='utf-8'))
+
+    def test_real_passes(self):
+        self.assertEqual(chk.enemy_nature_rules(self.t, self.el), [])
+
+    def test_three_natures_fails(self):
+        k = next(iter(self.t['enemies']))
+        self.t['enemies'][k]['natures'] = [2, 3, 4]
+        self.assertTrue(any('1～2 个' in b for b in chk.enemy_nature_rules(self.t, self.el)))
+
+    def test_higher_element_fails(self):
+        k = next(iter(self.t['enemies']))
+        self.t['enemies'][k]['natures'] = [11]
+        self.assertTrue(any('基础十系以外' in b for b in chk.enemy_nature_rules(self.t, self.el)))
+
+    def test_guardian_mismatch_fails(self):
+        k = next(k for k, e in self.t['enemies'].items() if e['src'] == 'guardian')
+        self.t['enemies'][k]['natures'] = [2]
+        self.assertTrue(any('guardian_constitutions' in b for b in chk.enemy_nature_rules(self.t, self.el)))
+
+    def test_knight_must_be_empty(self):
+        self.t['special']['knight']['natures'] = [2]
+        self.assertTrue(any('knight' in b for b in chk.enemy_nature_rules(self.t, self.el)))
+
+    def test_manual_needs_verdict(self):
+        k = next(iter(self.t['enemies']))
+        self.t['enemies'][k]['src'] = 'manual'
+        self.assertTrue(any('verdict' in b for b in chk.enemy_nature_rules(self.t, self.el)))
+
+
 class GuardianParams(unittest.TestCase):
     """guardian_params.json（T237／T245）：只认 31～34 层和 qiyin 行，取值是正整数百分比。"""
 
