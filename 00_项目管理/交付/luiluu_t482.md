@@ -82,3 +82,9 @@
 - 55b4ac98a WIP：元素效果 D 卡主体（图标、跳字、角色属性、圣佑改名、T485 核 P2-1 测试）
 - 960e13a8f 截图工具、寄生换图标、截图入仓
 - 交付单草稿与云端结果补写（本提交）
+
+## 返修 R2 验证
+
+- 本机前台（`--audio-driver Dummy`、隔离 HOME）：`xiyou_tianqi_element_effects` 94/94；`xiyou_tianqi_six_dim_radar` 33/33（首轮云端挂的 `book_disabled_equals_legacy`：旧窗口多了「角色属性」行，该条改为比对期间关元素总开关）。`发行空壳.py check` 0；`语法检查.py` 0 问题。
+- 云端选测（选测基准 99c727d6ff，201 个场景、6 片）：首轮 1aa14ec9a1 挂 1（six_dim_radar，已修）；复跑 586f55e2fc **全绿**：https://github.com/luiluu/PlayAgain-xiyou-godot/actions/runs/45598546029 （`gh run view` 前台等到 completed，`云端选测.py wait` 通过）。
+- 截图（`00_项目管理/交付截图/luiluu_t482/`，已更新）：`popup_both_sides.png`（敌我同场头顶跳字）、`book_enemy_nature_old.png`／`book_actor_nature_old.png`／`status_nature_old.png`（原版界面）、新界面五张与 `state_icons_all.png` 重拍；工具加参数 `--ui-skin=old --suffix=_old`。
