@@ -44,19 +44,28 @@ func place(shift: float) -> void:
 
 func refresh(s: XState) -> void:
 	var d := s.designation if s != null else {}
-	var sig := "%s|%s|%s|%s|%s" % [XUiSkin.on(), s.actor_name if s != null else "", d.get("name", ""), d.get("icon", 0), d.get("color", "")]
+	var sig := "%s|%s|%s|%s|%s|%s|%s|%s" % [XUiSkin.on(), s.actor_name if s != null else "", d.get("name", ""), d.get("icon", 0), d.get("color", ""),
+		XHonghuangTitles.ENABLED, XGraphics.fx_on(), XHonghuangTitles.worn_ok(s)]
 	if sig != _sig:
 		_sig = sig
 		queue_redraw()
+	elif XHonghuangTitles.flow_style(str(d.get("name", ""))) != "" and XGraphics.fx_on():
+		queue_redraw()  # T493 流光称号：画面特效开着才每帧重画，关着停在一帧
+
+
+## T493 流光的时间（画面特效关着时停在 0）
+static func flow_time() -> float:
+	return Time.get_ticks_msec() / 1000.0 if XGraphics.fx_on() else 0.0
 
 
 func _paint(c: XMVCanvas) -> void:
 	var s := XState.current
 	if s == null:
 		return
-	var d := s.designation
+	var d := s.designation if XHonghuangTitles.worn_ok(s) else {}  # T493 返修 P1-1：没兑换记号的 52／53 不显示
 	var col := Color.from_string(str(d.get("color", "#ffffff")), Color.WHITE)
 	var d_name := str(d.get("name", ""))
+	var flow := XHonghuangTitles.flow_style(d_name)
 	if XUiSkin.on():
 		# 新界面：称号（标题字体）＋名字（正文字体），不再垫底框（T095，Kyo 11-16「玩家名怎么有个框」）；
 		# 地面颜色深浅都有，字带一圈黑描边保证看得清
@@ -68,13 +77,19 @@ func _paint(c: XMVCanvas) -> void:
 		if tex != null:
 			c._keep.append(tex)
 			c.draw_texture_rect(tex, Rect2((W - 28.0) / 2.0, 0.0, 28.0, 28.0), false)
-		_outlined(c, ft, d_name, py + 4.0, col)
+		if flow != "":
+			_flow_line(c, ft, d_name, py + 4.0, XFontScale.size(PLATE_FONT_SIZE), flow)
+		else:
+			_outlined(c, ft, d_name, py + 4.0, col)
 		_outlined(c, fb, s.actor_name, py + 26.0, Color.WHITE)
 		return
 	c.clean_text = false
 	c.font = _bold_font
 	c.icon(int(d.get("icon", 0)), ICON_X, 0.0)
-	c.text(d_name, 0.0, TITLE_Y, W, "center", col, FONT_SIZE, LINE, 1.0, 1.0, Vector2.ZERO, Color.BLACK)
+	if flow != "":
+		_flow_line(c, _bold_font, d_name, TITLE_Y, FONT_SIZE, flow)
+	else:
+		c.text(d_name, 0.0, TITLE_Y, W, "center", col, FONT_SIZE, LINE, 1.0, 1.0, Vector2.ZERO, Color.BLACK)
 	c.text(s.actor_name, 0.0, NAME_Y, W, "center", Color.WHITE, FONT_SIZE, LINE, 1.0, 1.0, Vector2.ZERO, Color.BLACK)
 
 
@@ -89,4 +104,23 @@ func _outlined(c: XMVCanvas, f: Font, s: String, y: float, col: Color) -> void:
 	c.draw_set_transform(Vector2(roundf((W - w * sx) / 2.0), roundf(base)), 0.0, Vector2(sx, 1.0))
 	c.draw_string_outline(f, Vector2.ZERO, s, HORIZONTAL_ALIGNMENT_LEFT, -1, size, PLATE_OUTLINE_SIZE, PLATE_OUTLINE)
 	c.draw_string(f, Vector2.ZERO, s, HORIZONTAL_ALIGNMENT_LEFT, -1, size, col)
+	c.draw_set_transform(Vector2.ZERO)
+
+
+## T493 流光称号一行：居中、逐字按 XHonghuangTitles.flow_color 上色（时间流动）；描边黑色，洪荒首证换成明暗起伏的暖色光晕
+func _flow_line(c: XMVCanvas, f: Font, s: String, y: float, size: int, style: String) -> void:
+	var t := flow_time()
+	var w := f.get_string_size(s, HORIZONTAL_ALIGNMENT_LEFT, -1, size).x
+	var sx := minf(1.0, (W - 8.0) / maxf(w, 1.0))
+	var base := y + LINE - (LINE - size * 0.7) / 2.0
+	var ol = XHonghuangTitles.flow_outline(style, t)
+	var outline: Color = ol if ol is Color else PLATE_OUTLINE
+	c.draw_set_transform(Vector2(roundf((W - w * sx) / 2.0), roundf(base)), 0.0, Vector2(sx, 1.0))
+	c.draw_string_outline(f, Vector2.ZERO, s, HORIZONTAL_ALIGNMENT_LEFT, -1, size, PLATE_OUTLINE_SIZE, outline)
+	var x := 0.0
+	var n := s.length()
+	for i in range(n):
+		var ch := s.substr(i, 1)
+		XUiSkin.ds(c, f, Vector2(x, 0.0), ch, HORIZONTAL_ALIGNMENT_LEFT, -1, size, XHonghuangTitles.flow_color(style, i, n, t))
+		x += f.get_string_size(ch, HORIZONTAL_ALIGNMENT_LEFT, -1, size).x
 	c.draw_set_transform(Vector2.ZERO)

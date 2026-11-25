@@ -307,6 +307,7 @@ func _run() -> void:
 	XFestLobby.ENABLED = false
 	# T460 大厅洪荒碑（追加的 Map004 事件 82，原版没有）：对照原版语义关掉，由 tests/xiyou_honghuang_monument 核
 	XHonghuangMonument.ENABLED = false
+	XHonghuangTitles.ENABLED = false  # T493：比原版称号选项（Map4 EV1 更换称号），洪荒三款由 xiyou_honghuang_titles 测
 	XDungeon.restore_hang_up = false
 	# T055 变量 21 不为负（猿神空间重置连减两次等原版数据）：对照原版语义关掉，由 tests/xiyou_dungeon_inside_flag 核
 	XDungeon.inside_repair = false
