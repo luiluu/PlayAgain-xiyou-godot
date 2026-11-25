@@ -11,8 +11,11 @@ static func level(item: Dictionary):
 	var value := float(item.get("meta", {}).get("Init Level", XDB.plugin("CP_MagicWeapon").get("Init Level", 1)))
 	return XPower.js_round(value) if value != 0.0 else 1.0
 
+## 公式快照已写入战斗等级，实装查询则现场折算。
 static func first_armor_level(rows: Array, base_id: int):
 	for item in rows:
 		if item is Dictionary and item.get("kind") == "armor" and int(item.get("baseItemId", item.get("base", item.get("id", 0)))) == base_id:
-			return item.get("instanceLevel", XMagicWeapon.effective_level(item))
+			if item.has("instanceLevel"):
+				return item.instanceLevel
+			return XMagicWeapon.combat_level(item)
 	return 0.0
