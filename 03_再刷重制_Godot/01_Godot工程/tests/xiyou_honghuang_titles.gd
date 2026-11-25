@@ -1,7 +1,7 @@
 extends Node
 ## 【cc·T493／T508·未经审查】洪荒三款称号＋兑换码（XHonghuangTitles）专项：
 ## 1. 称号表：西游档末尾接 51 洪荒证道、52 洪荒首证、53 洪荒·阿夜；天启篇存档、回退开关关着都不列；
-##    选项：53 没拿到也照名字列（标阿夜专属、不可获得），选了不变；52、51 没拿到显示 ???；
+##    选项：53 没拿到也照名字列（标阿夜专属、不可获得），选了不变；51 没拿到显示 ???；52 也照名字列（T509，标首证人、不可获得）；
 ## 2. 洪荒证道自动解锁：洪荒开关＋层数 34（含老存档）才解锁、只解锁一次；非洪荒、没到 34、天启篇、开关关都不解锁；
 ##    真地图空闲时自动补发并弹提示；
 ## 3. 兑换码（T508 不绑存档）：码规范化（小写、空格、横线）后对；同一存档第二次提示已兑换、不再发；
@@ -139,11 +139,13 @@ func _run() -> void:
 	var labels := XDesignation.choices()
 	var idx53 := ids.find(53)
 	check("choice.aye_visible_locked", labels[idx53] == "\\I[6428]洪荒·阿夜（阿夜专属，不可获得）", labels[idx53])
-	check("choice.shouzheng_hidden", labels[ids.find(52)] == "\\I[0]???", labels[ids.find(52)])
+	check("choice.shouzheng_visible_locked", labels[ids.find(52)] == "\\I[6427]洪荒首证：首位证道洪荒者的荣誉。首证人：大手子。（不可获得）", labels[ids.find(52)])
 	check("choice.zhengdao_hidden", labels[ids.find(51)] == "\\I[0]???", labels[ids.find(51)])
 	sx.designation = {"name": "", "icon": 0, "color": "#ffffff"}
 	XDesignation.apply_choice(sx, idx53)
 	check("choice.aye_locked_noop", str(sx.designation.name) == "", sx.designation)
+	XDesignation.apply_choice(sx, ids.find(52))
+	check("choice.shouzheng_locked_noop", str(sx.designation.name) == "", sx.designation)
 	# 天启篇、回退开关
 	var st := _make_save(true)
 	XState.current = st
