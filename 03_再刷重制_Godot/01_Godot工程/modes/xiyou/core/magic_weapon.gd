@@ -131,6 +131,14 @@ static func effective_level(item, state: XState = null) -> float:
 	return minf(lv, cap) if cap > 0.0 else lv
 
 
+## 伤害公式、状态与升级特性读原版等效等级。领悟、升级和显示继续用实际等级口径。
+static func combat_level(item: Dictionary) -> float:
+	var lv := effective_level(item)
+	if lv <= 0.0 or not scale_active(item):
+		return lv
+	return lv * raw_max_level(item) / float(CAP_TOP)
+
+
 ## 迁移单件老存档 >99 级法宝：写回 888→99 折算等级（≤99 级、非西游档或关折算不动）；返回是否改写。
 static func migrate_item(item: Dictionary, state: XState = null) -> bool:
 	if not scale_active(item, state):
@@ -366,7 +374,7 @@ static func level_up_trait_object(item: Dictionary) -> Dictionary:
 	return _trait_cache[key]
 
 
-## Game_Actor.traitObjects 追加：每件法宝的升级特性对象按生效等级重复
+## Game_Actor.traitObjects 追加：每件法宝的升级特性按战斗等级叠加，只计完整份数。
 static func trait_objects(equips: Array) -> Array:
 	var out := []
 	for item in equips:
@@ -375,7 +383,7 @@ static func trait_objects(equips: Array) -> Array:
 		var o := level_up_trait_object(item)
 		if o.is_empty():
 			continue
-		for i in range(int(effective_level(item))):
+		for i in range(int(combat_level(item))):
 			out.append(o)
 	return out
 

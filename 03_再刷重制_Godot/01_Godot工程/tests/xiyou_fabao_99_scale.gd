@@ -6,8 +6,19 @@ extends Node
 ## 4) T476 楼层上限：折算后与 ≤99 级超本层上限的按上限生效、存档保留折算值，层数上限提高后自动恢复、不丢等级；
 ## 5) 三法宝 60 级进化翻倍（XThreeGrowth）、织神天梭（XYunshang）、装备/角色战力（XPower）与 XActor.param_plus 全部一致无重复放大；
 ## 6) 说明卡（XHelpCard.content / detail_rows）去掉「旧档超上限」「高于满级按原等级加成计」等旧行，按折算后／本层生效等级正常显示。
+## 7) T490 专属技能、状态与麒麟对剑战斗强度对齐原版 888 级，烽舞领悟按实际生效等级。
 var passed := 0
 var total := 0
+
+
+class CombatProbeActor extends XActor:
+	func param(i: int) -> float:
+		return [10000.0, 1000.0, 100.0, 100.0, 100.0, 100.0, 100.0, 100.0][i]
+
+
+class CombatProbeTarget extends XBattler:
+	func param(i: int) -> float:
+		return 1e8 if i == 0 else 50.0
 
 
 func check(tag: String, ok: bool, detail = null) -> void:
@@ -60,6 +71,9 @@ func _run() -> void:
 	_test_caps_and_feed_unchanged()
 	_test_help_cards()
 	_test_rollback_and_isolation()
+	_test_combat_levels()
+	_test_combat_skills()
+	_test_combat_poison()
 
 	XMagicWeapon.LEVEL_99 = was_l99
 	XMagicWeapon.FLOOR_CAP = was_floor
@@ -71,6 +85,150 @@ func _run() -> void:
 	XState.current = null
 	print("TEST_RESULT=" + JSON.stringify({"passed": passed, "total": total}))
 	get_tree().quit(0 if passed == total else 1)
+
+
+func _test_combat_levels() -> void:
+	var s := _make_xiyou(1)
+	var fire := XGear.template("armor", 3550)
+	fire.level = 99
+	check("combat.floor_caps_before_scaling", is_equal_approx(XMagicWeapon.combat_level(fire), 12.0 * 888.0 / 99.0) and fire.level == 99)
+	check("combat.floor_caps_learning", 7510 in XMagicWeapon.item_skills(fire) and not 7511 in XMagicWeapon.item_skills(fire))
+	s.set_variable(20, 30)
+	check("combat.floor_restores_full", XMagicWeapon.combat_level(fire) == 888.0)
+	for step in range(4):
+		var threshold := 10 * (step + 1)
+		var skill_id := 7510 + step
+		fire.level = threshold - 1
+		check("combat.learn_before_%d" % threshold, not skill_id in XMagicWeapon.item_skills(fire))
+		fire.level = threshold
+		check("combat.learn_at_%d" % threshold, skill_id in XMagicWeapon.item_skills(fire))
+	var other_max := fire.duplicate(true)
+	other_max.meta["Max Level"] = "300"
+	other_max.level = 99
+	check("combat.uses_item_max", XMagicWeapon.combat_level(other_max) == 300.0)
+	other_max.meta["Max Level"] = "60"
+	other_max.level = 60
+	check("combat.uncapped_item", XMagicWeapon.combat_level(other_max) == 60.0)
+	for wid in [73, 74, 75]:
+		var sword := XGear.template("weapon", wid)
+		sword.level = 99
+		var trait_row := XDB.rec("Armors", 4409)
+		var full := XMagicWeapon.trait_objects([sword])
+		s.set_variable(20, 1)
+		var limited := XMagicWeapon.trait_objects([sword]).size()
+		XMagicWeapon.SCALE_99_TO_888 = false
+		var rollback := XMagicWeapon.trait_objects([sword]).size()
+		sword.level = 888
+		var native := XMagicWeapon.trait_objects([sword])
+		XMagicWeapon.SCALE_99_TO_888 = true
+		s.set_variable(20, 30)
+		check("combat.traits_%d" % wid, full.size() == 888 and not trait_row.is_empty() and full.front() == trait_row
+			and full == native and limited == int(12.0 * 888.0 / 99.0) and rollback == 99,
+			[full.size(), native.size(), limited, rollback])
+	_make_tianqi(1)
+	var tianqi_sword := XGear.template("weapon", 73)
+	tianqi_sword.level = 99
+	check("combat.tianqi_traits", XMagicWeapon.trait_objects([tianqi_sword]).size() == 99)
+	XState.current = null
+	fire.level = 99
+	check("combat.no_save", XMagicWeapon.combat_level(fire) == 99.0)
+
+
+func _combat_skill_values(item: Dictionary, a: XActor, b: XBattler, vars: Array = []) -> Array:
+	var read_only := XDamage.eval_formula(item, a, b, vars)
+	var actual := XFormulaExecution.run_item(item, a, b, vars, {}, true)
+	return [read_only, actual.value, actual.available]
+
+
+func _test_combat_skills() -> void:
+	_make_xiyou()
+	var a := CombatProbeActor.new()
+	var b := CombatProbeTarget.new()
+	var vars := []
+	vars.resize(1166)
+	vars.fill(0.0)
+	vars[1165] = 600.0
+	# 天虎令、曹操、玉面狐狸、小明、签弟、克莉丝汀、大羿。原版参照用同一技能和面板，直接给原版等级。
+	for row in [[104, 7485, 3550], [38, 1068, 3640], [82, 4938, 3639], [99, 8087, 4996],
+			[34, 5437, 3808], [46, 5445, 3810], [59, 2192, 3641]]:
+		a.actor_id = row[0]
+		var item := XDB.rec("Skills", row[1])
+		var armor := XGear.template("armor", row[2])
+		a.equips = [armor]
+		armor.level = 99
+		var scaled := _combat_skill_values(item, a, b, vars)
+		XMagicWeapon.SCALE_99_TO_888 = false
+		var unscaled := _combat_skill_values(item, a, b, vars)
+		armor.level = 888
+		var native := _combat_skill_values(item, a, b, vars)
+		XMagicWeapon.SCALE_99_TO_888 = true
+		print("T490 formula ", row[1], " scaled/native/unscaled=", [scaled[0], native[0], unscaled[0]])
+		check("combat.skill_%d" % row[1], scaled == native and scaled[2] and scaled[0] == scaled[1] and scaled[0] > unscaled[0], [scaled, native, unscaled])
+
+	var qilin := XActor.new().setup(142)
+	var sword := XGear.template("weapon", 73)
+	qilin.equips = [sword]
+	var skill := XDB.rec("Skills", 10098)
+	vars.resize(1541)
+	vars[1540] = 600.0
+	sword.level = 99
+	var scaled_qilin := _combat_skill_values(skill, qilin, b, vars)
+	var crit := qilin.xparam(2)
+	XMagicWeapon.SCALE_99_TO_888 = false
+	var rollback_crit := qilin.xparam(2)
+	sword.level = 888
+	var native_qilin := _combat_skill_values(skill, qilin, b, vars)
+	var native_crit := qilin.xparam(2)
+	XMagicWeapon.SCALE_99_TO_888 = true
+	print("T490 qilin scaled/native=", [scaled_qilin[0], native_qilin[0]], " crit scaled/native/unscaled=", [crit, native_crit, rollback_crit])
+	check("combat.qilin_skill", scaled_qilin == native_qilin and scaled_qilin[2] and scaled_qilin[0] > 0.0
+		and is_equal_approx(crit, native_crit) and is_equal_approx(crit - rollback_crit, 7.89),
+		[scaled_qilin, native_qilin, crit, native_crit, rollback_crit])
+
+	_make_tianqi(1)
+	a.actor_id = 88
+	for row in [[5906, 3810], [5919, 3818]]:
+		var armor := XGear.template("armor", row[1])
+		armor.level = 99
+		a.equips = [armor]
+		var item := XDB.rec("Skills", row[0])
+		var scaled := _combat_skill_values(item, a, b)
+		check("combat.tianqi_level_%d" % row[0], XEquipmentView.first_armor_level(a.equip_list(), row[1]) == 99.0)
+		XMagicWeapon.SCALE_99_TO_888 = false
+		check("combat.tianqi_copy_%d" % row[0], scaled[2] and scaled == _combat_skill_values(item, a, b))
+		XMagicWeapon.SCALE_99_TO_888 = true
+
+
+func _poison_damage(item: Dictionary, b: XBattler) -> float:
+	b.hp = b.mhp
+	b.state_data["_stackingPoison"] = 2
+	XStateEffects.run_one("regenerate", b, item, {"execute": true})
+	return b.mhp - b.hp
+
+
+func _test_combat_poison() -> void:
+	_make_xiyou().set_variable(320, 600)
+	var a := CombatProbeActor.new()
+	a.actor_id = 16
+	var armor := XGear.template("armor", 3590)
+	a.equips = [armor]
+	var b := CombatProbeTarget.new()
+	b.state_origins[732] = weakref(a)
+	var state := XDB.rec("States", 732)
+	armor.level = 99
+	var scaled := _poison_damage(state, b)
+	var skill := XDB.rec("Skills", 4552)
+	check("combat.poison_skill_applies_state", skill.effects.any(func(e): return int(e.code) == 21 and int(e.dataId) == 732))
+	XMagicWeapon.SCALE_99_TO_888 = false
+	var rollback := _poison_damage(state, b)
+	armor.level = 888
+	var native := _poison_damage(state, b)
+	XMagicWeapon.SCALE_99_TO_888 = true
+	# 毒奶术附带的每轮状态伤害，按原版公式核对固定面板、2 层、变量 320 为 600。
+	var per_level := (1000.0 * 8.0 + 600.0 + 100.0) * 1.2 * 1.2
+	print("T490 poison scaled/native/unscaled=", [scaled, native, rollback])
+	check("combat.poison", scaled == native and scaled == roundf(per_level * 889.0)
+		and rollback == roundf(per_level * 100.0), [scaled, native, rollback])
 
 
 ## 1) 全库 222 件法宝（3 武器 + 219 防具）：原上限均 888，西游档 99 级精确等于 888 × 原始每级成长
@@ -301,7 +459,7 @@ func _test_levels_and_old_save() -> void:
 	XMagicWeapon._learn_cache.clear()
 	XMagicWeapon._trait_cache.clear()
 	check("floor_cap.item_skills_and_traits",
-		not sk_f1.has(10) and sk_f10.has(10) and tr_f1 == 12 and tr_f10 == 37,
+		not sk_f1.has(10) and sk_f10.has(10) and tr_f1 == 107 and tr_f10 == 331,
 		[sk_f1, sk_f10, tr_f1, tr_f10])
 
 	# XSave.save / XSave.load_slot 落盘往返：旧档 331 级落盘后第一次读档折算 37 并打标记，再存再读保持 37
