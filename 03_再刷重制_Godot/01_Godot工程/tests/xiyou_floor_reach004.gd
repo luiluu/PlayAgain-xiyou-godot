@@ -188,6 +188,7 @@ func _run() -> void:
 	XEnemy.force_roll = 100.0
 	XGuide.MILESTONE_ENABLED = false
 	XFestLobby.ENABLED = false  # 冠军庆典期间大厅多 78～81 号事件（原版没有，由 xiyou_fest_lobby 核）；比大厅保留事件时关掉
+	XHonghuangMonument.ENABLED = false  # T460 大厅洪荒碑多 82 号事件（原版没有，由 xiyou_honghuang_monument 核）；比大厅保留事件时关掉
 	seed(20261102)
 	_kept()
 	for m in ADDED:

@@ -285,7 +285,7 @@ func _draw_stele() -> void:
 		var tw := font.get_string_size(ch, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x
 		var pos := Vector2(cx - tw * 0.5, -75.0 + i * 20.0)
 		n.draw_string_outline(font, pos, ch, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, 3, Color(0.05, 0.02, 0.04, 0.96))
-		n.draw_string(font, pos, ch, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, Color(gold_bright, 0.88 + 0.12 * pulse))
+		XUiSkin.ds(n, font, pos, ch, HORIZONTAL_ALIGNMENT_LEFT, -1.0, fs, Color(gold_bright, 0.88 + 0.12 * pulse))
 
 	# 9. 底座正中鎏金铭牌（点题丰碑气质）
 	var plaque := Rect2(cx - 15.0, -24.5, 30.0, 5.0)
