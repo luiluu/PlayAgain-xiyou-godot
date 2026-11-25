@@ -5,6 +5,8 @@ extends Node
 ## 三、原版三套＋七印三印同时穿：只剩两套，被挤掉的七印效果（gear_effects 的 set:）也没了。
 ## 四、单件套不占名额、照旧生效。
 ## 五、开关关、西游档：全部生效（回到 T513 之前）。
+## 返修（小A 核 T513）：同件数原版套装号大的优先（NEWER_FIRST，关掉回号小）；混合 1／多件套（101）的 1 件档不占名额、被挤只退多件档；
+## 排序按生效件数（2 件套穿 3 件按 2）；不认识的印不进名额；掉率来源、殉印生命跟着退；真实装备页说明牌（XEquipScene＋新皮肤）和详情页的提示行。
 ## 套装件直接造实例（{equipment: {suits: [号]}}），七印件用 mark()；套装号从 EquipSuits 表按「最高一档件数」现挑。
 
 var results: Array = []
@@ -92,13 +94,67 @@ func _wear(a: XActor, suits: Dictionary, seals: Dictionary) -> void:
 ## 生效的原版套装号（按 XEquipSuits.active 的档反查）
 func _live_suits(a: XActor) -> Array:
 	var defs: Array = XDB.table("EquipSuits")
+	var act := XEquipSuits.active(a)
 	var out := []
-	for b in XEquipSuits.active(a):
-		for sid in range(1, defs.size()):
-			if defs[sid] != null and defs[sid].bonuses.has(b) and not out.has(sid):
-				out.append(sid)
+	for sid in XEquipSuits.counts(a):
+		for b in defs[int(sid)].bonuses:
+			if act.any(func(x): return is_same(x, b)) and not out.has(int(sid)):
+				out.append(int(sid))
 	out.sort()
 	return out
+
+
+func _find(a: XActor, f: Callable) -> Dictionary:
+	for e in a.equip_list():
+		if f.call(e):
+			return e
+	return {}
+
+
+## 表里第一套「有 1 件档、又有多件档」的混合套（101 哥布林脚趾）
+func _mixed() -> int:
+	var defs: Array = XDB.table("EquipSuits")
+	for i in range(1, defs.size()):
+		if defs[i] != null and not XTianqiSuits.single_piece(i) and XTianqiSuits._has_one(i) and XTianqiSuits._multi_low(i) >= 2:
+			return i
+	return 0
+
+
+## 表里第一套没有 1 件档、带掉率（bResultPlus[2]）的套装，最高档不超过 5 件
+func _drop_suit() -> int:
+	var defs: Array = XDB.table("EquipSuits")
+	for i in range(1, defs.size()):
+		if defs[i] == null or XTianqiSuits._has_one(i) or XTianqiSuits._tiers(i).is_empty() or int(XTianqiSuits._tiers(i)[-1]) > 5:
+			continue
+		for b in defs[i].bonuses:
+			var p: Array = b.get("bResultPlus", [])
+			if p.size() > 2 and float(p[2]) != 0.0:
+				return i
+	return 0
+
+
+## 真实装备页（XEquipScene，天启篇新皮肤）：选到被挤掉的件，说明牌第一节就是提示；选候选列表时不显示
+func _page_card(a: XActor, piece: Dictionary) -> void:
+	var page := XEquipScene.new()
+	add_child(page)
+	for i in 3:
+		await get_tree().process_frame
+	var sk = page.skin
+	if not _check_ok("page_skin_built", sk != null):
+		page.queue_free()
+		return
+	page._slot = a.equips.find(piece)
+	page._refresh()
+	await get_tree().process_frame
+	var secs: Array = sk.card.sections
+	_check("page_card_note", not secs.is_empty() and not (secs[0].get("rows", []) as Array).is_empty() and str(secs[0].rows[0].text) == XTianqiSuits.TEXT_CROWDED, secs.slice(0, 1))
+	page.queue_free()
+	await get_tree().process_frame
+
+
+func _check_ok(name: String, ok: bool) -> bool:
+	_check(name, ok)
+	return ok
 
 
 func _set_srcs(a: XActor) -> Array:
@@ -149,11 +205,14 @@ func _run() -> void:
 	_check("c2_two_seals", c2.has(h) and c2.has(m) and c2.size() == 2, c2)
 	_check("c2_crowded", XTianqiSuits.crowded_out(a, s3))
 
-	# 三、原版三套 3 件＋七印三印各 2 件：取三套原版里号小的两套（件数 3 > 2）
+	# 三、原版三套 3 件＋七印三印各 2 件：取三套原版里号大的两套（件数 3 > 2；协调 11-25 定新套优先）
 	_wear(a, {s3: 3, s3b: 3, s3c: 3}, {h: 2, m: 2, g: 2})
 	var want := [s3, s3b, s3c]
 	want.sort()
-	_check("c3_two_orig", _live_suits(a) == want.slice(0, 2), [_live_suits(a), want])
+	_check("c3_two_orig_newer", _live_suits(a) == want.slice(1, 3), [_live_suits(a), want])
+	XTianqiSuits.NEWER_FIRST = false
+	_check("c3_older_when_off", _live_suits(a) == want.slice(0, 2), [_live_suits(a), want])
+	XTianqiSuits.NEWER_FIRST = true
 	_check("c3_no_seal_fx", _set_srcs(a).is_empty(), _set_srcs(a))
 	_check("c3_seal_rank_tie", XTianqiSuits.live(a).seals.is_empty())
 
@@ -161,6 +220,53 @@ func _run() -> void:
 	_wear(a, {s3: 3, s1: 1}, {h: 3})
 	_check("c4_single_kept", _live_suits(a).has(s1) and _live_suits(a).has(s3), _live_suits(a))
 	_check("c4_seal_kept", _set_srcs(a) == [h], _set_srcs(a))
+
+	# 返修 P2-1④：2 件套穿 3 件按 2 算，与 2 件七印同件数时七印优先
+	_wear(a, {s3: 3, s2: 3}, {h: 2})
+	_check("overflow_capped", _live_suits(a) == [s3] and XTianqiSuits.live(a).seals == [h], XTianqiSuits.live(a))
+	# 返修 P3-1：不认识的印不进名额
+	_check("unknown_seal_skipped", XTianqiSuits.ranked({}, {"zzz": 3}).is_empty())
+	# 返修 P2-2：混合套（1 件档＋多件档）
+	var mx := _mixed()
+	_check("fixture_mixed", mx > 0, mx)
+	if mx > 0:
+		var top := int(XTianqiSuits._tiers(mx)[-1])
+		_wear(a, {s3: 3, s3b: 3, mx: 1}, {})
+		_check("mixed_one_free", _live_suits(a).has(mx) and _live_suits(a).size() == 3, _live_suits(a))
+		_wear(a, {mx: top}, {h: 5, m: 5})
+		var mine: Array = XDB.table("EquipSuits")[mx].bonuses
+		var tiers_on := XEquipSuits.active(a).filter(func(b): return mine.any(func(x): return is_same(x, b))).map(func(b): return int(b.requirePieces))
+		_check("mixed_crowded_keeps_one", tiers_on == [1], tiers_on)
+		_check("mixed_crowded_flag", XTianqiSuits.crowded_out(a, mx))
+	# 返修 P3-4：掉率来源跟着退
+	var ds := _drop_suit()
+	if ds > 0:
+		_wear(a, {ds: int(XTianqiSuits._tiers(ds)[-1])}, {h: 5, m: 5})
+		var srcs := XTianqiDrop.sources_of(a).filter(func(x): return str(x.name) == "套装")
+		_check("drop_source_gone", srcs.is_empty() and XTianqiSuits.crowded_out(a, ds), srcs)
+		XTianqiSuits.ENABLED = false
+		_check("drop_source_back_off", not XTianqiDrop.sources_of(a).filter(func(x): return str(x.name) == "套装").is_empty())
+		XTianqiSuits.ENABLED = true
+	# 殉印 2 件生命：挤掉就没了
+	_wear(a, {s3: 3, s3b: 3}, {"xun": 2})
+	_check("xun_hp_gone", XTianqiQiyinEffects.param_rate(a, 0) == 1.0 and XTianqiSuits.seal_crowded_out(a, "xun"))
+	_wear(a, {s3: 3}, {"xun": 2})
+	_check("xun_hp_live", XTianqiQiyinEffects.param_rate(a, 0) > 1.0)
+	# 说明牌提示：原版件、七印件
+	_wear(a, {s3: 3, s2: 2}, {h: 2})
+	var crowded_piece := _find(a, func(e): return e.get("equipment", {}).get("suits", []).has(s2))
+	var live_piece := _find(a, func(e): return e.get("equipment", {}).get("suits", []).has(s3))
+	_check("note_orig", XTianqiSuits.note(a, crowded_piece) == XTianqiSuits.TEXT_CROWDED and XTianqiSuits.note(a, live_piece) == "")
+	_wear(a, {s3: 3, s3b: 3}, {h: 2})
+	var seal_piece := _find(a, func(e): return str(XTianqiQiyinEffects.mark_of(e).get("seal", "")) == h)
+	_check("note_seal", XTianqiSuits.note(a, seal_piece) == XTianqiSuits.TEXT_CROWDED)
+	var gd := XSkinGearDetail.new()
+	gd.set_data(seal_piece, a, null, false)
+	_check("detail_row", not gd._rows.is_empty() and str(gd._rows[0].text) == XTianqiSuits.TEXT_CROWDED, gd._rows.slice(0, 1))
+	gd.set_data(seal_piece, a, null, true)
+	_check("detail_row_not_in_compare", gd._rows.is_empty() or str(gd._rows[0].text) != XTianqiSuits.TEXT_CROWDED)
+	gd.free()
+	await _page_card(a, seal_piece)
 
 	# 五、开关关：全部生效
 	_wear(a, {s3: 3, s2: 2}, {h: 5, m: 3})

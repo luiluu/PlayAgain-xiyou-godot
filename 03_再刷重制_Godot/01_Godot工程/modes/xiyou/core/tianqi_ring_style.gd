@@ -209,8 +209,9 @@ static func resolve(actor, party: Array = [], s = null) -> Dictionary:
 				out.orbs[sl] = {"style": "orb_tier", "tint": orb_tier_tint(XQuality.color(e)), "outline_w": float(style("orb_tier").get("outline_w", 2.0))}
 	# 小点
 	var min_pieces := int(data().get("dots", {}).get("min_pieces", 2))
+	var live_seals := XTianqiQiyinEffects.live_set_counts(a)  # 一人最多两套被挤掉的印不点小点（T513，小A 核 P3-3）
 	for seal in set_slots:
-		if (set_slots[seal] as Array).size() >= min_pieces:
+		if (set_slots[seal] as Array).size() >= min_pieces and live_seals.has(seal):
 			for sl in set_slots[seal]:
 				out.dots[sl] = seal_tint(seal)
 	out.sig = signature(out)
