@@ -118,7 +118,12 @@ const TOJI_RETURN_MARGIN := 1.25
 ## 天启篇存档（XTianqi.active）走 O-623 tq_ce_ok，本开关不介入、天启篇零改动；复活技仍归 o_revive_ce 独立控制。
 static var o_xiyou_heal_ce := true
 const XIYOU_HEAL_CE_EXCLUDE_ACTORS := [1, 8, 9, 10]  # 避开原版 smart_ai 对照探针队伍
-static var _heal_ce_meta_cache := {}
+## 白名单：仅允许结构／条件／加减状态／我方 339 追击与无环 117 子事件；循环（112/113/413）、跳转（118/119）、
+## 改开关（121/123）、改职业（321）、传送（201）、存档（352）及任意改变量／脚本一律拒绝。
+const HEAL_CE_ALLOW_CODES := [0, 108, 408, 111, 411, 412, 117, 313, 333, 339]
+const HEAL_CE_COUNTER_VARS := {987: 320, 91: 320, 143: 320, 1309: 372, 1310: 372, 1311: 372}  # 已审核角色战斗计数器（毒奶增伤 / 纯真值）
+static var _toaster_script_re := RegEx.create_from_string("^\\$\\.toaster\\(\\{\\s*message\\s*:\\s*'[^']*'(?:\\s*\\+\\s*\\$gameVariables\\.value\\((?:320|372)\\))?\\s*\\}\\);?$")
+static var _ce43_state_re := RegEx.create_from_string("^(?:var\\s+actor[123]\\s*=\\s*\\$gameActors\\.actor\\(1[345]\\)|actor[123]\\.addState\\(708\\));?$")
 static var _follow_state_re := RegEx.create_from_string("^(?:ADD_STATE|ADD STATE)[ ](\\d+(?:\\s*,\\s*\\d+)*)")
 
 
@@ -212,50 +217,86 @@ func legal(rec: Dictionary, item: bool) -> bool:
 	return true
 
 
-## 西游档「治疗＋安全追击 CE」放行：仅非天启篇、非原版探针角色、非复活友方技能，CE 严格安全且含我方 339 追击，
+## 西游档「治疗＋安全追击 CE」放行：仅非天启篇、非原版探针角色、非复活友方技能，
+## CE 通过严格白名单扫描（无循环／跳转／改开关／改职业／传送／存档／递归环，且含我方 339 追击），
 ## 且本技能为治疗（damage.type==3）或追击链含治疗技（如朵莉亚 8155 天籁／赤狐 7059 妖狐之舞）。
 func _xiyou_heal_ce_ok(rec: Dictionary, ce_id: int) -> bool:
 	if not o_xiyou_heal_ce or XTianqi.active(logic.state) or actor.actor_id in XIYOU_HEAL_CE_EXCLUDE_ACTORS:
 		return false
 	if not for_friend(rec) or for_dead_friend(rec):
 		return false
-	var meta := _heal_ce_meta(ce_id)
-	if not bool(meta.safe) or not bool(meta.has_339):
+	var info := {"has_339": false, "has_heal_339": false}
+	if not _heal_ce_safe_scan(ce_id, {}, 0, info) or not bool(info.has_339):
 		return false
-	return int(rec.get("damage", {}).get("type", 0)) == 3 or bool(meta.has_heal_339)
+	return int(rec.get("damage", {}).get("type", 0)) == 3 or bool(info.has_heal_339)
 
 
-## 公共事件的静态安全与追击特征（按 ce_id 缓存）：{safe, has_339, has_heal_339}
-static func _heal_ce_meta(ce_id: int) -> Dictionary:
-	if _heal_ce_meta_cache.has(ce_id):
-		return _heal_ce_meta_cache[ce_id]
-	var safe := not _ce_dangerous(ce_id, {}, true)
-	var info := {"safe": safe, "has_339": false, "has_heal_339": false}
-	if safe:
-		_scan_ce_339(ce_id, {}, info)
-	_heal_ce_meta_cache[ce_id] = info
-	return info
-
-
-static func _scan_ce_339(ce_id: int, seen: Dictionary, info: Dictionary) -> void:
-	if seen.has(ce_id):
-		return
-	seen[ce_id] = true
+## 白名单式安全扫描：实时校验 CE 指令、条件类型、窄白名单计数器／提示，并严格拒绝任何递归环（path.has）或超深调用。
+static func _heal_ce_safe_scan(ce_id: int, path: Dictionary, depth: int, info: Dictionary) -> bool:
+	if depth > 4 or path.has(ce_id):
+		return false
 	var ev := XDB.rec("CommonEvents", ce_id)
 	if ev.is_empty():
-		return
+		return false
+	var next_path := path.duplicate()
+	next_path[ce_id] = true
 	for c in ev.get("list", []):
 		var code := int(c.code)
 		var ps = c.get("parameters", [])
-		if code == 117 and ps is Array and not ps.is_empty():
-			_scan_ce_339(int(ps[0]), seen, info)
-		elif code == 339 and ps is Array and ps.size() >= 3 and int(ps[0]) == 1:
+		if code == 111:
+			if not (ps is Array) or ps.is_empty() or not (int(ps[0]) in [0, 1, 4]):
+				return false
+		elif code == 117:
+			if not (ps is Array) or ps.is_empty() or not _heal_ce_safe_scan(int(ps[0]), next_path, depth + 1, info):
+				return false
+		elif code == 339:
+			if not (ps is Array) or ps.size() < 3 or int(ps[0]) != 1:
+				return false
 			var fsk := XDB.rec("Skills", int(ps[2]))
-			if fsk.is_empty() or scope_of(fsk) == 0:
-				continue
-			info.has_339 = true
-			if int(fsk.get("damage", {}).get("type", 0)) == 3:
-				info.has_heal_339 = true
+			if fsk.is_empty():
+				return false
+			if scope_of(fsk) > 0:
+				info.has_339 = true
+				if int(fsk.get("damage", {}).get("type", 0)) == 3:
+					info.has_heal_339 = true
+			for fe in fsk.get("effects", []):
+				if int(fe.code) == 44 and not _heal_ce_safe_scan(int(fe.dataId), next_path, depth + 1, info):
+					return false
+		elif code in HEAL_CE_ALLOW_CODES:
+			continue
+		elif code == 122:
+			if not _heal_ce_var_allowed(ce_id, ps):
+				return false
+		elif code in [355, 655]:
+			if not _heal_ce_script_allowed(ce_id, ps):
+				return false
+		else:
+			return false
+	return true
+
+
+## 仅放行已核实的既有角色局部随机／战斗计数器 122，其余任意改变量一律拒绝。
+static func _heal_ce_var_allowed(ce_id: int, ps) -> bool:
+	if not (ps is Array):
+		return false
+	if ce_id == 91 and ps.size() >= 6 and int(ps[0]) == 82 and int(ps[1]) == 82 and int(ps[2]) == 0 and int(ps[3]) == 2 and int(ps[4]) == 1 and int(ps[5]) == 100:
+		return true
+	if HEAL_CE_COUNTER_VARS.has(ce_id) and ps.size() >= 5:
+		var vid := int(HEAL_CE_COUNTER_VARS[ce_id])
+		return int(ps[0]) == vid and int(ps[1]) == vid and int(ps[2]) == 1 and int(ps[3]) == 0
+	return false
+
+
+## 仅放行已核实的既有只读 toast 提示与 CE 43 给刘关张加状态 708，其余任意脚本一律拒绝。
+static func _heal_ce_script_allowed(ce_id: int, ps) -> bool:
+	if not (ps is Array) or ps.is_empty():
+		return false
+	var text := str(ps[0]).strip_edges()
+	if ce_id in [987, 91, 143, 1309, 1310, 1311]:
+		return _toaster_script_re.search(text) != null
+	if ce_id == 43:
+		return _ce43_state_re.search(text) != null
+	return false
 
 
 ## 技能最后一个 44 效果的公共事件 ID（同 XBattleCommonEvent.reserve_action 单槽覆盖语义）
@@ -267,12 +308,36 @@ static func _last_ce_id(rec: Dictionary) -> int:
 	return ce_id
 
 
+## 判断技能是否仅因 o_xiyou_heal_ce 放行进候选（原版 legalCandidate 会因其 44 效果拒绝）
+func _is_xiyou_heal_ce_added(rec: Dictionary) -> bool:
+	if not o_xiyou_heal_ce or XTianqi.active(logic.state) or actor.actor_id in XIYOU_HEAL_CE_EXCLUDE_ACTORS:
+		return false
+	var dmg_type := int(rec.get("damage", {}).get("type", 0))
+	var added := false
+	for e in rec.get("effects", []):
+		if int(e.code) != 44:
+			continue
+		var ce_id := int(e.dataId)
+		if tq_on() and tq_ce_ok(rec, dmg_type, ce_id):
+			continue
+		if o_revive_ce and revives(rec) and not _ce_dangerous(ce_id, {}, true):
+			continue
+		if dmg_type in [1, 2, 5, 6] and useful_common_event(ce_id):
+			continue
+		if _xiyou_heal_ce_ok(rec, ce_id):
+			added = true
+	return added
+
+
 ## 西游档「治疗＋安全追击 CE」的追击额外收益（只读，不递归铺垫）：
 ## 按当前战局条件静态解析 CE 里会触发的我方 339 追击技能，累加其预期打分（含 yepSeq.follow 敌方减益）。
+## 有未安排复活的倒地队友时不加追击分，且将追击技能预期伤害并入 sub.damageScale 防止相对伤害分失真压过复活。
 func _xiyou_heal_ce_bonus(rec: Dictionary, item: bool, ctx: Dictionary, d: Dictionary) -> float:
 	if item or not o_xiyou_heal_ce or XTianqi.active(logic.state) or actor.actor_id in XIYOU_HEAL_CE_EXCLUDE_ACTORS:
 		return 0.0
 	if not for_friend(d) or for_dead_friend(d) or rec.has("_alienOriginal") or d.has("_alienOriginal"):
+		return 0.0
+	if ctx.friends.any(func(t): return t.is_dead() and not revive_planned(logic, t)):
 		return 0.0
 	var ce_id := _last_ce_id(rec)
 	if ce_id <= 0 or not _xiyou_heal_ce_ok(rec, ce_id):
@@ -282,6 +347,17 @@ func _xiyou_heal_ce_bonus(rec: Dictionary, item: bool, ctx: Dictionary, d: Dicti
 		return 0.0
 	var sub := ctx.duplicate()
 	sub.noSetup = true
+	var follow_scale := float(ctx.get("damageScale", 0.0))
+	for entry in entries:
+		var caster: XActor = entry.caster
+		var fsk := XDB.rec("Skills", int(entry.skill_id))
+		if fsk.is_empty() or not for_opponent(fsk) or not (int(fsk.get("damage", {}).get("type", 0)) in [1, 5]):
+			continue
+		var ai_s: XSmartAI = self if caster == actor else XSmartAI.new(logic, caster)
+		var reps := maxf(1.0, num_targets(fsk) / maxf(1.0, ctx.foes.size())) if for_random(fsk) else 1.0
+		for t in ctx.foes:
+			follow_scale = maxf(follow_scale, ai_s.expected_damage(caster, t, fsk) * reps)
+	sub.damageScale = follow_scale
 	var bonus := 0.0
 	for entry in entries:
 		var caster: XActor = entry.caster
@@ -372,7 +448,7 @@ func _collect_ce_339(ce_id: int, seen: Dictionary, depth: int) -> Array:
 			out.append({"caster": caster, "skill_id": sid, "weight": cur_w})
 			var fsk := XDB.rec("Skills", sid)
 			var sub_ce := _last_ce_id(fsk)
-			if sub_ce > 0 and not _ce_dangerous(sub_ce, {}, true):
+			if sub_ce > 0 and _heal_ce_safe_scan(sub_ce, seen_next, depth + 1, {}):
 				for sub_e in _collect_ce_339(sub_ce, seen_next, depth + 1):
 					out.append({"caster": sub_e.caster, "skill_id": sub_e.skill_id, "weight": float(sub_e.weight) * cur_w})
 	return out
@@ -1089,10 +1165,20 @@ func _choose(cannon_only := false) -> Dictionary:
 	var return_skill := 0
 	if TOJI_SWITCH_HYSTERESIS and logic.toji_previous_shape >= 0 and XToji.own(actor) and not XTianqi.active(logic.state):
 		return_skill = XToji.SWITCH[logic.toji_previous_shape]
+	var scored := []
+	var best_revive := 0.0
 	for c in candidates:
 		var r := score_candidate(c.eval, c.item, context, c.dir)
 		if not c.item and int(c.rec.id) == return_skill and r.score <= best_attack * TOJI_RETURN_MARGIN:
 			r.score = 0.0
+		if revives(c.dir) and float(r.score) > best_revive:
+			best_revive = float(r.score)
+		scored.append({"c": c, "r": r})
+	for item_row in scored:
+		var c: Dictionary = item_row.c
+		var r: Dictionary = item_row.r
+		if best_revive > 0.0 and not c.item and _is_xiyou_heal_ce_added(c.rec) and float(r.score) >= best_revive:
+			r.score = maxf(0.0, best_revive - 1.0)
 		ranking.append({"id": int(c.rec.id), "item": c.item, "score": roundf(r.score), "target": r.target})
 		if r.score > best_score:
 			best_score = r.score

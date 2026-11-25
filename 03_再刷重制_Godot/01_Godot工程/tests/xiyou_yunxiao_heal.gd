@@ -72,6 +72,8 @@ func _run() -> void:
 
 	_yunxiao_suite()
 	_all_peer_healers_suite()
+	_p1_revive_priority_regression()
+	_p1_ce_whitelist_negative_regression()
 	_isolation_and_safety()
 	_tianqi_zero_change()
 
@@ -366,6 +368,174 @@ func _all_peer_healers_suite() -> void:
 		_check("peer.61.legal_%d" % sid, ai61.legal(XDB.rec("Skills", sid), false))
 		var ce_entries := ai61._collect_ce_339(ceid, {}, 0)
 		_check("peer.61.ce_collect_%d" % sid, ce_entries.any(func(x): return int(x.skill_id) == 5526), ce_entries)
+
+
+# ---- 二.5、P1-1 回归：有队友倒地时复活优先（小o 核查敌群 200 绯红蔷薇 + 带 CE 复活克莱德对照）----
+func _p1_revive_priority_regression() -> void:
+	var saved_rev := XSmartAI.o_revive_ce
+	# 1. 绯红蔷薇 50 级，西游档难度 ID 2，敌群 200（无加厚或改敌方属性），队伍 117/1/2/3，队友 3 倒地，其余满血满蓝满 TP
+	for rev_on in [false, true]:
+		XSmartAI.o_revive_ce = rev_on
+		var s := XState.new_game(2, 117, [])
+		s.set_switch(int(XItemMarks.SUPER_SWITCHES[0]), true)
+		for id in [117, 1, 2, 3]:
+			if not s.party.has(id):
+				s.add_actor(id)
+		s.items = {}
+		XState.current = s
+		var logic := XBattleLogic.new()
+		logic.setup(200, s, XBattleRandom.create("0000000000000506"))
+		logic.turn = 1
+		for a in logic.actors:
+			a.change_level(50)
+			a.refresh_passive()
+			a.recover_all()
+			a.tp = a.max_tp()
+		var rose := _actor(logic, 117)
+		_actor(logic, 3).add_state(1)
+		XSmartAI.o_xiyou_heal_ce = false
+		var p_off := _pick(logic, rose)
+		XSmartAI.o_xiyou_heal_ce = true
+		var p_on := _pick(logic, rose)
+		var tag := "revon" if rev_on else "revoff"
+		_check("p1_1.rose200.%s.off_picks_5779" % tag, p_off.id == 5779, p_off)
+		_check("p1_1.rose200.%s.on_still_picks_5779" % tag, p_on.id == 5779, p_on)
+		_check("p1_1.rose200.%s.5781_not_above_revive" % tag, p_on.score >= p_off.score - 1.0, [p_on, p_off])
+
+		# 若忘掉 5779 仅剩带 CE 的 5782 圣光救赎·圣（o_revive_ce=true）：仍须选复活 5782 而非 5781
+		if rev_on:
+			rose.forget_skill(5779)
+			rose.refresh_passive()
+			XSmartAI.o_xiyou_heal_ce = false
+			var p5782_off := _pick(logic, rose)
+			XSmartAI.o_xiyou_heal_ce = true
+			var p5782_on := _pick(logic, rose)
+			_check("p1_1.rose200.only5782.off_picks_5782", p5782_off.id == 5782, p5782_off)
+			_check("p1_1.rose200.only5782.on_still_picks_5782", p5782_on.id == 5782, p5782_on)
+
+	# 1b. 敌群 200 全员存活时：追击分因 damageScale 纳入 5540 期望伤害而不再畸高（远小于原 470,036）
+	XSmartAI.o_revive_ce = false
+	var s_alive := XState.new_game(2, 117, [])
+	s_alive.set_switch(int(XItemMarks.SUPER_SWITCHES[0]), true)
+	for id in [117, 1, 2, 3]:
+		if not s_alive.party.has(id):
+			s_alive.add_actor(id)
+	s_alive.items = {}
+	XState.current = s_alive
+	var l_alive := XBattleLogic.new()
+	l_alive.setup(200, s_alive, XBattleRandom.create("0000000000000506"))
+	l_alive.turn = 1
+	for a in l_alive.actors:
+		a.change_level(50)
+		a.refresh_passive()
+		a.recover_all()
+		a.tp = a.max_tp()
+	var p_alive := _pick(l_alive, _actor(l_alive, 117))
+	var s5781 := 0.0
+	var s5780 := 0.0
+	for row in p_alive.rank:
+		if int(row[0]) == 5781:
+			s5781 = float(row[1])
+		elif int(row[0]) == 5780:
+			s5780 = float(row[1])
+	_check("p1_1.rose200.alive.5781_bounded", s5781 > s5780 and s5781 < 100000.0, p_alive)
+	_actor(l_alive, 1).hp = floorf(_actor(l_alive, 1).mhp * 0.4)
+	var p_hurt_rose := _pick(l_alive, _actor(l_alive, 117))
+	_check("p1_1.rose200.hurt.picks_5781", p_hurt_rose.id == 5781 and p_hurt_rose.score < 200000.0, p_hurt_rose)
+
+	# 2. 克莱德 50 级，o_revive_ce=true，一人倒地，仅克莱德剩 25% HP，加厚敌群：开新开关仍选复活 4549 而非 4550
+	XSmartAI.o_revive_ce = true
+	var l_clyde := _setup_xiyou(50, [16, 1, 2, 3])
+	var clyde := _actor(l_clyde, 16)
+	_actor(l_clyde, 3).add_state(1)
+	clyde.hp = floorf(clyde.mhp * 0.25)
+	XSmartAI.o_xiyou_heal_ce = false
+	var c_off := _pick(l_clyde, clyde)
+	XSmartAI.o_xiyou_heal_ce = true
+	var c_on := _pick(l_clyde, clyde)
+	_check("p1_1.clyde.off_picks_4549", c_off.id == 4549, c_off)
+	_check("p1_1.clyde.on_still_picks_4549", c_on.id == 4549, c_on)
+
+	# 2b. 反例：若 o_revive_ce=false（候选池无复活技），克莱德剩 25% HP 时仍正常选 4550 次级治疗术
+	XSmartAI.o_revive_ce = false
+	var c_norev := _pick(l_clyde, clyde)
+	_check("p1_1.clyde.no_revive_picks_4550", c_norev.id == 4550, c_norev)
+
+	XSmartAI.o_revive_ce = saved_rev
+	XSmartAI.o_xiyou_heal_ce = true
+
+
+# ---- 二.6、P1-2 回归：白名单式 CE 安全门槛（内存测试事件，合法 339 与危险指令共存一律拒放）----
+func _p1_ce_whitelist_negative_regression() -> void:
+	var logic := _setup_xiyou(50, [100, 1, 2, 3])
+	var yx := _actor(logic, 100)
+	var ai := XSmartAI.new(logic, yx)
+	var ce_table: Array = XDB.table("CommonEvents")
+	var orig_size := ce_table.size()
+	var ce_a := orig_size
+	var ce_b := orig_size + 1
+	ce_table.append(null)
+	ce_table.append(null)
+
+	var make_skill := func(ce_id: int) -> Dictionary:
+		return {
+			"id": 999901,
+			"name": "内存测试治疗",
+			"scope": 8,
+			"mpCost": 0,
+			"tpCost": 0,
+			"occasion": 1,
+			"stypeId": 2,
+			"requiredWtypeId1": 0,
+			"requiredWtypeId2": 0,
+			"note": "",
+			"damage": {"type": 3, "formula": "1000", "elementId": 10, "critical": false, "variance": 0},
+			"effects": [{"code": 44, "dataId": ce_id, "value1": 1.0, "value2": 0.0}],
+		}
+
+	var base_list := func() -> Array:
+		return [
+			{"code": 111, "indent": 0, "parameters": [4, 100, 0]},
+			{"code": 313, "indent": 1, "parameters": [0, 100, 0, 1063]},
+			{"code": 339, "indent": 1, "parameters": [1, 100, 5572, -1]},
+			{"code": 412, "indent": 0, "parameters": []},
+			{"code": 0, "indent": 0, "parameters": []},
+		]
+
+	# 基线：纯白名单（条件＋加状态 313＋我方 339 追击）放行
+	ce_table[ce_a] = {"id": ce_a, "name": "test_safe", "list": base_list.call()}
+	_check("p1_2.mem_safe_allowed", ai.legal(make_skill.call(ce_a), false))
+
+	# 负例：在同一份合法 339 治疗 CE 里混入各类危险／非白名单指令，全部必须拒放
+	var bad_cases := [
+		["loop_112_413", [{"code": 112, "indent": 0, "parameters": []}, {"code": 413, "indent": 0, "parameters": []}]],
+		["jump_118_119", [{"code": 118, "indent": 0, "parameters": ["L"]}, {"code": 119, "indent": 0, "parameters": ["L"]}]],
+		["switch_121", [{"code": 121, "indent": 0, "parameters": [1, 1, 0]}]],
+		["var_122", [{"code": 122, "indent": 0, "parameters": [500, 500, 1, 0, 1]}]],
+		["class_321", [{"code": 321, "indent": 0, "parameters": [100, 1, false]}]],
+		["transfer_201", [{"code": 201, "indent": 0, "parameters": [0, 1, 0, 0, 0, 0]}]],
+		["save_352", [{"code": 352, "indent": 0, "parameters": []}]],
+		["self_call_117", [{"code": 117, "indent": 0, "parameters": [ce_a]}]],
+		["script_355", [{"code": 355, "indent": 0, "parameters": ["$gameSwitches.setValue(1, true);"]}]],
+		["cond_script_111_12", [{"code": 111, "indent": 0, "parameters": [12, "true"]}, {"code": 412, "indent": 0, "parameters": []}]],
+	]
+	for bc in bad_cases:
+		var name_s: String = bc[0]
+		var extra: Array = bc[1]
+		var cmds: Array = extra.duplicate(true)
+		cmds.append_array(base_list.call())
+		ce_table[ce_a] = {"id": ce_a, "name": "test_" + name_s, "list": cmds}
+		_check("p1_2.mem_block_%s" % name_s, not ai.legal(make_skill.call(ce_a), false), name_s)
+
+	# 双事件互调环：ce_a -> 117 ce_b -> 117 ce_a
+	var cmds_a: Array = [{"code": 117, "indent": 0, "parameters": [ce_b]}]
+	cmds_a.append_array(base_list.call())
+	ce_table[ce_a] = {"id": ce_a, "name": "test_cycle_a", "list": cmds_a}
+	ce_table[ce_b] = {"id": ce_b, "name": "test_cycle_b", "list": [{"code": 117, "indent": 0, "parameters": [ce_a]}, {"code": 0, "indent": 0, "parameters": []}]}
+	_check("p1_2.mem_block_cycle_ab", not ai.legal(make_skill.call(ce_a), false))
+
+	# 还原内存 CommonEvents 表，不留脏数据
+	ce_table.resize(orig_size)
 
 
 # ---- 三、严格隔离（探针角色、复活技、非治疗／自残／危险 CE）----
