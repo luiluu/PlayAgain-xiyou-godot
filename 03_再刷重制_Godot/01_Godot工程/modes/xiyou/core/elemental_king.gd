@@ -44,7 +44,7 @@ const GROWTH_PER_LEVEL := [100.0, 50.0, 25.0, 25.0, 25.0, 25.0, 25.0, 25.0]
 
 const NAME := "元素之王的赐福"
 const DESCRIPTION := "形态\n群友大手子亲自为大家找元素之王要的福利"
-const ELEM_PLACEHOLDER := "赐福元素：随机十三元素（爆出时确定，攻击额外附加该元素属性）"
+const ELEM_PLACEHOLDER := "赐福元素：获得时从十三种元素中随机定下一种（攻击时额外附带该属性）"
 
 static var _icon_cache: AtlasTexture = null
 
@@ -104,7 +104,7 @@ static func _element_text(elem_id: int) -> String:
 	var ename := element_name(elem_id)
 	if ename == "":
 		return ELEM_PLACEHOLDER
-	return "赐福元素：%s（攻击额外附加%s属性）" % [ename, ename]
+	return "赐福元素：%s（攻击时额外附带%s属性）" % [ename, ename]
 
 
 static func base_note() -> String:
@@ -119,7 +119,7 @@ static func base_note() -> String:
 		"</Prefixes>",
 		_aps_line("等级需求:%d" % REQ_LEVEL),
 		_aps_line("\\c[1]%s" % ELEM_PLACEHOLDER),
-		_aps_line("\\c[1]成长：每级生命+%d、魔力+%d、六维+%d（随穿戴者等级成长）" % [
+		_aps_line("\\c[1]成长：穿戴者每升一级，生命+%d、魔力+%d、其余六项属性各+%d" % [
 			int(GROWTH_PER_LEVEL[0]), int(GROWTH_PER_LEVEL[1]), int(GROWTH_PER_LEVEL[2]),
 		]),
 	]
