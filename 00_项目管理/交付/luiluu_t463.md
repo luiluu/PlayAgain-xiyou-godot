@@ -24,7 +24,7 @@
   - 兼容原版冻结参照测试：`xiyou_zhenqi.gd`（201/201）与 `xiyou_zhenqi_break.gd`（87/87）在比对冻结原版 oracle 段临时关闭 `XZhenqi.APPLY_TO_DAMAGE`；`xiyou_tianqi_deck_phys_amp.gd`（25/25）的 `west_t451_views_noop` 按 T465 后的西游档 `weapon:87` 值 `+200%` 对齐。
   - 云端选测（整轮 806 个场景、16 片）全部通过：https://github.com/luiluu/PlayAgain-xiyou-godot/actions/runs/45508294275 ；本地 `发行空壳.py check` 退出码 0（82 脚本 812 函数）。
   - 返修专项 `xiyou_t463_t465` 20/20，含新增的诛魔同步与回退；`xiyou_zhenqi` 201/201，`xiyou_zhenqi_break` 87/87。语法检查 1215 个脚本零问题，工具快速回归 24/24，`发行空壳.py check` 退出码 0。
-  - 合并主线时在 `xstate.gd` 读档和 `star_warehouse.gd` 星级仓库取出入口保留 T465 武器同步与 T476 法宝迁移。`xiyou_fabao_99_scale` 81/81、`xiyou_star_warehouse` 99/99、`xiyou_determinism` 372/372。最终游戏代码 `a31e5c794` 重跑三项真气与存档专项全过，另有 `xiyou_event_compare` 14/14。云端选测覆盖 11 个场景。[返修云端选测](https://github.com/luiluu/PlayAgain-xiyou-godot/actions/runs/45517146256)
+  - 合并主线时在 `xstate.gd` 读档和 `star_warehouse.gd` 星级仓库取出入口保留 T465 武器同步与 T476 法宝迁移。最终游戏代码 `a31e5c794` 本机 11 个场景全部通过，另含 `xiyou_fabao_99_scale` 81/81、`xiyou_star_warehouse` 99/99、`xiyou_determinism` 372/372、四个 `xiyou_event_compare` 场景共 32/32 与 `xiyou_tianqi_deck_phys_amp` 25/25。云端选测以 `7a5901b81` 跑同一组 11 个场景。[返修云端选测](https://github.com/luiluu/PlayAgain-xiyou-godot/actions/runs/45517996212)
 
 ## D283 前后量数对照（西游档，D286 和合并主线之前）
 
