@@ -348,5 +348,90 @@ func _run() -> void:
 		lbar.queue_free()
 	XBossHpBar.REBUILD = true
 
+	# 11. T498 顶部首领血条显示异化前缀（ALIEN_PREFIX）：西游档与下方详情一致、变身保留前缀、带回退开关、天启篇零改动；
+	# 同层实机战斗画面复现（21 层常规守层 457 vs 求道者替身 756），窗口模式加 --out=<目录> 出截图。
+	check("t498_alien_prefix_default_on", XBossHpBar.ALIEN_PREFIX)
+	var prev_state := XState.current
+	var s21 := XState.new_game_blank()
+	s21.party.clear()
+	s21.battle_slots.clear()
+	for id in [1, 2]:
+		s21.add_actor(id)
+		s21.actor(id).recover_all()
+	s21.map_id = 117  # 21层 威德天
+	s21.difficulty = 3  # 普通难度（mid）：三阶 21 层守层者出蚀骨（难度 1 宝宝会降一级成侵染）
+	s21.set_variable(20, 22)
+	s21.set_switch(2302, true)
+	XState.current = s21
+	# 11a. 漩涡异化前缀（tianqi_prefix）与原版异化前缀（XAlienBattle）
+	var gy := XEnemy.new().setup(880, 3, 100.0)  # 【求道者】关羽
+	gy.set_meta("tianqi_prefix", "蚀骨·")
+	var gy_bar := make_bar([gy])
+	steps(gy_bar, 2)
+	check("t498_bar_shows_rift_prefix", gy_bar._name_text == "蚀骨·【求道者】关羽" and gy_bar._name_text == XBossStatus.clean(gy.display_name()), gy_bar._name_text)
+	# 回退开关 ALIEN_PREFIX = false：退回只读 original_name()
+	XBossHpBar.ALIEN_PREFIX = false
+	steps(gy_bar, 1)
+	check("t498_bar_rollback_off", gy_bar._name_text == gy.original_name(), gy_bar._name_text)
+	XBossHpBar.ALIEN_PREFIX = true
+	steps(gy_bar, 1)
+	check("t498_bar_restore_on", gy_bar._name_text == "蚀骨·【求道者】关羽", gy_bar._name_text)
+	gy_bar.queue_free()
+	var ab := XEnemy.new().setup(6, 3, 100.0)
+	ab.alien = {"variant": "shield", "boss": true}
+	var ab_bar := make_bar([ab])
+	steps(ab_bar, 1)
+	check("t498_bar_shows_alien_battle_prefix", ab_bar._name_text == XAlienBattle.name_prefix(ab) + ab.original_name(), ab_bar._name_text)
+	ab_bar.queue_free()
+	# 变身保留异化前缀（30 层智甚 890 → 891）
+	var zs := XEnemy.new().setup(890, 3, 100.0)
+	zs.set_meta("tianqi_prefix", "蚀骨·")
+	var zs_bar := make_bar([zs])
+	zs.enemy_id = 891
+	steps(zs_bar, 1)
+	check("t498_bar_transform_keeps_prefix", zs_bar._name_text == "蚀骨·" + zs.original_name(), zs_bar._name_text)
+	zs_bar.queue_free()
+	# 11b. 天启篇零改动：XTianqi.active 为真时血条仍读 original_name()
+	var tq_s := XState.new_game_blank()
+	tq_s.flags["tianqi"] = {"rules": 1}
+	XState.current = tq_s
+	var tq_e := XEnemy.new().setup(880, 3, 100.0)
+	tq_e.set_meta("tianqi_prefix", "蚀骨·")
+	var tq_bar := make_bar([tq_e])
+	steps(tq_bar, 1)
+	check("t498_bar_tianqi_zero_diff", tq_bar._name_text == tq_e.original_name(), tq_bar._name_text)
+	tq_bar.queue_free()
+	# 11c. 实机战斗画面：三阶西游档 21 层常规守层（457）与求道者替身（756）同层都异化，顶部血条与下方首领面板名字一致
+	XState.current = s21
+	var cfg_dir := "user://test_boss_hp_bar_t498"
+	DirAccess.make_dir_recursive_absolute(ProjectSettings.globalize_path(cfg_dir))
+	XConfig.path_override = cfg_dir.path_join("options.json")
+	if FileAccess.file_exists(XConfig.path_override):
+		DirAccess.remove_absolute(ProjectSettings.globalize_path(XConfig.path_override))
+	XConfig.whisper_mark("rift1")
+	XConfig.whisper_mark("rift2")
+	XConfig.whisper_mark("rift3")
+	var prev_st_override := XRiftAlien.STAGE_OVERRIDE
+	XRiftAlien.STAGE_OVERRIDE = 0
+	for pair in [[457, "t498_f21_regular", "蚀骨·【守层者】"], [756, "t498_f21_standin", "蚀骨·【求道者】关羽"]]:
+		var tid: int = pair[0]
+		var shot_name: String = pair[1]
+		var expect_pre: String = pair[2]
+		var sc := XBattleScene.new()
+		sc.setup(tid, true, false, XDB.map(117))
+		add_child(sc)
+		await frames(35)
+		var bar_nm: String = sc.boss_hp._name_text if sc.boss_hp != null else ""
+		var panel_nm: String = XBossStatus.clean(sc.boss_panel.battler.display_name()) if sc.boss_panel != null and sc.boss_panel.battler != null else ""
+		var e0: XEnemy = sc.logic.enemies[0]
+		check(shot_name + "_alien_and_bar_match", bar_nm.begins_with(expect_pre) and bar_nm == panel_nm and XRiftAlien.is_alien(sc.logic, e0), [bar_nm, panel_nm, XRiftAlien.unit(sc.logic, e0)])
+		shot(shot_name)
+		sc.logic.end_battle(0)
+		sc.queue_free()
+		await frames(3)
+	XRiftAlien.STAGE_OVERRIDE = prev_st_override
+	XConfig.path_override = ""
+	XState.current = prev_state
+
 	print("TEST_RESULT=" + JSON.stringify({"passed": checks - failures.size(), "total": checks}))
 	get_tree().quit.call_deferred(0 if failures.is_empty() else 1)
