@@ -86,7 +86,6 @@ func _run() -> void:
 	_plain_mode_archives()
 	_migrate_fails()
 	_release_keys()
-	_t489_key_removed()
 	XSaveSeal.ENABLED = true
 	XSaveSeal.STRICT_AFTER_MIGRATE = true
 	XSaveSeal.simulate_template = false
@@ -537,62 +536,3 @@ func _migrate_fails() -> void:
 	XSaveSeal.forget_dirs()
 	check("mfail.retry_next_process", XSave.load_slot(1) and XSave.path(1).ends_with(".ksv") and XSaveSeal.marker_ok(d2))
 	XSave.dir_override = dir
-
-
-## T489：v0.04.01 补丁把发行密钥删了——发行版没密钥就不封存、看不见 .ksv（读档页空），玩家在空格里新存的是明文 .json。
-## 修复版（密钥回来）第一次迁移：原 .ksv 照旧是当前档，坏窗口的 .json 改名另存（不顶替、不删）；只守这一次，之后人工找回照旧。
-func _t489_key_removed() -> void:
-	var sub := dir.path_join("t489")
-	DirAccess.make_dir_recursive_absolute(sub)
-	var key_path := sub.path_join("key.json")
-	var f := FileAccess.open(key_path, FileAccess.WRITE)
-	f.store_string(JSON.stringify({"current": 1, "keys": {"1": "ab".repeat(32)}}))
-	f.close()
-	XSave.dir_override = sub
-	XSaveSeal.simulate_template = true
-	XSaveSeal.key_file_override = key_path
-	XSaveSeal.reload_keys()
-	_reset_caches()
-	var s := _new_state()
-	s.gold = 7777
-	XState.current = s
-	check("t489.v004_sealed_save", XSave.save(1) and XSave.path(1).ends_with(".ksv") and XSaveSeal.marker_ok(sub))
-	DirAccess.remove_absolute(sub.path_join(XSaveSeal.GUARD_MARK))  # dev.889 还没有这个记号
-	var ksv := _bytes(sub.path_join("save_1.ksv"))
-	# 装上 0.04.01：密钥文件没了
-	XSaveSeal.key_file_override = sub.path_join("gone.json")
-	XSaveSeal.reload_keys()
-	_reset_caches()
-	check("t489.broken_slot_looks_empty", not XSave.exists(1) and XSave.summary(1).ends_with("空"), XSave.summary(1))
-	check("t489.broken_marker_dropped", not FileAccess.file_exists(sub.path_join(XSaveSeal.MARKER)))
-	OS.delay_msec(1100)  # 修改时间按秒：坏窗口写的 .json 比 .ksv 新
-	var s2 := _new_state()
-	s2.gold = 1
-	XState.current = s2
-	check("t489.broken_writes_plain", XSave.save(1) and FileAccess.file_exists(sub.path_join("save_1.json")) and XSave.save(2))
-	check("t489.broken_ksv_untouched", _bytes(sub.path_join("save_1.ksv")) == ksv)
-	# 修复版：密钥回来
-	XSaveSeal.key_file_override = key_path
-	XSaveSeal.reload_keys()
-	_reset_caches()
-	XSaveSeal.last_aside.clear()
-	check("t489.fixed_old_save_back", XSave.load_slot(1) and XState.current.gold == 7777)
-	check("t489.fixed_ksv_same_bytes", _bytes(sub.path_join("save_1.ksv")) == ksv)
-	var aside := _files("save_1.json" + XSaveSeal.ASIDE_MARK, sub)
-	check("t489.window_json_kept_aside", aside.size() == 1 and not FileAccess.file_exists(sub.path_join("save_1.json"))
-		and int(JSON.parse_string(FileAccess.get_file_as_string(sub.path_join(aside[0]))).gold) == 1 and XSaveSeal.last_aside == aside, aside)
-	check("t489.new_slot_sealed", XSave.load_slot(2) and XState.current.gold == 1 and XSaveSeal.is_sealed(_bytes(sub.path_join("save_2.ksv"))))
-	check("t489.guard_marked", XSaveSeal.marker_ok(sub) and FileAccess.file_exists(sub.path_join(XSaveSeal.GUARD_MARK)))
-	# 只守一次：之后删记号人工找回照旧（比 .ksv 新的 .json 重新封存，.ksv 留底 replaced_）
-	OS.delay_msec(1100)
-	var d: Dictionary = JSON.parse_string(FileAccess.get_file_as_string(sub.path_join(aside[0])) if aside.size() == 1 else "{}")
-	d.gold = 3
-	_put(sub.path_join("save_1.json"), JSON.stringify(d).to_utf8_buffer())
-	DirAccess.remove_absolute(sub.path_join(XSaveSeal.MARKER))
-	XSaveSeal.forget_dirs()
-	check("t489.manual_recover_after_guard", XSave.load_slot(1) and XState.current.gold == 3 and _files("save_1.ksv" + XSaveSeal.REPLACED_MARK, sub).size() == 1)
-	XSaveSeal.simulate_template = false
-	XSaveSeal.key_file_override = ""
-	XSaveSeal.reload_keys()
-	XSave.dir_override = dir
-	_reset_caches()

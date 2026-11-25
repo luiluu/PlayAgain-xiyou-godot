@@ -44,15 +44,6 @@ extends RefCounted
 
 ## O-495。true：封存（有密钥时）；false：照旧写明文 .json，.ksv 解开写回 .json（回退）。
 static var ENABLED := true
-## T489（v0.04.01 补丁误删发行密钥，cc 11-25）：那段时间游戏不封存，看不见 .ksv，玩家新写的明文 .json 比原 .ksv 新；
-## 修复版第一次迁移某个目录时（目录里还没有 GUARD_MARK），同名 .ksv 本把密钥解得开的，**不**让更新的 .json 顶替：
-## .json 原样改名成 <名>.json.unsealed_<时间>[_n] 留着（不删、不封），原 .ksv 照旧是当前档。每个目录只做这一次（迁移成功后写 GUARD_MARK），
-## 之后「删记号人工找回」照旧（比 .ksv 新的 .json 重新封存）。回退：KEEP_GOOD_KSV = false（照旧一律让新的 .json 顶替、.ksv 留底 replaced_）。
-static var KEEP_GOOD_KSV := true
-const GUARD_MARK := ".t489_checked"
-const ASIDE_MARK := ".unsealed_"
-## 本进程另存走的明文（文件名），给界面提示和测试看
-static var last_aside := []
 ## 目录迁移完（有记号）后不再读 .json。false：每次进目录都把比 .ksv 新的 .json 重新封存（不防把改过的明文丢回目录）。
 static var STRICT_AFTER_MIGRATE := true
 ## 测试用：当成发行构建（不认测试密钥、要注入的密钥）
@@ -433,25 +424,14 @@ static func ensure_dir(dir: String) -> bool:
 
 
 static func _migrate_dir(dir: String) -> bool:
-	last_migration = {"dir": dir, "sealed": [], "failed": [], "aside": []}
+	last_migration = {"dir": dir, "sealed": [], "failed": []}
 	var all_ok := true
-	var guard := KEEP_GOOD_KSV and not FileAccess.file_exists(dir.path_join(GUARD_MARK))
 	for name in DirAccess.get_files_at(dir):
 		var p := dir.path_join(name)
 		if not (covered(p) and name.ends_with(".json")):
 			continue
 		var k := p.trim_suffix(".json") + EXT
 		if FileAccess.file_exists(k) and FileAccess.get_modified_time(k) >= FileAccess.get_modified_time(p):
-			continue
-		if guard and FileAccess.file_exists(k) and _good_sealed(k):
-			# T489：原 .ksv 是好的，坏窗口里写的 .json 不顶替它，改名另存
-			var keep := unique_name("%s%s%s" % [p, ASIDE_MARK, _stamp()])
-			if DirAccess.rename_absolute(p, keep) == OK:
-				last_migration.aside.append(keep.get_file())
-				last_aside.append(keep.get_file())
-			else:
-				last_migration.failed.append(name)
-				all_ok = false
 			continue
 		var raw = _read_bytes(p)
 		if raw == null or is_sealed(raw):
@@ -469,10 +449,6 @@ static func _migrate_dir(dir: String) -> bool:
 	if not all_ok or not _put_marker(dir):
 		_tried[dir] = true
 		return false
-	if KEEP_GOOD_KSV and not FileAccess.file_exists(dir.path_join(GUARD_MARK)):
-		_put(dir.path_join(GUARD_MARK), "1".to_utf8_buffer())  # 写不成也不要紧：下次迁移再守一次，结果一样
-	if not (last_migration.aside as Array).is_empty():
-		print("XSaveSeal: 原存档解得开，更新期间写的明文另存（不顶替）：", JSON.stringify(last_migration.aside))
 	if not (last_migration.sealed as Array).is_empty():
 		print("XSaveSeal: 旧存档已补上签名：", JSON.stringify(last_migration))
 	return true
@@ -526,12 +502,6 @@ static func archive_before_replace(path: String) -> bool:
 		return false
 	last_replaced.append(keep.get_file())
 	return true
-
-
-## 这个 .ksv 是封存格式、而且本把密钥验得过签名解得开
-static func _good_sealed(path: String) -> bool:
-	var b = _read_bytes(path)
-	return b != null and is_sealed(b) and unseal(b).ok
 
 
 static func _put_marker(dir: String) -> bool:
