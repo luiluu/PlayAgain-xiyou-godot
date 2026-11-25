@@ -1,11 +1,14 @@
 extends Node
-## 【cc·T493·未经审查】洪荒三款称号＋一次性绑存档兑换码（XHonghuangTitles）专项：
+## 【cc·T493／T508·未经审查】洪荒三款称号＋兑换码（XHonghuangTitles）专项：
 ## 1. 称号表：西游档末尾接 51 洪荒证道、52 洪荒首证、53 洪荒·阿夜；天启篇存档、回退开关关着都不列；
 ##    选项：53 没拿到也照名字列（标阿夜专属、不可获得），选了不变；52、51 没拿到显示 ???；
 ## 2. 洪荒证道自动解锁：洪荒开关＋层数 34（含老存档）才解锁、只解锁一次；非洪荒、没到 34、天启篇、开关关都不解锁；
 ##    真地图空闲时自动补发并弹提示；
-## 3. 兑换码：码规范化（小写、空格、横线）后对；同一存档第二次提示已兑换、不再发；换一份存档（存档身份不同）无效；错码无效；
-##    天启篇（同身份）、开关关着都不能兑换；兑换后存档往返仍在；和 07_开发环境/洪荒兑换码.py 同一算法（固定测试向量）；
+## 3. 兑换码（T508 不绑存档）：码规范化（小写、空格、横线）后对；同一存档第二次提示已兑换、不再发；
+##    本机兑一次后本机所有存档（别的档、新开档、导入档）都有、再输提示已拥有；本机解锁文件封存、不进存档、不进 options.json；
+##    拷到别的设备（设备 ID 不同）、改一个字节、换成明文都不认（文件原样）；别的设备输码照样能兑；没有封存密钥时退回记在存档里；
+##    T493 只记在存档里的照旧有、再输码补成本机；T493 v1 绑存档哈希作废；错码无效；
+##    天启篇、开关关着都不能兑换；兑换后存档往返仍在；和 07_开发环境/洪荒兑换码.py 同一算法（固定测试向量）；
 ##    仓库配置能读出（只有哈希，不含码原文）；
 ## 4. 碑前兑换：真地图 Map004 调查洪荒碑 → 选「输入兑换码」→ 输入 → 解锁；再来一次提示已兑换；天启档没有碑；
 ## 5. 图标 6426～6428 能取到 32 贴图、互不相同；流光样式与颜色随字、随时间变化，画面特效关着停在一帧。
@@ -14,7 +17,9 @@ const TestEnv = preload("res://tests/xiyou_test_env.gd")
 const TIMEOUT_FRAMES := 1200
 ## 测试码（不是发行码）：与 Python 版算出的固定向量对照
 const TEST_CODE := "ABCD-2345-EFGH-6789"
-const TEST_HASH_12345 := "6b7e39a4a4ff30305c506a46b8d61d5915ae5dcd1f8e81a64644121df3523a68"
+const TEST_HASH := "23938796a9efeedb67a27f17ec2ade9a0f66dccd4d00a5fc3e3fecef1fbfe4a2"
+## T493 v1 算法（sha256("honghuang-redeem-v1|码|orb_seed")）算出的旧式哈希：T508 起作废
+const TEST_HASH_V1_12345 := "6b7e39a4a4ff30305c506a46b8d61d5915ae5dcd1f8e81a64644121df3523a68"
 
 var results := []
 var out_dir := ""
@@ -97,6 +102,9 @@ func _reset_config() -> void:
 
 func _run() -> void:
 	TestEnv.isolate("xiyou_honghuang_titles")
+	DirAccess.remove_absolute(ProjectSettings.globalize_path(XHonghuangTitles.local_path()))  # T508 本机解锁文件从没有开始
+	XHonghuangTitles.machine_id_override = ""
+	XHonghuangTitles.reload_local()
 	XMessageBox.auto = true
 	XGuide.MILESTONE_ENABLED = false
 	XFest.ENABLED = false
@@ -182,7 +190,7 @@ func _run() -> void:
 	await _close(map_old)
 
 	# ==== 3. 兑换码 ====
-	check("hash.matches_python_tool", XHonghuangTitles.code_hash(TEST_CODE, "12345") == TEST_HASH_12345, XHonghuangTitles.code_hash(TEST_CODE, "12345"))
+	check("hash.matches_python_tool", XHonghuangTitles.code_hash(TEST_CODE) == TEST_HASH, XHonghuangTitles.code_hash(TEST_CODE))
 	check("hash.normalize", XHonghuangTitles.normalize(" abcd-2345 efgh_6789 ") == "ABCD2345EFGH6789")
 	XHonghuangTitles.codes_override = null
 	XHonghuangTitles._codes = null
@@ -195,11 +203,12 @@ func _run() -> void:
 	sa.orb_seed = 12345
 	var sb := _make_save()
 	sb.orb_seed = 67890
-	XHonghuangTitles.codes_override = [{"hash": XHonghuangTitles.code_hash(TEST_CODE, "12345"), "titles": [52, 53]}]
-	XState.current = sb
-	var rb := XHonghuangTitles.redeem(sb, TEST_CODE)
-	check("redeem.other_save_invalid", not rb.ok and rb.text == XHonghuangTitles.MSG_INVALID and not XDesignation.unlocked(52) and not XDesignation.unlocked(53), rb)
+	# T493 v1 绑存档的旧哈希作废：配置里只有旧式条目时，原存档（同 orb_seed）输入旧码也不对
+	XHonghuangTitles.codes_override = [{"hash": TEST_HASH_V1_12345, "titles": [52, 53]}]
 	XState.current = sa
+	var rv1 := XHonghuangTitles.redeem(sa, TEST_CODE)
+	check("redeem.v1_retired", not rv1.ok and rv1.text == XHonghuangTitles.MSG_INVALID and not sa.flags.has(XHonghuangTitles.FLAG_KEY), rv1)
+	XHonghuangTitles.codes_override = [{"hash": XHonghuangTitles.code_hash(TEST_CODE), "titles": [52, 53]}]
 	var rbad := XHonghuangTitles.redeem(sa, "ABCD-2345-EFGH-6780")
 	check("redeem.wrong_code", not rbad.ok and rbad.text == XHonghuangTitles.MSG_INVALID, rbad)
 	check("redeem.empty", not XHonghuangTitles.redeem(sa, "  ").ok)
@@ -212,15 +221,83 @@ func _run() -> void:
 	check("redeem.off_unavailable", not roff.ok and not sa.flags.has(XHonghuangTitles.FLAG_KEY), roff)
 	XHonghuangTitles.ENABLED = true
 	XState.current = sa
+	check("local.none_before", not FileAccess.file_exists(XHonghuangTitles.local_path()) and not XDesignation.unlocked(52))
 	var ra := XHonghuangTitles.redeem(sa, " abcd 2345-efgh 6789 ")
 	check("redeem.ok", ra.ok and ra.titles == [52, 53] and str(ra.text).contains("洪荒首证、洪荒·阿夜"), ra)
-	check("redeem.unlocked_here", XDesignation.unlocked(52) and XDesignation.unlocked(53), [XDesignation.unlocked(52), XDesignation.unlocked(53), XState.current == sa, sa.flags.get(XHonghuangTitles.FLAG_KEY)])
+	check("redeem.unlocked_here", XDesignation.unlocked(52) and XDesignation.unlocked(53), [XDesignation.unlocked(52), XDesignation.unlocked(53), XState.current == sa])
 	check("redeem.not_global", XConfig.designations().get("52") != true and XConfig.designations().get("53") != true)
+	# 本机解锁文件：封存格式（不是明文），存档里不记
+	var lp := XHonghuangTitles.local_path()
+	var lbytes := FileAccess.get_file_as_bytes(lp)
+	check("local.file_sealed", FileAccess.file_exists(lp) and XSaveSeal.is_sealed(lbytes) and not lbytes.get_string_from_utf8().contains("\"titles\""), lbytes.size())
+	check("local.not_in_save", not sa.flags.has(XHonghuangTitles.FLAG_KEY))
 	var ra2 := XHonghuangTitles.redeem(sa, TEST_CODE)
 	check("redeem.second_use", not ra2.ok and ra2.text == XHonghuangTitles.MSG_USED and ra2.titles.is_empty(), ra2)
+	# 本机别的存档、新开档：不输码就有，再输提示已拥有
 	XState.current = sb
-	check("redeem.switch_save_none", not XDesignation.unlocked(52) and not XDesignation.unlocked(53))
-	check("redeem.other_save_still_invalid", XHonghuangTitles.redeem(sb, TEST_CODE).text == XHonghuangTitles.MSG_INVALID)
+	check("local.other_save_has", XDesignation.unlocked(52) and XDesignation.unlocked(53))
+	check("local.other_save_used", XHonghuangTitles.redeem(sb, TEST_CODE).text == XHonghuangTitles.MSG_USED)
+	var sn := XState.new_game(3, 1, [8, 9, 10])
+	XState.current = sn
+	check("local.newgame_has", int(sn.orb_seed) != 12345 and not sn.flags.has(XHonghuangTitles.FLAG_KEY) and XDesignation.unlocked(52) and XDesignation.unlocked(53))
+	XDesignation.apply_choice(sn, _ids().find(53))
+	check("local.newgame_wear", sn.designation.name == "洪荒·阿夜" and XHonghuangTitles.worn_ok(sn), sn.designation)
+	# 天启篇存档、回退开关关着：不列、不显示（本机文件原样留着）
+	var stq3 := _make_save(true)
+	XState.current = stq3
+	check("local.tianqi_none", not XHonghuangTitles.save_has(stq3, 52) and not _ids().has(52))
+	XState.current = sn
+	XHonghuangTitles.ENABLED = false
+	check("local.off_none", not XHonghuangTitles.save_has(sn, 52) and not XHonghuangTitles.worn_ok(sn) and FileAccess.file_exists(lp))
+	XHonghuangTitles.ENABLED = true
+	check("local.on_again", XHonghuangTitles.save_has(sn, 52))
+	# options.json 里手写 52／53 不算数
+	XConfig.designations()["52"] = true
+	XConfig.designations()["53"] = true
+	var good_bytes := lbytes.duplicate()
+	DirAccess.remove_absolute(ProjectSettings.globalize_path(lp))
+	XHonghuangTitles.reload_local()
+	check("local.options_forged_ignored", not XDesignation.unlocked(52) and not XDesignation.unlocked(53))
+	XConfig.designations().erase("52")
+	XConfig.designations().erase("53")
+	# 换一台设备：把本机文件原样拷过去（设备 ID 不同）→ 不认；不带码没有；输码照样能兑（码不绑设备）
+	_put_local(good_bytes)
+	XHonghuangTitles.machine_id_override = "other-device-for-test"
+	XHonghuangTitles.reload_local()
+	check("device.copied_file_ignored", not XDesignation.unlocked(52) and not XDesignation.unlocked(53) and not XHonghuangTitles.worn_ok(sn))
+	check("device.file_untouched", FileAccess.get_file_as_bytes(lp) == good_bytes)
+	var rdev := XHonghuangTitles.redeem(sn, TEST_CODE)
+	check("device.redeem_ok", rdev.ok and XDesignation.unlocked(52) and XDesignation.unlocked(53), rdev)
+	XHonghuangTitles.machine_id_override = ""
+	_put_local(good_bytes)
+	XHonghuangTitles.reload_local()
+	check("device.back_home", XDesignation.unlocked(52) and XDesignation.unlocked(53))
+	# 篡改：改一个字节（签名不对）、换成明文 → 不认，文件原样，存档照常
+	var bad := good_bytes.duplicate()
+	bad[bad.size() / 2] = (int(bad[bad.size() / 2]) + 1) % 256
+	_put_local(bad)
+	XHonghuangTitles.reload_local()
+	check("tamper.byte_flip_ignored", not XDesignation.unlocked(52) and not XDesignation.unlocked(53) and FileAccess.get_file_as_bytes(lp) == bad)
+	_put_local(JSON.stringify({"titles": {"52": true, "53": true}, "used": [], "machine": XHonghuangTitles.machine_tag()}).to_utf8_buffer())
+	XHonghuangTitles.reload_local()
+	check("tamper.plain_ignored", not XDesignation.unlocked(52) and not XDesignation.unlocked(53))
+	check("tamper.save_fine", XHonghuangTitles.worn_ok(XState.from_dict(JSON.parse_string(JSON.stringify(sa.to_dict())))))
+	# 没有封存密钥（发行构建没注入密钥）：本机文件写不了 → 退回记在当前存档里（这份存档一次）
+	DirAccess.remove_absolute(ProjectSettings.globalize_path(lp))
+	XSaveSeal.simulate_template = true
+	XSaveSeal.reload_keys()
+	XHonghuangTitles.reload_local()
+	var snk := _make_save()
+	XState.current = snk
+	var rk := XHonghuangTitles.redeem(snk, TEST_CODE)
+	check("nokey.fallback_save", rk.ok and XHonghuangTitles._flag_has(snk.flags, 52) and XHonghuangTitles._flag_has(snk.flags, 53) and not FileAccess.file_exists(lp), rk)
+	check("nokey.second_use", XHonghuangTitles.redeem(snk, TEST_CODE).text == XHonghuangTitles.MSG_USED)
+	XSaveSeal.simulate_template = false
+	XSaveSeal.reload_keys()
+	# T493 只兑在存档里的老存档：照旧有；再输新码补成本机拥有
+	check("legacy.save_flag_still_ok", XDesignation.unlocked(52) and XHonghuangTitles.worn_ok(snk))
+	var rl := XHonghuangTitles.redeem(snk, TEST_CODE)
+	check("legacy.upgrade_to_local", rl.ok and XHonghuangTitles.local_has(52) and XHonghuangTitles.local_has(53), rl)
 	# 佩戴：兑换的存档能选 53，选项变成带图标的名字
 	XState.current = sa
 	var ids_a := _ids()
@@ -231,7 +308,20 @@ func _run() -> void:
 	XState.current = back
 	check("save.roundtrip", int(back.orb_seed) == 12345 and XDesignation.unlocked(52) and XDesignation.unlocked(53) and back.designation.name == "洪荒·阿夜", [back.orb_seed, back.designation])
 	check("save.roundtrip_still_once", XHonghuangTitles.redeem(back, TEST_CODE).text == XHonghuangTitles.MSG_USED)
-	_unsealed_vs_sealed(back)
+	# 封存／明文导入：用 T493 式记在存档里的档（同时戴着阿夜），在「别的设备」上测（本机解锁不掺进来）
+	var legacy := XState.from_dict(JSON.parse_string(JSON.stringify(back.to_dict())))
+	legacy.flags[XHonghuangTitles.FLAG_KEY] = {"titles": {"52": true, "53": true}, "used": [TEST_HASH]}
+	XHonghuangTitles.machine_id_override = "other-device-for-test"
+	XHonghuangTitles.reload_local()
+	_unsealed_vs_sealed(legacy)
+	XHonghuangTitles.machine_id_override = ""
+	XHonghuangTitles.reload_local()
+	# 导入档（本机）：没兑过的存档封存导出再导入 → 本机解锁，不输码就有
+	_imported_has_local()
+
+	# 碑前兑换要从「本机没有」开始
+	DirAccess.remove_absolute(ProjectSettings.globalize_path(lp))
+	XHonghuangTitles.reload_local()
 
 	# ==== 4. 碑前兑换（真地图）====
 	var sm := _make_save()
@@ -358,6 +448,33 @@ func _unsealed_vs_sealed(back: XState) -> void:
 	XState.current = back
 
 
+func _put_local(bytes: PackedByteArray) -> void:
+	var f := FileAccess.open(XHonghuangTitles.local_path(), FileAccess.WRITE)
+	f.store_buffer(bytes)
+	f.close()
+
+
+## T508 导入档：本机已兑过，一份没兑过的存档封存导出再导入 → 不输码就有，再输提示已拥有
+func _imported_has_local() -> void:
+	var old_seal := XSaveSeal.ENABLED
+	XSaveSeal.ENABLED = true
+	var fresh := _make_save()
+	fresh.orb_seed = 24680
+	XState.current = fresh
+	XSave.save(8)
+	var ex8 := XSaveTransfer.export_text(8)
+	var imp8 := XSaveTransfer.parse_import(str(ex8.get("text", "")))
+	var d8 = imp8.get("data", {})
+	check("import.fresh_sealed", str(ex8.get("text", "")).contains(XSaveTransfer.FORMAT_SEALED) and d8 is Dictionary and not (d8.get("flags", {}) as Dictionary).has(XHonghuangTitles.FLAG_KEY), imp8.get("error", ""))
+	if d8 is Dictionary:
+		var imp := XState.from_dict(JSON.parse_string(JSON.stringify(d8)))
+		XState.current = imp
+		check("import.local_has", XDesignation.unlocked(52) and XDesignation.unlocked(53))
+		check("import.used", XHonghuangTitles.redeem(imp, TEST_CODE).text == XHonghuangTitles.MSG_USED)
+	XSave.remove(8)
+	XSaveSeal.ENABLED = old_seal
+
+
 func _plate_crop(map: XMapScene) -> Image:
 	RenderingServer.force_draw()
 	var img := get_viewport().get_texture().get_image()
@@ -405,6 +522,8 @@ func _quiet(map: XMapScene) -> void:
 
 func _capture() -> void:
 	TestEnv.isolate("xiyou_honghuang_titles_shots")
+	DirAccess.remove_absolute(ProjectSettings.globalize_path(XHonghuangTitles.local_path()))
+	XHonghuangTitles.reload_local()
 	XMessageBox.auto = true
 	XGuide.MILESTONE_ENABLED = false
 	XFest.ENABLED = false

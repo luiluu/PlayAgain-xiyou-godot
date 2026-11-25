@@ -43,7 +43,7 @@ static func unlocked(id: int) -> bool:
 	if id == KYO_ID:
 		return XAchievement.global_has(KYO_ACHIEVEMENT)  # syncDesignation：DesignationN[31] = K.owned()
 	if XHonghuangTitles.is_save_title(id):
-		return XHonghuangTitles.save_has(XState.current, id)  # T493：洪荒首证、洪荒·阿夜只记在兑换的那份存档里
+		return XHonghuangTitles.save_has(XState.current, id)  # T493／T508：洪荒首证、洪荒·阿夜记在本机解锁文件（或 T493 兑换的那份存档）里
 	return XConfig.designations().get(str(id)) == true
 
 ## 事件脚本 ConfigManager.DesignationN[N] = true
