@@ -1,0 +1,12 @@
+# 补丁线 github/patch/v0.04 eaf453d05（dev.890）浅克隆实跑；存档＝玩家旧档（11-23 v0.03 导出）（洪荒 difficulty 8，存在大厅）
+Godot Engine v4.7.2.stable.official.ed1daf0bf - https://godotengine.org
+T486R2 import=
+T486R2 R1_cfg_rift12_enter1={"XRift.stage":3,"difficulty":8,"ev203A":true,"ev205A":null,"ev76A":true,"load_ok":true,"lobby_s3":true,"rift3_anim":true,"seen":["rift1","rift2","rift3"]}
+T486R2 R1_cfg_rift12_enter2={"XRift.stage":3,"difficulty":8,"ev203A":true,"ev205A":true,"ev76A":true,"load_ok":true,"lobby_s3":true,"rift3_anim":false,"seen":["rift1","rift2","rift3"]}
+T486R2 import=
+T486R2 R2_cfg_empty_enter1={"XRift.stage":2,"difficulty":8,"ev203A":true,"ev205A":null,"ev76A":true,"load_ok":true,"lobby_s3":false,"rift3_anim":false,"seen":[]}
+T486R2 R2_cfg_empty_enter2={"XRift.stage":2,"difficulty":8,"ev203A":true,"ev205A":null,"ev76A":true,"load_ok":true,"lobby_s3":false,"rift3_anim":false,"seen":[]}
+T486R2 R2_cfg_empty_enter3={"XRift.stage":2,"difficulty":8,"ev203A":true,"ev205A":null,"ev76A":true,"load_ok":true,"lobby_s3":false,"rift3_anim":false,"seen":[]}
+T486R2 import=
+T486R2 R3_cfg_rift1_enter1={"XRift.stage":2,"difficulty":8,"ev203A":true,"ev205A":null,"ev76A":true,"load_ok":true,"lobby_s3":false,"rift3_anim":false,"seen":["rift1"]}
+T486R2 R3_cfg_rift1_enter2={"XRift.stage":2,"difficulty":8,"ev203A":true,"ev205A":null,"ev76A":true,"load_ok":true,"lobby_s3":false,"rift3_anim":false,"seen":["rift1"]}
