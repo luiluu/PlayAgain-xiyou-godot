@@ -1,0 +1,6 @@
+[gd_scene load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://tests/xiyou_touch_dest_d1d2.gd" id="1"]
+
+[node name="XiyouTouchDestD1d2" type="Node"]
+script = ExtResource("1")

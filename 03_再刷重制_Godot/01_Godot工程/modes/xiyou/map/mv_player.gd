@@ -6,6 +6,9 @@ extends MVCharacter
 signal stepped
 signal action_pressed
 signal touch_target_reached
+## 点按的 D1／D2（Game_Player.triggerTouchActionD1／D2）：d2 假＝脚下（飞艇上下、脚下「确定键、角色下方」事件），真＝面前一格事件。
+## 只在 DEFER_CLICK_ACTION 开着时发；关着时照旧发通用确认 action_pressed
+signal touch_action(d2: bool)
 ## Game_Player.moveStraight：能走时先让队伍跟随追上一步（追的是玩家移动前的位置）
 signal before_step
 
@@ -36,6 +39,19 @@ var vehicle_speed := 0
 ## 紧接着的物理帧又看到「刚按下」，再调查一次 NPC（又开对话、又开店）；高刷新率显示器上处理帧多于物理帧，更容易撞上。
 ## 原版 popScene 回地图要隔帧，Input.isTriggered 早已过去。这里在 _unhandled_input 记下这一下，下一次物理帧用掉。
 var _accept_queued := false
+## T507 返修（小o 核 P1-1）：点自己脚下／前方一格当确认（D1／D2）原来在输入回调里当场发 action_pressed，比地图物理帧采样快捷键 1
+## 还早：1 和点按同一批到达时，先开了面前的漩涡／NPC，busy 之后热键不再预约，回城请求被吞。开着时这一下也像确认键一样先记下，
+## 到玩家自己的物理帧（排在地图物理帧采样、预约快捷键之后）再发，预约的回城就会先跑（XMapScene.RESERVED_FIRST）。
+## 小o 抽核 P1-3：照冻结 MV（Scene_Map.processMapTouch 只存最新目的地；Game_Player.updateNonmoving → triggerTouchAction 按目的地走
+## D1／D2）。站定点脚下＝D1、点面前一格＝D2，记下留到玩家物理帧发 touch_action；走动／滑行中点按只改目的地（后点覆盖前点），
+## 不转成确认键，停稳后按目的地走 D1（走到停下的 touch_target_reached）或 D2（走不过去、目的地正是面前格）。同一下点按只发一次。
+## 例外（R2 P1-2）：乘飞艇滑行中点的就是正在滑进的这一格，停稳时按 D1 降落（原版要停稳后再点）。
+## 回退开关 DEFER_CLICK_ACTION = false：回到当场发通用确认 action_pressed。
+static var DEFER_CLICK_ACTION := true
+## 站定时点的 D1／D2，等玩家物理帧发：0 没有、1 D1、2 D2
+var _touch_queued := 0
+## 乘飞艇滑行中点了正滑进的这一格（停稳时 D1 降落）
+var _tap_self_moving := false
 
 
 func _unhandled_input(event: InputEvent) -> void:
@@ -51,7 +67,9 @@ func _unhandled_input(event: InputEvent) -> void:
 		_hold_cell = _touch_cell(get_global_mouse_position())
 		_hold_count = 1
 		click_cell(_hold_cell)
-	elif event is InputEventScreenTouch and event.pressed:
+	elif event is InputEventScreenTouch and event.pressed and not (DEFER_CLICK_ACTION and _touch_emulates_mouse()):
+		# 引擎从触屏仿出了鼠标左键时上面已按那一下处理过（目的地、D1／D2）；这里再写目的地会把 click_cell 清掉的目的地又写回来，
+		# 停稳后同一下再走一次 D2（同一下点按触发两次，P1-3）
 		var p2: Vector2 = get_canvas_transform().affine_inverse() * (event as InputEventScreenTouch).position
 		touch_target = _touch_cell(p2)
 
@@ -60,9 +78,27 @@ func _unhandled_input(event: InputEvent) -> void:
 ## 当作确认；乘飞艇时 D2 只查事件（canStartLocalEvents 为假，什么都不做），前方一格照常当目的地飞过去
 func click_cell(c: Vector2i) -> void:
 	touch_target = c
-	if touch_target == grid or (touch_target == front_cell(direction) and vehicle_speed <= 0):
+	if not DEFER_CLICK_ACTION:
+		if touch_target == grid or (touch_target == front_cell(direction) and vehicle_speed <= 0):
+			touch_target = Vector2i(-1, -1)
+			action_pressed.emit()
+		return
+	# 后点覆盖前点：之前记下的 D1／D2 与飞艇滑行点脚下都作废
+	_touch_queued = 0
+	_tap_self_moving = false
+	if is_moving():
+		_tap_self_moving = vehicle_speed > 0 and c == grid
+		return
+	if c == grid:
 		touch_target = Vector2i(-1, -1)
-		action_pressed.emit()
+		_touch_queued = 1
+	elif c == front_cell(direction) and vehicle_speed <= 0:
+		touch_target = Vector2i(-1, -1)
+		_touch_queued = 2
+
+
+static func _touch_emulates_mouse() -> bool:
+	return bool(ProjectSettings.get_setting("input_devices/pointing/emulate_mouse_from_touch", true))
 
 
 ## Game_Player 的跑步姿势保持帧数（跟随用 isDashingPoseFollower 读它）
@@ -88,12 +124,14 @@ func _update_hold() -> void:
 		if c != _hold_cell:
 			_hold_cell = c
 			touch_target = c if c != grid else Vector2i(-1, -1)
+			_tap_self_moving = false
 
 
 ## $gameTemp.clearDestination（连同 Scene_Map._touchCount）
 func clear_destination() -> void:
 	touch_target = Vector2i(-1, -1)
 	_hold_count = 0
+	_tap_self_moving = false
 
 
 func update_character() -> void:
@@ -102,6 +140,12 @@ func update_character() -> void:
 	# 这一下确认键只给紧接着的这一个物理帧（同原版 isTriggered 只在按下那帧为真；走动中、不收输入时按的作废）
 	var accept := _accept_queued
 	_accept_queued = false
+	# 站定时点的 D1／D2（DEFER_CLICK_ACTION）：不收输入（事件、菜单、挂机、升降）时作废
+	var touch_kind := _touch_queued
+	if not input_enabled:
+		_touch_queued = 0
+		_tap_self_moving = false
+		touch_kind = 0
 	if not is_moving() and auto_step.is_valid():
 		for d in auto_step.call():
 			if move_straight(d):
@@ -110,6 +154,10 @@ func update_character() -> void:
 		return
 	if is_moving() or not input_enabled:
 		return
+	if touch_kind != 0:
+		_touch_queued = 0
+		touch_action.emit(touch_kind == 2)
+		return
 	var d := _input_dir()
 	if d == 0 and touch_target.x >= 0:
 		d = _toward(touch_target)
@@ -117,8 +165,12 @@ func update_character() -> void:
 			# 走到点的那格停下：Game_Player.updateNonmoving → triggerTouchAction → D1（脚下确定键事件）。
 			# 点自己脚下在 click_cell 当场按确认、目标已清掉，所以到这里的一定是走过来的。
 			var arrived := touch_target == grid and MV_TOUCH_D1
+			var self_tap := _tap_self_moving and touch_target == grid
+			_tap_self_moving = false
 			touch_target = Vector2i(-1, -1)
-			if arrived:
+			if self_tap:
+				touch_action.emit(false)   # 飞艇滑行中点了这一格：D1 降落
+			elif arrived:
 				touch_target_reached.emit()
 	if d != 0:
 		move_speed = vehicle_speed if vehicle_speed > 0 else walk_speed()
@@ -127,7 +179,10 @@ func update_character() -> void:
 		elif touch_target.x >= 0:
 			# 走不过去：面向目标，若目标就是相邻格则视为调查（乘飞艇时只在图边飞不过去，D2 不触发事件）
 			if front_cell(d) == touch_target and vehicle_speed <= 0:
-				action_pressed.emit()
+				if DEFER_CLICK_ACTION:
+					touch_action.emit(true)   # D2：只查面前一格
+				else:
+					action_pressed.emit()
 			touch_target = Vector2i(-1, -1)
 	elif accept:
 		action_pressed.emit()
