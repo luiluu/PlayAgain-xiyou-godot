@@ -1,7 +1,27 @@
 # 交付：luiluu/t480
 
 - 车道／工作者：T480 元素效果B 效果接线（我方打敌）（cc，Opus＋medium，P8），从 luiluu/t484 @ 1ad6347c6 开出（含 T479、T484，未合 main；它们合 main 后再 rebase）
-- 状态：可合并
+- 状态：可合并（返修 R2 已交，待小A 复核；本树已并 luiluu/t484 @61c9013c6＝T479＋T484 R2）
+
+## 返修 R2（小A 核 `00_项目管理/核查/T480_小A核.md`：P1×2、P2×4、P3×2）
+
+| 号 | 改法 | 测试 |
+| --- | --- | --- |
+| P1-1 圣护己方入口零命中／转换书误触发 | 协调定**丙案**：不看技能元素（真实库己方技没有一个带神圣），新函数 `holy_ally_skill` 读 `elements_table.json` 新字段 `holy_ally`：`exclude` 先排除 → `skills` 白名单直接算 → `by_nature` 为真时技能卡（`skill_rework.skills`）归属角色的自然体质（`actor_nature.json`，T484 R2 表）含神圣也算。伤害技（type 1／5）不走己方入口。转换书、转属只管攻击，碰不到这里 | `holy_ally_real_skill_list`（7 个真算、5 个真不算）、`holy_ally_by_nature_switch`、`holy_ally_real_skills_give_shield`（2318／5571／2320 实战给盾）、`holy_convert_book_no_ally_shield`（damageElement＝8 时放 357 治疗波不给；拿掉修复会挂） |
+| P1-2 反射时序 | `note_hit` 开头认 `logic._reflecting`（apply 期间就为真）或 `r.reflected`，反射回自己的结算既不记段也不走己方入口；`battle_logic.gd` 不改 | `holy_reflected_no_shield_no_segment`：敌人 mrf＝1，经 `_invoke` 全路径反射神圣魔法伤害，不挂圣护、神圣不记合格段（拿掉修复会挂） |
+| P2-1 数值写死 | `SPECS` 特性只留模板，`state_rec` 按 `element_effects.<系>.value` 生成特性与说明里的百分数；`XTianqiElements.reload_table` 清 `_recs`；浸湿、遮蔽锋芒、感电统一读 `spec_value`（感电读 `element_effects.5.boss.value`，不再借 `rates.weak_exposure`，与弱点暴露各取各的再取高） | `state_values_from_table`、`reload_rebuilds_state_rec`、`shock_pct_from_table` |
+| P2-2 反击时出手者 | **没切 `set_acting`**（切了会连带把反击挂的状态来源改成反击者，持续伤害归属跟着变，影响面超出本卡）；改成圣护盾先认元素效果最里层的行动帧帧主（反击单独开帧，帧主是反击者），没有帧才看 `acting_battler` | `shield_blocks_enemy_counter_debuff` |
+| P2-3 盾的边界 | ① 已挂着的减益被对方重施（续回合）也挡；② 盾碎日志带持盾者名字；③ 带 `removeByRestriction` 的减益在目标受限时本来就加不上，盾不耗（在 `shield_blocks` 里判，没挪 `battler.gd` 钩子位置） | `shield_blocks_refresh_of_existing_debuff`、`shield_log_names_holder` |
+| P2-4 迟缓借 61 | `element_effects.3` 去掉 `borrow: 61`，迟缓只查新状态号自己的抵抗 | `slow_no_borrow_61` |
+| P3-1、P3-2 | 没改，留 C 卡观察：灼烧／寄生极低伤害段每跳取整为 0；`out_mult`／`crit_mult`／`has_shock` 不查开关（只在战斗中途热关时已挂状态仍起效） | — |
+
+**神圣己方技最终名单**（可用角色技能卡里、己方目标、非被动；协调 R2 口径）：
+- 按体质（T484 R2 表里含神圣的角色：窃格瓦拉·周、晴明、摇光、法海、拉尔、阿语、艾琳、嫦娥、哈基米；修 R2 已改空不再进来）：拉尔 2317 神性能量、2318 圣光净化、2320 天堂光辉；阿语 5511 仪式:疗愈、5512 仪式:苏生、5513 仪式:转化。晴明、摇光、法海、艾琳、嫦娥、哈基米现在没有己方目标的主动技。
+- 白名单 `holy_ally.skills`：5571 黄庭圣经（云霄）、5779 圣光救赎、5782 圣光救赎·圣（绯红蔷薇）、2095 超越之光、2099 超越之光2.0（瑞普）、6274 白昼·精灵神祝（伊莉雅）。
+- 排除 `holy_ally.exclude`：749 冷血（窃格瓦拉·周，「两回合必定暴击＋回 TP」，不是圣光意象）。阿语 5513 仪式:转化（免死但伤害 −50%）我看了留着：同属阿语「仪式」一套、意象是祭祀，拿不准可挪进排除。
+- 三案切换只改表：`by_nature: false` 就是纯白名单（乙）。数据校验同步认 `holy_ally`（布尔、正整数技能号、白名单与排除不重叠），新增 3 例。
+
+**文字（按小A 报告非争议项）**：负号改全角「−」、说明里带数的改读表；灼烧「回合结束受到火焰持续伤害」、寄生「回合结束受自然伤害，为施加方血量最低者回等量血」、感电补「（与弱点暴露、破绽取高）」、圣护说明去开发词「抵挡下一次可净化的负面状态，不挡伤害（1次）」；日志「X 陷入了Y！」「X 因麻痹跳过了本次行动！」「X 净化了Y并获得了圣护！」（没驱散时「X 获得了圣护！」，合成一行）、「X 的圣护抵挡了Y！」（补持盾者名）。**没动**（等 Kyo 挑）：圣护盾／碎甲／遮蔽锋芒三个名字、体质前缀；迟缓、浸湿普通版要不要补「再次触发转为冰冻」这类联动说明（同一个状态号首领、普通共用，补了首领版会说错，留 E 卡定）。待小A 复审。
 
 ## 变更记录草稿
 
