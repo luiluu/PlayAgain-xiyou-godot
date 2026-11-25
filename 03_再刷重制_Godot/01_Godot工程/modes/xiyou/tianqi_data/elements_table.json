@@ -132,7 +132,7 @@
     ],
     "higher_drop_difficulties": ["lianyu", "zhengdao"]
   },
-  "_effects_doc": "T480/T485 元素独特效果（设计稿 天启篇_元素独特效果_v0.3 第 3～6 节，B 我方打敌 ＋ B2 敌打我方）。数字全是试测参数，C 卡校准；effect_tier_of 是 v0.7 估算的人数档（C 卡按当前数据重数后改），神圣按 D285 补「群体己方人人都给」降一档到 many。enemy_effect_rules 供 B2 敌方施效预算与软替换读取。名字是草稿，待小A 审。",
+  "_effects_doc": "T480/T485/T495 元素独特效果（设计稿 天启篇_元素独特效果_v0.3 第 3～6 节，B 我方打敌 ＋ B2 敌打我方 ＋ C2 落表）。effect_tier_of 已按 Kyo 11-25 事项 64（D284/D285）角色自带原生人数落表：火23(many)、冰17(mid，由many调至mid 15%)、地7(few)、雷14(mid)、自然13(mid)、奥术12(mid)、暗14(mid)、水7(few)、风11(few)，神圣14(含己方入口)按群体圣护专项维持 many 11%。enemy_effect_rules 供 B2 敌方施效预算与软替换读取。名字是草稿，待小A 审。",
   "element_effects": {
     "2": {"key": "burn", "name": "灼烧", "category": "dot", "turns": 3, "value": 0.11, "borrow": 17, "boss": {"turns": 2}},
     "3": {"key": "slow", "name": "迟缓", "category": "debuff", "turns": 2, "value": 0.22, "freeze": {"key": "freeze", "name": "冰冻", "category": "stop", "borrow": 1082}, "boss": {"turns": 1, "no_freeze": true}},
@@ -150,7 +150,7 @@
     "mid": {"min": 12, "chance": 0.15},
     "few": {"min": 0, "chance": 0.22}
   },
-  "effect_tier_of": {"2": "many", "3": "many", "4": "few", "5": "mid", "6": "mid", "7": "mid", "8": "many", "9": "mid", "14": "few", "15": "few"},
+  "effect_tier_of": {"2": "many", "3": "mid", "4": "few", "5": "mid", "6": "mid", "7": "mid", "8": "many", "9": "mid", "14": "few", "15": "few"},
   "_holy_ally_doc": "T480 R2／T485（协调定丙案）：哪些己方目标技算神圣（§3.5 己方入口，敌我镜像）。真实库里己方技没有带神圣元素的，不看技能元素：exclude 先排除（749 冷血、5513 仪式:转化意象不像圣光）；skills 白名单直接算（非神圣体质角色／敌人的圣光类技能）；by_nature 为真时，我方看技能卡归属角色体质（actor_nature.json）、敌方看施放者自然体质（enemy_nature.json）含神圣。转换书只管攻击，不进这个入口。迟缓不借原版 61 停滞查抵抗（61 是封印类控制，R2 P2-4）。",
   "holy_ally": {"by_nature": true, "skills": [5571, 5779, 5782, 2095, 2099, 6274, 680, 3968], "exclude": [749, 5513]},
   "effect_rules": {"cooldown": 1, "boss_cooldown": 2, "stun_shared_cooldown": 5, "boss_chance_rate": 0.5, "dot_tick_cap": 0.05, "freeze_per_battle": 1, "freeze_on_slow_count": 2, "holy_boss_per_battle": 3},

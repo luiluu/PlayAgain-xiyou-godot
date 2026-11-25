@@ -1,0 +1,2310 @@
+{
+	"diff": "lianyu",
+	"phase4": true,
+	"rows": [
+		{
+			"actor_skip": 0,
+			"actor_visits": 24,
+			"actor_void": 0,
+			"acts": 24,
+			"askip": 0,
+			"deaths": 4,
+			"ehp0": 102840.0,
+			"ehp_left": 87714.0,
+			"eskip": 0,
+			"floor": 6,
+			"inc": 110229.0,
+			"level": 20,
+			"line": "war",
+			"lost": true,
+			"on": false,
+			"out": 14832.0,
+			"seed": 0,
+			"stats": {},
+			"stats_a2e": {},
+			"stats_a_holy": {},
+			"stats_e2a": {},
+			"stats_e_holy": {},
+			"team": [
+				122,
+				95,
+				119,
+				117
+			],
+			"team_i": 0,
+			"timeout": false,
+			"turns": 8,
+			"won": false
+		},
+		{
+			"actor_skip": 0,
+			"actor_visits": 24,
+			"actor_void": 0,
+			"acts": 24,
+			"askip": 0,
+			"deaths": 4,
+			"ehp0": 102840.0,
+			"ehp_left": 87714.0,
+			"eskip": 0,
+			"floor": 6,
+			"inc": 110229.0,
+			"level": 20,
+			"line": "war",
+			"lost": true,
+			"on": true,
+			"out": 14832.0,
+			"seed": 0,
+			"stats": {
+				"3": {
+					"applied": 0,
+					"blocked": 0,
+					"eligible": 1,
+					"immune": 0,
+					"rolled": 1
+				},
+				"5": {
+					"applied": 0,
+					"blocked": 0,
+					"eligible": 1,
+					"immune": 0,
+					"rolled": 1
+				}
+			},
+			"stats_a2e": {},
+			"stats_a_holy": {},
+			"stats_e2a": {
+				"3": {
+					"applied": 0,
+					"blocked": 0,
+					"eligible": 1,
+					"immune": 0,
+					"rolled": 1
+				},
+				"5": {
+					"applied": 0,
+					"blocked": 0,
+					"eligible": 1,
+					"immune": 0,
+					"rolled": 1
+				}
+			},
+			"stats_e_holy": {},
+			"team": [
+				122,
+				95,
+				119,
+				117
+			],
+			"team_i": 0,
+			"timeout": false,
+			"turns": 8,
+			"won": false
+		},
+		{
+			"actor_skip": 0,
+			"actor_visits": 21,
+			"actor_void": 0,
+			"acts": 21,
+			"askip": 0,
+			"deaths": 4,
+			"ehp0": 102840.0,
+			"ehp_left": 90274.0,
+			"eskip": 0,
+			"floor": 6,
+			"inc": 109060.0,
+			"level": 20,
+			"line": "war",
+			"lost": true,
+			"on": false,
+			"out": 12278.0,
+			"seed": 1,
+			"stats": {},
+			"stats_a2e": {},
+			"stats_a_holy": {},
+			"stats_e2a": {},
+			"stats_e_holy": {},
+			"team": [
+				122,
+				95,
+				119,
+				117
+			],
+			"team_i": 0,
+			"timeout": false,
+			"turns": 8,
+			"won": false
+		},
+		{
+			"actor_skip": 0,
+			"actor_visits": 21,
+			"actor_void": 0,
+			"acts": 21,
+			"askip": 0,
+			"deaths": 4,
+			"ehp0": 102840.0,
+			"ehp_left": 90274.0,
+			"eskip": 0,
+			"floor": 6,
+			"inc": 109060.0,
+			"level": 20,
+			"line": "war",
+			"lost": true,
+			"on": true,
+			"out": 12278.0,
+			"seed": 1,
+			"stats": {
+				"5": {
+					"applied": 0,
+					"blocked": 0,
+					"eligible": 1,
+					"immune": 0,
+					"rolled": 1
+				}
+			},
+			"stats_a2e": {},
+			"stats_a_holy": {},
+			"stats_e2a": {
+				"5": {
+					"applied": 0,
+					"blocked": 0,
+					"eligible": 1,
+					"immune": 0,
+					"rolled": 1
+				}
+			},
+			"stats_e_holy": {},
+			"team": [
+				122,
+				95,
+				119,
+				117
+			],
+			"team_i": 0,
+			"timeout": false,
+			"turns": 8,
+			"won": false
+		},
+		{
+			"actor_skip": 0,
+			"actor_visits": 25,
+			"actor_void": 0,
+			"acts": 25,
+			"askip": 0,
+			"deaths": 4,
+			"ehp0": 102840.0,
+			"ehp_left": 86889.0,
+			"eskip": 0,
+			"floor": 6,
+			"inc": 109929.0,
+			"level": 20,
+			"line": "war",
+			"lost": true,
+			"on": false,
+			"out": 15369.0,
+			"seed": 2,
+			"stats": {},
+			"stats_a2e": {},
+			"stats_a_holy": {},
+			"stats_e2a": {},
+			"stats_e_holy": {},
+			"team": [
+				122,
+				95,
+				119,
+				117
+			],
+			"team_i": 0,
+			"timeout": false,
+			"turns": 8,
+			"won": false
+		},
+		{
+			"actor_skip": 0,
+			"actor_visits": 25,
+			"actor_void": 0,
+			"acts": 25,
+			"askip": 0,
+			"deaths": 4,
+			"ehp0": 102840.0,
+			"ehp_left": 86889.0,
+			"eskip": 0,
+			"floor": 6,
+			"inc": 109929.0,
+			"level": 20,
+			"line": "war",
+			"lost": true,
+			"on": true,
+			"out": 15369.0,
+			"seed": 2,
+			"stats": {
+				"5": {
+					"applied": 0,
+					"blocked": 0,
+					"eligible": 2,
+					"immune": 0,
+					"rolled": 2
+				}
+			},
+			"stats_a2e": {},
+			"stats_a_holy": {},
+			"stats_e2a": {
+				"5": {
+					"applied": 0,
+					"blocked": 0,
+					"eligible": 2,
+					"immune": 0,
+					"rolled": 2
+				}
+			},
+			"stats_e_holy": {},
+			"team": [
+				122,
+				95,
+				119,
+				117
+			],
+			"team_i": 0,
+			"timeout": false,
+			"turns": 8,
+			"won": false
+		},
+		{
+			"actor_skip": 0,
+			"actor_visits": 2,
+			"actor_void": 0,
+			"acts": 2,
+			"askip": 0,
+			"deaths": 0,
+			"ehp0": 102840.0,
+			"ehp_left": 0.0,
+			"eskip": 0,
+			"floor": 6,
+			"inc": 841.0,
+			"level": 20,
+			"line": "war",
+			"lost": false,
+			"on": false,
+			"out": 102678.0,
+			"seed": 0,
+			"stats": {},
+			"stats_a2e": {},
+			"stats_a_holy": {},
+			"stats_e2a": {},
+			"stats_e_holy": {},
+			"team": [
+				108,
+				152,
+				100,
+				127
+			],
+			"team_i": 1,
+			"timeout": false,
+			"turns": 1,
+			"won": true
+		},
+		{
+			"actor_skip": 0,
+			"actor_visits": 2,
+			"actor_void": 0,
+			"acts": 2,
+			"askip": 0,
+			"deaths": 0,
+			"ehp0": 102840.0,
+			"ehp_left": 0.0,
+			"eskip": 0,
+			"floor": 6,
+			"inc": 841.0,
+			"level": 20,
+			"line": "war",
+			"lost": false,
+			"on": true,
+			"out": 102678.0,
+			"seed": 0,
+			"stats": {},
+			"stats_a2e": {},
+			"stats_a_holy": {},
+			"stats_e2a": {},
+			"stats_e_holy": {},
+			"team": [
+				108,
+				152,
+				100,
+				127
+			],
+			"team_i": 1,
+			"timeout": false,
+			"turns": 1,
+			"won": true
+		},
+		{
+			"actor_skip": 0,
+			"actor_visits": 3,
+			"actor_void": 0,
+			"acts": 3,
+			"askip": 0,
+			"deaths": 0,
+			"ehp0": 102840.0,
+			"ehp_left": 0.0,
+			"eskip": 0,
+			"floor": 6,
+			"inc": 1758.0,
+			"level": 20,
+			"line": "war",
+			"lost": false,
+			"on": false,
+			"out": 102840.0,
+			"seed": 1,
+			"stats": {},
+			"stats_a2e": {},
+			"stats_a_holy": {},
+			"stats_e2a": {},
+			"stats_e_holy": {},
+			"team": [
+				108,
+				152,
+				100,
+				127
+			],
+			"team_i": 1,
+			"timeout": false,
+			"turns": 1,
+			"won": true
+		},
+		{
+			"actor_skip": 0,
+			"actor_visits": 3,
+			"actor_void": 0,
+			"acts": 3,
+			"askip": 0,
+			"deaths": 0,
+			"ehp0": 102840.0,
+			"ehp_left": 0.0,
+			"eskip": 0,
+			"floor": 6,
+			"inc": 1758.0,
+			"level": 20,
+			"line": "war",
+			"lost": false,
+			"on": true,
+			"out": 102840.0,
+			"seed": 1,
+			"stats": {
+				"7": {
+					"applied": 0,
+					"blocked": 0,
+					"eligible": 1,
+					"immune": 0,
+					"rolled": 1
+				}
+			},
+			"stats_a2e": {
+				"7": {
+					"applied": 0,
+					"blocked": 0,
+					"eligible": 1,
+					"immune": 0,
+					"rolled": 1
+				}
+			},
+			"stats_a_holy": {},
+			"stats_e2a": {},
+			"stats_e_holy": {},
+			"team": [
+				108,
+				152,
+				100,
+				127
+			],
+			"team_i": 1,
+			"timeout": false,
+			"turns": 1,
+			"won": true
+		},
+		{
+			"actor_skip": 0,
+			"actor_visits": 4,
+			"actor_void": 0,
+			"acts": 4,
+			"askip": 0,
+			"deaths": 0,
+			"ehp0": 102840.0,
+			"ehp_left": 0.0,
+			"eskip": 0,
+			"floor": 6,
+			"inc": 1758.0,
+			"level": 20,
+			"line": "war",
+			"lost": false,
+			"on": false,
+			"out": 102671.0,
+			"seed": 2,
+			"stats": {},
+			"stats_a2e": {},
+			"stats_a_holy": {},
+			"stats_e2a": {},
+			"stats_e_holy": {},
+			"team": [
+				108,
+				152,
+				100,
+				127
+			],
+			"team_i": 1,
+			"timeout": false,
+			"turns": 1,
+			"won": true
+		},
+		{
+			"actor_skip": 0,
+			"actor_visits": 4,
+			"actor_void": 0,
+			"acts": 4,
+			"askip": 0,
+			"deaths": 0,
+			"ehp0": 102840.0,
+			"ehp_left": 0.0,
+			"eskip": 0,
+			"floor": 6,
+			"inc": 1758.0,
+			"level": 20,
+			"line": "war",
+			"lost": false,
+			"on": true,
+			"out": 102671.0,
+			"seed": 2,
+			"stats": {
+				"7": {
+					"applied": 0,
+					"blocked": 0,
+					"eligible": 1,
+					"immune": 0,
+					"rolled": 1
+				}
+			},
+			"stats_a2e": {
+				"7": {
+					"applied": 0,
+					"blocked": 0,
+					"eligible": 1,
+					"immune": 0,
+					"rolled": 1
+				}
+			},
+			"stats_a_holy": {},
+			"stats_e2a": {},
+			"stats_e_holy": {},
+			"team": [
+				108,
+				152,
+				100,
+				127
+			],
+			"team_i": 1,
+			"timeout": false,
+			"turns": 1,
+			"won": true
+		},
+		{
+			"actor_skip": 0,
+			"actor_visits": 36,
+			"actor_void": 0,
+			"acts": 36,
+			"askip": 0,
+			"deaths": 4,
+			"ehp0": 313200.0,
+			"ehp_left": 299706.0,
+			"eskip": 0,
+			"floor": 13,
+			"inc": 167603.0,
+			"level": 35,
+			"line": "war",
+			"lost": true,
+			"on": false,
+			"out": 28589.0,
+			"seed": 0,
+			"stats": {},
+			"stats_a2e": {},
+			"stats_a_holy": {},
+			"stats_e2a": {},
+			"stats_e_holy": {},
+			"team": [
+				122,
+				95,
+				119,
+				117
+			],
+			"team_i": 0,
+			"timeout": false,
+			"turns": 10,
+			"won": false
+		},
+		{
+			"actor_skip": 0,
+			"actor_visits": 29,
+			"actor_void": 0,
+			"acts": 29,
+			"askip": 0,
+			"deaths": 4,
+			"ehp0": 313200.0,
+			"ehp_left": 272465.0,
+			"eskip": 0,
+			"floor": 13,
+			"inc": 148987.0,
+			"level": 35,
+			"line": "war",
+			"lost": true,
+			"on": true,
+			"out": 20752.0,
+			"seed": 0,
+			"stats": {
+				"8": {
+					"applied": 2,
+					"blocked": 0,
+					"eligible": 11,
+					"immune": 0,
+					"rolled": 8
+				},
+				"9": {
+					"applied": 1,
+					"blocked": 0,
+					"eligible": 2,
+					"immune": 0,
+					"rolled": 2
+				}
+			},
+			"stats_a2e": {},
+			"stats_a_holy": {
+				"8": {
+					"applied": 0,
+					"blocked": 0,
+					"eligible": 1,
+					"immune": 0,
+					"rolled": 1
+				}
+			},
+			"stats_e2a": {},
+			"stats_e_holy": {
+				"8": {
+					"applied": 0,
+					"blocked": 0,
+					"eligible": 5,
+					"immune": 0,
+					"rolled": 3
+				}
+			},
+			"team": [
+				122,
+				95,
+				119,
+				117
+			],
+			"team_i": 0,
+			"timeout": false,
+			"turns": 9,
+			"won": false
+		},
+		{
+			"actor_skip": 0,
+			"actor_visits": 26,
+			"actor_void": 0,
+			"acts": 26,
+			"askip": 0,
+			"deaths": 4,
+			"ehp0": 313200.0,
+			"ehp_left": 251426.0,
+			"eskip": 0,
+			"floor": 13,
+			"inc": 115311.0,
+			"level": 35,
+			"line": "war",
+			"lost": true,
+			"on": false,
+			"out": 27465.0,
+			"seed": 1,
+			"stats": {},
+			"stats_a2e": {},
+			"stats_a_holy": {},
+			"stats_e2a": {},
+			"stats_e_holy": {},
+			"team": [
+				122,
+				95,
+				119,
+				117
+			],
+			"team_i": 0,
+			"timeout": false,
+			"turns": 8,
+			"won": false
+		},
+		{
+			"actor_skip": 0,
+			"actor_visits": 26,
+			"actor_void": 0,
+			"acts": 26,
+			"askip": 0,
+			"deaths": 4,
+			"ehp0": 313200.0,
+			"ehp_left": 251426.0,
+			"eskip": 0,
+			"floor": 13,
+			"inc": 115311.0,
+			"level": 35,
+			"line": "war",
+			"lost": true,
+			"on": true,
+			"out": 27465.0,
+			"seed": 1,
+			"stats": {
+				"7": {
+					"applied": 1,
+					"blocked": 0,
+					"eligible": 1,
+					"immune": 0,
+					"rolled": 1
+				},
+				"8": {
+					"applied": 0,
+					"blocked": 0,
+					"eligible": 9,
+					"immune": 0,
+					"rolled": 9
+				}
+			},
+			"stats_a2e": {
+				"7": {
+					"applied": 1,
+					"blocked": 0,
+					"eligible": 1,
+					"immune": 0,
+					"rolled": 1
+				}
+			},
+			"stats_a_holy": {
+				"8": {
+					"applied": 0,
+					"blocked": 0,
+					"eligible": 1,
+					"immune": 0,
+					"rolled": 1
+				}
+			},
+			"stats_e2a": {},
+			"stats_e_holy": {
+				"8": {
+					"applied": 0,
+					"blocked": 0,
+					"eligible": 5,
+					"immune": 0,
+					"rolled": 5
+				}
+			},
+			"team": [
+				122,
+				95,
+				119,
+				117
+			],
+			"team_i": 0,
+			"timeout": false,
+			"turns": 8,
+			"won": false
+		},
+		{
+			"actor_skip": 0,
+			"actor_visits": 17,
+			"actor_void": 0,
+			"acts": 17,
+			"askip": 0,
+			"deaths": 4,
+			"ehp0": 313200.0,
+			"ehp_left": 275682.0,
+			"eskip": 0,
+			"floor": 13,
+			"inc": 161305.0,
+			"level": 35,
+			"line": "war",
+			"lost": true,
+			"on": false,
+			"out": 28575.0,
+			"seed": 2,
+			"stats": {},
+			"stats_a2e": {},
+			"stats_a_holy": {},
+			"stats_e2a": {},
+			"stats_e_holy": {},
+			"team": [
+				122,
+				95,
+				119,
+				117
+			],
+			"team_i": 0,
+			"timeout": false,
+			"turns": 5,
+			"won": false
+		},
+		{
+			"actor_skip": 0,
+			"actor_visits": 22,
+			"actor_void": 0,
+			"acts": 22,
+			"askip": 0,
+			"deaths": 4,
+			"ehp0": 313200.0,
+			"ehp_left": 266224.0,
+			"eskip": 0,
+			"floor": 13,
+			"inc": 168107.0,
+			"level": 35,
+			"line": "war",
+			"lost": true,
+			"on": true,
+			"out": 29537.0,
+			"seed": 2,
+			"stats": {
+				"7": {
+					"applied": 0,
+					"blocked": 0,
+					"eligible": 1,
+					"immune": 0,
+					"rolled": 1
+				},
+				"8": {
+					"applied": 2,
+					"blocked": 0,
+					"eligible": 10,
+					"immune": 0,
+					"rolled": 5
+				},
+				"9": {
+					"applied": 0,
+					"blocked": 0,
+					"eligible": 2,
+					"immune": 0,
+					"rolled": 2
+				}
+			},
+			"stats_a2e": {
+				"7": {
+					"applied": 0,
+					"blocked": 0,
+					"eligible": 1,
+					"immune": 0,
+					"rolled": 1
+				}
+			},
+			"stats_a_holy": {
+				"8": {
+					"applied": 0,
+					"blocked": 0,
+					"eligible": 2,
+					"immune": 0,
+					"rolled": 2
+				}
+			},
+			"stats_e2a": {},
+			"stats_e_holy": {
+				"8": {
+					"applied": 2,
+					"blocked": 0,
+					"eligible": 5,
+					"immune": 0,
+					"rolled": 2
+				}
+			},
+			"team": [
+				122,
+				95,
+				119,
+				117
+			],
+			"team_i": 0,
+			"timeout": false,
+			"turns": 6,
+			"won": false
+		},
+		{
+			"actor_skip": 0,
+			"actor_visits": 1,
+			"actor_void": 0,
+			"acts": 1,
+			"askip": 0,
+			"deaths": 0,
+			"ehp0": 313200.0,
+			"ehp_left": 0.0,
+			"eskip": 0,
+			"floor": 13,
+			"inc": 1444.0,
+			"level": 35,
+			"line": "war",
+			"lost": false,
+			"on": false,
+			"out": 313200.0,
+			"seed": 0,
+			"stats": {},
+			"stats_a2e": {},
+			"stats_a_holy": {},
+			"stats_e2a": {},
+			"stats_e_holy": {},
+			"team": [
+				108,
+				152,
+				100,
+				127
+			],
+			"team_i": 1,
+			"timeout": false,
+			"turns": 1,
+			"won": true
+		},
+		{
+			"actor_skip": 0,
+			"actor_visits": 1,
+			"actor_void": 0,
+			"acts": 1,
+			"askip": 0,
+			"deaths": 0,
+			"ehp0": 313200.0,
+			"ehp_left": 0.0,
+			"eskip": 0,
+			"floor": 13,
+			"inc": 1444.0,
+			"level": 35,
+			"line": "war",
+			"lost": false,
+			"on": true,
+			"out": 313200.0,
+			"seed": 0,
+			"stats": {
+				"8": {
+					"applied": 0,
+					"blocked": 0,
+					"eligible": 1,
+					"immune": 0,
+					"rolled": 1
+				}
+			},
+			"stats_a2e": {},
+			"stats_a_holy": {},
+			"stats_e2a": {},
+			"stats_e_holy": {},
+			"team": [
+				108,
+				152,
+				100,
+				127
+			],
+			"team_i": 1,
+			"timeout": false,
+			"turns": 1,
+			"won": true
+		},
+		{
+			"actor_skip": 0,
+			"actor_visits": 1,
+			"actor_void": 0,
+			"acts": 1,
+			"askip": 0,
+			"deaths": 0,
+			"ehp0": 313200.0,
+			"ehp_left": 0.0,
+			"eskip": 0,
+			"floor": 13,
+			"inc": 1444.0,
+			"level": 35,
+			"line": "war",
+			"lost": false,
+			"on": false,
+			"out": 313200.0,
+			"seed": 1,
+			"stats": {},
+			"stats_a2e": {},
+			"stats_a_holy": {},
+			"stats_e2a": {},
+			"stats_e_holy": {},
+			"team": [
+				108,
+				152,
+				100,
+				127
+			],
+			"team_i": 1,
+			"timeout": false,
+			"turns": 1,
+			"won": true
+		},
+		{
+			"actor_skip": 0,
+			"actor_visits": 1,
+			"actor_void": 0,
+			"acts": 1,
+			"askip": 0,
+			"deaths": 0,
+			"ehp0": 313200.0,
+			"ehp_left": 0.0,
+			"eskip": 0,
+			"floor": 13,
+			"inc": 1444.0,
+			"level": 35,
+			"line": "war",
+			"lost": false,
+			"on": true,
+			"out": 313200.0,
+			"seed": 1,
+			"stats": {
+				"8": {
+					"applied": 0,
+					"blocked": 0,
+					"eligible": 1,
+					"immune": 0,
+					"rolled": 1
+				}
+			},
+			"stats_a2e": {},
+			"stats_a_holy": {},
+			"stats_e2a": {},
+			"stats_e_holy": {},
+			"team": [
+				108,
+				152,
+				100,
+				127
+			],
+			"team_i": 1,
+			"timeout": false,
+			"turns": 1,
+			"won": true
+		},
+		{
+			"actor_skip": 0,
+			"actor_visits": 2,
+			"actor_void": 0,
+			"acts": 2,
+			"askip": 0,
+			"deaths": 0,
+			"ehp0": 313200.0,
+			"ehp_left": 0.0,
+			"eskip": 0,
+			"floor": 13,
+			"inc": 3017.0,
+			"level": 35,
+			"line": "war",
+			"lost": false,
+			"on": false,
+			"out": 313200.0,
+			"seed": 2,
+			"stats": {},
+			"stats_a2e": {},
+			"stats_a_holy": {},
+			"stats_e2a": {},
+			"stats_e_holy": {},
+			"team": [
+				108,
+				152,
+				100,
+				127
+			],
+			"team_i": 1,
+			"timeout": false,
+			"turns": 1,
+			"won": true
+		},
+		{
+			"actor_skip": 0,
+			"actor_visits": 2,
+			"actor_void": 0,
+			"acts": 2,
+			"askip": 0,
+			"deaths": 0,
+			"ehp0": 313200.0,
+			"ehp_left": 0.0,
+			"eskip": 0,
+			"floor": 13,
+			"inc": 3017.0,
+			"level": 35,
+			"line": "war",
+			"lost": false,
+			"on": true,
+			"out": 313200.0,
+			"seed": 2,
+			"stats": {
+				"8": {
+					"applied": 0,
+					"blocked": 0,
+					"eligible": 1,
+					"immune": 0,
+					"rolled": 1
+				}
+			},
+			"stats_a2e": {},
+			"stats_a_holy": {},
+			"stats_e2a": {},
+			"stats_e_holy": {},
+			"team": [
+				108,
+				152,
+				100,
+				127
+			],
+			"team_i": 1,
+			"timeout": false,
+			"turns": 1,
+			"won": true
+		},
+		{
+			"actor_skip": 0,
+			"actor_visits": 54,
+			"actor_void": 0,
+			"acts": 54,
+			"askip": 0,
+			"deaths": 0,
+			"ehp0": 22200000.0,
+			"ehp_left": 30033057.0,
+			"eskip": 0,
+			"floor": 20,
+			"inc": 131511.0,
+			"level": 50,
+			"line": "war",
+			"lost": false,
+			"on": false,
+			"out": 60787.0,
+			"seed": 0,
+			"stats": {},
+			"stats_a2e": {},
+			"stats_a_holy": {},
+			"stats_e2a": {},
+			"stats_e_holy": {},
+			"team": [
+				122,
+				95,
+				119,
+				117
+			],
+			"team_i": 0,
+			"timeout": true,
+			"turns": 12,
+			"won": false
+		},
+		{
+			"actor_skip": 0,
+			"actor_visits": 54,
+			"actor_void": 0,
+			"acts": 54,
+			"askip": 0,
+			"deaths": 0,
+			"ehp0": 22200000.0,
+			"ehp_left": 30033454.0,
+			"eskip": 0,
+			"floor": 20,
+			"inc": 131511.0,
+			"level": 50,
+			"line": "war",
+			"lost": false,
+			"on": true,
+			"out": 60390.0,
+			"seed": 0,
+			"stats": {
+				"8": {
+					"applied": 0,
+					"blocked": 0,
+					"eligible": 1,
+					"immune": 0,
+					"rolled": 1
+				},
+				"9": {
+					"applied": 1,
+					"blocked": 0,
+					"eligible": 2,
+					"immune": 0,
+					"rolled": 2
+				}
+			},
+			"stats_a2e": {},
+			"stats_a_holy": {
+				"8": {
+					"applied": 0,
+					"blocked": 0,
+					"eligible": 1,
+					"immune": 0,
+					"rolled": 1
+				}
+			},
+			"stats_e2a": {},
+			"stats_e_holy": {},
+			"team": [
+				122,
+				95,
+				119,
+				117
+			],
+			"team_i": 0,
+			"timeout": true,
+			"turns": 12,
+			"won": false
+		},
+		{
+			"actor_skip": 0,
+			"actor_visits": 28,
+			"actor_void": 0,
+			"acts": 28,
+			"askip": 0,
+			"deaths": 4,
+			"ehp0": 22200000.0,
+			"ehp_left": 24631663.0,
+			"eskip": 0,
+			"floor": 20,
+			"inc": 270627.0,
+			"level": 50,
+			"line": "war",
+			"lost": true,
+			"on": false,
+			"out": 39434.0,
+			"seed": 1,
+			"stats": {},
+			"stats_a2e": {},
+			"stats_a_holy": {},
+			"stats_e2a": {},
+			"stats_e_holy": {},
+			"team": [
+				122,
+				95,
+				119,
+				117
+			],
+			"team_i": 0,
+			"timeout": false,
+			"turns": 7,
+			"won": false
+		},
+		{
+			"actor_skip": 0,
+			"actor_visits": 28,
+			"actor_void": 0,
+			"acts": 28,
+			"askip": 0,
+			"deaths": 4,
+			"ehp0": 22200000.0,
+			"ehp_left": 24631663.0,
+			"eskip": 0,
+			"floor": 20,
+			"inc": 270627.0,
+			"level": 50,
+			"line": "war",
+			"lost": true,
+			"on": true,
+			"out": 39434.0,
+			"seed": 1,
+			"stats": {
+				"8": {
+					"applied": 0,
+					"blocked": 0,
+					"eligible": 1,
+					"immune": 0,
+					"rolled": 1
+				}
+			},
+			"stats_a2e": {},
+			"stats_a_holy": {
+				"8": {
+					"applied": 0,
+					"blocked": 0,
+					"eligible": 1,
+					"immune": 0,
+					"rolled": 1
+				}
+			},
+			"stats_e2a": {},
+			"stats_e_holy": {},
+			"team": [
+				122,
+				95,
+				119,
+				117
+			],
+			"team_i": 0,
+			"timeout": false,
+			"turns": 7,
+			"won": false
+		},
+		{
+			"actor_skip": 0,
+			"actor_visits": 30,
+			"actor_void": 0,
+			"acts": 30,
+			"askip": 0,
+			"deaths": 4,
+			"ehp0": 22200000.0,
+			"ehp_left": 22200000.0,
+			"eskip": 0,
+			"floor": 20,
+			"inc": 341945.0,
+			"level": 50,
+			"line": "war",
+			"lost": true,
+			"on": false,
+			"out": 40226.0,
+			"seed": 2,
+			"stats": {},
+			"stats_a2e": {},
+			"stats_a_holy": {},
+			"stats_e2a": {},
+			"stats_e_holy": {},
+			"team": [
+				122,
+				95,
+				119,
+				117
+			],
+			"team_i": 0,
+			"timeout": false,
+			"turns": 7,
+			"won": false
+		},
+		{
+			"actor_skip": 0,
+			"actor_visits": 30,
+			"actor_void": 0,
+			"acts": 30,
+			"askip": 0,
+			"deaths": 4,
+			"ehp0": 22200000.0,
+			"ehp_left": 22200000.0,
+			"eskip": 0,
+			"floor": 20,
+			"inc": 341945.0,
+			"level": 50,
+			"line": "war",
+			"lost": true,
+			"on": true,
+			"out": 40100.0,
+			"seed": 2,
+			"stats": {
+				"7": {
+					"applied": 0,
+					"blocked": 0,
+					"eligible": 1,
+					"immune": 0,
+					"rolled": 1
+				},
+				"8": {
+					"applied": 0,
+					"blocked": 0,
+					"eligible": 3,
+					"immune": 0,
+					"rolled": 3
+				},
+				"9": {
+					"applied": 1,
+					"blocked": 0,
+					"eligible": 3,
+					"immune": 0,
+					"rolled": 3
+				}
+			},
+			"stats_a2e": {
+				"7": {
+					"applied": 0,
+					"blocked": 0,
+					"eligible": 1,
+					"immune": 0,
+					"rolled": 1
+				}
+			},
+			"stats_a_holy": {
+				"8": {
+					"applied": 0,
+					"blocked": 0,
+					"eligible": 3,
+					"immune": 0,
+					"rolled": 3
+				}
+			},
+			"stats_e2a": {},
+			"stats_e_holy": {},
+			"team": [
+				122,
+				95,
+				119,
+				117
+			],
+			"team_i": 0,
+			"timeout": false,
+			"turns": 7,
+			"won": false
+		},
+		{
+			"actor_skip": 0,
+			"actor_visits": 2,
+			"actor_void": 0,
+			"acts": 2,
+			"askip": 0,
+			"deaths": 0,
+			"ehp0": 22200000.0,
+			"ehp_left": 0.0,
+			"eskip": 0,
+			"floor": 20,
+			"inc": 2046.0,
+			"level": 50,
+			"line": "war",
+			"lost": false,
+			"on": false,
+			"out": 22200000.0,
+			"seed": 0,
+			"stats": {},
+			"stats_a2e": {},
+			"stats_a_holy": {},
+			"stats_e2a": {},
+			"stats_e_holy": {},
+			"team": [
+				108,
+				152,
+				100,
+				127
+			],
+			"team_i": 1,
+			"timeout": false,
+			"turns": 1,
+			"won": true
+		},
+		{
+			"actor_skip": 0,
+			"actor_visits": 2,
+			"actor_void": 0,
+			"acts": 2,
+			"askip": 0,
+			"deaths": 0,
+			"ehp0": 22200000.0,
+			"ehp_left": 0.0,
+			"eskip": 0,
+			"floor": 20,
+			"inc": 2046.0,
+			"level": 50,
+			"line": "war",
+			"lost": false,
+			"on": true,
+			"out": 22200000.0,
+			"seed": 0,
+			"stats": {},
+			"stats_a2e": {},
+			"stats_a_holy": {},
+			"stats_e2a": {},
+			"stats_e_holy": {},
+			"team": [
+				108,
+				152,
+				100,
+				127
+			],
+			"team_i": 1,
+			"timeout": false,
+			"turns": 1,
+			"won": true
+		},
+		{
+			"actor_skip": 0,
+			"actor_visits": 1,
+			"actor_void": 0,
+			"acts": 1,
+			"askip": 0,
+			"deaths": 0,
+			"ehp0": 22200000.0,
+			"ehp_left": 0.0,
+			"eskip": 0,
+			"floor": 20,
+			"inc": 2046.0,
+			"level": 50,
+			"line": "war",
+			"lost": false,
+			"on": false,
+			"out": 22200000.0,
+			"seed": 1,
+			"stats": {},
+			"stats_a2e": {},
+			"stats_a_holy": {},
+			"stats_e2a": {},
+			"stats_e_holy": {},
+			"team": [
+				108,
+				152,
+				100,
+				127
+			],
+			"team_i": 1,
+			"timeout": false,
+			"turns": 1,
+			"won": true
+		},
+		{
+			"actor_skip": 0,
+			"actor_visits": 1,
+			"actor_void": 0,
+			"acts": 1,
+			"askip": 0,
+			"deaths": 0,
+			"ehp0": 22200000.0,
+			"ehp_left": 0.0,
+			"eskip": 0,
+			"floor": 20,
+			"inc": 2046.0,
+			"level": 50,
+			"line": "war",
+			"lost": false,
+			"on": true,
+			"out": 22200000.0,
+			"seed": 1,
+			"stats": {},
+			"stats_a2e": {},
+			"stats_a_holy": {},
+			"stats_e2a": {},
+			"stats_e_holy": {},
+			"team": [
+				108,
+				152,
+				100,
+				127
+			],
+			"team_i": 1,
+			"timeout": false,
+			"turns": 1,
+			"won": true
+		},
+		{
+			"actor_skip": 0,
+			"actor_visits": 4,
+			"actor_void": 0,
+			"acts": 4,
+			"askip": 0,
+			"deaths": 0,
+			"ehp0": 22200000.0,
+			"ehp_left": 0.0,
+			"eskip": 0,
+			"floor": 20,
+			"inc": 4276.0,
+			"level": 50,
+			"line": "war",
+			"lost": false,
+			"on": false,
+			"out": 22199700.0,
+			"seed": 2,
+			"stats": {},
+			"stats_a2e": {},
+			"stats_a_holy": {},
+			"stats_e2a": {},
+			"stats_e_holy": {},
+			"team": [
+				108,
+				152,
+				100,
+				127
+			],
+			"team_i": 1,
+			"timeout": false,
+			"turns": 1,
+			"won": true
+		},
+		{
+			"actor_skip": 0,
+			"actor_visits": 4,
+			"actor_void": 0,
+			"acts": 4,
+			"askip": 0,
+			"deaths": 0,
+			"ehp0": 22200000.0,
+			"ehp_left": 0.0,
+			"eskip": 0,
+			"floor": 20,
+			"inc": 4276.0,
+			"level": 50,
+			"line": "war",
+			"lost": false,
+			"on": true,
+			"out": 22199700.0,
+			"seed": 2,
+			"stats": {
+				"7": {
+					"applied": 0,
+					"blocked": 0,
+					"eligible": 1,
+					"immune": 0,
+					"rolled": 1
+				},
+				"8": {
+					"applied": 0,
+					"blocked": 0,
+					"eligible": 1,
+					"immune": 0,
+					"rolled": 1
+				}
+			},
+			"stats_a2e": {
+				"7": {
+					"applied": 0,
+					"blocked": 0,
+					"eligible": 1,
+					"immune": 0,
+					"rolled": 1
+				}
+			},
+			"stats_a_holy": {
+				"8": {
+					"applied": 0,
+					"blocked": 0,
+					"eligible": 1,
+					"immune": 0,
+					"rolled": 1
+				}
+			},
+			"stats_e2a": {},
+			"stats_e_holy": {},
+			"team": [
+				108,
+				152,
+				100,
+				127
+			],
+			"team_i": 1,
+			"timeout": false,
+			"turns": 1,
+			"won": true
+		},
+		{
+			"actor_skip": 0,
+			"actor_visits": 30,
+			"actor_void": 0,
+			"acts": 30,
+			"askip": 0,
+			"deaths": 4,
+			"ehp0": 18360000.0,
+			"ehp_left": 19922211.0,
+			"eskip": 0,
+			"floor": 28,
+			"inc": 645332.0,
+			"level": 65,
+			"line": "war",
+			"lost": true,
+			"on": false,
+			"out": 258790.0,
+			"seed": 0,
+			"stats": {},
+			"stats_a2e": {},
+			"stats_a_holy": {},
+			"stats_e2a": {},
+			"stats_e_holy": {},
+			"team": [
+				122,
+				95,
+				119,
+				117
+			],
+			"team_i": 0,
+			"timeout": false,
+			"turns": 8,
+			"won": false
+		},
+		{
+			"actor_skip": 0,
+			"actor_visits": 30,
+			"actor_void": 0,
+			"acts": 30,
+			"askip": 0,
+			"deaths": 4,
+			"ehp0": 18360000.0,
+			"ehp_left": 19922211.0,
+			"eskip": 0,
+			"floor": 28,
+			"inc": 645332.0,
+			"level": 65,
+			"line": "war",
+			"lost": true,
+			"on": true,
+			"out": 258790.0,
+			"seed": 0,
+			"stats": {
+				"4": {
+					"applied": 0,
+					"blocked": 0,
+					"eligible": 7,
+					"immune": 0,
+					"rolled": 7
+				},
+				"6": {
+					"applied": 0,
+					"blocked": 0,
+					"eligible": 1,
+					"immune": 0,
+					"rolled": 1
+				},
+				"7": {
+					"applied": 0,
+					"blocked": 0,
+					"eligible": 1,
+					"immune": 0,
+					"rolled": 1
+				},
+				"8": {
+					"applied": 0,
+					"blocked": 0,
+					"eligible": 4,
+					"immune": 0,
+					"rolled": 4
+				},
+				"9": {
+					"applied": 0,
+					"blocked": 0,
+					"eligible": 4,
+					"immune": 0,
+					"rolled": 4
+				}
+			},
+			"stats_a2e": {
+				"7": {
+					"applied": 0,
+					"blocked": 0,
+					"eligible": 1,
+					"immune": 0,
+					"rolled": 1
+				}
+			},
+			"stats_a_holy": {
+				"8": {
+					"applied": 0,
+					"blocked": 0,
+					"eligible": 3,
+					"immune": 0,
+					"rolled": 3
+				}
+			},
+			"stats_e2a": {
+				"4": {
+					"applied": 0,
+					"blocked": 0,
+					"eligible": 7,
+					"immune": 0,
+					"rolled": 7
+				}
+			},
+			"stats_e_holy": {
+				"8": {
+					"applied": 0,
+					"blocked": 0,
+					"eligible": 1,
+					"immune": 0,
+					"rolled": 1
+				}
+			},
+			"team": [
+				122,
+				95,
+				119,
+				117
+			],
+			"team_i": 0,
+			"timeout": false,
+			"turns": 8,
+			"won": false
+		},
+		{
+			"actor_skip": 0,
+			"actor_visits": 39,
+			"actor_void": 0,
+			"acts": 39,
+			"askip": 0,
+			"deaths": 4,
+			"ehp0": 18360000.0,
+			"ehp_left": 19174060.0,
+			"eskip": 0,
+			"floor": 28,
+			"inc": 654346.0,
+			"level": 65,
+			"line": "war",
+			"lost": true,
+			"on": false,
+			"out": 1008699.0,
+			"seed": 1,
+			"stats": {},
+			"stats_a2e": {},
+			"stats_a_holy": {},
+			"stats_e2a": {},
+			"stats_e_holy": {},
+			"team": [
+				122,
+				95,
+				119,
+				117
+			],
+			"team_i": 0,
+			"timeout": false,
+			"turns": 11,
+			"won": false
+		},
+		{
+			"actor_skip": 0,
+			"actor_visits": 42,
+			"actor_void": 0,
+			"acts": 42,
+			"askip": 0,
+			"deaths": 4,
+			"ehp0": 18360000.0,
+			"ehp_left": 19409778.0,
+			"eskip": 0,
+			"floor": 28,
+			"inc": 559538.0,
+			"level": 65,
+			"line": "war",
+			"lost": true,
+			"on": true,
+			"out": 774170.0,
+			"seed": 1,
+			"stats": {
+				"4": {
+					"applied": 1,
+					"blocked": 0,
+					"eligible": 11,
+					"immune": 0,
+					"rolled": 11
+				},
+				"5": {
+					"applied": 1,
+					"blocked": 0,
+					"eligible": 9,
+					"immune": 0,
+					"rolled": 9
+				},
+				"6": {
+					"applied": 0,
+					"blocked": 0,
+					"eligible": 5,
+					"immune": 0,
+					"rolled": 5
+				},
+				"8": {
+					"applied": 2,
+					"blocked": 0,
+					"eligible": 7,
+					"immune": 0,
+					"rolled": 6
+				},
+				"9": {
+					"applied": 0,
+					"blocked": 0,
+					"eligible": 5,
+					"immune": 1,
+					"rolled": 4
+				}
+			},
+			"stats_a2e": {
+				"9": {
+					"applied": 0,
+					"blocked": 0,
+					"eligible": 1,
+					"immune": 1,
+					"rolled": 0
+				}
+			},
+			"stats_a_holy": {
+				"8": {
+					"applied": 0,
+					"blocked": 0,
+					"eligible": 3,
+					"immune": 0,
+					"rolled": 3
+				}
+			},
+			"stats_e2a": {
+				"4": {
+					"applied": 1,
+					"blocked": 0,
+					"eligible": 11,
+					"immune": 0,
+					"rolled": 11
+				},
+				"5": {
+					"applied": 1,
+					"blocked": 0,
+					"eligible": 9,
+					"immune": 0,
+					"rolled": 9
+				},
+				"6": {
+					"applied": 0,
+					"blocked": 0,
+					"eligible": 4,
+					"immune": 0,
+					"rolled": 4
+				},
+				"9": {
+					"applied": 0,
+					"blocked": 0,
+					"eligible": 1,
+					"immune": 0,
+					"rolled": 1
+				}
+			},
+			"stats_e_holy": {
+				"8": {
+					"applied": 2,
+					"blocked": 0,
+					"eligible": 4,
+					"immune": 0,
+					"rolled": 3
+				}
+			},
+			"team": [
+				122,
+				95,
+				119,
+				117
+			],
+			"team_i": 0,
+			"timeout": false,
+			"turns": 11,
+			"won": false
+		},
+		{
+			"actor_skip": 0,
+			"actor_visits": 52,
+			"actor_void": 0,
+			"acts": 52,
+			"askip": 0,
+			"deaths": 1,
+			"ehp0": 18360000.0,
+			"ehp_left": 19144811.0,
+			"eskip": 0,
+			"floor": 28,
+			"inc": 613096.0,
+			"level": 65,
+			"line": "war",
+			"lost": false,
+			"on": false,
+			"out": 1034029.0,
+			"seed": 2,
+			"stats": {},
+			"stats_a2e": {},
+			"stats_a_holy": {},
+			"stats_e2a": {},
+			"stats_e_holy": {},
+			"team": [
+				122,
+				95,
+				119,
+				117
+			],
+			"team_i": 0,
+			"timeout": true,
+			"turns": 12,
+			"won": false
+		},
+		{
+			"actor_skip": 0,
+			"actor_visits": 52,
+			"actor_void": 0,
+			"acts": 52,
+			"askip": 0,
+			"deaths": 1,
+			"ehp0": 18360000.0,
+			"ehp_left": 19144811.0,
+			"eskip": 0,
+			"floor": 28,
+			"inc": 613144.0,
+			"level": 65,
+			"line": "war",
+			"lost": false,
+			"on": true,
+			"out": 1034029.0,
+			"seed": 2,
+			"stats": {
+				"4": {
+					"applied": 1,
+					"blocked": 0,
+					"eligible": 12,
+					"immune": 0,
+					"rolled": 11
+				},
+				"5": {
+					"applied": 0,
+					"blocked": 0,
+					"eligible": 3,
+					"immune": 0,
+					"rolled": 3
+				},
+				"6": {
+					"applied": 0,
+					"blocked": 0,
+					"eligible": 7,
+					"immune": 0,
+					"rolled": 7
+				},
+				"7": {
+					"applied": 0,
+					"blocked": 0,
+					"eligible": 1,
+					"immune": 0,
+					"rolled": 1
+				},
+				"8": {
+					"applied": 1,
+					"blocked": 0,
+					"eligible": 5,
+					"immune": 0,
+					"rolled": 4
+				},
+				"9": {
+					"applied": 0,
+					"blocked": 0,
+					"eligible": 14,
+					"immune": 4,
+					"rolled": 10
+				}
+			},
+			"stats_a2e": {
+				"7": {
+					"applied": 0,
+					"blocked": 0,
+					"eligible": 1,
+					"immune": 0,
+					"rolled": 1
+				},
+				"9": {
+					"applied": 0,
+					"blocked": 0,
+					"eligible": 4,
+					"immune": 4,
+					"rolled": 0
+				}
+			},
+			"stats_a_holy": {
+				"8": {
+					"applied": 1,
+					"blocked": 0,
+					"eligible": 3,
+					"immune": 0,
+					"rolled": 2
+				}
+			},
+			"stats_e2a": {
+				"4": {
+					"applied": 1,
+					"blocked": 0,
+					"eligible": 12,
+					"immune": 0,
+					"rolled": 11
+				},
+				"5": {
+					"applied": 0,
+					"blocked": 0,
+					"eligible": 3,
+					"immune": 0,
+					"rolled": 3
+				},
+				"6": {
+					"applied": 0,
+					"blocked": 0,
+					"eligible": 6,
+					"immune": 0,
+					"rolled": 6
+				},
+				"9": {
+					"applied": 0,
+					"blocked": 0,
+					"eligible": 5,
+					"immune": 0,
+					"rolled": 5
+				}
+			},
+			"stats_e_holy": {
+				"8": {
+					"applied": 0,
+					"blocked": 0,
+					"eligible": 2,
+					"immune": 0,
+					"rolled": 2
+				}
+			},
+			"team": [
+				122,
+				95,
+				119,
+				117
+			],
+			"team_i": 0,
+			"timeout": true,
+			"turns": 12,
+			"won": false
+		},
+		{
+			"actor_skip": 0,
+			"actor_visits": 3,
+			"actor_void": 0,
+			"acts": 3,
+			"askip": 0,
+			"deaths": 0,
+			"ehp0": 18360000.0,
+			"ehp_left": 0.0,
+			"eskip": 0,
+			"floor": 28,
+			"inc": 7695.0,
+			"level": 65,
+			"line": "war",
+			"lost": false,
+			"on": false,
+			"out": 18359999.0,
+			"seed": 0,
+			"stats": {},
+			"stats_a2e": {},
+			"stats_a_holy": {},
+			"stats_e2a": {},
+			"stats_e_holy": {},
+			"team": [
+				108,
+				152,
+				100,
+				127
+			],
+			"team_i": 1,
+			"timeout": false,
+			"turns": 1,
+			"won": true
+		},
+		{
+			"actor_skip": 0,
+			"actor_visits": 3,
+			"actor_void": 0,
+			"acts": 3,
+			"askip": 0,
+			"deaths": 0,
+			"ehp0": 18360000.0,
+			"ehp_left": 0.0,
+			"eskip": 0,
+			"floor": 28,
+			"inc": 7695.0,
+			"level": 65,
+			"line": "war",
+			"lost": false,
+			"on": true,
+			"out": 18359999.0,
+			"seed": 0,
+			"stats": {
+				"6": {
+					"applied": 0,
+					"blocked": 0,
+					"eligible": 1,
+					"immune": 0,
+					"rolled": 1
+				},
+				"7": {
+					"applied": 0,
+					"blocked": 0,
+					"eligible": 1,
+					"immune": 0,
+					"rolled": 1
+				}
+			},
+			"stats_a2e": {
+				"7": {
+					"applied": 0,
+					"blocked": 0,
+					"eligible": 1,
+					"immune": 0,
+					"rolled": 1
+				}
+			},
+			"stats_a_holy": {},
+			"stats_e2a": {},
+			"stats_e_holy": {},
+			"team": [
+				108,
+				152,
+				100,
+				127
+			],
+			"team_i": 1,
+			"timeout": false,
+			"turns": 1,
+			"won": true
+		},
+		{
+			"actor_skip": 0,
+			"actor_visits": 2,
+			"actor_void": 0,
+			"acts": 2,
+			"askip": 0,
+			"deaths": 0,
+			"ehp0": 18360000.0,
+			"ehp_left": 0.0,
+			"eskip": 0,
+			"floor": 28,
+			"inc": 7695.0,
+			"level": 65,
+			"line": "war",
+			"lost": false,
+			"on": false,
+			"out": 18360000.0,
+			"seed": 1,
+			"stats": {},
+			"stats_a2e": {},
+			"stats_a_holy": {},
+			"stats_e2a": {},
+			"stats_e_holy": {},
+			"team": [
+				108,
+				152,
+				100,
+				127
+			],
+			"team_i": 1,
+			"timeout": false,
+			"turns": 1,
+			"won": true
+		},
+		{
+			"actor_skip": 0,
+			"actor_visits": 2,
+			"actor_void": 0,
+			"acts": 2,
+			"askip": 0,
+			"deaths": 0,
+			"ehp0": 18360000.0,
+			"ehp_left": 0.0,
+			"eskip": 0,
+			"floor": 28,
+			"inc": 7695.0,
+			"level": 65,
+			"line": "war",
+			"lost": false,
+			"on": true,
+			"out": 18360000.0,
+			"seed": 1,
+			"stats": {
+				"6": {
+					"applied": 0,
+					"blocked": 0,
+					"eligible": 1,
+					"immune": 0,
+					"rolled": 1
+				},
+				"7": {
+					"applied": 0,
+					"blocked": 0,
+					"eligible": 1,
+					"immune": 0,
+					"rolled": 1
+				}
+			},
+			"stats_a2e": {
+				"7": {
+					"applied": 0,
+					"blocked": 0,
+					"eligible": 1,
+					"immune": 0,
+					"rolled": 1
+				}
+			},
+			"stats_a_holy": {},
+			"stats_e2a": {},
+			"stats_e_holy": {},
+			"team": [
+				108,
+				152,
+				100,
+				127
+			],
+			"team_i": 1,
+			"timeout": false,
+			"turns": 1,
+			"won": true
+		},
+		{
+			"actor_skip": 0,
+			"actor_visits": 2,
+			"actor_void": 0,
+			"acts": 2,
+			"askip": 0,
+			"deaths": 0,
+			"ehp0": 18360000.0,
+			"ehp_left": 0.0,
+			"eskip": 0,
+			"floor": 28,
+			"inc": 3603.0,
+			"level": 65,
+			"line": "war",
+			"lost": false,
+			"on": false,
+			"out": 18357720.0,
+			"seed": 2,
+			"stats": {},
+			"stats_a2e": {},
+			"stats_a_holy": {},
+			"stats_e2a": {},
+			"stats_e_holy": {},
+			"team": [
+				108,
+				152,
+				100,
+				127
+			],
+			"team_i": 1,
+			"timeout": false,
+			"turns": 1,
+			"won": true
+		},
+		{
+			"actor_skip": 0,
+			"actor_visits": 2,
+			"actor_void": 0,
+			"acts": 2,
+			"askip": 0,
+			"deaths": 0,
+			"ehp0": 18360000.0,
+			"ehp_left": 0.0,
+			"eskip": 0,
+			"floor": 28,
+			"inc": 3603.0,
+			"level": 65,
+			"line": "war",
+			"lost": false,
+			"on": true,
+			"out": 18357720.0,
+			"seed": 2,
+			"stats": {
+				"6": {
+					"applied": 1,
+					"blocked": 0,
+					"eligible": 1,
+					"immune": 0,
+					"rolled": 1
+				},
+				"8": {
+					"applied": 0,
+					"blocked": 0,
+					"eligible": 1,
+					"immune": 0,
+					"rolled": 1
+				}
+			},
+			"stats_a2e": {},
+			"stats_a_holy": {
+				"8": {
+					"applied": 0,
+					"blocked": 0,
+					"eligible": 1,
+					"immune": 0,
+					"rolled": 1
+				}
+			},
+			"stats_e2a": {},
+			"stats_e_holy": {},
+			"team": [
+				108,
+				152,
+				100,
+				127
+			],
+			"team_i": 1,
+			"timeout": false,
+			"turns": 1,
+			"won": true
+		}
+	],
+	"tpl": "C"
+}

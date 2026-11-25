@@ -16,7 +16,7 @@ func arg(k: String, d := "") -> String:
 
 
 func _run() -> void:
-	XTianqiBase.PHASE4 = false
+	XTianqiBase.PHASE4 = arg("phase4", "1") != "0"
 	var res := {}
 	match arg("mode", "count"):
 		"count":
@@ -48,6 +48,8 @@ func _run() -> void:
 				print("ONEINFO members=", st.battle_members().map(func(x): return x.actor_id), " hp=", a0.hp, "/", a0.mhp, " dead=", a0.is_dead(), " lv=", a0.level)
 		"team":
 			res = _team()
+		"multi_stop":
+			res = _multi_stop()
 		"floor":
 			res = _floor()
 		"immune":
@@ -68,6 +70,8 @@ func _run() -> void:
 			res = _floor2()
 		"defense":
 			res = _defense()
+		"defense2":
+			res = _defense2()
 		"legaltest":
 			for id in Array(arg("ids", "2,3,28,100").split(",")).map(func(x): return int(x)):
 				for diff in ["xunchang", "lianyu", "zhengdao"]:
@@ -75,8 +79,17 @@ func _run() -> void:
 					var info := legal_build(s, s.actor(id), int(arg("elem", "5")))
 					print("LEGAL ", id, " ", diff, " tier=", XTianqiSecrets.tier_of(s.actor(id), s), " ", JSON.stringify(info), " elems=", attack_elems(s.actor(id)))
 	if arg("out") != "":
-		var f := FileAccess.open(arg("out"), FileAccess.WRITE)
+		var out_p := arg("out")
+		var dir_p := out_p.get_base_dir()
+		if dir_p != "":
+			DirAccess.make_dir_recursive_absolute(dir_p)
+		var f := FileAccess.open(out_p, FileAccess.WRITE)
+		if f == null:
+			push_error("无法写入输出文件: " + out_p)
+			get_tree().quit(1)
+			return
 		f.store_string(JSON.stringify(res, "\t"))
+		f.close()
 	print("RESULT_DONE")
 	get_tree().quit(0)
 
@@ -95,19 +108,32 @@ static func usable_ids() -> Array:
 const BASE := [2, 3, 4, 5, 6, 7, 8, 9, 14, 15]
 
 
+## 该角色在指定难度下是否允许上场（寻常／艰险 super_cap == 0，超强者不可上场）
+static func can_deploy_in_diff(id: int, diff: String) -> bool:
+	var s := XState.new_game(XTianqi.legacy_of(diff), 2, [])
+	s.flags["tianqi"] = {"rules": XTianqi.RULES_VERSION, "difficulty": diff, "lineup": [2]}
+	var cap := XTianqi.super_cap(s)
+	if cap == 0 and XTier.tier_of(id) == XTier.SUPER:
+		return false
+	return true
+
+
 static func dress_state(id: int, lv := 81, diff := "lianyu") -> XState:
 	var s := XState.new_game(XTianqi.legacy_of(diff), id, [])
 	s.flags["tianqi"] = {"rules": XTianqi.RULES_VERSION, "difficulty": diff, "lineup": [id]}
 	if not s.battle_members().any(func(x): return int(x.actor_id) == id):
-		# 新局以他为首位进不了出战栏（强者／超强者等）：用天启篇的入队路径（_joining）加进来再放到第 1 格
+		# 新局以他为首位进不了出战栏（强者／超强者等）：用天启篇的入队路径（_joining）加进来再放到第 1 格，
+		# 并移除临时占位的 2 号绿司机，防止 enforce_party 把 2 号顶替进出战栏（T495 修 122 狂刀寻常硬错）
 		s = XState.new_game(XTianqi.legacy_of(diff), 2, [])
-		s.flags["tianqi"] = {"rules": XTianqi.RULES_VERSION, "difficulty": diff, "lineup": [2]}
+		s.flags["tianqi"] = {"rules": XTianqi.RULES_VERSION, "difficulty": diff, "lineup": [id]}
 		XTianqi._joining = true
 		s.add_actor(id)
 		XTianqi._joining = false
 		s.set_battle_slot(0, id)
 		for i in range(1, s.battle_slots.size()):
 			s.set_battle_slot(i, 0)
+		if id != 2:
+			s.remove_actor(2)
 	s.actor_max_level = lv
 	var a := s.actor(id)
 	a.change_level_mv(lv)
@@ -118,8 +144,8 @@ static func dress_state(id: int, lv := 81, diff := "lianyu") -> XState:
 
 ## ---- 合法构筑（R2：正式用书、占格、封印；不直接学技能绕过格数） ----
 const BOOK_ITEM := {2: 1035, 3: 1036, 4: 1037, 5: 1038, 6: 1039, 7: 1040, 8: 1041, 9: 1042, 14: 3101, 15: 3102, 11: 3103, 12: 3104, 13: 3105}
-## 填格用的通用秘籍（沿用 T445 炼狱配法的通用增伤／体能类，逐本过占格校验；不含转属类）
-const FILLERS := [2480, 6139, 6159, 488, 489, 490, 2471, 2472, 2478]
+## 填格用的通用秘籍（沿用 T445 炼狱配法的通用增伤／体能类，逐本过占格校验；不含转属类；12 本确保证道 9 格也有备用书走通封印）
+const FILLERS := [2480, 6139, 6159, 488, 489, 490, 2471, 2472, 2473, 2474, 2478, 2479]
 
 
 ## 按物品用书：先过 item_learn_reason（占格、替换、已学），通过才学技能。返回 {ok, reason}
@@ -174,37 +200,60 @@ static func legal_build(s: XState, a: XActor, elem: int, seal_flow := true) -> D
 
 
 
-## 人数（§5.1）：能打出该系伤害的可用角色。口径 A＝原生（技能卡、被动里天然带该系，不算转换书）；B＝A 再加「装合法转换书后」（有攻击技能的人都能转成任何一系）。
+## 人数（§5.1／Kyo 11-25 事项 64）：能打出该系伤害的可用角色。
+## 口径 A＝原生（角色自带技能卡／被动／普攻里天然带该系，不算转换书；同时单列神圣己方入口人数）；
+## 口径 B＝装合法转换书后（三难度各自独立走 item_learn_reason → use_book → action_elements，修掉水/风被误当高等书的硬错）。
 func _count() -> Dictionary:
 	var ids := usable_ids()
 	var native := {}
+	var native_with_basic := {}
 	var detail := {}
 	var attackers := []
+	var holy_ally_ids := []
+	var basic_atk := XDB.rec("Skills", 1)
 	for id in ids:
 		var s := dress_state(int(id))
 		var a := s.actor(int(id))
-		var deployable := s.battle_members().any(func(x): return int(x.actor_id) == int(id))   # 新局以他为首位建队，他能进出战栏（同 baseline_dps 的筛法）
+		var deployable := s.battle_members().any(func(x): return int(x.actor_id) == int(id))
 		var els := {}
+		var els_basic := {}
 		var has_attack := false
+		var has_holy_ally := false
 		for sk in a.skills():
-			if not sk is Dictionary or not int(sk.get("damage", {}).get("type", 0)) in [1, 5]:
+			if not sk is Dictionary:
 				continue
-			has_attack = true
-			for e in XDamage.action_elements(sk, a):
+			if int(sk.get("damage", {}).get("type", 0)) in [1, 5]:
+				has_attack = true
+				for e in XDamage.action_elements(sk, a):
+					if int(e) in BASE:
+						els[int(e)] = int(els.get(int(e), 0)) + 1
+						els_basic[int(e)] = int(els_basic.get(int(e), 0)) + 1
+			elif XTianqiElementEffects.holy_ally_skill(sk, a):
+				has_holy_ally = true
+		if basic_atk is Dictionary and not basic_atk.is_empty():
+			for e in XDamage.action_elements(basic_atk, a):
 				if int(e) in BASE:
-					els[int(e)] = int(els.get(int(e), 0)) + 1
+					els_basic[int(e)] = int(els_basic.get(int(e), 0)) + 1
 		if has_attack and deployable:
 			attackers.append(int(id))
+		if has_holy_ally and deployable:
+			holy_ally_ids.append(int(id))
 		var nm := str(XDB.rec("Actors", int(id)).get("name", ""))
-		detail[str(id)] = {"name": nm, "elements": els, "attack": has_attack and deployable, "deployable": deployable, "has_attack_skill": has_attack}
+		detail[str(id)] = {"name": nm, "elements": els, "elements_with_basic": els_basic, "attack": has_attack and deployable, "deployable": deployable, "has_attack_skill": has_attack, "holy_ally": has_holy_ally, "tier": XTier.tier_of(int(id)), "natures": actor_natures(int(id))}
 		for e in els:
 			if not deployable:
 				break
 			if not native.has(e):
 				native[e] = []
 			native[e].append(int(id))
+		for e in els_basic:
+			if not deployable:
+				break
+			if not native_with_basic.has(e):
+				native_with_basic[e] = []
+			native_with_basic[e].append(int(id))
 	var tiers: Dictionary = XTianqiElements.data().effect_tiers
-	var out := {"usable": ids.size(), "attackers": attackers.size(), "native": {}, "detail": detail}
+	var out := {"phase4": XTianqiBase.PHASE4, "usable": ids.size(), "attackers": attackers.size(), "holy_ally_ids": holy_ally_ids, "native": {}, "native_with_basic": {}, "detail": detail}
 	for e in BASE:
 		var n := (native.get(e, []) as Array).size()
 		var tier := "few"
@@ -212,48 +261,62 @@ func _count() -> Dictionary:
 			if n >= int(tiers[k].min):
 				tier = k
 				break
-		out.native[str(e)] = {"n": n, "tier": tier, "chance": tiers[tier].chance, "table_tier": str(XTianqiElements.data().effect_tier_of.get(str(e), ""))}
-	out["legal"] = _count_legal(attackers, tiers)
+		var n_b := (native_with_basic.get(e, []) as Array).size()
+		out.native[str(e)] = {"n": n, "tier": tier, "chance": tiers[tier].chance, "table_tier": str(XTianqiElements.data().effect_tier_of.get(str(e), "")), "ids": native.get(e, [])}
+		out.native_with_basic[str(e)] = {"n": n_b, "diff": n_b - n}
+	if arg("skip_legal", "0") != "1":
+		out["legal"] = _count_legal(attackers, tiers)
 	return out
 
 
-## 口径 B（设计稿 §5.1／§7.1「含合法装转换书后能打出的」）：有攻击技能且能出战的人，逐个按物品正式用书（item_learn_reason，三种难度各判一次），
-## 学后读实际结算元素（action_elements 去重）含目标元素才算。基础十系＋高等三系（高等只在炼狱／证道有来源）
+## 口径 B（对照）：三难度各自独立结算（xunchang／lianyu／zhengdao）。
+## T495 修硬错：只对高等三系（HIGHER_ELEMENTS=[11,12,13]）检查 higher_drop_difficulties；水(14)、风(15) 在寻常当铺提供（shop_goods 实机核验）。
 func _count_legal(attackers: Array, tiers: Dictionary) -> Dictionary:
 	var elems := BASE.duplicate() + [11, 12, 13]
 	var ids_by := {}
 	var fails := {}
 	var by_diff := {}
+	var deploy_by_diff := {}
 	for e in elems:
 		ids_by[e] = []
 		by_diff[e] = {"xunchang": 0, "lianyu": 0, "zhengdao": 0}
+		deploy_by_diff[e] = {"xunchang": 0, "lianyu": 0, "zhengdao": 0}
 	var allowed: Array = XTianqiElements.data().get("conversion_books", {}).get("higher_drop_difficulties", ["lianyu", "zhengdao"])
-	for id in attackers:
-		var s := dress_state(int(id), 60, "lianyu")
-		var a := s.actor(int(id))
-		var prev := 0
-		for e in elems:
-			if prev > 0:
-				a.forget_skill(int(CONV_SKILL[prev]))
-			var ok_diff := {}
-			for diff in ["xunchang", "lianyu", "zhengdao"]:
-				s.flags["tianqi"]["difficulty"] = diff
+	# 实机核验寻常当铺是否上架水书(3101)、风书(3102)
+	var s_shop := dress_state(2, 60, "xunchang")
+	var shop_items := XTianqiElements.shop_goods(s_shop, XTianqiElements.PAWNSHOP_MAP, []).map(func(g): return int(g[1]))
+	var pawnshop_check := {"xunchang_has_water_3101": shop_items.has(3101), "xunchang_has_wind_3102": shop_items.has(3102)}
+	for diff in ["xunchang", "lianyu", "zhengdao"]:
+		for id in attackers:
+			var dep := can_deploy_in_diff(int(id), diff)
+			var s := dress_state(int(id), 60, diff)
+			var a := s.actor(int(id))
+			var prev := 0
+			for e in elems:
+				if prev > 0:
+					a.forget_skill(int(CONV_SKILL[prev]))
+				var is_higher := XTianqiElements.HIGHER_ELEMENTS.has(int(e))
+				var source_ok := (not is_higher) or allowed.has(diff)
 				var rs := XTianqiSecrets.item_learn_reason(a, XDB.rec("Items", int(BOOK_ITEM[e])), s)
-				ok_diff[diff] = rs == "" and (int(e) < 11 or allowed.has(diff))
+				if not source_ok:
+					prev = 0
+					continue
 				if rs != "":
 					fails["%d:%d:%s" % [id, e, diff]] = rs
-			s.flags["tianqi"]["difficulty"] = "lianyu"
-			var r := use_book(s, a, int(BOOK_ITEM[e]))
-			prev = int(e)
-			if bool(r.ok) and attack_elems(a).has(int(e)):
-				(ids_by[e] as Array).append(int(id))
-				for diff in ok_diff:
-					if bool(ok_diff[diff]):
-						by_diff[e][diff] = int(by_diff[e][diff]) + 1
-			else:
-				fails["%d:%d:use" % [id, e]] = str(r.get("reason", "学后元素不含目标"))
-		print("legal count ", id)
-	var res := {"attackers": attackers.size(), "per_elem": {}, "fails": fails}
+					prev = 0
+					continue
+				var r := use_book(s, a, int(BOOK_ITEM[e]))
+				prev = int(e)
+				if bool(r.ok) and attack_elems(a).has(int(e)):
+					by_diff[e][diff] = int(by_diff[e][diff]) + 1
+					if dep:
+						deploy_by_diff[e][diff] = int(deploy_by_diff[e][diff]) + 1
+					if diff == "lianyu":
+						(ids_by[e] as Array).append(int(id))
+				else:
+					fails["%d:%d:%s:use" % [id, e, diff]] = str(r.get("reason", "学后元素不含目标"))
+		print("legal count done for diff=", diff)
+	var res := {"attackers": attackers.size(), "pawnshop_check": pawnshop_check, "per_elem": {}, "fails": fails}
 	for e in elems:
 		var n := (ids_by[e] as Array).size()
 		var tier := "few"
@@ -261,7 +324,7 @@ func _count_legal(attackers: Array, tiers: Dictionary) -> Dictionary:
 			if n >= int(tiers[k].min):
 				tier = k
 				break
-		res.per_elem[str(e)] = {"n": n, "tier": tier, "chance": tiers[tier].chance, "n_by_diff": by_diff[e], "table_tier": str(XTianqiElements.data().effect_tier_of.get(str(e), "")), "ids": ids_by[e]}
+		res.per_elem[str(e)] = {"n": n, "tier": tier, "chance": tiers[tier].chance, "n_by_diff": by_diff[e], "n_deployable_by_diff": deploy_by_diff[e], "table_tier": str(XTianqiElements.data().effect_tier_of.get(str(e), "")), "ids": ids_by[e]}
 	return res
 
 
@@ -331,20 +394,96 @@ static func _hp_sum(list: Array) -> float:
 	return t
 
 
+## 精确分类一次 act 调用：排除作废位（死亡、战斗已结束、指令为空/被事件清空）与跳过位（元素停手、五条悟过载、旧控）
+static func _classify_act(was_over: bool, was_alive: bool, cmd_valid: bool, mv0: bool, sk_delta: int, logs, u) -> String:
+	if was_over or not was_alive:
+		return "void"
+	if sk_delta > 0:
+		return "eskip"
+	var has_skip := false
+	if logs is Array:
+		for lg in logs:
+			if lg is Dictionary and str(lg.get("type", "")) == "skip" and is_same(lg.get("user"), u):
+				has_skip = true
+				break
+	if not mv0:
+		return "oskip"
+	if has_skip:
+		return "overload"
+	if not cmd_valid:
+		return "void"
+	return "done"
+
+
+static func _stats_snap(logic) -> Dictionary:
+	return XTianqiElementEffects.stats(logic).duplicate(true)
+
+
+static func _stats_add_diff(dst: Dictionary, before: Dictionary, after: Dictionary, filter_fn: Callable = Callable()) -> void:
+	for k in after:
+		if filter_fn.is_valid() and not bool(filter_fn.call(int(k))):
+			continue
+		var a: Dictionary = after[k]
+		var b: Dictionary = before.get(k, {})
+		for kk in a:
+			var d := int(a.get(kk, 0)) - int(b.get(kk, 0))
+			if d > 0:
+				if not dst.has(k):
+					dst[k] = {"eligible": 0, "immune": 0, "blocked": 0, "rolled": 0, "applied": 0}
+				dst[k][kk] = int(dst[k].get(kk, 0)) + d
+
+
+static func _unit_frozen(logic, b) -> int:
+	if logic.has_meta(XTianqiElementEffects.META):
+		var units: Dictionary = logic.get_meta(XTianqiElementEffects.META).units
+		if units.has(b):
+			return int(units[b].get("frozen", 0))
+	return 0
+
+
+static func _unit_done(logic, b) -> int:
+	if logic.has_meta(XTianqiElementEffects.META):
+		var units: Dictionary = logic.get_meta(XTianqiElementEffects.META).units
+		if units.has(b):
+			return int(units[b].get("done", 0))
+	return 0
+
+
+static func _count_order_map(order: Array) -> Dictionary:
+	var m := {}
+	for b in order:
+		m[b] = int(m.get(b, 0)) + 1
+	return m
+
+
 ## 一场：我方打 turns 回合。refill＝每次出手前补满对方（baseline 的 raw 口径），不补血时照常打到胜负（不复活、不夹具补满）。
-## 返回：out（我方出手让敌方掉的血）、dot（回合末持续伤害）、inc（敌方出手我方掉的血）、eskip（敌方被元素停手吃掉的行动位）、eact（敌方实际出手次数）、stats
-## R2 新增：tgt（逐目标：visits＝act 次数、done＝完成位、eskip＝元素停手位、oskip＝旧控位、stop_need＝收尾时保护尚余）、
-##   ts_out（回合开始伤害）、ctr（敌方行动里我方反击掉的血）、burn_dmg／parasite_dmg（回合末按 tick 归因）、para_heal（回合末 regen 日志里有效治疗）、
-##   aeskip（我方被元素停手位）、aoskip（我方旧控位）
+## T495 增强：
+##   - 精确分类 act（排除作废与跳过位），并跟踪 _clear_unable 从队列提前移除的旧控位（oskip_queue）
+##   - 分边记账 stats_e2a／stats_e_holy／stats_a2e／stats_a_holy 及分边挡减益／驱散
+##   - 逐回合敌方停手统计 per_turn_enemy（验证多动目标同回合只跳 1 位）
+##   - 支持 opts.force_elite（精英态）与 opts.expected_actors（断言实际出战角色无替身）
 func fight(s: XState, troop: int, on: bool, seed_i: int, opts := {}) -> Dictionary:
 	XTianqiElements.EFFECTS = on
 	var logic := XBattleLogic.new()
 	logic.setup(troop, s, XBattleRandom.create(_seed_hex(seed_i)))
 	logic.auto = true
+	if bool(opts.get("force_elite", false)):
+		for e in logic.enemies:
+			e.elite = true
+	if opts.has("expected_actors"):
+		var exp_ids: Array = opts.expected_actors
+		var got_ids := logic.actors.map(func(a): return int(a.actor_id))
+		if got_ids != exp_ids:
+			logic.end_battle(0)
+			return {"error": "出战角色不符: want=%s got=%s" % [str(exp_ids), str(got_ids)], "turns": 0}
 	var hp_target := float(opts.get("enemy_mhp", 0.0))
+	var def_scale := float(opts.get("enemy_def_scale", 1.0))
 	for e in logic.enemies:
 		if hp_target > 0.0:
 			set_param(e, 0, hp_target)
+		if def_scale != 1.0:
+			set_param(e, 3, -e.param(3) * (1.0 - def_scale))
+			set_param(e, 5, -e.param(5) * (1.0 - def_scale))
 		e.recover_all()
 	var rev_e := 0
 	var rev_a := 0
@@ -361,26 +500,50 @@ func fight(s: XState, troop: int, on: bool, seed_i: int, opts := {}) -> Dictiona
 	var done := 0
 	var blocks := 0
 	var dispels := 0
+	var actor_blocks := 0
+	var enemy_blocks := 0
+	var actor_dispels := 0
+	var enemy_dispels := 0
 	var refill: bool = bool(opts.get("refill", true))
-	var refill_e: bool = bool(opts.get("refill_e", refill))   # 补满敌方（我方出手前）
-	var refill_a: bool = bool(opts.get("refill_a", refill))   # 补满我方（敌方出手前）；关着时我方照常死亡、不复活
+	var refill_e: bool = bool(opts.get("refill_e", refill))
+	var refill_a: bool = bool(opts.get("refill_a", refill))
 	var tgt := {}
 	var atgt := {}
+	var stats_e2a := {}
+	var stats_e_holy := {}
+	var stats_a2e := {}
+	var stats_a_holy := {}
+	var per_turn_enemy := []
+	var oskip_queue_e := {}
+	var oskip_queue_a := {}
+	var applied_on_actor := {}
+	var actor_names := {}
+	var enemy_names := {}
+	for a in logic.actors:
+		actor_names[str(a.display_name())] = int(a.actor_id)
+	for ei in logic.enemies.size():
+		enemy_names[str(logic.enemies[ei].display_name())] = ei
 	for r in int(opts.get("turns", turns)):
 		var eb0 := _hp_sum(logic.enemies)
 		logic.start_turn()
 		logic.take_turn_start_logs()
 		ts_out += maxf(0.0, eb0 - _hp_sum(logic.enemies))
+		var turn_e := {}
 		var guard := 0
-		while guard < 80:
+		while guard < 120:
 			var u := logic.next_subject()
 			if u == null:
 				break
 			guard += 1
+			var order_before := _count_order_map(logic.current_order)
+			var was_over := logic.is_over()
+			var was_alive: bool = u.is_alive()
 			var cmd := logic.decide(u)
+			var cmd_valid: bool = cmd[0] != null and not (cmd[0] is Dictionary and (cmd[0] as Dictionary).is_empty())
 			var logs = null
 			var mv0: bool = logic.can_move(u)
 			var sk0 := XTianqiElementEffects.skip_count(logic, u)
+			var st_before := _stats_snap(logic)
 			if u is XActor:
 				if refill_e:
 					for e in logic.enemies:
@@ -389,10 +552,15 @@ func fight(s: XState, troop: int, on: bool, seed_i: int, opts := {}) -> Dictiona
 				var before := _hp_sum(logic.enemies)
 				logs = logic.act(u, cmd[0], cmd[1])
 				out += maxf(0.0, before - _hp_sum(logic.enemies))
-				aact += 1
-				_tally(atgt, int(u.actor_id), mv0, XTianqiElementEffects.skip_count(logic, u) - sk0)
+				var cls := _classify_act(was_over, was_alive, cmd_valid, mv0, XTianqiElementEffects.skip_count(logic, u) - sk0, logs, u)
+				if cls == "done":
+					aact += 1
+				_tally_cls(atgt, int(u.actor_id), cls)
+				var st_after := _stats_snap(logic)
+				_stats_add_diff(stats_a2e, st_before, st_after, func(e): return e != 8)
+				_stats_add_diff(stats_a_holy, st_before, st_after, func(e): return e == 8)
 				if refill_e and logic.enemies.all(func(e): return e.is_dead() or e.hidden):
-					rev_e += 1   # 过杀：一个动作把夹具打死，复活补满继续（这类角色的增益量不出来，单列）
+					rev_e += 1
 					for e in logic.enemies:
 						if e.is_dead():
 							e.remove_state(1)
@@ -407,19 +575,64 @@ func fight(s: XState, troop: int, on: bool, seed_i: int, opts := {}) -> Dictiona
 				logs = logic.act(u, cmd[0], cmd[1])
 				inc += maxf(0.0, before2 - _hp_sum(logic.actors))
 				ctr += maxf(0.0, eb1 - _hp_sum(logic.enemies))
-				eact += 1
-				_tally(tgt, logic.enemies.find(u), mv0, XTianqiElementEffects.skip_count(logic, u) - sk0)
+				var cls2 := _classify_act(was_over, was_alive, cmd_valid, mv0, XTianqiElementEffects.skip_count(logic, u) - sk0, logs, u)
+				if cls2 == "done":
+					eact += 1
+				var eidx := logic.enemies.find(u)
+				_tally_cls(tgt, eidx, cls2)
+				_tally_cls(turn_e, eidx, cls2)
+				var st_after2 := _stats_snap(logic)
+				_stats_add_diff(stats_e2a, st_before, st_after2, func(e): return e != 8)
+				_stats_add_diff(stats_e_holy, st_before, st_after2, func(e): return e == 8)
 				if refill_a and logic.actors.all(func(a): return a.is_dead()):
 					rev_a += 1
 					for a in logic.actors:
 						a.remove_state(1)
 						a.hp = a.mhp
-			if on and logs != null:
-				var txt := JSON.stringify(logs)
-				blocks += txt.count("圣护抵挡了")
-				dispels += txt.count("净化了")
+			# 跟踪被 _clear_unable 从 current_order 中因旧控提前移除的行动位
+			var order_after := _count_order_map(logic.current_order)
+			for b in order_before:
+				var lost_slots := int(order_before[b]) - int(order_after.get(b, 0))
+				if lost_slots > 0 and b.is_alive() and not logic.can_move(b):
+					if b is XEnemy:
+						var ei2 := logic.enemies.find(b)
+						oskip_queue_e[ei2] = int(oskip_queue_e.get(ei2, 0)) + lost_slots
+					elif b is XActor:
+						oskip_queue_a[int(b.actor_id)] = int(oskip_queue_a.get(int(b.actor_id), 0)) + lost_slots
+			if on and logs is Array:
+				for lg in logs:
+					if lg is Dictionary and str(lg.get("type", "")) == "battle_text":
+						var tx := str(lg.get("text", ""))
+						if tx.contains("圣护抵挡了"):
+							blocks += 1
+							var matched_a := false
+							for anm in actor_names:
+								if tx.begins_with(anm + " "):
+									actor_blocks += 1
+									matched_a = true
+									break
+							if not matched_a:
+								enemy_blocks += 1
+						if tx.contains("净化了"):
+							dispels += 1
+							var matched_a2 := false
+							for anm in actor_names:
+								if tx.begins_with(anm + " "):
+									actor_dispels += 1
+									matched_a2 = true
+									break
+							if not matched_a2:
+								enemy_dispels += 1
+						if tx.contains("陷入了"):
+							for anm in actor_names:
+								if tx.begins_with(anm + " "):
+									var aid := int(actor_names[anm])
+									applied_on_actor[aid] = int(applied_on_actor.get(aid, 0)) + 1
+									break
 			if logic.is_over():
 				break
+		if bool(opts.get("record_turns", false)):
+			per_turn_enemy.append({"turn": r + 1, "e": turn_e})
 		if logic.is_over():
 			break
 		var eb := _hp_sum(logic.enemies)
@@ -447,37 +660,53 @@ func fight(s: XState, troop: int, on: bool, seed_i: int, opts := {}) -> Dictiona
 		eskip += XTianqiElementEffects.skip_count(logic, e)
 	var idx := 0
 	for e in logic.enemies:
-		var row: Dictionary = tgt.get(idx, {})
+		var row: Dictionary = tgt.get(idx, {"visits": 0, "done": 0, "eskip": 0, "oskip": 0, "overload": 0, "void": 0})
 		row["stop_need"] = _stop_need(logic, e)
+		row["oskip_queue"] = int(oskip_queue_e.get(idx, 0))
+		row["engine_done"] = _unit_done(logic, e)
+		row["frozen"] = _unit_frozen(logic, e)
+		row["is_boss"] = XTianqiElementEffects.effect_boss(logic, e)
+		row["is_elite"] = XTianqiElementEffects.effect_elite(logic, e)
 		row["name"] = str(e.display_name())
 		tgt[idx] = row
 		idx += 1
+	for a in logic.actors:
+		var aid := int(a.actor_id)
+		var arow: Dictionary = atgt.get(aid, {"visits": 0, "done": 0, "eskip": 0, "oskip": 0, "overload": 0, "void": 0})
+		arow["stop_need"] = _stop_need(logic, a)
+		arow["oskip_queue"] = int(oskip_queue_a.get(aid, 0))
+		arow["frozen"] = _unit_frozen(logic, a)
+		arow["applied_on_me"] = int(applied_on_actor.get(aid, 0))
+		arow["natures"] = actor_natures(aid)
+		arow["dead"] = a.is_dead()
+		arow["name"] = str(a.display_name())
+		atgt[aid] = arow
 	for k in tgt:
-		oskip += int(tgt[k].get("oskip", 0))
+		oskip += int(tgt[k].get("oskip", 0)) + int(tgt[k].get("oskip_queue", 0))
 	for k in atgt:
 		aeskip += int(atgt[k].get("eskip", 0))
-		aoskip += int(atgt[k].get("oskip", 0))
+		aoskip += int(atgt[k].get("oskip", 0)) + int(atgt[k].get("oskip_queue", 0))
 	var askip := 0
 	for a in logic.actors:
 		askip += XTianqiElementEffects.skip_count(logic, a)
-	var res := {"out": out, "dot": dot, "inc": inc, "eskip": eskip, "oskip": oskip, "askip": askip, "aeskip": aeskip, "aoskip": aoskip, "blocks": blocks, "dispels": dispels, "max_frozen": _max_frozen(logic), "rev_e": rev_e, "rev_a": rev_a, "eact": eact, "aact": aact, "turns": done,
-		"ts_out": ts_out, "ctr": ctr, "burn_dmg": burn_dmg, "parasite_dmg": para_dmg, "para_heal": para_heal, "tgt": tgt,
+	var res := {"out": out, "dot": dot, "inc": inc, "eskip": eskip, "oskip": oskip, "askip": askip, "aeskip": aeskip, "aoskip": aoskip,
+		"blocks": blocks, "dispels": dispels, "actor_blocks": actor_blocks, "enemy_blocks": enemy_blocks, "actor_dispels": actor_dispels, "enemy_dispels": enemy_dispels,
+		"max_frozen": _max_frozen(logic), "rev_e": rev_e, "rev_a": rev_a, "eact": eact, "aact": aact, "turns": done,
+		"ts_out": ts_out, "ctr": ctr, "burn_dmg": burn_dmg, "parasite_dmg": para_dmg, "para_heal": para_heal, "tgt": tgt, "atgt": atgt,
 		"won": logic.is_won(), "lost": logic.is_lost(), "stats": XTianqiElementEffects.stats(logic).duplicate(true),
+		"stats_e2a": stats_e2a, "stats_e_holy": stats_e_holy, "stats_a2e": stats_a2e, "stats_a_holy": stats_a_holy,
 		"ehp_left": _hp_sum(logic.enemies), "ehp_max": float(logic.enemies.map(func(e): return e.mhp).reduce(func(x, y): return x + y, 0.0))}
+	if bool(opts.get("record_turns", false)):
+		res["per_turn_enemy"] = per_turn_enemy
 	logic.end_battle(0)
 	return res
 
 
-## 访问位记账：skipped_by_elem＝这次 act 里元素停手计数增量；mv0 假＝进 act 前已被旧控挡住
-static func _tally(d: Dictionary, k: int, mv0: bool, skip_delta: int) -> void:
-	var row: Dictionary = d.get(k, {"visits": 0, "done": 0, "eskip": 0, "oskip": 0})
+## 访问位记账（T495：精确区分 done／eskip／oskip／overload／void）
+static func _tally_cls(d: Dictionary, k: int, cls: String) -> void:
+	var row: Dictionary = d.get(k, {"visits": 0, "done": 0, "eskip": 0, "oskip": 0, "overload": 0, "void": 0})
 	row["visits"] = int(row.visits) + 1
-	if not mv0:
-		row["oskip"] = int(row.oskip) + 1
-	elif skip_delta > 0:
-		row["eskip"] = int(row.eskip) + 1
-	else:
-		row["done"] = int(row.done) + 1
+	row[cls] = int(row.get(cls, 0)) + 1
 	d[k] = row
 
 
@@ -535,9 +764,9 @@ func calib(mk: Callable, troop: int, _mult := 10.0, _want := 0.0) -> Dictionary:
 	return {"enemy_mhp": clampf(d * 10.0 / 190.0, 1.0e4, 1.0e11), "atk_mult": 1.0}
 
 
-func neutral_state_for(ids: Array, lv: int) -> XState:
-	var s := XState.new_game(XTianqi.legacy_of("lianyu"), 2, [])
-	s.flags["tianqi"] = {"rules": XTianqi.RULES_VERSION, "difficulty": "lianyu", "lineup": ids.duplicate()}
+func neutral_state_for(ids: Array, lv: int, diff := "lianyu") -> XState:
+	var s := XState.new_game(XTianqi.legacy_of(diff), 2, [])
+	s.flags["tianqi"] = {"rules": XTianqi.RULES_VERSION, "difficulty": diff, "lineup": ids.duplicate()}
 	for id in ids:
 		if int(id) != 2:
 			XTianqi._joining = true
@@ -545,6 +774,8 @@ func neutral_state_for(ids: Array, lv: int) -> XState:
 			XTianqi._joining = false
 	for i in s.battle_slots.size():
 		s.set_battle_slot(i, int(ids[i]) if i < ids.size() else 0)
+	if not ids.has(2):
+		s.remove_actor(2)
 	s.actor_max_level = lv
 	for id in ids:
 		var a := s.actor(int(id))
@@ -599,6 +830,7 @@ func _solo() -> Dictionary:
 	if only != "":
 		ids = Array(only.split(",")).map(func(x): return int(x))
 	var rows := []
+	var skipped_by_diff := []
 	var tr := _pick_fixture()
 	_neutral()
 	var bi := 0
@@ -606,6 +838,9 @@ func _solo() -> Dictionary:
 		if idx % sn != si_:
 			continue
 		var id: int = ids[idx]
+		if not can_deploy_in_diff(id, sdiff):
+			skipped_by_diff.append({"id": id, "name": str(count.detail.get(str(id), {}).get("name", "")), "reason": "难度 %s 候选池不含超强者" % sdiff})
+			continue
 		var d: Dictionary = count.detail.get(str(id), {})
 		var native: Array = (d.get("elements", {}) as Dictionary).keys().map(func(x): return int(x))
 		var builds := ["native"]
@@ -617,31 +852,33 @@ func _solo() -> Dictionary:
 				elem = XTianqiElements.BASE_ELEMENTS[(idx + bi) % 10]
 				bi += 1
 			var infos := []
+			var conv_checks := []
 			var mk := func() -> XState:
 				var s := dress_state(id, level, sdiff)
 				if legal:
 					var inf := legal_build(s, s.actor(id), elem, true)
 					if infos.is_empty():
 						infos.append(inf)
+						conv_checks.append(true if elem <= 0 else attack_elems(s.actor(id)).has(elem))
 				elif elem > 0:
 					convert_all(s, elem)
+					if conv_checks.is_empty():
+						conv_checks.append(attack_elems(s.actor(id)).has(elem))
 				return s
 			var cal := calib(mk, tr)
 			var tgt := float(cal.enemy_mhp)
 			var runs := []
 			for si in seeds:
 				for on in [false, true]:
-					var r := fight(mk.call(), tr, on, id * 100 + si, {"enemy_mhp": tgt, "atk_mult": cal.atk_mult, "turns": turns})   # 种子随角色错开：同一个种子序列对所有人一样时，前几次掷点同生同灭
+					var r := fight(mk.call(), tr, on, id * 100 + si, {"enemy_mhp": tgt, "atk_mult": cal.atk_mult, "turns": turns, "expected_actors": [id]})
 					r["seed"] = si
 					r["on"] = on
 					runs.append(r)
-			var conv_ok := true
-			if elem > 0:
-				conv_ok = attack_elems(dress_state_conv(id, elem)).has(elem)
+			var conv_ok: bool = bool(conv_checks[0]) if not conv_checks.is_empty() else true
 			rows.append({"id": id, "name": str(d.get("name", "")), "build": build, "elem": elem, "native": native, "natures": actor_natures(id),
 				"conv_ok": conv_ok, "mhp": tgt, "atk_mult": cal.atk_mult, "runs": runs, "diff": sdiff, "legal": legal, "build_info": infos[0] if not infos.is_empty() else {}})
 			print("solo ", id, " ", build, " ", elem)
-	return {"rows": rows, "level": level, "turns": turns, "seeds": seeds, "troop": tr, "diff": sdiff, "legal": legal}
+	return {"rows": rows, "skipped_by_diff": skipped_by_diff, "level": level, "turns": turns, "seeds": seeds, "troop": tr, "diff": sdiff, "legal": legal}
 
 
 ## R2：13 名无攻击技能的可用角色补开／关样本。单人（零触发回归＋辅助自身技能）与配一名标准输出（2 号）各 5 种子，合法炼狱构筑（只填秘籍格、不装转换书：他们没有攻击技能可转）
@@ -689,7 +926,8 @@ func dress_state_conv(id: int, elem: int) -> XActor:
 
 
 func actor_natures(id: int) -> Array:
-	return XTianqiNature.actor_table().get("actors", {}).get(str(id), {}).get("natures", [])
+	var raw: Array = XTianqiNature.actor_table().get("actors", {}).get(str(id), {}).get("natures", [])
+	return raw.map(func(x): return int(x))
 
 
 ## 找夹具敌人：单敌非首领的敌群里，对几个参照角色（60 级）每次出手打掉我方血量 8%～20% 的
@@ -946,8 +1184,14 @@ func _floor2() -> Dictionary:
 	var prev_crown := XDemonCrown.path_override
 	XDemonCrown.path_override = tmp_crown
 	var tpl := arg("tpl", "C")
-	var diff := D271.template_diff(tpl)
+	var diff := arg("force_diff", "") if arg("force_diff", "") != "" else D271.template_diff(tpl)
 	var nseeds := int(arg("seeds", "5"))
+	var seed_list := []
+	if arg("seed_list", "") != "":
+		seed_list = Array(arg("seed_list").split(",")).map(func(x): return int(x))
+	else:
+		for i in nseeds:
+			seed_list.append(i)
 	var floors := Array(arg("floors", "6,13,20,28,33,35").split(",")).map(func(x): return int(x))
 	var d = D271.new()
 	d.teams_n = int(arg("teams", "2"))
@@ -956,38 +1200,55 @@ func _floor2() -> Dictionary:
 	var rows := []
 	_real_nature()
 	var lines := ["war", "famine", "death", "plague"]
+	var use_d271_lv := arg("d271_lv", "0") == "1"
+	var conv_elems := []
+	if arg("conv_elem", "") != "":
+		conv_elems = Array(arg("conv_elem").split(",")).map(func(x): return int(x))
 	for f in floors:
-		var lv: int = level_cap(int(f)) if int(f) < 35 else 81
+		var lv: int = D271.floor_level_cap(int(f)) if (use_d271_lv or int(f) >= 31) else level_cap(int(f))
 		for ti in teams.size():
-			# 标准队毕业装备下 6～35 层一回合就赢（加血夹具试过不生效：守层者血量由难度倍率重算），回合数没有分辨力，改记「我方出手数」
-			for si in nseeds:
-				var ln: String = str(lines[(ti * nseeds + si) % lines.size()]) if int(f) >= 35 else "war"
-				var bseed: int = base_seed + int(f) * 1000 + ti * 100 + si
-				for scaled in [false]:
-					var pair := {}
-					for on in [false, true]:
-						if FileAccess.file_exists(tmp_crown):
-							DirAccess.remove_absolute(tmp_crown)
-						var built: Dictionary = d._build_state(tpl, diff, teams[ti], f, lv, ln, bseed)
-						XTianqiElements.EFFECTS = on
-						var rec := _fight_floor2(built.state, f, ln, bseed, 0.0, int(arg("max_turns", "40")))
-						rec["on"] = on
-						rec["scaled"] = scaled
-						rec["floor"] = f
-						rec["team_i"] = ti
-						rec["seed"] = si
-						rec["team"] = teams[ti].field
-						rec["line"] = ln
-						rows.append(rec)
-						pair[on] = rec
-					print("floor2 f=%d t=%d s=%d scaled=%s off(win=%s turns=%d dead=%d) on(win=%s turns=%d dead=%d)" % [f, ti, si, str(scaled), str(pair[false].won), int(pair[false].turns), int(pair[false].deaths), str(pair[true].won), int(pair[true].turns), int(pair[true].deaths)])
+			for si in seed_list:
+				var ln: String = str(lines[(ti * maxi(1, nseeds) + int(si)) % lines.size()]) if int(f) >= 35 else "war"
+				var bseed: int = base_seed + int(f) * 1000 + ti * 100 + int(si)
+				var pair := {}
+				for on in [false, true]:
+					if FileAccess.file_exists(tmp_crown):
+						DirAccess.remove_absolute(tmp_crown)
+					var built: Dictionary = d._build_state(tpl, diff, teams[ti], f, lv, ln, bseed)
+					if not conv_elems.is_empty():
+						var st_b: XState = built.state
+						var bms: Array = st_b.battle_members()
+						for bi in bms.size():
+							var ce := int(conv_elems[bi % conv_elems.size()])
+							if ce > 0:
+								# 若满格先替换一本非转属秘籍腾格，严格走合法转换书流程
+								var a_b: XActor = bms[bi]
+								if XTianqiSecrets.used_slots(a_b, st_b) >= XTianqiSecrets.limit(a_b, st_b):
+									for sid in a_b.skill_ids.duplicate():
+										if XTianqiSecrets.occupies_slot(int(sid)):
+											a_b.forget_skill(int(sid))
+											break
+								use_book(st_b, a_b, int(BOOK_ITEM[ce]))
+					XTianqiElements.EFFECTS = on
+					var rec := _fight_floor2(built.state, f, ln, bseed, 0.0, int(arg("max_turns", "40")))
+					rec["on"] = on
+					rec["floor"] = f
+					rec["level"] = lv
+					rec["team_i"] = ti
+					rec["seed"] = int(si)
+					rec["team"] = teams[ti].field
+					rec["line"] = ln
+					rows.append(rec)
+					pair[on] = rec
+				print("floor2 f=%d t=%d s=%d off(win=%s turns=%d acts=%d dead=%d) on(win=%s turns=%d acts=%d dead=%d)" % [f, ti, int(si), str(pair[false].won), int(pair[false].turns), int(pair[false].acts), int(pair[false].deaths), str(pair[true].won), int(pair[true].turns), int(pair[true].acts), int(pair[true].deaths)])
 	XDemonCrown.path_override = prev_crown
 	if FileAccess.file_exists(tmp_crown):
 		DirAccess.remove_absolute(tmp_crown)
-	return {"rows": rows, "tpl": tpl, "diff": diff}
+	return {"rows": rows, "tpl": tpl, "diff": diff, "phase4": XTianqiBase.PHASE4}
 
 
-## 同 D271 _fight_floor，补：5～33 层按 TROOPS 取守层者；开／关由外面设；不补血、不复活（只有 D271 自带的救场道具）；记停手位与元素事件
+## 同 D271 _fight_floor，补：5～33 层按 TROOPS 取守层者，34 鸿钧，35 骑士影子，36 骑士本体（3 阶段）；
+## T495 修硬错：acts 严格排除作废位（死亡、结束、cmd 为空／take_cleared）与跳过位（旧控、过载、元素停手），另列 actor_visits／actor_void／actor_skip 与分边统计。
 func _fight_floor2(s: XState, f: int, ln: String, sd: int, hp_add: float, max_turns: int) -> Dictionary:
 	XState._become_current(s)
 	seed(sd + 55555)
@@ -995,9 +1256,16 @@ func _fight_floor2(s: XState, f: int, ln: String, sd: int, hp_add: float, max_tu
 	var run_events := f <= 34
 	if f <= 33:
 		troop = int(XGuardianRework.TROOPS[f])
+	elif f == 34:
+		XTianqiSummit.prepare_hongjun(s)
+		troop = int(XTianqiSummit.data().hongjun.troop)
 	elif f == 35:
 		if not XTianqiHorsemen.prepare(ln, s, "shadow"):
-			return {"error": "prepare shadow 失败", "won": false, "lost": false, "turns": 0, "deaths": 4}
+			return {"error": "prepare shadow 失败", "won": false, "lost": false, "turns": 0, "acts": 0, "deaths": 4}
+		troop = int(XTianqiLine.data(ln).shell_troop)
+	elif f == 36:
+		if not XTianqiHorsemen.prepare(ln, s, "body"):
+			return {"error": "prepare body 失败", "won": false, "lost": false, "turns": 0, "acts": 0, "deaths": 4}
 		troop = int(XTianqiLine.data(ln).shell_troop)
 	var logic := D271.VPLogic.new()
 	logic.setup(troop, s, XBattleRandom.create(str(s.random_master)))
@@ -1016,6 +1284,13 @@ func _fight_floor2(s: XState, f: int, ln: String, sd: int, hp_add: float, max_tu
 	var inc := 0.0
 	var out := 0.0
 	var acts := 0
+	var actor_visits := 0
+	var actor_void := 0
+	var actor_skip := 0
+	var stats_a2e := {}
+	var stats_e2a := {}
+	var stats_a_holy := {}
+	var stats_e_holy := {}
 	for _r in max_turns:
 		if logic.is_over():
 			break
@@ -1033,12 +1308,32 @@ func _fight_floor2(s: XState, f: int, ln: String, sd: int, hp_add: float, max_tu
 			if u == null:
 				break
 			count += 1
-			var cmd := [null, null] if run_events and logic.take_cleared(u) else logic.decide(u)
+			var was_over := logic.is_over()
+			var was_alive: bool = u.is_alive()
+			var cleared := run_events and logic.take_cleared(u)
+			var cmd := [null, null] if cleared else logic.decide(u)
+			var cmd_valid: bool = (not cleared) and cmd[0] != null and not (cmd[0] is Dictionary and (cmd[0] as Dictionary).is_empty())
+			var mv0: bool = logic.can_move(u)
+			var sk0 := XTianqiElementEffects.skip_count(logic, u)
+			var st_before := _stats_snap(logic)
 			var ea := _hp_sum(logic.enemies)
 			var aa := _hp_sum(logic.actors)
-			logic.act(u, cmd[0], cmd[1])
+			var logs = logic.act(u, cmd[0], cmd[1])
+			var cls := _classify_act(was_over, was_alive, cmd_valid, mv0, XTianqiElementEffects.skip_count(logic, u) - sk0, logs, u)
+			var st_after := _stats_snap(logic)
 			if u is XActor:
-				acts += 1
+				actor_visits += 1
+				if cls == "done":
+					acts += 1
+				elif cls == "void":
+					actor_void += 1
+				else:
+					actor_skip += 1
+				_stats_add_diff(stats_a2e, st_before, st_after, func(e): return e != 8)
+				_stats_add_diff(stats_a_holy, st_before, st_after, func(e): return e == 8)
+			else:
+				_stats_add_diff(stats_e2a, st_before, st_after, func(e): return e != 8)
+				_stats_add_diff(stats_e_holy, st_before, st_after, func(e): return e == 8)
 			out += maxf(0.0, ea - _hp_sum(logic.enemies))
 			inc += maxf(0.0, aa - _hp_sum(logic.actors))
 			if logic.is_over():
@@ -1059,8 +1354,12 @@ func _fight_floor2(s: XState, f: int, ln: String, sd: int, hp_add: float, max_tu
 	for a in logic.actors:
 		askip += XTianqiElementEffects.skip_count(logic, a)
 	var deaths := logic.actors.filter(func(a): return a.is_dead()).size()
-	var res := {"won": won, "lost": lost, "timeout": (not won) and (not lost), "turns": done, "acts": acts, "deaths": deaths, "out": out, "inc": inc, "eskip": eskip, "askip": askip,
-		"stats": XTianqiElementEffects.stats(logic).duplicate(true), "ehp0": ehp0, "ehp_left": _hp_sum(logic.enemies)}
+	var res := {"won": won, "lost": lost, "timeout": (not won) and (not lost), "turns": done,
+		"acts": acts, "actor_visits": actor_visits, "actor_void": actor_void, "actor_skip": actor_skip,
+		"deaths": deaths, "out": out, "inc": inc, "eskip": eskip, "askip": askip,
+		"stats": XTianqiElementEffects.stats(logic).duplicate(true),
+		"stats_a2e": stats_a2e, "stats_e2a": stats_e2a, "stats_a_holy": stats_a_holy, "stats_e_holy": stats_e_holy,
+		"ehp0": ehp0, "ehp_left": _hp_sum(logic.enemies)}
 	logic.end_battle(0 if won else 2)
 	return res
 
@@ -1283,3 +1582,155 @@ func _dark2() -> Dictionary:
 			print("dark2 ", variant, " ", f, " ", tot)
 	XTianqiElements.reload_table()
 	return {"rows": rows, "rolls": rolls}
+
+
+## ---- T495 验收 3：非首领多动目标实际停手与保护完成验证（验证一回合只跳 1 个行动位） ----
+## 目标：天启篇真实非首领多动机制——战争线异化号令官（shigu 蚀骨／huaxing 化形，均非首领 effect_boss==false）挂在普通 3 怪敌群（30 火焰哥布林×3、14 鱼人×3），
+## 全敌方 3 只普通怪每回合必 2 动（extra_actions==1）；同时补普通单动对照（14 无异化）验证寒冰升 15% 后单动群控仍过 17% 判线。
+func _multi_stop() -> Dictionary:
+	level = int(arg("level", "60"))
+	seeds = int(arg("seeds", "5"))
+	var nturns := int(arg("turns", "12"))
+	var count := _count_json()
+	var thunder := _pick4(_natives_of(count, 5), 1)
+	var ice := _pick4(_natives_of(count, 3), 1)
+	var water := _pick4(_natives_of(count, 14), 1)
+	var water_ice := water.slice(0, 2) + ice.slice(0, 2)
+	var teams := [
+		{"label": "雷单系", "elem": 5, "ids": thunder},
+		{"label": "冰单系", "elem": 3, "ids": ice},
+		{"label": "水冰配合", "elem": 3, "ids": water_ice},
+	]
+	var specs := [
+		{"troop": 30, "tier": "shigu", "tag": "多动2动·蚀骨号令官(troop30)"},
+		{"troop": 14, "tier": "shigu", "tag": "多动2动·蚀骨号令官(troop14)"},
+		{"troop": 30, "tier": "huaxing", "tag": "多动2动·化形号令官(troop30)"},
+		{"troop": 14, "tier": "", "tag": "单动对照·寒冰15%新表(troop14)"},
+	]
+	_neutral()
+	var presets: Dictionary = XTianqiWarLine.data().presets
+	var rows := []
+	for sp in specs:
+		var mt: int = int(sp.troop)
+		var tier: String = str(sp.tier)
+		for tm in teams:
+			var ids: Array = tm.ids
+			var mk := func() -> XState:
+				var s := neutral_state_for(ids, level, "lianyu")
+				for a in s.battle_members():
+					legal_build(s, a, 0, false)
+				if tier != "":
+					s.flags["tianqi"]["line"] = "war"
+					presets["_t495_cmd"] = {"troop": mt, "units": [0], "tier": tier, "kind": "commander"}
+					XTianqiWarAlien.prepare("_t495_cmd", s)
+				return s
+			var cal := calib(mk, mt)
+			var runs := []
+			for si in seeds:
+				for on in [false, true]:
+					var r := fight(mk.call(), mt, on, si + 200, {"turns": nturns, "enemy_mhp": float(cal.enemy_mhp), "refill": true, "record_turns": true, "expected_actors": ids})
+					r["seed"] = si
+					r["on"] = on
+					runs.append(r)
+			rows.append({"troop": mt, "tier": tier, "tag": str(sp.tag), "label": str(tm.label), "elem": int(tm.elem), "ids": ids, "runs": runs})
+			var ons := runs.filter(func(x): return bool(x.on))
+			var tot_eskip := 0
+			var tot_done := 0
+			for x in ons:
+				tot_eskip += int(x.get("eskip", 0))
+				for k in x.get("tgt", {}):
+					tot_done += int(x.tgt[k].get("done", 0))
+			print("multi_stop %s %s done=%d eskip=%d" % [str(sp.tag), str(tm.label), tot_done, tot_eskip])
+	presets.erase("_t495_cmd")
+	return {"rows": rows, "level": level, "turns": nturns, "seeds": seeds, "phase4": XTianqiBase.PHASE4}
+
+
+## ---- T495 验收 5：敌打我方补测（两名水体质角色 14 关羽／120 希格雯、普通怪与精英雷冰群攻、低韧性、降难度换装、净化与敌方圣护） ----
+func _defense2() -> Dictionary:
+	seeds = int(arg("seeds", "5"))
+	var nturns := int(arg("turns", "12"))
+	var seed_list := []
+	if arg("seed_list", "") != "":
+		seed_list = Array(arg("seed_list").split(",")).map(func(x): return int(x))
+	else:
+		for i in seeds:
+			seed_list.append(i)
+	var diffs := Array(arg("diffs", "lianyu,xunchang").split(","))
+	var only_group := arg("only_group", "")
+	# 队伍配置（注意 120 希格雯为超强者，寻常难度 super_cap=0 不可上场，故寻常水体质组仅上 14 关羽，炼狱水体质组同时上 14 关羽 + 120 希格雯）
+	var teams := {
+		"water_mix": {"ids_lianyu": [14, 120, 1, 6], "ids_xunchang": [14, 1, 6, 41], "desc": "水体质专组(炼狱14关羽+120希格雯+2无体质;寻常14关羽+3无体质)"},
+		"low_resolve": {"ids_lianyu": [5, 6, 15, 24], "ids_xunchang": [5, 6, 15, 24], "desc": "低韧性专组(全E档resolve,-10%韧性,受停手×1.10)"},
+		"purify": {"ids_lianyu": [63, 56, 44, 14], "ids_xunchang": [63, 56, 44, 14], "desc": "净化救场组(63拉尔圣光净化+56瑞普圣护+44碧池宁静+14关羽水体质)"},
+		"none_ctrl": {"ids_lianyu": [1, 6, 15, 41], "ids_xunchang": [1, 6, 15, 41], "desc": "无体质对照组(均无元素体质)"},
+	}
+	# 三类高信号敌群（6 场）：普通怪雷冰群攻、精英雷冰群攻（真实精英标记）、敌方圣护（非首领精英 + 首领神圣体质）
+	var enemies := [
+		{"kind": "normal_aoe", "troop": 34, "lv": 25, "force_elite": false, "desc": "普通·冰霜拉赫克(暴风雪/冰刺群冰)"},
+		{"kind": "normal_aoe", "troop": 676, "lv": 60, "force_elite": false, "desc": "普通·嘤嘤怪军团(圣裁之雷+怒涛终章群雷冰)"},
+		{"kind": "elite_aoe", "troop": 34, "lv": 28, "force_elite": true, "desc": "精英·冰霜拉赫克(真精英群冰)"},
+		{"kind": "elite_aoe", "troop": 676, "lv": 70, "force_elite": true, "desc": "精英·嘤嘤怪军团(真精英群雷冰)"},
+		{"kind": "enemy_holy", "troop": 440, "lv": 60, "force_elite": false, "desc": "敌圣护·精英佛陀x3+佛门奸细(圣光术/圣光矢)"},
+		{"kind": "enemy_holy", "troop": 111, "lv": 35, "force_elite": false, "desc": "敌圣护·13层圣骑士瑟伦(首领神圣体质+圣光术)"},
+	]
+	_real_nature()
+	var d271 = D271.new()
+	var rows := []
+	for gkey in teams:
+		if only_group != "" and gkey != only_group:
+			continue
+		for diff in diffs:
+			var ids: Array = teams[gkey]["ids_xunchang"] if str(diff) == "xunchang" else teams[gkey]["ids_lianyu"]
+			# 降难度换装：炼狱穿 C/B 对应适龄神话/史诗装（8/6/5 秘籍格），寻常穿 A 顺推混搭装（6/4/3 秘籍格，无七印神话）
+			var equip_tpl := "A" if str(diff) == "xunchang" else "B"
+			for ec in enemies:
+				var tr: int = int(ec.troop)
+				var lv: int = int(ec.lv)
+				var f_el: bool = bool(ec.force_elite)
+				var mk := func() -> XState:
+					var s := neutral_state_for(ids, lv, str(diff))
+					var rng := RandomNumberGenerator.new()
+					rng.seed = base_seed + tr * 17 + lv
+					var qstream := XRandomStream.create(XRandomStream.hex64(base_seed + tr * 19), "def2")
+					for a in s.battle_members():
+						legal_build(s, a, 0, false)
+						# 按难度换装：寻常配低一档同级常规装备，炼狱配同级较高品质装备（不跨级穿 75 级七印）
+						var slots: Array = a.equip_slots()
+						var role: String = D271.TB.role_of(int(a.actor_id))
+						var w: Dictionary = D271.K.main_weights(a)
+						var max_q := 4 if str(diff) == "xunchang" else 5
+						var min_q := 2 if str(diff) == "xunchang" else 3
+						for i in slots.size():
+							var et := int(slots[i])
+							if et == 13 or et == 16 or et == 17 or not XTianqiGear.open_type(et):
+								continue
+							var it: Dictionary = d271._pick_db_item(a, et, role, w, maxi(1, lv - 15), lv, min_q, max_q, "def2_%s_%d_%d" % [diff, int(a.actor_id), i])
+							if not it.is_empty():
+								XTianqiAffixRoll.apply(it, s, func(): return rng.randf())
+								a.equips[i] = it
+						a.param_mark_dirty()
+						a.refresh_passive()
+						a.recover_all()
+					XTianqiElements.ensure_deck(s, 66223)
+					return s
+				var runs := []
+				for si in seed_list:
+					for on in [false, true]:
+						var r := fight(mk.call(), tr, on, int(si) + 400, {"turns": nturns, "refill_e": true, "refill_a": false, "force_elite": f_el, "expected_actors": ids})
+						r["seed"] = int(si)
+						r["on"] = on
+						runs.append(r)
+				rows.append({"group": gkey, "group_desc": teams[gkey].desc, "ids": ids, "diff": str(diff), "equip_tpl": equip_tpl,
+					"kind": str(ec.kind), "troop": tr, "enemy_desc": str(ec.desc), "force_elite": f_el, "level": lv, "runs": runs})
+				var ons := runs.filter(func(x): return bool(x.on))
+				var e2a_ap := 0
+				var eh_ap := 0
+				var aes := 0
+				for x in ons:
+					aes += int(x.aeskip)
+					for v in (x.stats_e2a as Dictionary).values():
+						e2a_ap += int(v.get("applied", 0))
+					for v in (x.stats_e_holy as Dictionary).values():
+						eh_ap += int(v.get("applied", 0))
+				print("defense2 %s %s %s tr=%d(el=%s) e2a_ap=%d eh_ap=%d aeskip=%d" % [gkey, str(diff), str(ec.kind), tr, str(f_el), e2a_ap, eh_ap, aes])
+	return {"rows": rows, "turns": nturns, "seeds": seed_list, "diffs": diffs, "phase4": XTianqiBase.PHASE4}
