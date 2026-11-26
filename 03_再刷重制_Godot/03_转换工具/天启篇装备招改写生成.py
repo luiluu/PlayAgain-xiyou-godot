@@ -246,7 +246,110 @@ def plan():
         rows[str(sid)], hits[sid] = damage_row(sk, elements, states)
     for sid, row in BATCH1_MANUAL.items():
         rows[str(sid)] = dict(row)
+    for sid in BATCH2_ATTACK:
+        sk = skills[sid]
+        assert sk['damage']['type'] in (1, 2, 5, 6), sid
+        rows[str(sid)], hits[sid] = attack_row(sk, elements)
+    rows['4442'] = dict(BATCH2_HEAL_4442)
     return rows, hits
+
+
+# ---- 批 2：替换普攻（Replace Attack）104 招＋武器触发（Weapon Unleash）13 招 ----
+# Kyo 11-26 事项 82 定甲：天启篇我方普攻照稿＝物攻×1；替换普攻统一普攻 1.0 模板，招牌最高 1.5；995／1968 保持 1.0（T541 已改，不动）。
+# 武器触发（普攻时 X% 换成这招）同属普攻位，按同一模板。招牌＝原版品质 8（传说装备的专属普攻），其余 1.0。
+BATCH2_ATTACK = [
+    12, 179, 288, 293, 299, 300, 301, 308, 344, 370, 444, 445, 491, 492, 493, 494, 554, 570, 572, 587, 616, 617,
+    635, 636, 637, 639, 640, 647, 658, 682, 767, 768, 769, 770, 788, 811, 813, 834, 851, 860, 869, 871, 884, 885,
+    886, 890, 891, 938, 944, 992, 1003, 1004, 1007, 1023, 1024, 1050, 1273, 1278, 1279, 1353, 1690, 1866, 1871,
+    1872, 1946, 1969, 1970, 2252, 2284, 2440, 2442, 2443, 2602, 2635, 2636, 2815, 2816, 3181, 3188, 3189, 3190,
+    3191, 3547, 3548, 3573, 3575, 3649, 3651, 3887, 3888, 3889, 3890, 4369, 4437, 4441, 4444, 4708, 4716, 4722,
+    5420, 6015, 6016, 6017, 6018,
+    # 武器触发
+    127, 258, 259, 294, 295, 296, 309, 495, 496, 497, 638, 2802, 2806,
+]
+BATCH2_HEAL_4442 = {
+    'name': '悦耳', 'kind': '普攻', 'heal': {'mhp_pct': 0.1}, 'mp': 0, 'tp': 0,
+    'desc': ['效果：普通攻击变为治疗一名友方，恢复 10% 最大生命并附加「悦耳」'],
+    '_note': f'{TAG} 装备招批 2：优雅提琴的替换普攻是单体治疗，原 800＋魔攻×2 → 最大生命 10%（普攻位，低于技能单体治疗 30% 的标准）'}
+STAT_KEYS = ('atk', 'mat', 'agi', 'luk', 'def', 'mdf')
+STAT_NAME.update({'luk': '幸运', 'def': '物理防御', 'mdf': '魔法防御'})
+
+
+def attack_stats(sk):
+    """主属性取公式里系数最大的那项；次属性系数不低于主属性一半才一起算（各占一份）。只吃生命的按生命折算。"""
+    f = sk['damage']['formula']
+    w = {}
+    for k in STAT_KEYS:
+        for m in re.finditer(rf'a\.{k}\s*\*\s*\(?\s*([\d.]+)|([\d.]+)\s*\*\s*a\.{k}\b', f):
+            w[k] = max(w.get(k, 0.0), float(m.group(1) or m.group(2)))
+        if k not in w and re.search(rf'\ba\.{k}\b', f):
+            w[k] = 1.0
+    if not w:
+        if re.search(r'\ba\.mhp\b', f):
+            return ('mhp',)
+        return ('atk',) if sk['stypeId'] in (0, 1) else ('mat',)
+    top = max(w.values())
+    order = sorted(w, key=lambda k: (-w[k], STAT_KEYS.index(k)))
+    return tuple(k for k in order if w[k] * 2 >= top)[:2]  # 最多两项（主＋次），多属性平均吃的取系数最高的两项
+
+
+def attack_row(sk, elements):
+    sid, scope = sk['id'], sk['scope']
+    area = scope in (2, 8, 10)
+    rand = scope - 2 if 3 <= scope <= 6 else 1
+    sig = int(str(sk['meta'].get('quality', '0')).strip() or 0) >= 8
+    total = 150 if sig else 100
+    if area:
+        total //= 2   # 全体按常规表「全体是单体一半」
+    stats = attack_stats(sk)
+    ops = [{'op': 'drop_if'}, {'op': 'clear_effect_args'}]
+    seq = sk.get('yepSeq') or {}
+    gains = sorted({c[0] for ph in ('target', 'whole') for c in seq.get(ph, [])
+                    if re.match(r'(?i)(?:hp|mp|tp)\s*[+-]', c[0])})
+    ops += [{'op': 'drop_cmd', 'match': g} for g in gains]
+    per_target = hits_per_target(sk, ops) * max(1, int(sk.get('repeats', 1)))
+    hits = per_target * rand
+    per = total // (hits * len(stats))
+    split = 1
+    while per > 100 or (per >= 100 and per % 100):
+        split += 1
+        per = total // (hits * split * len(stats))
+    if per < 1:
+        raise SystemExit(f'{sid} 段数 {hits} 太多，系数不到 1%')
+    if split > 1:
+        ops.append({'op': 'split_effects', 'n': split})
+        per_target *= split
+        hits *= split
+    w = {k: STAT_WEIGHT.get(k, 1) for k in stats}
+    row = {'name': sk['name'] or f'替换普攻{sid}', 'kind': '普攻', 'tp': 0, 'mp': 0,
+           'damage': {'stats': w, 'coef': per / 100}, 'seq': ops}
+    if re.search(r'(?i)<\s*Cooldown\s*:', sk['note']):
+        row['note_remove'] = ['Cooldown']
+    if '<pos=APs text=冷却时间:' in sk['note']:
+        row['header'] = {'冷却时间': '无'}
+    eff_rm = [[44, e['dataId']] for e in sk['effects'] if e['code'] == 44]
+    if eff_rm:
+        row['effects_remove'] = eff_rm
+    eid = sk['damage']['elementId']
+    elem = elements[eid] if 0 < eid < len(elements) else ''
+    elem_txt = f'{elem}伤害' if elem and elem != '物理' else ('物理伤害' if eid in (-1, 0, 1) else '伤害')
+    if stats == ('mhp',):
+        each = f'最大生命×{per * 4 / 100:g}%'
+    else:
+        each = f'{"、".join(STAT_NAME[k] for k in stats)}{"各" if len(stats) > 1 else ""}×{per}%'
+    n = per_target if area else hits
+    if rand > 1:
+        head = f'效果：普通攻击变为随机攻击敌人 {rand} 次（每次 {per_target} 段）的{elem_txt}'
+    elif area:
+        head = f'效果：普通攻击变为对全体敌人各 {per_target} 段的{elem_txt}' if per_target > 1 else f'效果：普通攻击变为对全体敌人的{elem_txt}'
+    else:
+        head = f'效果：普通攻击变为 {hits} 段{elem_txt}' if hits > 1 else f'效果：普通攻击变为{elem_txt}'
+    tot = f'{per * n * len(stats) * (4 if stats == ("mhp",) else 1) / (100 if stats == ("mhp",) else 1):g}%'
+    dmg = f'伤害：每段 {each}，{n} 段合计×{tot}' if n > 1 else f'伤害：{each}'
+    row['desc'] = [head, dmg]
+    row['_note'] = (f'{TAG} 装备招批 2（替换普攻，Kyo 事项 82 甲）：原 {sk["damage"]["formula"][:60]}'
+                    f' → 普攻{"招牌 1.5" if sig else " 1.0"}{"（全体减半）" if area else ""}，{hits} 段×{per}%×{len(stats)} 属性，去固定底数／熟练度／条件连段／耗蓝冷却')
+    return row, hits
 
 
 def apply(sr, rows):
