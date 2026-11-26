@@ -2895,6 +2895,8 @@ def growth_rules(table: dict) -> list:
     fr = table.get('floor_rule', {})
     if not _pos_int(fr.get('window'), True):
         bad.append('floor_rule.window＝%r 不是非负整数' % (fr.get('window'),))
+    if not (_pos_int(fr.get('crown_window'), True) and fr.get('crown_window') <= 36):
+        bad.append('floor_rule.crown_window＝%r 不是 0～36 的整数（魔冠头顶的层数窗口，T548）' % (fr.get('crown_window'),))
     if not (_pos_int(fr.get('abyss_cap')) and fr.get('abyss_cap') <= 36):
         bad.append('floor_rule.abyss_cap＝%r 不在 1～36' % (fr.get('abyss_cap'),))
     if not (isinstance(fr.get('abyss_prefix'), str) and fr.get('abyss_prefix')):
