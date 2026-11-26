@@ -1,0 +1,6806 @@
+{
+ "brand_max_bonus": 0.5,
+ "brand_pct": 75.0,
+ "build": "full",
+ "caps": {
+  "弱者": 8.0,
+  "强者": 11.0,
+  "超强者": 11.0
+ },
+ "def": 8200.0,
+ "fabao_level": 99,
+ "gear_level": 80,
+ "guyu_affixes": [
+  {
+   "affixes": [
+    "skill_damage",
+    "crit_damage",
+    "first_strike"
+   ],
+   "name": "【真印】止戈",
+   "slot": 0
+  },
+  {
+   "affixes": [
+    "skill_damage",
+    "crit_damage",
+    "mat"
+   ],
+   "name": "三环剑",
+   "slot": 1
+  },
+  {
+   "affixes": [],
+   "name": "【真印】天卷·头",
+   "slot": 2
+  },
+  {
+   "affixes": [],
+   "name": "【真印】天卷·甲",
+   "slot": 3
+  },
+  {
+   "affixes": [],
+   "name": "【真印】天卷·裤",
+   "slot": 4
+  },
+  {
+   "affixes": [],
+   "name": "天卷·手",
+   "slot": 5
+  },
+  {
+   "affixes": [],
+   "name": "天卷·鞋",
+   "slot": 6
+  },
+  {
+   "affixes": [],
+   "name": "天卷·腰",
+   "slot": 7
+  },
+  {
+   "affixes": [
+    "skill_damage",
+    "crit_damage",
+    "mat"
+   ],
+   "name": "邪龙饰物",
+   "slot": 8
+  },
+  {
+   "affixes": [
+    "skill_damage",
+    "element_damage/nature",
+    "mat"
+   ],
+   "name": "苍苍白骨",
+   "slot": 9
+  }
+ ],
+ "hits": 20,
+ "k": 0.5,
+ "level": 81,
+ "mastery_max_level_seen": 8,
+ "metric": "cast_total",
+ "missing": [],
+ "rows": [
+  {
+   "actor": 95,
+   "atk": 6694.0,
+   "battle_tier": "超强者",
+   "brand_mult": 1.375,
+   "build": {
+    "equips": [
+     "【真印】送行",
+     "送行",
+     "【真印】天卷·头",
+     "【真印】天卷·甲",
+     "【真印】天卷·裤",
+     "天卷·手",
+     "天卷·鞋",
+     "天卷·腰",
+     "邪龙饰物",
+     "苍苍白骨",
+     "",
+     "",
+     "红色围巾",
+     "",
+     "",
+     "嘶风逐日驹",
+     "",
+     "",
+     ""
+    ],
+    "secrets": [
+     488,
+     2471,
+     2480,
+     6139,
+     6159
+    ],
+    "trumpet": [
+     2
+    ]
+   },
+   "input_name": "后颈斩",
+   "input_skill": 10731,
+   "ledger_violations": 0,
+   "lianyu": {
+    "cast_peaks": [
+     {
+      "actor": 95,
+      "atk": 6694.0,
+      "input_name": "旋转斩击",
+      "input_skill": 8119,
+      "mat": 1700.0,
+      "mhp": 325406.0,
+      "peak": 387696,
+      "peak_base": 387696,
+      "peak_single": 48462,
+      "segments": [
+       48462.0,
+       48462.0,
+       48462.0,
+       48462.0,
+       48462.0,
+       48462.0,
+       48462.0,
+       48462.0
+      ],
+      "segs_base": 8,
+      "skill": 8119,
+      "skill_name": "旋转斩击",
+      "variance": 0
+     },
+     {
+      "actor": 95,
+      "atk": 6694.0,
+      "input_name": "立体机动",
+      "input_skill": 10729,
+      "mat": 1700.0,
+      "mhp": 325406.0,
+      "peak": 861556,
+      "peak_base": 861556,
+      "peak_single": 215389,
+      "segments": [
+       215389.0,
+       215389.0,
+       215389.0,
+       215389.0
+      ],
+      "segs_base": 4,
+      "skill": 10729,
+      "skill_name": "立体机动",
+      "variance": 0
+     },
+     {
+      "actor": 95,
+      "atk": 6694.0,
+      "input_name": "雷枪",
+      "input_skill": 10730,
+      "mat": 1700.0,
+      "mhp": 325406.0,
+      "peak": 323083,
+      "peak_base": 323083,
+      "peak_single": 323083,
+      "segments": [
+       323083.0
+      ],
+      "segs_base": 1,
+      "skill": 10730,
+      "skill_name": "雷枪",
+      "variance": 0
+     },
+     {
+      "actor": 95,
+      "atk": 6694.0,
+      "input_name": "后颈斩",
+      "input_skill": 10731,
+      "mat": 1700.0,
+      "mhp": 325406.0,
+      "peak": 989395,
+      "peak_base": 989395,
+      "peak_single": 258002,
+      "segments": [
+       215389.0,
+       258002.0,
+       258002.0,
+       258002.0
+      ],
+      "segs_base": 4,
+      "skill": 10731,
+      "skill_name": "后颈斩",
+      "variance": 0
+     }
+    ],
+    "forced_diagnostics": [],
+    "forced_main": [],
+    "gear": [
+     {
+      "actor": 95,
+      "etype": 1,
+      "grade": 6,
+      "grade_name": "神话",
+      "name": "【真印】送行",
+      "qiyin": true,
+      "req_level": 80,
+      "true_seal": true
+     },
+     {
+      "actor": 95,
+      "etype": 1,
+      "grade": 6,
+      "grade_name": "神话",
+      "name": "送行",
+      "qiyin": true,
+      "req_level": 80,
+      "true_seal": false
+     },
+     {
+      "actor": 95,
+      "etype": 3,
+      "grade": 6,
+      "grade_name": "神话",
+      "name": "【真印】天卷·头",
+      "qiyin": true,
+      "req_level": 80,
+      "true_seal": true
+     },
+     {
+      "actor": 95,
+      "etype": 4,
+      "grade": 6,
+      "grade_name": "神话",
+      "name": "【真印】天卷·甲",
+      "qiyin": true,
+      "req_level": 80,
+      "true_seal": true
+     },
+     {
+      "actor": 95,
+      "etype": 5,
+      "grade": 6,
+      "grade_name": "神话",
+      "name": "【真印】天卷·裤",
+      "qiyin": true,
+      "req_level": 80,
+      "true_seal": true
+     },
+     {
+      "actor": 95,
+      "etype": 6,
+      "grade": 6,
+      "grade_name": "神话",
+      "name": "天卷·手",
+      "qiyin": true,
+      "req_level": 80,
+      "true_seal": false
+     },
+     {
+      "actor": 95,
+      "etype": 7,
+      "grade": 6,
+      "grade_name": "神话",
+      "name": "天卷·鞋",
+      "qiyin": true,
+      "req_level": 80,
+      "true_seal": false
+     },
+     {
+      "actor": 95,
+      "etype": 8,
+      "grade": 6,
+      "grade_name": "神话",
+      "name": "天卷·腰",
+      "qiyin": true,
+      "req_level": 80,
+      "true_seal": false
+     },
+     {
+      "actor": 95,
+      "etype": 9,
+      "grade": 5,
+      "grade_name": "不朽",
+      "name": "邪龙饰物",
+      "qiyin": false,
+      "req_level": 70,
+      "true_seal": false
+     },
+     {
+      "actor": 95,
+      "etype": 10,
+      "grade": 5,
+      "grade_name": "不朽",
+      "name": "苍苍白骨",
+      "qiyin": false,
+      "req_level": 70,
+      "true_seal": false
+     }
+    ],
+    "mastery": 8,
+    "mastery_cap": 10,
+    "race_rank": 5,
+    "secret_limit": 5,
+    "skill_learned": true
+   },
+   "lottery_count": 0,
+   "mat": 1700.0,
+   "mhp": 325406.0,
+   "peak": 989395,
+   "peak_base": 989395,
+   "peak_single": 258002,
+   "segments": [
+    215389.0,
+    258002.0,
+    258002.0,
+    258002.0
+   ],
+   "segs_base": 4,
+   "skill": 10731,
+   "skill_name": "后颈斩",
+   "tier": "超强者",
+   "variance": 0
+  },
+  {
+   "actor": 107,
+   "atk": 12866.0,
+   "battle_tier": "超强者",
+   "brand_mult": 1.375,
+   "build": {
+    "equips": [
+     "【真印】以身饲虎",
+     "三环剑",
+     "【真印】天卷·头",
+     "【真印】天卷·甲",
+     "【真印】天卷·裤",
+     "天卷·手",
+     "天卷·鞋",
+     "天卷·腰",
+     "邪龙饰物",
+     "苍苍白骨",
+     "",
+     "",
+     "贯虹之槊",
+     "",
+     "",
+     "嘶风逐日驹",
+     "",
+     "",
+     ""
+    ],
+    "secrets": [
+     488,
+     2471,
+     2480,
+     6139,
+     6159
+    ],
+    "trumpet": [
+     2
+    ]
+   },
+   "forced": true,
+   "input_name": "爆发:天星·陨",
+   "input_skill": 5673,
+   "ledger_violations": 0,
+   "lianyu": {
+    "cast_peaks": [
+     {
+      "actor": 107,
+      "atk": 12866.0,
+      "input_name": "普攻:岩雨·轻击",
+      "input_skill": 5668,
+      "mat": 3469.0,
+      "mhp": 385842.0,
+      "peak": 541000,
+      "peak_base": 541000,
+      "peak_single": 108200,
+      "segments": [
+       108200.0,
+       108200.0,
+       108200.0,
+       108200.0,
+       108200.0
+      ],
+      "segs_base": 5,
+      "skill": 5668,
+      "skill_name": "普攻:岩雨·轻击",
+      "variance": 0
+     },
+     {
+      "actor": 107,
+      "atk": 12866.0,
+      "input_name": "普攻:岩雨·重击",
+      "input_skill": 5669,
+      "mat": 3469.0,
+      "mhp": 385842.0,
+      "peak": 259633,
+      "peak_base": 259633,
+      "peak_single": 259633,
+      "segments": [
+       259633.0
+      ],
+      "segs_base": 1,
+      "skill": 5669,
+      "skill_name": "普攻:岩雨·重击",
+      "variance": 0
+     },
+     {
+      "actor": 107,
+      "atk": 12866.0,
+      "input_name": "战技:地心·岩脊",
+      "input_skill": 5670,
+      "mat": 3469.0,
+      "mhp": 385842.0,
+      "peak": 794454,
+      "peak_base": 794454,
+      "peak_single": 397227,
+      "segments": [
+       397227.0,
+       397227.0
+      ],
+      "segs_base": 2,
+      "skill": 5670,
+      "skill_name": "战技:地心·岩脊",
+      "variance": 0
+     }
+    ],
+    "forced_diagnostics": [],
+    "forced_main": [
+     {
+      "actor": 107,
+      "atk": 12866.0,
+      "forced": true,
+      "input_name": "爆发:天星·陨",
+      "input_skill": 5673,
+      "mat": 3469.0,
+      "mhp": 385842.0,
+      "peak": 1038348,
+      "peak_base": 1038348,
+      "peak_single": 519174,
+      "segments": [
+       519174.0,
+       519174.0
+      ],
+      "segs_base": 2,
+      "skill": 5673,
+      "skill_name": "爆发:天星·陨",
+      "variance": 0
+     }
+    ],
+    "gear": [
+     {
+      "actor": 107,
+      "etype": 1,
+      "grade": 6,
+      "grade_name": "神话",
+      "name": "【真印】以身饲虎",
+      "qiyin": true,
+      "req_level": 80,
+      "true_seal": true
+     },
+     {
+      "actor": 107,
+      "etype": 2,
+      "grade": 5,
+      "grade_name": "不朽",
+      "name": "三环剑",
+      "qiyin": false,
+      "req_level": 70,
+      "true_seal": false
+     },
+     {
+      "actor": 107,
+      "etype": 3,
+      "grade": 6,
+      "grade_name": "神话",
+      "name": "【真印】天卷·头",
+      "qiyin": true,
+      "req_level": 80,
+      "true_seal": true
+     },
+     {
+      "actor": 107,
+      "etype": 4,
+      "grade": 6,
+      "grade_name": "神话",
+      "name": "【真印】天卷·甲",
+      "qiyin": true,
+      "req_level": 80,
+      "true_seal": true
+     },
+     {
+      "actor": 107,
+      "etype": 5,
+      "grade": 6,
+      "grade_name": "神话",
+      "name": "【真印】天卷·裤",
+      "qiyin": true,
+      "req_level": 80,
+      "true_seal": true
+     },
+     {
+      "actor": 107,
+      "etype": 6,
+      "grade": 6,
+      "grade_name": "神话",
+      "name": "天卷·手",
+      "qiyin": true,
+      "req_level": 80,
+      "true_seal": false
+     },
+     {
+      "actor": 107,
+      "etype": 7,
+      "grade": 6,
+      "grade_name": "神话",
+      "name": "天卷·鞋",
+      "qiyin": true,
+      "req_level": 80,
+      "true_seal": false
+     },
+     {
+      "actor": 107,
+      "etype": 8,
+      "grade": 6,
+      "grade_name": "神话",
+      "name": "天卷·腰",
+      "qiyin": true,
+      "req_level": 80,
+      "true_seal": false
+     },
+     {
+      "actor": 107,
+      "etype": 9,
+      "grade": 5,
+      "grade_name": "不朽",
+      "name": "邪龙饰物",
+      "qiyin": false,
+      "req_level": 70,
+      "true_seal": false
+     },
+     {
+      "actor": 107,
+      "etype": 10,
+      "grade": 5,
+      "grade_name": "不朽",
+      "name": "苍苍白骨",
+      "qiyin": false,
+      "req_level": 70,
+      "true_seal": false
+     }
+    ],
+    "mastery": 8,
+    "mastery_cap": 10,
+    "race_rank": 5,
+    "secret_limit": 5,
+    "skill_learned": true
+   },
+   "lottery_count": 0,
+   "mat": 3469.0,
+   "mhp": 385842.0,
+   "peak": 1038348,
+   "peak_base": 1038348,
+   "peak_single": 519174,
+   "segments": [
+    519174.0,
+    519174.0
+   ],
+   "segs_base": 2,
+   "skill": 5673,
+   "skill_name": "爆发:天星·陨",
+   "tier": "超强者",
+   "variance": 0
+  },
+  {
+   "actor": 108,
+   "atk": 4734.0,
+   "battle_tier": "超强者",
+   "brand_mult": 1.375,
+   "build": {
+    "equips": [
+     "【真印】危楼",
+     "尘影盾",
+     "【真印】阴府随行·头",
+     "【真印】阴府随行·甲",
+     "【真印】阴府随行·裤",
+     "阴府随行·手",
+     "阴府随行·鞋",
+     "阴府随行·腰",
+     "砗磲项链",
+     "和煦",
+     "",
+     "",
+     "旭日之心",
+     "",
+     "",
+     "嘶风逐日驹",
+     "",
+     "",
+     ""
+    ],
+    "secrets": [
+     489,
+     2480,
+     2782,
+     6139,
+     6159
+    ],
+    "trumpet": [
+     2
+    ]
+   },
+   "input_name": "厄临星爆 30%",
+   "input_skill": 5706,
+   "ledger_violations": 0,
+   "lianyu": {
+    "cast_peaks": [
+     {
+      "actor": 108,
+      "atk": 4734.0,
+      "input_name": "星光爆裂 ex-fb",
+      "input_skill": 5696,
+      "mat": 6887.0,
+      "mhp": 304787.0,
+      "peak": 517142,
+      "peak_base": 517142,
+      "peak_single": 517142,
+      "segments": [
+       517142.0
+      ],
+      "segs_base": 1,
+      "skill": 5696,
+      "skill_name": "星光爆裂 ex-fb",
+      "variance": 20
+     },
+     {
+      "actor": 108,
+      "atk": 4734.0,
+      "input_name": "凰霞风暴A.C.S 30%",
+      "input_skill": 5703,
+      "mat": 6887.0,
+      "mhp": 304787.0,
+      "peak": 544315,
+      "peak_base": 544315,
+      "peak_single": 544315,
+      "segments": [
+       544315.0
+      ],
+      "segs_base": 1,
+      "skill": 5703,
+      "skill_name": "凰霞风暴A.C.S 30%",
+      "variance": 20
+     },
+     {
+      "actor": 108,
+      "atk": 4734.0,
+      "input_name": "厄临星爆 30%",
+      "input_skill": 5706,
+      "mat": 6887.0,
+      "mhp": 304787.0,
+      "peak": 1043499,
+      "peak_base": 1043499,
+      "peak_single": 279860,
+      "segments": [
+       246300.0,
+       273557.0,
+       279860.0,
+       243782.0
+      ],
+      "segs_base": 4,
+      "skill": 5706,
+      "skill_name": "厄临星爆 30%",
+      "variance": 20
+     },
+     {
+      "actor": 108,
+      "atk": 4734.0,
+      "input_name": "星光",
+      "input_skill": 5710,
+      "mat": 6887.0,
+      "mhp": 304787.0,
+      "peak": 59179,
+      "peak_base": 59179,
+      "peak_single": 30464,
+      "segments": [
+       30464.0,
+       28715.0
+      ],
+      "segs_base": 2,
+      "skill": 5710,
+      "skill_name": "星光",
+      "variance": 20
+     }
+    ],
+    "forced_diagnostics": [],
+    "forced_main": [
+     {
+      "actor": 108,
+      "atk": 4734.0,
+      "forced": true,
+      "input_name": "凰霞风暴A.C.S 60%",
+      "input_skill": 5704,
+      "mat": 6887.0,
+      "mhp": 304787.0,
+      "peak": 463656,
+      "peak_base": 463656,
+      "peak_single": 463656,
+      "segments": [
+       463656.0
+      ],
+      "segs_base": 1,
+      "skill": 5704,
+      "skill_name": "凰霞风暴A.C.S 60%",
+      "variance": 20
+     },
+     {
+      "actor": 108,
+      "atk": 4734.0,
+      "forced": true,
+      "input_name": "凰霞风暴A.C.S 90%",
+      "input_skill": 5705,
+      "mat": 6887.0,
+      "mhp": 304787.0,
+      "peak": 463656,
+      "peak_base": 463656,
+      "peak_single": 463656,
+      "segments": [
+       463656.0
+      ],
+      "segs_base": 1,
+      "skill": 5705,
+      "skill_name": "凰霞风暴A.C.S 90%",
+      "variance": 20
+     },
+     {
+      "actor": 108,
+      "atk": 4734.0,
+      "forced": true,
+      "input_name": "厄临星爆 60%",
+      "input_skill": 5708,
+      "mat": 6887.0,
+      "mhp": 304787.0,
+      "peak": 852286,
+      "peak_base": 852286,
+      "peak_single": 225105,
+      "segments": [
+       225105.0,
+       189296.0,
+       216028.0,
+       221857.0
+      ],
+      "segs_base": 4,
+      "skill": 5708,
+      "skill_name": "厄临星爆 60%",
+      "variance": 20
+     },
+     {
+      "actor": 108,
+      "atk": 4734.0,
+      "forced": true,
+      "input_name": "厄临星爆 90%",
+      "input_skill": 5709,
+      "mat": 6887.0,
+      "mhp": 304787.0,
+      "peak": 852286,
+      "peak_base": 852286,
+      "peak_single": 225105,
+      "segments": [
+       225105.0,
+       189296.0,
+       216028.0,
+       221857.0
+      ],
+      "segs_base": 4,
+      "skill": 5709,
+      "skill_name": "厄临星爆 90%",
+      "variance": 20
+     }
+    ],
+    "gear": [
+     {
+      "actor": 108,
+      "etype": 1,
+      "grade": 6,
+      "grade_name": "神话",
+      "name": "【真印】危楼",
+      "qiyin": true,
+      "req_level": 80,
+      "true_seal": true
+     },
+     {
+      "actor": 108,
+      "etype": 2,
+      "grade": 5,
+      "grade_name": "不朽",
+      "name": "尘影盾",
+      "qiyin": false,
+      "req_level": 75,
+      "true_seal": false
+     },
+     {
+      "actor": 108,
+      "etype": 3,
+      "grade": 6,
+      "grade_name": "神话",
+      "name": "【真印】阴府随行·头",
+      "qiyin": true,
+      "req_level": 80,
+      "true_seal": true
+     },
+     {
+      "actor": 108,
+      "etype": 4,
+      "grade": 6,
+      "grade_name": "神话",
+      "name": "【真印】阴府随行·甲",
+      "qiyin": true,
+      "req_level": 80,
+      "true_seal": true
+     },
+     {
+      "actor": 108,
+      "etype": 5,
+      "grade": 6,
+      "grade_name": "神话",
+      "name": "【真印】阴府随行·裤",
+      "qiyin": true,
+      "req_level": 80,
+      "true_seal": true
+     },
+     {
+      "actor": 108,
+      "etype": 6,
+      "grade": 6,
+      "grade_name": "神话",
+      "name": "阴府随行·手",
+      "qiyin": true,
+      "req_level": 80,
+      "true_seal": false
+     },
+     {
+      "actor": 108,
+      "etype": 7,
+      "grade": 6,
+      "grade_name": "神话",
+      "name": "阴府随行·鞋",
+      "qiyin": true,
+      "req_level": 80,
+      "true_seal": false
+     },
+     {
+      "actor": 108,
+      "etype": 8,
+      "grade": 6,
+      "grade_name": "神话",
+      "name": "阴府随行·腰",
+      "qiyin": true,
+      "req_level": 80,
+      "true_seal": false
+     },
+     {
+      "actor": 108,
+      "etype": 9,
+      "grade": 5,
+      "grade_name": "不朽",
+      "name": "砗磲项链",
+      "qiyin": false,
+      "req_level": 75,
+      "true_seal": false
+     },
+     {
+      "actor": 108,
+      "etype": 10,
+      "grade": 5,
+      "grade_name": "不朽",
+      "name": "和煦",
+      "qiyin": false,
+      "req_level": 70,
+      "true_seal": false
+     }
+    ],
+    "mastery": 8,
+    "mastery_cap": 10,
+    "race_rank": 5,
+    "secret_limit": 5,
+    "skill_learned": true
+   },
+   "lottery_count": 0,
+   "mat": 6887.0,
+   "mhp": 304787.0,
+   "peak": 1043499,
+   "peak_base": 1043499,
+   "peak_single": 279860,
+   "segments": [
+    246300.0,
+    273557.0,
+    279860.0,
+    243782.0
+   ],
+   "segs_base": 4,
+   "skill": 5706,
+   "skill_name": "厄临星爆 30%",
+   "tier": "超强者",
+   "variance": 20
+  },
+  {
+   "actor": 122,
+   "atk": 9658.0,
+   "battle_tier": "超强者",
+   "brand_mult": 1.375,
+   "build": {
+    "equips": [
+     "【真印】送行",
+     "三环剑",
+     "【真印】阴府随行·头",
+     "【真印】阴府随行·甲",
+     "【真印】阴府随行·裤",
+     "阴府随行·手",
+     "阴府随行·鞋",
+     "阴府随行·腰",
+     "邪龙饰物",
+     "苍苍白骨",
+     "",
+     "",
+     "阴阳扇·狂龙",
+     "",
+     "",
+     "嘶风逐日驹",
+     "",
+     "",
+     ""
+    ],
+    "secrets": [
+     489,
+     2471,
+     2480,
+     6139,
+     6159
+    ],
+    "trumpet": [
+     2
+    ]
+   },
+   "input_name": "雨龙泣",
+   "input_skill": 6026,
+   "ledger_violations": 0,
+   "lianyu": {
+    "cast_peaks": [
+     {
+      "actor": 122,
+      "atk": 9658.0,
+      "input_name": "一爪破风",
+      "input_skill": 6021,
+      "mat": 1700.0,
+      "mhp": 352634.0,
+      "peak": 428930,
+      "peak_base": 428930,
+      "peak_single": 142977,
+      "segments": [
+       142977.0,
+       142977.0,
+       142976.0
+      ],
+      "segs_base": 3,
+      "skill": 6021,
+      "skill_name": "一爪破风",
+      "variance": 0
+     },
+     {
+      "actor": 122,
+      "atk": 9658.0,
+      "input_name": "回龙逆斩",
+      "input_skill": 6022,
+      "mat": 1700.0,
+      "mhp": 352634.0,
+      "peak": 571907,
+      "peak_base": 571907,
+      "peak_single": 571907,
+      "segments": [
+       571907.0
+      ],
+      "segs_base": 1,
+      "skill": 6022,
+      "skill_name": "回龙逆斩",
+      "variance": 0
+     },
+     {
+      "actor": 122,
+      "atk": 9658.0,
+      "input_name": "夜龙一炬",
+      "input_skill": 6023,
+      "mat": 1700.0,
+      "mhp": 352634.0,
+      "peak": 428931,
+      "peak_base": 428931,
+      "peak_single": 428931,
+      "segments": [
+       428931.0
+      ],
+      "segs_base": 1,
+      "skill": 6023,
+      "skill_name": "夜龙一炬",
+      "variance": 0
+     },
+     {
+      "actor": 122,
+      "atk": 9658.0,
+      "input_name": "离龙吼",
+      "input_skill": 6024,
+      "mat": 1700.0,
+      "mhp": 352634.0,
+      "peak": 122202,
+      "peak_base": 122202,
+      "peak_single": 122202,
+      "segments": [
+       122202.0
+      ],
+      "segs_base": 1,
+      "skill": 6024,
+      "skill_name": "离龙吼",
+      "variance": 0
+     },
+     {
+      "actor": 122,
+      "atk": 9658.0,
+      "input_name": "江山万里啸狂龙",
+      "input_skill": 6025,
+      "mat": 1700.0,
+      "mhp": 352634.0,
+      "peak": 571907,
+      "peak_base": 571907,
+      "peak_single": 571907,
+      "segments": [
+       571907.0
+      ],
+      "segs_base": 1,
+      "skill": 6025,
+      "skill_name": "江山万里啸狂龙",
+      "variance": 0
+     },
+     {
+      "actor": 122,
+      "atk": 9658.0,
+      "input_name": "雨龙泣",
+      "input_skill": 6026,
+      "mat": 1700.0,
+      "mhp": 352634.0,
+      "peak": 857859,
+      "peak_base": 857859,
+      "peak_single": 428931,
+      "segments": [
+       428931.0,
+       428928.0
+      ],
+      "segs_base": 2,
+      "skill": 6026,
+      "skill_name": "雨龙泣",
+      "variance": 0
+     },
+     {
+      "actor": 122,
+      "atk": 9658.0,
+      "input_name": "无影龙",
+      "input_skill": 6027,
+      "mat": 1700.0,
+      "mhp": 352634.0,
+      "peak": 714884,
+      "peak_base": 714884,
+      "peak_single": 714884,
+      "segments": [
+       714884.0
+      ],
+      "segs_base": 1,
+      "skill": 6027,
+      "skill_name": "无影龙",
+      "variance": 0
+     }
+    ],
+    "forced_diagnostics": [],
+    "forced_main": [
+     {
+      "actor": 122,
+      "atk": 9658.0,
+      "forced": true,
+      "input_name": "旋龙斩",
+      "input_skill": 6028,
+      "mat": 1700.0,
+      "mhp": 352634.0,
+      "peak": 714882,
+      "peak_base": 714882,
+      "peak_single": 142977,
+      "segments": [
+       142977.0,
+       142977.0,
+       142976.0,
+       142976.0,
+       142976.0
+      ],
+      "segs_base": 5,
+      "skill": 6028,
+      "skill_name": "旋龙斩",
+      "variance": 0
+     }
+    ],
+    "gear": [
+     {
+      "actor": 122,
+      "etype": 1,
+      "grade": 6,
+      "grade_name": "神话",
+      "name": "【真印】送行",
+      "qiyin": true,
+      "req_level": 80,
+      "true_seal": true
+     },
+     {
+      "actor": 122,
+      "etype": 2,
+      "grade": 5,
+      "grade_name": "不朽",
+      "name": "三环剑",
+      "qiyin": false,
+      "req_level": 70,
+      "true_seal": false
+     },
+     {
+      "actor": 122,
+      "etype": 3,
+      "grade": 6,
+      "grade_name": "神话",
+      "name": "【真印】阴府随行·头",
+      "qiyin": true,
+      "req_level": 80,
+      "true_seal": true
+     },
+     {
+      "actor": 122,
+      "etype": 4,
+      "grade": 6,
+      "grade_name": "神话",
+      "name": "【真印】阴府随行·甲",
+      "qiyin": true,
+      "req_level": 80,
+      "true_seal": true
+     },
+     {
+      "actor": 122,
+      "etype": 5,
+      "grade": 6,
+      "grade_name": "神话",
+      "name": "【真印】阴府随行·裤",
+      "qiyin": true,
+      "req_level": 80,
+      "true_seal": true
+     },
+     {
+      "actor": 122,
+      "etype": 6,
+      "grade": 6,
+      "grade_name": "神话",
+      "name": "阴府随行·手",
+      "qiyin": true,
+      "req_level": 80,
+      "true_seal": false
+     },
+     {
+      "actor": 122,
+      "etype": 7,
+      "grade": 6,
+      "grade_name": "神话",
+      "name": "阴府随行·鞋",
+      "qiyin": true,
+      "req_level": 80,
+      "true_seal": false
+     },
+     {
+      "actor": 122,
+      "etype": 8,
+      "grade": 6,
+      "grade_name": "神话",
+      "name": "阴府随行·腰",
+      "qiyin": true,
+      "req_level": 80,
+      "true_seal": false
+     },
+     {
+      "actor": 122,
+      "etype": 9,
+      "grade": 5,
+      "grade_name": "不朽",
+      "name": "邪龙饰物",
+      "qiyin": false,
+      "req_level": 70,
+      "true_seal": false
+     },
+     {
+      "actor": 122,
+      "etype": 10,
+      "grade": 5,
+      "grade_name": "不朽",
+      "name": "苍苍白骨",
+      "qiyin": false,
+      "req_level": 70,
+      "true_seal": false
+     }
+    ],
+    "mastery": 8,
+    "mastery_cap": 10,
+    "race_rank": 5,
+    "secret_limit": 5,
+    "skill_learned": true
+   },
+   "lottery_count": 0,
+   "mat": 1700.0,
+   "mhp": 352634.0,
+   "peak": 857859,
+   "peak_base": 857859,
+   "peak_single": 428931,
+   "segments": [
+    428931.0,
+    428928.0
+   ],
+   "segs_base": 2,
+   "skill": 6026,
+   "skill_name": "雨龙泣",
+   "tier": "超强者",
+   "variance": 0
+  },
+  {
+   "actor": 152,
+   "atk": 7660.0,
+   "battle_tier": "超强者",
+   "brand_mult": 1.375,
+   "build": {
+    "equips": [
+     "【真印】止戈",
+     "三环剑",
+     "【真印】阴府随行·头",
+     "【真印】阴府随行·甲",
+     "【真印】阴府随行·裤",
+     "阴府随行·手",
+     "阴府随行·鞋",
+     "阴府随行·腰",
+     "邪龙饰物",
+     "苍苍白骨",
+     "",
+     "",
+     "徐凤年·不朽法宝",
+     "",
+     "",
+     "嘶风逐日驹",
+     "",
+     "",
+     ""
+    ],
+    "secrets": [
+     488,
+     2471,
+     2480,
+     6139,
+     6159
+    ],
+    "trumpet": [
+     2
+    ]
+   },
+   "input_name": "剑九",
+   "input_skill": 9995,
+   "ledger_violations": 0,
+   "lianyu": {
+    "cast_peaks": [
+     {
+      "actor": 152,
+      "atk": 7660.0,
+      "input_name": "剑九",
+      "input_skill": 9995,
+      "mat": 3304.0,
+      "mhp": 346789.0,
+      "peak": 1088032,
+      "peak_base": 1088032,
+      "peak_single": 136004,
+      "segments": [
+       136004.0,
+       136004.0,
+       136004.0,
+       136004.0,
+       136004.0,
+       136004.0,
+       136004.0,
+       136004.0
+      ],
+      "segs_base": 8,
+      "skill": 9995,
+      "skill_name": "剑九",
+      "variance": 0
+     },
+     {
+      "actor": 152,
+      "atk": 7660.0,
+      "input_name": "剑气滚龙壁·封印",
+      "input_skill": 9998,
+      "mat": 3304.0,
+      "mhp": 346789.0,
+      "peak": 850040,
+      "peak_base": 850040,
+      "peak_single": 170008,
+      "segments": [
+       170008.0,
+       170008.0,
+       170008.0,
+       170008.0,
+       170008.0
+      ],
+      "segs_base": 5,
+      "skill": 9998,
+      "skill_name": "剑气滚龙壁·封印",
+      "variance": 0
+     }
+    ],
+    "forced_diagnostics": [],
+    "forced_main": [],
+    "gear": [
+     {
+      "actor": 152,
+      "etype": 1,
+      "grade": 6,
+      "grade_name": "神话",
+      "name": "【真印】止戈",
+      "qiyin": true,
+      "req_level": 80,
+      "true_seal": true
+     },
+     {
+      "actor": 152,
+      "etype": 2,
+      "grade": 5,
+      "grade_name": "不朽",
+      "name": "三环剑",
+      "qiyin": false,
+      "req_level": 70,
+      "true_seal": false
+     },
+     {
+      "actor": 152,
+      "etype": 3,
+      "grade": 6,
+      "grade_name": "神话",
+      "name": "【真印】阴府随行·头",
+      "qiyin": true,
+      "req_level": 80,
+      "true_seal": true
+     },
+     {
+      "actor": 152,
+      "etype": 4,
+      "grade": 6,
+      "grade_name": "神话",
+      "name": "【真印】阴府随行·甲",
+      "qiyin": true,
+      "req_level": 80,
+      "true_seal": true
+     },
+     {
+      "actor": 152,
+      "etype": 5,
+      "grade": 6,
+      "grade_name": "神话",
+      "name": "【真印】阴府随行·裤",
+      "qiyin": true,
+      "req_level": 80,
+      "true_seal": true
+     },
+     {
+      "actor": 152,
+      "etype": 6,
+      "grade": 6,
+      "grade_name": "神话",
+      "name": "阴府随行·手",
+      "qiyin": true,
+      "req_level": 80,
+      "true_seal": false
+     },
+     {
+      "actor": 152,
+      "etype": 7,
+      "grade": 6,
+      "grade_name": "神话",
+      "name": "阴府随行·鞋",
+      "qiyin": true,
+      "req_level": 80,
+      "true_seal": false
+     },
+     {
+      "actor": 152,
+      "etype": 8,
+      "grade": 6,
+      "grade_name": "神话",
+      "name": "阴府随行·腰",
+      "qiyin": true,
+      "req_level": 80,
+      "true_seal": false
+     },
+     {
+      "actor": 152,
+      "etype": 9,
+      "grade": 5,
+      "grade_name": "不朽",
+      "name": "邪龙饰物",
+      "qiyin": false,
+      "req_level": 70,
+      "true_seal": false
+     },
+     {
+      "actor": 152,
+      "etype": 10,
+      "grade": 5,
+      "grade_name": "不朽",
+      "name": "苍苍白骨",
+      "qiyin": false,
+      "req_level": 70,
+      "true_seal": false
+     }
+    ],
+    "mastery": 8,
+    "mastery_cap": 10,
+    "race_rank": 5,
+    "secret_limit": 5,
+    "skill_learned": true
+   },
+   "lottery_count": 0,
+   "mat": 3304.0,
+   "mhp": 346789.0,
+   "peak": 1088032,
+   "peak_base": 1088032,
+   "peak_single": 136004,
+   "segments": [
+    136004.0,
+    136004.0,
+    136004.0,
+    136004.0,
+    136004.0,
+    136004.0,
+    136004.0,
+    136004.0
+   ],
+   "segs_base": 8,
+   "skill": 9995,
+   "skill_name": "剑九",
+   "tier": "超强者",
+   "variance": 0
+  },
+  {
+   "actor": 163,
+   "atk": 7637.0,
+   "battle_tier": "超强者",
+   "brand_mult": 1.375,
+   "build": {
+    "equips": [
+     "【真印】一力降十会",
+     "三环剑",
+     "【真印】天卷·头",
+     "【真印】天卷·甲",
+     "【真印】天卷·裤",
+     "天卷·手",
+     "天卷·鞋",
+     "天卷·腰",
+     "邪龙饰物",
+     "苍苍白骨",
+     "",
+     "",
+     "一拳",
+     "",
+     "",
+     "嘶风逐日驹",
+     "",
+     "",
+     ""
+    ],
+    "secrets": [
+     488,
+     2471,
+     2480,
+     6139,
+     6159
+    ],
+    "trumpet": [
+     2
+    ]
+   },
+   "input_name": "认真一拳",
+   "input_skill": 9938,
+   "ledger_violations": 0,
+   "lianyu": {
+    "cast_peaks": [
+     {
+      "actor": 163,
+      "atk": 7637.0,
+      "input_name": "普通一拳",
+      "input_skill": 9934,
+      "mat": 3304.0,
+      "mhp": 326482.0,
+      "peak": 928802,
+      "peak_base": 928802,
+      "peak_single": 464401,
+      "segments": [
+       464401.0,
+       464401.0
+      ],
+      "segs_base": 2,
+      "skill": 9934,
+      "skill_name": "普通一拳",
+      "variance": 0
+     },
+     {
+      "actor": 163,
+      "atk": 7637.0,
+      "input_name": "认真一拳",
+      "input_skill": 9938,
+      "mat": 3304.0,
+      "mhp": 326482.0,
+      "peak": 1322993,
+      "peak_base": 1322993,
+      "peak_single": 461102,
+      "segments": [
+       461102.0,
+       456709.0,
+       405182.0
+      ],
+      "segs_base": 3,
+      "skill": 9938,
+      "skill_name": "认真一拳",
+      "variance": 20
+     },
+     {
+      "actor": 163,
+      "atk": 7637.0,
+      "input_name": "认真连续拳！",
+      "input_skill": 9939,
+      "mat": 3304.0,
+      "mhp": 326482.0,
+      "peak": 1167798,
+      "peak_base": 1167798,
+      "peak_single": 159347,
+      "segments": [
+       159347.0,
+       133868.0,
+       140809.0,
+       154576.0,
+       144907.0,
+       142324.0,
+       154776.0,
+       137191.0
+      ],
+      "segs_base": 8,
+      "skill": 9939,
+      "skill_name": "认真连续拳！",
+      "variance": 20
+     }
+    ],
+    "forced_diagnostics": [],
+    "forced_main": [
+     {
+      "actor": 163,
+      "atk": 7637.0,
+      "forced": true,
+      "input_name": "真.认真一拳",
+      "input_skill": 10615,
+      "mat": 3304.0,
+      "mhp": 326482.0,
+      "peak": 1224846,
+      "peak_base": 1224846,
+      "peak_single": 441122,
+      "segments": [
+       409747.0,
+       441122.0,
+       373977.0
+      ],
+      "segs_base": 3,
+      "skill": 10615,
+      "skill_name": "真.认真一拳",
+      "variance": 20
+     }
+    ],
+    "gear": [
+     {
+      "actor": 163,
+      "etype": 1,
+      "grade": 6,
+      "grade_name": "神话",
+      "name": "【真印】一力降十会",
+      "qiyin": true,
+      "req_level": 80,
+      "true_seal": true
+     },
+     {
+      "actor": 163,
+      "etype": 2,
+      "grade": 5,
+      "grade_name": "不朽",
+      "name": "三环剑",
+      "qiyin": false,
+      "req_level": 70,
+      "true_seal": false
+     },
+     {
+      "actor": 163,
+      "etype": 3,
+      "grade": 6,
+      "grade_name": "神话",
+      "name": "【真印】天卷·头",
+      "qiyin": true,
+      "req_level": 80,
+      "true_seal": true
+     },
+     {
+      "actor": 163,
+      "etype": 4,
+      "grade": 6,
+      "grade_name": "神话",
+      "name": "【真印】天卷·甲",
+      "qiyin": true,
+      "req_level": 80,
+      "true_seal": true
+     },
+     {
+      "actor": 163,
+      "etype": 5,
+      "grade": 6,
+      "grade_name": "神话",
+      "name": "【真印】天卷·裤",
+      "qiyin": true,
+      "req_level": 80,
+      "true_seal": true
+     },
+     {
+      "actor": 163,
+      "etype": 6,
+      "grade": 6,
+      "grade_name": "神话",
+      "name": "天卷·手",
+      "qiyin": true,
+      "req_level": 80,
+      "true_seal": false
+     },
+     {
+      "actor": 163,
+      "etype": 7,
+      "grade": 6,
+      "grade_name": "神话",
+      "name": "天卷·鞋",
+      "qiyin": true,
+      "req_level": 80,
+      "true_seal": false
+     },
+     {
+      "actor": 163,
+      "etype": 8,
+      "grade": 6,
+      "grade_name": "神话",
+      "name": "天卷·腰",
+      "qiyin": true,
+      "req_level": 80,
+      "true_seal": false
+     },
+     {
+      "actor": 163,
+      "etype": 9,
+      "grade": 5,
+      "grade_name": "不朽",
+      "name": "邪龙饰物",
+      "qiyin": false,
+      "req_level": 70,
+      "true_seal": false
+     },
+     {
+      "actor": 163,
+      "etype": 10,
+      "grade": 5,
+      "grade_name": "不朽",
+      "name": "苍苍白骨",
+      "qiyin": false,
+      "req_level": 70,
+      "true_seal": false
+     }
+    ],
+    "mastery": 8,
+    "mastery_cap": 10,
+    "race_rank": 5,
+    "secret_limit": 5,
+    "skill_learned": true
+   },
+   "lottery_count": 0,
+   "mat": 3304.0,
+   "mhp": 326482.0,
+   "peak": 1322993,
+   "peak_base": 1322993,
+   "peak_single": 461102,
+   "segments": [
+    461102.0,
+    456709.0,
+    405182.0
+   ],
+   "segs_base": 3,
+   "skill": 9938,
+   "skill_name": "认真一拳",
+   "tier": "超强者",
+   "variance": 20
+  },
+  {
+   "actor": 167,
+   "atk": 3079.0,
+   "battle_tier": "超强者",
+   "brand_mult": 1.375,
+   "build": {
+    "equips": [
+     "【真印】危楼",
+     "双鱼念气瓶",
+     "【真印】天卷·头",
+     "【真印】天卷·甲",
+     "【真印】天卷·裤",
+     "天卷·手",
+     "天卷·鞋",
+     "天卷·腰",
+     "砗磲项链",
+     "和煦",
+     "",
+     "",
+     "冥河断罪镰",
+     "",
+     "",
+     "嘶风逐日驹",
+     "",
+     "",
+     ""
+    ],
+    "secrets": [
+     489,
+     2479,
+     2480,
+     6139,
+     6159
+    ],
+    "trumpet": [
+     2
+    ]
+   },
+   "input_name": "黑翼裁决",
+   "input_skill": 10125,
+   "ledger_violations": 0,
+   "lianyu": {
+    "cast_peaks": [
+     {
+      "actor": 167,
+      "atk": 3079.0,
+      "input_name": "渡魂鸦啄",
+      "input_skill": 10122,
+      "mat": 6559.0,
+      "mhp": 318729.0,
+      "peak": 742186,
+      "peak_base": 395743,
+      "peak_single": 371267,
+      "segments": [
+       370919.0,
+       371267.0
+      ],
+      "segs_base": 1,
+      "skill": 10122,
+      "skill_name": "渡魂鸦啄",
+      "variance": 10
+     },
+     {
+      "actor": 167,
+      "atk": 3079.0,
+      "input_name": "冥羽连葬",
+      "input_skill": 10123,
+      "mat": 6559.0,
+      "mhp": 318729.0,
+      "peak": 735977,
+      "peak_base": 392209,
+      "peak_single": 190984,
+      "segments": [
+       183527.0,
+       181067.0,
+       180399.0,
+       190984.0
+      ],
+      "segs_base": 2,
+      "skill": 10123,
+      "skill_name": "冥羽连葬",
+      "variance": 10
+     },
+     {
+      "actor": 167,
+      "atk": 3079.0,
+      "input_name": "亡者盛宴",
+      "input_skill": 10124,
+      "mat": 6559.0,
+      "mhp": 318729.0,
+      "peak": 365918,
+      "peak_base": 196343,
+      "peak_single": 185180,
+      "segments": [
+       185180.0,
+       180738.0
+      ],
+      "segs_base": 1,
+      "skill": 10124,
+      "skill_name": "亡者盛宴",
+      "variance": 10
+     },
+     {
+      "actor": 167,
+      "atk": 3079.0,
+      "input_name": "黑翼裁决",
+      "input_skill": 10125,
+      "mat": 6559.0,
+      "mhp": 318729.0,
+      "peak": 1435615,
+      "peak_base": 739555,
+      "peak_single": 188975,
+      "segments": [
+       174263.0,
+       184468.0,
+       180141.0,
+       170071.0,
+       188975.0,
+       180197.0,
+       176342.0,
+       181158.0
+      ],
+      "segs_base": 4,
+      "skill": 10125,
+      "skill_name": "黑翼裁决",
+      "variance": 10
+     },
+     {
+      "actor": 167,
+      "atk": 3079.0,
+      "input_name": "万魂归鸦",
+      "input_skill": 10126,
+      "mat": 6559.0,
+      "mhp": 318729.0,
+      "peak": 1090298,
+      "peak_base": 600055,
+      "peak_single": 552215,
+      "segments": [
+       538083.0,
+       552215.0
+      ],
+      "segs_base": 1,
+      "skill": 10126,
+      "skill_name": "万魂归鸦",
+      "variance": 10
+     }
+    ],
+    "forced_diagnostics": [],
+    "forced_main": [],
+    "gear": [
+     {
+      "actor": 167,
+      "etype": 1,
+      "grade": 6,
+      "grade_name": "神话",
+      "name": "【真印】危楼",
+      "qiyin": true,
+      "req_level": 80,
+      "true_seal": true
+     },
+     {
+      "actor": 167,
+      "etype": 2,
+      "grade": 5,
+      "grade_name": "不朽",
+      "name": "双鱼念气瓶",
+      "qiyin": false,
+      "req_level": 75,
+      "true_seal": false
+     },
+     {
+      "actor": 167,
+      "etype": 3,
+      "grade": 6,
+      "grade_name": "神话",
+      "name": "【真印】天卷·头",
+      "qiyin": true,
+      "req_level": 80,
+      "true_seal": true
+     },
+     {
+      "actor": 167,
+      "etype": 4,
+      "grade": 6,
+      "grade_name": "神话",
+      "name": "【真印】天卷·甲",
+      "qiyin": true,
+      "req_level": 80,
+      "true_seal": true
+     },
+     {
+      "actor": 167,
+      "etype": 5,
+      "grade": 6,
+      "grade_name": "神话",
+      "name": "【真印】天卷·裤",
+      "qiyin": true,
+      "req_level": 80,
+      "true_seal": true
+     },
+     {
+      "actor": 167,
+      "etype": 6,
+      "grade": 6,
+      "grade_name": "神话",
+      "name": "天卷·手",
+      "qiyin": true,
+      "req_level": 80,
+      "true_seal": false
+     },
+     {
+      "actor": 167,
+      "etype": 7,
+      "grade": 6,
+      "grade_name": "神话",
+      "name": "天卷·鞋",
+      "qiyin": true,
+      "req_level": 80,
+      "true_seal": false
+     },
+     {
+      "actor": 167,
+      "etype": 8,
+      "grade": 6,
+      "grade_name": "神话",
+      "name": "天卷·腰",
+      "qiyin": true,
+      "req_level": 80,
+      "true_seal": false
+     },
+     {
+      "actor": 167,
+      "etype": 9,
+      "grade": 5,
+      "grade_name": "不朽",
+      "name": "砗磲项链",
+      "qiyin": false,
+      "req_level": 75,
+      "true_seal": false
+     },
+     {
+      "actor": 167,
+      "etype": 10,
+      "grade": 5,
+      "grade_name": "不朽",
+      "name": "和煦",
+      "qiyin": false,
+      "req_level": 70,
+      "true_seal": false
+     }
+    ],
+    "mastery": 6,
+    "mastery_cap": 8,
+    "race_rank": 5,
+    "secret_limit": 5,
+    "skill_learned": true
+   },
+   "lottery_count": 0,
+   "mat": 6559.0,
+   "mhp": 318729.0,
+   "peak": 1435615,
+   "peak_base": 739555,
+   "peak_single": 188975,
+   "segments": [
+    174263.0,
+    184468.0,
+    180141.0,
+    170071.0,
+    188975.0,
+    180197.0,
+    176342.0,
+    181158.0
+   ],
+   "segs_base": 4,
+   "skill": 10125,
+   "skill_name": "黑翼裁决",
+   "tier": "超强者",
+   "variance": 10
+  },
+  {
+   "actor": 168,
+   "atk": 7660.0,
+   "battle_tier": "超强者",
+   "brand_mult": 1.375,
+   "build": {
+    "equips": [
+     "【真印】止戈",
+     "三环剑",
+     "【真印】阴府随行·头",
+     "【真印】阴府随行·甲",
+     "【真印】阴府随行·裤",
+     "阴府随行·手",
+     "阴府随行·鞋",
+     "阴府随行·腰",
+     "邪龙饰物",
+     "苍苍白骨",
+     "",
+     "",
+     "黑龙心鳞",
+     "",
+     "",
+     "嘶风逐日驹",
+     "",
+     "",
+     ""
+    ],
+    "secrets": [
+     488,
+     2472,
+     2480,
+     6139,
+     6159
+    ],
+    "trumpet": [
+     2
+    ]
+   },
+   "forced": true,
+   "input_name": "黑日焚界",
+   "input_skill": 10151,
+   "ledger_violations": 0,
+   "lianyu": {
+    "cast_peaks": [
+     {
+      "actor": 168,
+      "atk": 7660.0,
+      "input_name": "赤鳞断",
+      "input_skill": 10140,
+      "mat": 3502.0,
+      "mhp": 359278.0,
+      "peak": 538204,
+      "peak_base": 538204,
+      "peak_single": 538204,
+      "segments": [
+       538204.0
+      ],
+      "segs_base": 1,
+      "skill": 10140,
+      "skill_name": "赤鳞断",
+      "variance": 0
+     },
+     {
+      "actor": 168,
+      "atk": 7660.0,
+      "input_name": "龙牙横扫",
+      "input_skill": 10141,
+      "mat": 3502.0,
+      "mhp": 359278.0,
+      "peak": 419214,
+      "peak_base": 419214,
+      "peak_single": 419214,
+      "segments": [
+       419214.0
+      ],
+      "segs_base": 1,
+      "skill": 10141,
+      "skill_name": "龙牙横扫",
+      "variance": 0
+     },
+     {
+      "actor": 168,
+      "atk": 7660.0,
+      "input_name": "余烬术式",
+      "input_skill": 10142,
+      "mat": 3502.0,
+      "mhp": 359278.0,
+      "peak": 193539,
+      "peak_base": 193539,
+      "peak_single": 193539,
+      "segments": [
+       193539.0
+      ],
+      "segs_base": 1,
+      "skill": 10142,
+      "skill_name": "余烬术式",
+      "variance": 0
+     },
+     {
+      "actor": 168,
+      "atk": 7660.0,
+      "input_name": "熔城火雨",
+      "input_skill": 10143,
+      "mat": 3502.0,
+      "mhp": 359278.0,
+      "peak": 193539,
+      "peak_base": 193539,
+      "peak_single": 64513,
+      "segments": [
+       64513.0,
+       64513.0,
+       64513.0
+      ],
+      "segs_base": 3,
+      "skill": 10143,
+      "skill_name": "熔城火雨",
+      "variance": 0
+     },
+     {
+      "actor": 168,
+      "atk": 7660.0,
+      "input_name": "解放·黑龙",
+      "input_skill": 10146,
+      "mat": 3502.0,
+      "mhp": 359278.0,
+      "peak": 286954,
+      "peak_base": 286954,
+      "peak_single": 286954,
+      "segments": [
+       286954.0
+      ],
+      "segs_base": 1,
+      "skill": 10146,
+      "skill_name": "解放·黑龙",
+      "variance": 0
+     }
+    ],
+    "forced_diagnostics": [],
+    "forced_main": [
+     {
+      "actor": 168,
+      "atk": 7660.0,
+      "forced": true,
+      "input_name": "灼鳞裂爪",
+      "input_skill": 10148,
+      "mat": 3502.0,
+      "mhp": 431134.0,
+      "peak": 675221,
+      "peak_base": 675221,
+      "peak_single": 675221,
+      "segments": [
+       675221.0
+      ],
+      "segs_base": 1,
+      "skill": 10148,
+      "skill_name": "灼鳞裂爪",
+      "variance": 0
+     },
+     {
+      "actor": 168,
+      "atk": 7660.0,
+      "forced": true,
+      "input_name": "王焰吐息",
+      "input_skill": 10149,
+      "mat": 3502.0,
+      "mhp": 431134.0,
+      "peak": 98158,
+      "peak_base": 98158,
+      "peak_single": 98158,
+      "segments": [
+       98158.0
+      ],
+      "segs_base": 1,
+      "skill": 10149,
+      "skill_name": "王焰吐息",
+      "variance": 0
+     },
+     {
+      "actor": 168,
+      "atk": 7660.0,
+      "forced": true,
+      "input_name": "天坠翼击",
+      "input_skill": 10150,
+      "mat": 3502.0,
+      "mhp": 431134.0,
+      "peak": 675221,
+      "peak_base": 675221,
+      "peak_single": 675221,
+      "segments": [
+       675221.0
+      ],
+      "segs_base": 1,
+      "skill": 10150,
+      "skill_name": "天坠翼击",
+      "variance": 0
+     },
+     {
+      "actor": 168,
+      "atk": 7660.0,
+      "forced": true,
+      "input_name": "黑日焚界",
+      "input_skill": 10151,
+      "mat": 3502.0,
+      "mhp": 431134.0,
+      "peak": 1340655,
+      "peak_base": 1340655,
+      "peak_single": 446885,
+      "segments": [
+       446885.0,
+       446885.0,
+       446885.0
+      ],
+      "segs_base": 3,
+      "skill": 10151,
+      "skill_name": "黑日焚界",
+      "variance": 0
+     }
+    ],
+    "gear": [
+     {
+      "actor": 168,
+      "etype": 1,
+      "grade": 6,
+      "grade_name": "神话",
+      "name": "【真印】止戈",
+      "qiyin": true,
+      "req_level": 80,
+      "true_seal": true
+     },
+     {
+      "actor": 168,
+      "etype": 2,
+      "grade": 5,
+      "grade_name": "不朽",
+      "name": "三环剑",
+      "qiyin": false,
+      "req_level": 70,
+      "true_seal": false
+     },
+     {
+      "actor": 168,
+      "etype": 3,
+      "grade": 6,
+      "grade_name": "神话",
+      "name": "【真印】阴府随行·头",
+      "qiyin": true,
+      "req_level": 80,
+      "true_seal": true
+     },
+     {
+      "actor": 168,
+      "etype": 4,
+      "grade": 6,
+      "grade_name": "神话",
+      "name": "【真印】阴府随行·甲",
+      "qiyin": true,
+      "req_level": 80,
+      "true_seal": true
+     },
+     {
+      "actor": 168,
+      "etype": 5,
+      "grade": 6,
+      "grade_name": "神话",
+      "name": "【真印】阴府随行·裤",
+      "qiyin": true,
+      "req_level": 80,
+      "true_seal": true
+     },
+     {
+      "actor": 168,
+      "etype": 6,
+      "grade": 6,
+      "grade_name": "神话",
+      "name": "阴府随行·手",
+      "qiyin": true,
+      "req_level": 80,
+      "true_seal": false
+     },
+     {
+      "actor": 168,
+      "etype": 7,
+      "grade": 6,
+      "grade_name": "神话",
+      "name": "阴府随行·鞋",
+      "qiyin": true,
+      "req_level": 80,
+      "true_seal": false
+     },
+     {
+      "actor": 168,
+      "etype": 8,
+      "grade": 6,
+      "grade_name": "神话",
+      "name": "阴府随行·腰",
+      "qiyin": true,
+      "req_level": 80,
+      "true_seal": false
+     },
+     {
+      "actor": 168,
+      "etype": 9,
+      "grade": 5,
+      "grade_name": "不朽",
+      "name": "邪龙饰物",
+      "qiyin": false,
+      "req_level": 70,
+      "true_seal": false
+     },
+     {
+      "actor": 168,
+      "etype": 10,
+      "grade": 5,
+      "grade_name": "不朽",
+      "name": "苍苍白骨",
+      "qiyin": false,
+      "req_level": 70,
+      "true_seal": false
+     }
+    ],
+    "mastery": 8,
+    "mastery_cap": 10,
+    "race_rank": 5,
+    "secret_limit": 5,
+    "skill_learned": true
+   },
+   "lottery_count": 0,
+   "mat": 3502.0,
+   "mhp": 431134.0,
+   "peak": 1340655,
+   "peak_base": 1340655,
+   "peak_single": 446885,
+   "segments": [
+    446885.0,
+    446885.0,
+    446885.0
+   ],
+   "segs_base": 3,
+   "skill": 10151,
+   "skill_name": "黑日焚界",
+   "tier": "超强者",
+   "variance": 0
+  },
+  {
+   "actor": 169,
+   "atk": 7063.0,
+   "battle_tier": "超强者",
+   "brand_mult": 1.375,
+   "build": {
+    "equips": [
+     "【真印】送行",
+     "送行",
+     "【真印】天卷·头",
+     "【真印】天卷·甲",
+     "【真印】天卷·裤",
+     "天卷·手",
+     "天卷·鞋",
+     "天卷·腰",
+     "邪龙饰物",
+     "苍苍白骨",
+     "",
+     "",
+     "赤雨双缨",
+     "",
+     "",
+     "嘶风逐日驹",
+     "",
+     "",
+     ""
+    ],
+    "secrets": [
+     488,
+     2475,
+     2480,
+     6139,
+     6159
+    ],
+    "trumpet": [
+     2
+    ]
+   },
+   "input_name": "八雷飞渡",
+   "input_skill": 10173,
+   "ledger_violations": 0,
+   "lianyu": {
+    "cast_peaks": [
+     {
+      "actor": 169,
+      "atk": 7063.0,
+      "input_name": "紫电双斩",
+      "input_skill": 10171,
+      "mat": 1700.0,
+      "mhp": 285382.0,
+      "peak": 428396,
+      "peak_base": 428396,
+      "peak_single": 214198,
+      "segments": [
+       214198.0,
+       214198.0
+      ],
+      "segs_base": 2,
+      "skill": 10171,
+      "skill_name": "紫电双斩",
+      "variance": 0
+     },
+     {
+      "actor": 169,
+      "atk": 7063.0,
+      "input_name": "霆影横渡",
+      "input_skill": 10172,
+      "mat": 1700.0,
+      "mhp": 285382.0,
+      "peak": 407998,
+      "peak_base": 407998,
+      "peak_single": 203999,
+      "segments": [
+       203999.0,
+       203999.0
+      ],
+      "segs_base": 2,
+      "skill": 10172,
+      "skill_name": "霆影横渡",
+      "variance": 0
+     },
+     {
+      "actor": 169,
+      "atk": 7063.0,
+      "input_name": "八雷飞渡",
+      "input_skill": 10173,
+      "mat": 1700.0,
+      "mhp": 285382.0,
+      "peak": 865094,
+      "peak_base": 865094,
+      "peak_single": 432547,
+      "segments": [
+       432547.0,
+       432547.0
+      ],
+      "segs_base": 2,
+      "skill": 10173,
+      "skill_name": "八雷飞渡",
+      "variance": 0
+     }
+    ],
+    "forced_diagnostics": [],
+    "forced_main": [
+     {
+      "actor": 169,
+      "atk": 7063.0,
+      "forced": true,
+      "input_name": "赤雨·黄泉归葬",
+      "input_skill": 10174,
+      "mat": 1700.0,
+      "mhp": 285382.0,
+      "peak": 645960,
+      "peak_base": 645960,
+      "peak_single": 107660,
+      "segments": [
+       107660.0,
+       107660.0,
+       107660.0,
+       107660.0,
+       107660.0,
+       107660.0
+      ],
+      "segs_base": 6,
+      "skill": 10174,
+      "skill_name": "赤雨·黄泉归葬",
+      "variance": 0
+     }
+    ],
+    "gear": [
+     {
+      "actor": 169,
+      "etype": 1,
+      "grade": 6,
+      "grade_name": "神话",
+      "name": "【真印】送行",
+      "qiyin": true,
+      "req_level": 80,
+      "true_seal": true
+     },
+     {
+      "actor": 169,
+      "etype": 1,
+      "grade": 6,
+      "grade_name": "神话",
+      "name": "送行",
+      "qiyin": true,
+      "req_level": 80,
+      "true_seal": false
+     },
+     {
+      "actor": 169,
+      "etype": 3,
+      "grade": 6,
+      "grade_name": "神话",
+      "name": "【真印】天卷·头",
+      "qiyin": true,
+      "req_level": 80,
+      "true_seal": true
+     },
+     {
+      "actor": 169,
+      "etype": 4,
+      "grade": 6,
+      "grade_name": "神话",
+      "name": "【真印】天卷·甲",
+      "qiyin": true,
+      "req_level": 80,
+      "true_seal": true
+     },
+     {
+      "actor": 169,
+      "etype": 5,
+      "grade": 6,
+      "grade_name": "神话",
+      "name": "【真印】天卷·裤",
+      "qiyin": true,
+      "req_level": 80,
+      "true_seal": true
+     },
+     {
+      "actor": 169,
+      "etype": 6,
+      "grade": 6,
+      "grade_name": "神话",
+      "name": "天卷·手",
+      "qiyin": true,
+      "req_level": 80,
+      "true_seal": false
+     },
+     {
+      "actor": 169,
+      "etype": 7,
+      "grade": 6,
+      "grade_name": "神话",
+      "name": "天卷·鞋",
+      "qiyin": true,
+      "req_level": 80,
+      "true_seal": false
+     },
+     {
+      "actor": 169,
+      "etype": 8,
+      "grade": 6,
+      "grade_name": "神话",
+      "name": "天卷·腰",
+      "qiyin": true,
+      "req_level": 80,
+      "true_seal": false
+     },
+     {
+      "actor": 169,
+      "etype": 9,
+      "grade": 5,
+      "grade_name": "不朽",
+      "name": "邪龙饰物",
+      "qiyin": false,
+      "req_level": 70,
+      "true_seal": false
+     },
+     {
+      "actor": 169,
+      "etype": 10,
+      "grade": 5,
+      "grade_name": "不朽",
+      "name": "苍苍白骨",
+      "qiyin": false,
+      "req_level": 70,
+      "true_seal": false
+     }
+    ],
+    "mastery": 8,
+    "mastery_cap": 10,
+    "race_rank": 5,
+    "secret_limit": 5,
+    "skill_learned": true
+   },
+   "lottery_count": 0,
+   "mat": 1700.0,
+   "mhp": 285382.0,
+   "peak": 865094,
+   "peak_base": 865094,
+   "peak_single": 432547,
+   "segments": [
+    432547.0,
+    432547.0
+   ],
+   "segs_base": 2,
+   "skill": 10173,
+   "skill_name": "八雷飞渡",
+   "tier": "超强者",
+   "variance": 0
+  },
+  {
+   "actor": 171,
+   "atk": 16977.0,
+   "battle_tier": "超强者",
+   "brand_mult": 1.375,
+   "build": {
+    "equips": [
+     "【真印】止戈",
+     "三环剑",
+     "【真印】天卷·头",
+     "【真印】天卷·甲",
+     "【真印】天卷·裤",
+     "天卷·手",
+     "天卷·鞋",
+     "天卷·腰",
+     "邪龙饰物",
+     "苍苍白骨",
+     "",
+     "",
+     "藏兵咒灵",
+     "",
+     "",
+     "嘶风逐日驹",
+     "",
+     "",
+     ""
+    ],
+    "secrets": [
+     488,
+     2471,
+     2480,
+     6139,
+     6159
+    ],
+    "trumpet": [
+     2
+    ]
+   },
+   "forced": true,
+   "input_name": "释魂刀",
+   "input_skill": 10218,
+   "ledger_violations": 0,
+   "lianyu": {
+    "cast_peaks": [],
+    "forced_diagnostics": [],
+    "forced_main": [
+     {
+      "actor": 171,
+      "atk": 16977.0,
+      "forced": true,
+      "input_name": "游云",
+      "input_skill": 10216,
+      "mat": 0.0,
+      "mhp": 362618.0,
+      "peak": 921041,
+      "peak_base": 683375,
+      "peak_single": 237666,
+      "segments": [
+       237666.0,
+       136675.0,
+       136675.0,
+       136675.0,
+       136675.0,
+       136675.0
+      ],
+      "segs_base": 5,
+      "skill": 10216,
+      "skill_name": "游云",
+      "variance": 0
+     },
+     {
+      "actor": 171,
+      "atk": 16977.0,
+      "forced": true,
+      "input_name": "万里锁",
+      "input_skill": 10217,
+      "mat": 0.0,
+      "mhp": 362618.0,
+      "peak": 1023546,
+      "peak_base": 392940,
+      "peak_single": 392940,
+      "segments": [
+       237666.0,
+       392940.0,
+       392940.0
+      ],
+      "segs_base": 1,
+      "skill": 10217,
+      "skill_name": "万里锁",
+      "variance": 0
+     },
+     {
+      "actor": 171,
+      "atk": 16977.0,
+      "forced": true,
+      "input_name": "释魂刀",
+      "input_skill": 10218,
+      "mat": 0.0,
+      "mhp": 362618.0,
+      "peak": 1194445,
+      "peak_base": 956779,
+      "peak_single": 956779,
+      "segments": [
+       237666.0,
+       956779.0
+      ],
+      "segs_base": 1,
+      "skill": 10218,
+      "skill_name": "释魂刀",
+      "variance": 0
+     },
+     {
+      "actor": 171,
+      "atk": 16977.0,
+      "forced": true,
+      "input_name": "天逆鉾",
+      "input_skill": 10219,
+      "mat": 0.0,
+      "mhp": 362618.0,
+      "peak": 1023546,
+      "peak_base": 392940,
+      "peak_single": 392940,
+      "segments": [
+       237666.0,
+       392940.0,
+       392940.0
+      ],
+      "segs_base": 1,
+      "skill": 10219,
+      "skill_name": "天逆鉾",
+      "variance": 0
+     },
+     {
+      "actor": 171,
+      "atk": 16977.0,
+      "forced": true,
+      "input_name": "武器库·游云",
+      "input_skill": 10220,
+      "mat": 0.0,
+      "mhp": 362618.0,
+      "peak": 237666,
+      "peak_base": 237666,
+      "peak_single": 237666,
+      "segments": [
+       237666.0
+      ],
+      "segs_base": 1,
+      "skill": 10220,
+      "skill_name": "武器库·游云",
+      "variance": 0
+     },
+     {
+      "actor": 171,
+      "atk": 16977.0,
+      "forced": true,
+      "input_name": "武器库·万里锁",
+      "input_skill": 10223,
+      "mat": 0.0,
+      "mhp": 362618.0,
+      "peak": 190132,
+      "peak_base": 190132,
+      "peak_single": 190132,
+      "segments": [
+       190132.0
+      ],
+      "segs_base": 1,
+      "skill": 10223,
+      "skill_name": "武器库·万里锁",
+      "variance": 0
+     },
+     {
+      "actor": 171,
+      "atk": 16977.0,
+      "forced": true,
+      "input_name": "武器库·释魂刀",
+      "input_skill": 10221,
+      "mat": 0.0,
+      "mhp": 362618.0,
+      "peak": 237666,
+      "peak_base": 237666,
+      "peak_single": 237666,
+      "segments": [
+       237666.0
+      ],
+      "segs_base": 1,
+      "skill": 10221,
+      "skill_name": "武器库·释魂刀",
+      "variance": 0
+     },
+     {
+      "actor": 171,
+      "atk": 16977.0,
+      "forced": true,
+      "input_name": "武器库·天逆鉾",
+      "input_skill": 10222,
+      "mat": 0.0,
+      "mhp": 362618.0,
+      "peak": 158444,
+      "peak_base": 158444,
+      "peak_single": 158444,
+      "segments": [
+       158444.0
+      ],
+      "segs_base": 1,
+      "skill": 10222,
+      "skill_name": "武器库·天逆鉾",
+      "variance": 0
+     }
+    ],
+    "gear": [
+     {
+      "actor": 171,
+      "etype": 1,
+      "grade": 6,
+      "grade_name": "神话",
+      "name": "【真印】止戈",
+      "qiyin": true,
+      "req_level": 80,
+      "true_seal": true
+     },
+     {
+      "actor": 171,
+      "etype": 2,
+      "grade": 5,
+      "grade_name": "不朽",
+      "name": "三环剑",
+      "qiyin": false,
+      "req_level": 70,
+      "true_seal": false
+     },
+     {
+      "actor": 171,
+      "etype": 3,
+      "grade": 6,
+      "grade_name": "神话",
+      "name": "【真印】天卷·头",
+      "qiyin": true,
+      "req_level": 80,
+      "true_seal": true
+     },
+     {
+      "actor": 171,
+      "etype": 4,
+      "grade": 6,
+      "grade_name": "神话",
+      "name": "【真印】天卷·甲",
+      "qiyin": true,
+      "req_level": 80,
+      "true_seal": true
+     },
+     {
+      "actor": 171,
+      "etype": 5,
+      "grade": 6,
+      "grade_name": "神话",
+      "name": "【真印】天卷·裤",
+      "qiyin": true,
+      "req_level": 80,
+      "true_seal": true
+     },
+     {
+      "actor": 171,
+      "etype": 6,
+      "grade": 6,
+      "grade_name": "神话",
+      "name": "天卷·手",
+      "qiyin": true,
+      "req_level": 80,
+      "true_seal": false
+     },
+     {
+      "actor": 171,
+      "etype": 7,
+      "grade": 6,
+      "grade_name": "神话",
+      "name": "天卷·鞋",
+      "qiyin": true,
+      "req_level": 80,
+      "true_seal": false
+     },
+     {
+      "actor": 171,
+      "etype": 8,
+      "grade": 6,
+      "grade_name": "神话",
+      "name": "天卷·腰",
+      "qiyin": true,
+      "req_level": 80,
+      "true_seal": false
+     },
+     {
+      "actor": 171,
+      "etype": 9,
+      "grade": 5,
+      "grade_name": "不朽",
+      "name": "邪龙饰物",
+      "qiyin": false,
+      "req_level": 70,
+      "true_seal": false
+     },
+     {
+      "actor": 171,
+      "etype": 10,
+      "grade": 5,
+      "grade_name": "不朽",
+      "name": "苍苍白骨",
+      "qiyin": false,
+      "req_level": 70,
+      "true_seal": false
+     }
+    ],
+    "mastery": 8,
+    "mastery_cap": 10,
+    "race_rank": 5,
+    "secret_limit": 5,
+    "skill_learned": true
+   },
+   "lottery_count": 0,
+   "mat": 0.0,
+   "mhp": 362618.0,
+   "peak": 1194445,
+   "peak_base": 956779,
+   "peak_single": 956779,
+   "segments": [
+    237666.0,
+    956779.0
+   ],
+   "segs_base": 1,
+   "skill": 10218,
+   "skill_name": "释魂刀",
+   "tier": "超强者",
+   "variance": 0
+  },
+  {
+   "actor": 172,
+   "atk": 7683.0,
+   "battle_tier": "超强者",
+   "brand_mult": 1.375,
+   "build": {
+    "equips": [
+     "【真印】送行",
+     "三环剑",
+     "【真印】阴府随行·头",
+     "【真印】阴府随行·甲",
+     "【真印】阴府随行·裤",
+     "阴府随行·手",
+     "阴府随行·鞋",
+     "阴府随行·腰",
+     "邪龙饰物",
+     "苍苍白骨",
+     "",
+     "",
+     "神武解",
+     "",
+     "",
+     "嘶风逐日驹",
+     "",
+     "",
+     ""
+    ],
+    "secrets": [
+     488,
+     2471,
+     2480,
+     6139,
+     6159
+    ],
+    "trumpet": [
+     2
+    ]
+   },
+   "forced": true,
+   "input_name": "伏魔御厨子",
+   "input_skill": 10231,
+   "ledger_violations": 0,
+   "lianyu": {
+    "cast_peaks": [
+     {
+      "actor": 172,
+      "atk": 7683.0,
+      "input_name": "解",
+      "input_skill": 10229,
+      "mat": 3304.0,
+      "mhp": 340484.0,
+      "peak": 626533,
+      "peak_base": 626533,
+      "peak_single": 626533,
+      "segments": [
+       626533.0
+      ],
+      "segs_base": 1,
+      "skill": 10229,
+      "skill_name": "解",
+      "variance": 0
+     },
+     {
+      "actor": 172,
+      "atk": 7683.0,
+      "input_name": "捌",
+      "input_skill": 10230,
+      "mat": 3304.0,
+      "mhp": 340484.0,
+      "peak": 1211688,
+      "peak_base": 1211688,
+      "peak_single": 1020369,
+      "segments": [
+       191319.0,
+       1020369.0
+      ],
+      "segs_base": 2,
+      "skill": 10230,
+      "skill_name": "捌",
+      "variance": 0
+     },
+     {
+      "actor": 172,
+      "atk": 7683.0,
+      "input_name": "伏魔御厨子",
+      "input_skill": 10231,
+      "mat": 3304.0,
+      "mhp": 340484.0,
+      "peak": 153026,
+      "peak_base": 153026,
+      "peak_single": 153026,
+      "segments": [
+       153026.0
+      ],
+      "segs_base": 1,
+      "skill": 10231,
+      "skill_name": "伏魔御厨子",
+      "variance": 0
+     }
+    ],
+    "forced_diagnostics": [],
+    "forced_main": [
+     {
+      "actor": 172,
+      "atk": 7683.0,
+      "forced": true,
+      "input_name": "解",
+      "input_skill": 10229,
+      "mat": 3304.0,
+      "mhp": 340484.0,
+      "peak": 1108505,
+      "peak_base": 1108505,
+      "peak_single": 554252,
+      "segments": [
+       184751.0,
+       369502.0,
+       554252.0
+      ],
+      "segs_base": 3,
+      "skill": 10229,
+      "skill_name": "解",
+      "variance": 0
+     },
+     {
+      "actor": 172,
+      "atk": 7683.0,
+      "forced": true,
+      "input_name": "捌",
+      "input_skill": 10230,
+      "mat": 3304.0,
+      "mhp": 340484.0,
+      "peak": 1151572,
+      "peak_base": 1151572,
+      "peak_single": 575786,
+      "segments": [
+       191929.0,
+       383857.0,
+       575786.0
+      ],
+      "segs_base": 3,
+      "skill": 10230,
+      "skill_name": "捌",
+      "variance": 0
+     },
+     {
+      "actor": 172,
+      "atk": 7683.0,
+      "forced": true,
+      "input_name": "伏魔御厨子",
+      "input_skill": 10231,
+      "mat": 3304.0,
+      "mhp": 340484.0,
+      "peak": 1237634,
+      "peak_base": 1237634,
+      "peak_single": 618817,
+      "segments": [
+       206272.0,
+       412545.0,
+       618817.0
+      ],
+      "segs_base": 3,
+      "skill": 10231,
+      "skill_name": "伏魔御厨子",
+      "variance": 0
+     },
+     {
+      "actor": 172,
+      "atk": 7683.0,
+      "forced": true,
+      "input_name": "追斩·斩击",
+      "input_skill": 10236,
+      "mat": 3304.0,
+      "mhp": 340484.0,
+      "peak": 127521,
+      "peak_base": 127521,
+      "peak_single": 127521,
+      "segments": [
+       127521.0
+      ],
+      "segs_base": 1,
+      "skill": 10236,
+      "skill_name": "追斩·斩击",
+      "variance": 0
+     },
+     {
+      "actor": 172,
+      "atk": 7683.0,
+      "forced": true,
+      "input_name": "御厨子·斩击",
+      "input_skill": 10237,
+      "mat": 3304.0,
+      "mhp": 340484.0,
+      "peak": 127521,
+      "peak_base": 127521,
+      "peak_single": 127521,
+      "segments": [
+       127521.0
+      ],
+      "segs_base": 1,
+      "skill": 10237,
+      "skill_name": "御厨子·斩击",
+      "variance": 0
+     },
+     {
+      "actor": 172,
+      "atk": 7683.0,
+      "forced": true,
+      "input_name": "咒力体术",
+      "input_skill": 10238,
+      "mat": 3304.0,
+      "mhp": 340484.0,
+      "peak": 113858,
+      "peak_base": 113858,
+      "peak_single": 113858,
+      "segments": [
+       113858.0
+      ],
+      "segs_base": 1,
+      "skill": 10238,
+      "skill_name": "咒力体术",
+      "variance": 0
+     }
+    ],
+    "gear": [
+     {
+      "actor": 172,
+      "etype": 1,
+      "grade": 6,
+      "grade_name": "神话",
+      "name": "【真印】送行",
+      "qiyin": true,
+      "req_level": 80,
+      "true_seal": true
+     },
+     {
+      "actor": 172,
+      "etype": 2,
+      "grade": 5,
+      "grade_name": "不朽",
+      "name": "三环剑",
+      "qiyin": false,
+      "req_level": 70,
+      "true_seal": false
+     },
+     {
+      "actor": 172,
+      "etype": 3,
+      "grade": 6,
+      "grade_name": "神话",
+      "name": "【真印】阴府随行·头",
+      "qiyin": true,
+      "req_level": 80,
+      "true_seal": true
+     },
+     {
+      "actor": 172,
+      "etype": 4,
+      "grade": 6,
+      "grade_name": "神话",
+      "name": "【真印】阴府随行·甲",
+      "qiyin": true,
+      "req_level": 80,
+      "true_seal": true
+     },
+     {
+      "actor": 172,
+      "etype": 5,
+      "grade": 6,
+      "grade_name": "神话",
+      "name": "【真印】阴府随行·裤",
+      "qiyin": true,
+      "req_level": 80,
+      "true_seal": true
+     },
+     {
+      "actor": 172,
+      "etype": 6,
+      "grade": 6,
+      "grade_name": "神话",
+      "name": "阴府随行·手",
+      "qiyin": true,
+      "req_level": 80,
+      "true_seal": false
+     },
+     {
+      "actor": 172,
+      "etype": 7,
+      "grade": 6,
+      "grade_name": "神话",
+      "name": "阴府随行·鞋",
+      "qiyin": true,
+      "req_level": 80,
+      "true_seal": false
+     },
+     {
+      "actor": 172,
+      "etype": 8,
+      "grade": 6,
+      "grade_name": "神话",
+      "name": "阴府随行·腰",
+      "qiyin": true,
+      "req_level": 80,
+      "true_seal": false
+     },
+     {
+      "actor": 172,
+      "etype": 9,
+      "grade": 5,
+      "grade_name": "不朽",
+      "name": "邪龙饰物",
+      "qiyin": false,
+      "req_level": 70,
+      "true_seal": false
+     },
+     {
+      "actor": 172,
+      "etype": 10,
+      "grade": 5,
+      "grade_name": "不朽",
+      "name": "苍苍白骨",
+      "qiyin": false,
+      "req_level": 70,
+      "true_seal": false
+     }
+    ],
+    "mastery": 8,
+    "mastery_cap": 10,
+    "race_rank": 5,
+    "secret_limit": 5,
+    "skill_learned": true
+   },
+   "lottery_count": 0,
+   "mat": 3304.0,
+   "mhp": 340484.0,
+   "peak": 1237634,
+   "peak_base": 1237634,
+   "peak_single": 618817,
+   "segments": [
+    206272.0,
+    412545.0,
+    618817.0
+   ],
+   "segs_base": 3,
+   "skill": 10231,
+   "skill_name": "伏魔御厨子",
+   "tier": "超强者",
+   "variance": 0
+  },
+  {
+   "actor": 173,
+   "atk": 7637.0,
+   "battle_tier": "超强者",
+   "brand_mult": 1.375,
+   "build": {
+    "equips": [
+     "【真印】一力降十会",
+     "三环剑",
+     "【真印】天卷·头",
+     "【真印】天卷·甲",
+     "【真印】天卷·裤",
+     "天卷·手",
+     "天卷·鞋",
+     "天卷·腰",
+     "邪龙饰物",
+     "苍苍白骨",
+     "",
+     "",
+     "破限之心·星空",
+     "",
+     "",
+     "嘶风逐日驹",
+     "",
+     "",
+     ""
+    ],
+    "secrets": [
+     488,
+     2471,
+     2480,
+     6139,
+     6159
+    ],
+    "trumpet": [
+     2
+    ]
+   },
+   "forced": true,
+   "input_name": "认真一拳",
+   "input_skill": 10263,
+   "ledger_violations": 0,
+   "lianyu": {
+    "cast_peaks": [
+     {
+      "actor": 173,
+      "atk": 7637.0,
+      "input_name": "核分裂",
+      "input_skill": 10259,
+      "mat": 3469.0,
+      "mhp": 347645.0,
+      "peak": 254049,
+      "peak_base": 254049,
+      "peak_single": 84683,
+      "segments": [
+       84683.0,
+       84683.0,
+       84683.0
+      ],
+      "segs_base": 3,
+      "skill": 10259,
+      "skill_name": "核分裂",
+      "variance": 0
+     },
+     {
+      "actor": 173,
+      "atk": 7637.0,
+      "input_name": "核分裂重力拳",
+      "input_skill": 10260,
+      "mat": 3469.0,
+      "mhp": 347645.0,
+      "peak": 676020,
+      "peak_base": 676020,
+      "peak_single": 135204,
+      "segments": [
+       135204.0,
+       135204.0,
+       135204.0,
+       135204.0,
+       135204.0
+      ],
+      "segs_base": 5,
+      "skill": 10260,
+      "skill_name": "核分裂重力拳",
+      "variance": 0
+     },
+     {
+      "actor": 173,
+      "atk": 7637.0,
+      "input_name": "伽马射线暴",
+      "input_skill": 10261,
+      "mat": 3469.0,
+      "mhp": 347645.0,
+      "peak": 811224,
+      "peak_base": 811224,
+      "peak_single": 270408,
+      "segments": [
+       270408.0,
+       270408.0,
+       270408.0
+      ],
+      "segs_base": 3,
+      "skill": 10261,
+      "skill_name": "伽马射线暴",
+      "variance": 0
+     }
+    ],
+    "forced_diagnostics": [],
+    "forced_main": [
+     {
+      "actor": 173,
+      "atk": 7637.0,
+      "forced": true,
+      "input_name": "流水岩碎拳",
+      "input_skill": 10250,
+      "mat": 3469.0,
+      "mhp": 347645.0,
+      "peak": 363200,
+      "peak_base": 363200,
+      "peak_single": 181600,
+      "segments": [
+       181600.0,
+       181600.0
+      ],
+      "segs_base": 2,
+      "skill": 10250,
+      "skill_name": "流水岩碎拳",
+      "variance": 0
+     },
+     {
+      "actor": 173,
+      "atk": 7637.0,
+      "forced": true,
+      "input_name": "旋风铁斩拳",
+      "input_skill": 10251,
+      "mat": 3469.0,
+      "mhp": 347645.0,
+      "peak": 272400,
+      "peak_base": 272400,
+      "peak_single": 90800,
+      "segments": [
+       90800.0,
+       90800.0,
+       90800.0
+      ],
+      "segs_base": 3,
+      "skill": 10251,
+      "skill_name": "旋风铁斩拳",
+      "variance": 0
+     },
+     {
+      "actor": 173,
+      "atk": 7637.0,
+      "forced": true,
+      "input_name": "交牙龙杀拳",
+      "input_skill": 10252,
+      "mat": 3469.0,
+      "mhp": 347645.0,
+      "peak": 363200,
+      "peak_base": 363200,
+      "peak_single": 181600,
+      "segments": [
+       181600.0,
+       181600.0
+      ],
+      "segs_base": 2,
+      "skill": 10252,
+      "skill_name": "交牙龙杀拳",
+      "variance": 0
+     },
+     {
+      "actor": 173,
+      "atk": 7637.0,
+      "forced": true,
+      "input_name": "怪害神杀拳",
+      "input_skill": 10253,
+      "mat": 3469.0,
+      "mhp": 347645.0,
+      "peak": 272400,
+      "peak_base": 272400,
+      "peak_single": 90800,
+      "segments": [
+       90800.0,
+       90800.0,
+       90800.0
+      ],
+      "segs_base": 3,
+      "skill": 10253,
+      "skill_name": "怪害神杀拳",
+      "variance": 0
+     },
+     {
+      "actor": 173,
+      "atk": 7637.0,
+      "forced": true,
+      "input_name": "怪害神杀拳",
+      "input_skill": 10255,
+      "mat": 3469.0,
+      "mhp": 347645.0,
+      "peak": 326880,
+      "peak_base": 326880,
+      "peak_single": 65376,
+      "segments": [
+       65376.0,
+       65376.0,
+       65376.0,
+       65376.0,
+       65376.0
+      ],
+      "segs_base": 5,
+      "skill": 10255,
+      "skill_name": "怪害神杀拳",
+      "variance": 0
+     },
+     {
+      "actor": 173,
+      "atk": 7637.0,
+      "forced": true,
+      "input_name": "轰气空裂拳",
+      "input_skill": 10254,
+      "mat": 3469.0,
+      "mhp": 347645.0,
+      "peak": 163440,
+      "peak_base": 163440,
+      "peak_single": 81720,
+      "segments": [
+       81720.0,
+       81720.0
+      ],
+      "segs_base": 2,
+      "skill": 10254,
+      "skill_name": "轰气空裂拳",
+      "variance": 0
+     },
+     {
+      "actor": 173,
+      "atk": 7637.0,
+      "forced": true,
+      "input_name": "大发劲",
+      "input_skill": 10256,
+      "mat": 3469.0,
+      "mhp": 347645.0,
+      "peak": 635601,
+      "peak_base": 635601,
+      "peak_single": 635601,
+      "segments": [
+       635601.0
+      ],
+      "segs_base": 1,
+      "skill": 10256,
+      "skill_name": "大发劲",
+      "variance": 0
+     },
+     {
+      "actor": 173,
+      "atk": 7637.0,
+      "forced": true,
+      "input_name": "极发劲",
+      "input_skill": 10257,
+      "mat": 3469.0,
+      "mhp": 347645.0,
+      "peak": 635601,
+      "peak_base": 635601,
+      "peak_single": 635601,
+      "segments": [
+       635601.0
+      ],
+      "segs_base": 1,
+      "skill": 10257,
+      "skill_name": "极发劲",
+      "variance": 0
+     },
+     {
+      "actor": 173,
+      "atk": 7637.0,
+      "forced": true,
+      "input_name": "认真一拳",
+      "input_skill": 10263,
+      "mat": 3469.0,
+      "mhp": 347645.0,
+      "peak": 1243380,
+      "peak_base": 1243380,
+      "peak_single": 414460,
+      "segments": [
+       414460.0,
+       414460.0,
+       414460.0
+      ],
+      "segs_base": 3,
+      "skill": 10263,
+      "skill_name": "认真一拳",
+      "variance": 0
+     },
+     {
+      "actor": 173,
+      "atk": 7637.0,
+      "forced": true,
+      "input_name": "神杀瞬击",
+      "input_skill": 10258,
+      "mat": 3469.0,
+      "mhp": 347645.0,
+      "peak": 90800,
+      "peak_base": 90800,
+      "peak_single": 90800,
+      "segments": [
+       90800.0
+      ],
+      "segs_base": 1,
+      "skill": 10258,
+      "skill_name": "神杀瞬击",
+      "variance": 0
+     }
+    ],
+    "gear": [
+     {
+      "actor": 173,
+      "etype": 1,
+      "grade": 6,
+      "grade_name": "神话",
+      "name": "【真印】一力降十会",
+      "qiyin": true,
+      "req_level": 80,
+      "true_seal": true
+     },
+     {
+      "actor": 173,
+      "etype": 2,
+      "grade": 5,
+      "grade_name": "不朽",
+      "name": "三环剑",
+      "qiyin": false,
+      "req_level": 70,
+      "true_seal": false
+     },
+     {
+      "actor": 173,
+      "etype": 3,
+      "grade": 6,
+      "grade_name": "神话",
+      "name": "【真印】天卷·头",
+      "qiyin": true,
+      "req_level": 80,
+      "true_seal": true
+     },
+     {
+      "actor": 173,
+      "etype": 4,
+      "grade": 6,
+      "grade_name": "神话",
+      "name": "【真印】天卷·甲",
+      "qiyin": true,
+      "req_level": 80,
+      "true_seal": true
+     },
+     {
+      "actor": 173,
+      "etype": 5,
+      "grade": 6,
+      "grade_name": "神话",
+      "name": "【真印】天卷·裤",
+      "qiyin": true,
+      "req_level": 80,
+      "true_seal": true
+     },
+     {
+      "actor": 173,
+      "etype": 6,
+      "grade": 6,
+      "grade_name": "神话",
+      "name": "天卷·手",
+      "qiyin": true,
+      "req_level": 80,
+      "true_seal": false
+     },
+     {
+      "actor": 173,
+      "etype": 7,
+      "grade": 6,
+      "grade_name": "神话",
+      "name": "天卷·鞋",
+      "qiyin": true,
+      "req_level": 80,
+      "true_seal": false
+     },
+     {
+      "actor": 173,
+      "etype": 8,
+      "grade": 6,
+      "grade_name": "神话",
+      "name": "天卷·腰",
+      "qiyin": true,
+      "req_level": 80,
+      "true_seal": false
+     },
+     {
+      "actor": 173,
+      "etype": 9,
+      "grade": 5,
+      "grade_name": "不朽",
+      "name": "邪龙饰物",
+      "qiyin": false,
+      "req_level": 70,
+      "true_seal": false
+     },
+     {
+      "actor": 173,
+      "etype": 10,
+      "grade": 5,
+      "grade_name": "不朽",
+      "name": "苍苍白骨",
+      "qiyin": false,
+      "req_level": 70,
+      "true_seal": false
+     }
+    ],
+    "mastery": 8,
+    "mastery_cap": 10,
+    "race_rank": 5,
+    "secret_limit": 5,
+    "skill_learned": true
+   },
+   "lottery_count": 0,
+   "mat": 3469.0,
+   "mhp": 347645.0,
+   "peak": 1243380,
+   "peak_base": 1243380,
+   "peak_single": 414460,
+   "segments": [
+    414460.0,
+    414460.0,
+    414460.0
+   ],
+   "segs_base": 3,
+   "skill": 10263,
+   "skill_name": "认真一拳",
+   "tier": "超强者",
+   "variance": 0
+  },
+  {
+   "actor": 175,
+   "atk": 7295.0,
+   "battle_tier": "超强者",
+   "brand_mult": 1.375,
+   "build": {
+    "equips": [
+     "【真印】止戈",
+     "三环剑",
+     "【真印】天卷·头",
+     "【真印】天卷·甲",
+     "【真印】天卷·裤",
+     "天卷·手",
+     "天卷·鞋",
+     "天卷·腰",
+     "邪龙饰物",
+     "苍苍白骨",
+     "",
+     "",
+     "百谷生",
+     "",
+     "",
+     "嘶风逐日驹",
+     "",
+     "",
+     ""
+    ],
+    "secrets": [
+     489,
+     2480,
+     2780,
+     6139,
+     6159
+    ],
+    "trumpet": [
+     2
+    ]
+   },
+   "forced": true,
+   "input_name": "储备终结",
+   "input_skill": 10292,
+   "ledger_violations": 0,
+   "lianyu": {
+    "cast_peaks": [],
+    "forced_diagnostics": [],
+    "forced_main": [
+     {
+      "actor": 175,
+      "atk": 7295.0,
+      "forced": true,
+      "input_name": "储备终结",
+      "input_skill": 10292,
+      "mat": 4097.0,
+      "mhp": 297281.0,
+      "peak": 1389252,
+      "peak_single": 1389252,
+      "segments": [
+       1389252.0
+      ],
+      "skill": 10292,
+      "skill_name": "储备终结",
+      "variance": 0
+     }
+    ],
+    "gear": [
+     {
+      "actor": 175,
+      "etype": 1,
+      "grade": 6,
+      "grade_name": "神话",
+      "name": "【真印】止戈",
+      "qiyin": true,
+      "req_level": 80,
+      "true_seal": true
+     },
+     {
+      "actor": 175,
+      "etype": 2,
+      "grade": 5,
+      "grade_name": "不朽",
+      "name": "三环剑",
+      "qiyin": false,
+      "req_level": 70,
+      "true_seal": false
+     },
+     {
+      "actor": 175,
+      "etype": 3,
+      "grade": 6,
+      "grade_name": "神话",
+      "name": "【真印】天卷·头",
+      "qiyin": true,
+      "req_level": 80,
+      "true_seal": true
+     },
+     {
+      "actor": 175,
+      "etype": 4,
+      "grade": 6,
+      "grade_name": "神话",
+      "name": "【真印】天卷·甲",
+      "qiyin": true,
+      "req_level": 80,
+      "true_seal": true
+     },
+     {
+      "actor": 175,
+      "etype": 5,
+      "grade": 6,
+      "grade_name": "神话",
+      "name": "【真印】天卷·裤",
+      "qiyin": true,
+      "req_level": 80,
+      "true_seal": true
+     },
+     {
+      "actor": 175,
+      "etype": 6,
+      "grade": 6,
+      "grade_name": "神话",
+      "name": "天卷·手",
+      "qiyin": true,
+      "req_level": 80,
+      "true_seal": false
+     },
+     {
+      "actor": 175,
+      "etype": 7,
+      "grade": 6,
+      "grade_name": "神话",
+      "name": "天卷·鞋",
+      "qiyin": true,
+      "req_level": 80,
+      "true_seal": false
+     },
+     {
+      "actor": 175,
+      "etype": 8,
+      "grade": 6,
+      "grade_name": "神话",
+      "name": "天卷·腰",
+      "qiyin": true,
+      "req_level": 80,
+      "true_seal": false
+     },
+     {
+      "actor": 175,
+      "etype": 9,
+      "grade": 5,
+      "grade_name": "不朽",
+      "name": "邪龙饰物",
+      "qiyin": false,
+      "req_level": 70,
+      "true_seal": false
+     },
+     {
+      "actor": 175,
+      "etype": 10,
+      "grade": 5,
+      "grade_name": "不朽",
+      "name": "苍苍白骨",
+      "qiyin": false,
+      "req_level": 70,
+      "true_seal": false
+     }
+    ],
+    "mastery": 8,
+    "mastery_cap": 10,
+    "race_rank": 5,
+    "secret_limit": 5,
+    "skill_learned": true
+   },
+   "lottery_count": 0,
+   "mat": 4097.0,
+   "mhp": 297281.0,
+   "peak": 1389252,
+   "peak_single": 1389252,
+   "segments": [
+    1389252.0
+   ],
+   "skill": 10292,
+   "skill_name": "储备终结",
+   "tier": "超强者",
+   "variance": 0
+  },
+  {
+   "actor": 176,
+   "atk": 7660.0,
+   "battle_tier": "超强者",
+   "bind_mode": "arm",
+   "bind_probe": {
+    "host": 1,
+    "kairen": true,
+    "lock_or_heming": true,
+    "mode": "tusu_duo",
+    "party": [
+     176,
+     1
+    ]
+   },
+   "brand_mult": 1.375,
+   "build": {
+    "equips": [
+     "【真印】止戈",
+     "三环剑",
+     "【真印】阴府随行·头",
+     "【真印】阴府随行·甲",
+     "【真印】阴府随行·裤",
+     "阴府随行·手",
+     "阴府随行·鞋",
+     "阴府随行·腰",
+     "邪龙饰物",
+     "苍苍白骨",
+     "",
+     "",
+     "止戈环",
+     "",
+     "",
+     "嘶风逐日驹",
+     "",
+     "",
+     ""
+    ],
+    "secrets": [
+     488,
+     2471,
+     2480,
+     6139,
+     6159
+    ],
+    "trumpet": [
+     2
+    ]
+   },
+   "forced": true,
+   "input_name": "贯日",
+   "input_skill": 10315,
+   "ledger_violations": 0,
+   "lianyu": {
+    "cast_peaks": [],
+    "forced_diagnostics": [],
+    "forced_main": [
+     {
+      "actor": 176,
+      "atk": 7660.0,
+      "bind_mode": "arm",
+      "forced": true,
+      "input_name": "点射",
+      "input_skill": 10314,
+      "mat": 3304.0,
+      "mhp": 321063.0,
+      "peak": 190051,
+      "peak_base": 190051,
+      "peak_single": 95026,
+      "segments": [
+       95025.0,
+       95026.0
+      ],
+      "segs_base": 2,
+      "skill": 10314,
+      "skill_name": "点射",
+      "variance": 0,
+      "weapon_phase": "bow"
+     },
+     {
+      "actor": 176,
+      "atk": 7660.0,
+      "bind_mode": "arm",
+      "forced": true,
+      "input_name": "贯日",
+      "input_skill": 10315,
+      "mat": 3304.0,
+      "mhp": 321063.0,
+      "peak": 961658,
+      "peak_base": 961658,
+      "peak_single": 320554,
+      "segments": [
+       320552.0,
+       320552.0,
+       320554.0
+      ],
+      "segs_base": 3,
+      "skill": 10315,
+      "skill_name": "贯日",
+      "variance": 0,
+      "weapon_phase": "bow"
+     },
+     {
+      "actor": 176,
+      "atk": 7660.0,
+      "bind_mode": "arm",
+      "forced": true,
+      "input_name": "斩锋",
+      "input_skill": 10312,
+      "mat": 3304.0,
+      "mhp": 321063.0,
+      "peak": 190051,
+      "peak_base": 190051,
+      "peak_single": 190051,
+      "segments": [
+       190051.0
+      ],
+      "segs_base": 1,
+      "skill": 10312,
+      "skill_name": "斩锋",
+      "variance": 0,
+      "weapon_phase": "sword"
+     },
+     {
+      "actor": 176,
+      "atk": 7660.0,
+      "bind_mode": "arm",
+      "forced": true,
+      "input_name": "横扫",
+      "input_skill": 10313,
+      "mat": 3304.0,
+      "mhp": 321063.0,
+      "peak": 76020,
+      "peak_base": 76020,
+      "peak_single": 76020,
+      "segments": [
+       76020.0
+      ],
+      "segs_base": 1,
+      "skill": 10313,
+      "skill_name": "横扫",
+      "variance": 0,
+      "weapon_phase": "sword"
+     },
+     {
+      "actor": 176,
+      "atk": 7660.0,
+      "bind_mode": "arm",
+      "forced": true,
+      "input_name": "敕令",
+      "input_skill": 10317,
+      "mat": 3304.0,
+      "mhp": 321063.0,
+      "peak": 61800,
+      "peak_base": 61800,
+      "peak_single": 30900,
+      "segments": [
+       30900.0,
+       30900.0
+      ],
+      "segs_base": 2,
+      "skill": 10317,
+      "skill_name": "敕令",
+      "variance": 0,
+      "weapon_phase": "book"
+     },
+     {
+      "actor": 176,
+      "atk": 7660.0,
+      "bind_mode": "arm",
+      "forced": true,
+      "input_name": "震击",
+      "input_skill": 10318,
+      "mat": 3304.0,
+      "mhp": 321063.0,
+      "peak": 190051,
+      "peak_base": 190051,
+      "peak_single": 190051,
+      "segments": [
+       190051.0
+      ],
+      "segs_base": 1,
+      "skill": 10318,
+      "skill_name": "震击",
+      "variance": 0,
+      "weapon_phase": "hammer"
+     },
+     {
+      "actor": 176,
+      "atk": 7660.0,
+      "bind_mode": "support",
+      "forced": true,
+      "input_name": "剑气纵横",
+      "input_skill": 10319,
+      "mat": 3304.0,
+      "mhp": 321063.0,
+      "peak": 66104,
+      "peak_base": 66104,
+      "peak_single": 66104,
+      "segments": [
+       66104.0
+      ],
+      "segs_base": 1,
+      "skill": 10319,
+      "skill_name": "剑气纵横",
+      "variance": 0,
+      "weapon_phase": "sword"
+     },
+     {
+      "actor": 176,
+      "atk": 7660.0,
+      "bind_mode": "support",
+      "forced": true,
+      "input_name": "镇魂重击",
+      "input_skill": 10323,
+      "mat": 3304.0,
+      "mhp": 321063.0,
+      "peak": 99157,
+      "peak_base": 99157,
+      "peak_single": 99157,
+      "segments": [
+       99157.0
+      ],
+      "segs_base": 1,
+      "skill": 10323,
+      "skill_name": "镇魂重击",
+      "variance": 0,
+      "weapon_phase": "hammer"
+     },
+     {
+      "actor": 176,
+      "atk": 7660.0,
+      "bind_mode": "body",
+      "forced": true,
+      "input_name": "铸锋斩",
+      "input_skill": 10324,
+      "mat": 3304.0,
+      "mhp": 321063.0,
+      "peak": 111777,
+      "peak_base": 111777,
+      "peak_single": 111777,
+      "segments": [
+       111777.0
+      ],
+      "segs_base": 1,
+      "skill": 10324,
+      "skill_name": "铸锋斩",
+      "variance": 0,
+      "weapon_phase": ""
+     },
+     {
+      "actor": 176,
+      "atk": 7660.0,
+      "bind_mode": "body",
+      "forced": true,
+      "input_name": "炉火诀",
+      "input_skill": 10325,
+      "mat": 3304.0,
+      "mhp": 321063.0,
+      "peak": 20193,
+      "peak_base": 20193,
+      "peak_single": 20193,
+      "segments": [
+       20193.0
+      ],
+      "segs_base": 1,
+      "skill": 10325,
+      "skill_name": "炉火诀",
+      "variance": 0,
+      "weapon_phase": ""
+     }
+    ],
+    "gear": [
+     {
+      "actor": 176,
+      "etype": 1,
+      "grade": 6,
+      "grade_name": "神话",
+      "name": "【真印】止戈",
+      "qiyin": true,
+      "req_level": 80,
+      "true_seal": true
+     },
+     {
+      "actor": 176,
+      "etype": 2,
+      "grade": 5,
+      "grade_name": "不朽",
+      "name": "三环剑",
+      "qiyin": false,
+      "req_level": 70,
+      "true_seal": false
+     },
+     {
+      "actor": 176,
+      "etype": 3,
+      "grade": 6,
+      "grade_name": "神话",
+      "name": "【真印】阴府随行·头",
+      "qiyin": true,
+      "req_level": 80,
+      "true_seal": true
+     },
+     {
+      "actor": 176,
+      "etype": 4,
+      "grade": 6,
+      "grade_name": "神话",
+      "name": "【真印】阴府随行·甲",
+      "qiyin": true,
+      "req_level": 80,
+      "true_seal": true
+     },
+     {
+      "actor": 176,
+      "etype": 5,
+      "grade": 6,
+      "grade_name": "神话",
+      "name": "【真印】阴府随行·裤",
+      "qiyin": true,
+      "req_level": 80,
+      "true_seal": true
+     },
+     {
+      "actor": 176,
+      "etype": 6,
+      "grade": 6,
+      "grade_name": "神话",
+      "name": "阴府随行·手",
+      "qiyin": true,
+      "req_level": 80,
+      "true_seal": false
+     },
+     {
+      "actor": 176,
+      "etype": 7,
+      "grade": 6,
+      "grade_name": "神话",
+      "name": "阴府随行·鞋",
+      "qiyin": true,
+      "req_level": 80,
+      "true_seal": false
+     },
+     {
+      "actor": 176,
+      "etype": 8,
+      "grade": 6,
+      "grade_name": "神话",
+      "name": "阴府随行·腰",
+      "qiyin": true,
+      "req_level": 80,
+      "true_seal": false
+     },
+     {
+      "actor": 176,
+      "etype": 9,
+      "grade": 5,
+      "grade_name": "不朽",
+      "name": "邪龙饰物",
+      "qiyin": false,
+      "req_level": 70,
+      "true_seal": false
+     },
+     {
+      "actor": 176,
+      "etype": 10,
+      "grade": 5,
+      "grade_name": "不朽",
+      "name": "苍苍白骨",
+      "qiyin": false,
+      "req_level": 70,
+      "true_seal": false
+     }
+    ],
+    "mastery": 0,
+    "mastery_cap": 10,
+    "race_rank": 5,
+    "secret_limit": 5,
+    "skill_learned": false
+   },
+   "lottery_count": 0,
+   "mat": 3304.0,
+   "mhp": 321063.0,
+   "peak": 961658,
+   "peak_base": 961658,
+   "peak_single": 320554,
+   "segments": [
+    320552.0,
+    320552.0,
+    320554.0
+   ],
+   "segs_base": 3,
+   "skill": 10315,
+   "skill_name": "贯日",
+   "tier": "超强者",
+   "variance": 0,
+   "weapon_phase": "bow"
+  },
+  {
+   "actor": 177,
+   "atk": 2905.0,
+   "battle_tier": "超强者",
+   "bind_probe": {
+    "auto_tongdiao_duo": {
+     "elem_fire_peak": 393867,
+     "elem_fire_segs": [
+      393867.0
+     ],
+     "host_phys_peak": 196933,
+     "host_phys_segs": [
+      196933.0
+     ],
+     "party": [
+      177,
+      1
+     ]
+    },
+    "host": 1,
+    "mode": "xuan_liexing_4p",
+    "party": [
+     177,
+     1,
+     22,
+     2
+    ],
+    "shadows": [
+     22,
+     2
+    ]
+   },
+   "brand_mult": 1.375,
+   "build": {
+    "equips": [
+     "【真印】危楼",
+     "双鱼念气瓶",
+     "【真印】天卷·头",
+     "【真印】天卷·甲",
+     "【真印】天卷·裤",
+     "天卷·手",
+     "天卷·鞋",
+     "天卷·腰",
+     "砗磲项链",
+     "和煦",
+     "",
+     "",
+     "璇玑星盘",
+     "",
+     "",
+     "嘶风逐日驹",
+     "",
+     "",
+     ""
+    ],
+    "secrets": [
+     489,
+     2471,
+     2480,
+     6139,
+     6159
+    ],
+    "trumpet": [
+     2
+    ]
+   },
+   "forced": true,
+   "input_name": "棱光",
+   "input_skill": 10337,
+   "ledger_violations": 0,
+   "lianyu": {
+    "cast_peaks": [],
+    "forced_diagnostics": [],
+    "forced_main": [
+     {
+      "actor": 177,
+      "atk": 2905.0,
+      "forced": true,
+      "input_name": "棱光",
+      "input_skill": 10337,
+      "mat": 6559.0,
+      "mhp": 300490.0,
+      "peak": 873701,
+      "peak_base": 873701,
+      "peak_single": 198180,
+      "segments": [
+       91902.0,
+       106131.0,
+       125573.0,
+       153735.0,
+       198180.0,
+       198180.0
+      ],
+      "segs_base": 6,
+      "shadows": 2,
+      "skill": 10337,
+      "skill_name": "棱光",
+      "variance": 0
+     }
+    ],
+    "gear": [
+     {
+      "actor": 177,
+      "etype": 1,
+      "grade": 6,
+      "grade_name": "神话",
+      "name": "【真印】危楼",
+      "qiyin": true,
+      "req_level": 80,
+      "true_seal": true
+     },
+     {
+      "actor": 177,
+      "etype": 2,
+      "grade": 5,
+      "grade_name": "不朽",
+      "name": "双鱼念气瓶",
+      "qiyin": false,
+      "req_level": 75,
+      "true_seal": false
+     },
+     {
+      "actor": 177,
+      "etype": 3,
+      "grade": 6,
+      "grade_name": "神话",
+      "name": "【真印】天卷·头",
+      "qiyin": true,
+      "req_level": 80,
+      "true_seal": true
+     },
+     {
+      "actor": 177,
+      "etype": 4,
+      "grade": 6,
+      "grade_name": "神话",
+      "name": "【真印】天卷·甲",
+      "qiyin": true,
+      "req_level": 80,
+      "true_seal": true
+     },
+     {
+      "actor": 177,
+      "etype": 5,
+      "grade": 6,
+      "grade_name": "神话",
+      "name": "【真印】天卷·裤",
+      "qiyin": true,
+      "req_level": 80,
+      "true_seal": true
+     },
+     {
+      "actor": 177,
+      "etype": 6,
+      "grade": 6,
+      "grade_name": "神话",
+      "name": "天卷·手",
+      "qiyin": true,
+      "req_level": 80,
+      "true_seal": false
+     },
+     {
+      "actor": 177,
+      "etype": 7,
+      "grade": 6,
+      "grade_name": "神话",
+      "name": "天卷·鞋",
+      "qiyin": true,
+      "req_level": 80,
+      "true_seal": false
+     },
+     {
+      "actor": 177,
+      "etype": 8,
+      "grade": 6,
+      "grade_name": "神话",
+      "name": "天卷·腰",
+      "qiyin": true,
+      "req_level": 80,
+      "true_seal": false
+     },
+     {
+      "actor": 177,
+      "etype": 9,
+      "grade": 5,
+      "grade_name": "不朽",
+      "name": "砗磲项链",
+      "qiyin": false,
+      "req_level": 75,
+      "true_seal": false
+     },
+     {
+      "actor": 177,
+      "etype": 10,
+      "grade": 5,
+      "grade_name": "不朽",
+      "name": "和煦",
+      "qiyin": false,
+      "req_level": 70,
+      "true_seal": false
+     }
+    ],
+    "mastery": 8,
+    "mastery_cap": 10,
+    "race_rank": 5,
+    "secret_limit": 5,
+    "skill_learned": true
+   },
+   "lottery_count": 0,
+   "mat": 6559.0,
+   "mhp": 300490.0,
+   "peak": 873701,
+   "peak_base": 873701,
+   "peak_single": 198180,
+   "segments": [
+    91902.0,
+    106131.0,
+    125573.0,
+    153735.0,
+    198180.0,
+    198180.0
+   ],
+   "segs_base": 6,
+   "shadows": 2,
+   "skill": 10337,
+   "skill_name": "棱光",
+   "tier": "超强者",
+   "variance": 0
+  },
+  {
+   "actor": 179,
+   "atk": 7660.0,
+   "battle_tier": "超强者",
+   "brand_mult": 1.375,
+   "build": {
+    "equips": [
+     "【真印】止戈",
+     "三环剑",
+     "【真印】天卷·头",
+     "【真印】天卷·甲",
+     "【真印】天卷·裤",
+     "天卷·手",
+     "天卷·鞋",
+     "天卷·腰",
+     "邪龙饰物",
+     "苍苍白骨",
+     "",
+     "",
+     "萨姆变身器",
+     "",
+     "",
+     "嘶风逐日驹",
+     "",
+     "",
+     ""
+    ],
+    "secrets": [
+     488,
+     2472,
+     2480,
+     6139,
+     6159
+    ],
+    "trumpet": [
+     2
+    ]
+   },
+   "input_name": "完全燃烧",
+   "input_skill": 10623,
+   "ledger_violations": 0,
+   "lianyu": {
+    "cast_peaks": [
+     {
+      "actor": 179,
+      "atk": 7660.0,
+      "input_name": "天火轰击",
+      "input_skill": 10622,
+      "mat": 1836.0,
+      "mhp": 412430.0,
+      "peak": 725772,
+      "peak_base": 725772,
+      "peak_single": 121552,
+      "segments": [
+       118012.0,
+       121552.0,
+       121552.0,
+       121552.0,
+       121552.0,
+       121552.0
+      ],
+      "segs_base": 6,
+      "skill": 10622,
+      "skill_name": "天火轰击",
+      "variance": 0
+     },
+     {
+      "actor": 179,
+      "atk": 7660.0,
+      "input_name": "完全燃烧",
+      "input_skill": 10623,
+      "mat": 1836.0,
+      "mhp": 412430.0,
+      "peak": 736856,
+      "peak_base": 736856,
+      "peak_single": 82631,
+      "segments": [
+       75808.0,
+       82631.0,
+       82631.0,
+       82631.0,
+       82631.0,
+       82631.0,
+       82631.0,
+       82631.0,
+       82631.0
+      ],
+      "segs_base": 9,
+      "skill": 10623,
+      "skill_name": "完全燃烧",
+      "variance": 0
+     }
+    ],
+    "forced_diagnostics": [],
+    "forced_main": [],
+    "gear": [
+     {
+      "actor": 179,
+      "etype": 1,
+      "grade": 6,
+      "grade_name": "神话",
+      "name": "【真印】止戈",
+      "qiyin": true,
+      "req_level": 80,
+      "true_seal": true
+     },
+     {
+      "actor": 179,
+      "etype": 2,
+      "grade": 5,
+      "grade_name": "不朽",
+      "name": "三环剑",
+      "qiyin": false,
+      "req_level": 70,
+      "true_seal": false
+     },
+     {
+      "actor": 179,
+      "etype": 3,
+      "grade": 6,
+      "grade_name": "神话",
+      "name": "【真印】天卷·头",
+      "qiyin": true,
+      "req_level": 80,
+      "true_seal": true
+     },
+     {
+      "actor": 179,
+      "etype": 4,
+      "grade": 6,
+      "grade_name": "神话",
+      "name": "【真印】天卷·甲",
+      "qiyin": true,
+      "req_level": 80,
+      "true_seal": true
+     },
+     {
+      "actor": 179,
+      "etype": 5,
+      "grade": 6,
+      "grade_name": "神话",
+      "name": "【真印】天卷·裤",
+      "qiyin": true,
+      "req_level": 80,
+      "true_seal": true
+     },
+     {
+      "actor": 179,
+      "etype": 6,
+      "grade": 6,
+      "grade_name": "神话",
+      "name": "天卷·手",
+      "qiyin": true,
+      "req_level": 80,
+      "true_seal": false
+     },
+     {
+      "actor": 179,
+      "etype": 7,
+      "grade": 6,
+      "grade_name": "神话",
+      "name": "天卷·鞋",
+      "qiyin": true,
+      "req_level": 80,
+      "true_seal": false
+     },
+     {
+      "actor": 179,
+      "etype": 8,
+      "grade": 6,
+      "grade_name": "神话",
+      "name": "天卷·腰",
+      "qiyin": true,
+      "req_level": 80,
+      "true_seal": false
+     },
+     {
+      "actor": 179,
+      "etype": 9,
+      "grade": 5,
+      "grade_name": "不朽",
+      "name": "邪龙饰物",
+      "qiyin": false,
+      "req_level": 70,
+      "true_seal": false
+     },
+     {
+      "actor": 179,
+      "etype": 10,
+      "grade": 5,
+      "grade_name": "不朽",
+      "name": "苍苍白骨",
+      "qiyin": false,
+      "req_level": 70,
+      "true_seal": false
+     }
+    ],
+    "mastery": 8,
+    "mastery_cap": 10,
+    "race_rank": 5,
+    "secret_limit": 5,
+    "skill_learned": true
+   },
+   "lottery_count": 0,
+   "mat": 1836.0,
+   "mhp": 412430.0,
+   "peak": 736856,
+   "peak_base": 736856,
+   "peak_single": 82631,
+   "segments": [
+    75808.0,
+    82631.0,
+    82631.0,
+    82631.0,
+    82631.0,
+    82631.0,
+    82631.0,
+    82631.0,
+    82631.0
+   ],
+   "segs_base": 9,
+   "skill": 10623,
+   "skill_name": "完全燃烧",
+   "tier": "超强者",
+   "variance": 0
+  },
+  {
+   "actor": 180,
+   "atk": 3257.0,
+   "battle_tier": "超强者",
+   "brand_mult": 1.375,
+   "build": {
+    "equips": [
+     "【真印】送行",
+     "双鱼念气瓶",
+     "【真印】阴府随行·头",
+     "【真印】阴府随行·甲",
+     "【真印】阴府随行·裤",
+     "阴府随行·手",
+     "阴府随行·鞋",
+     "阴府随行·腰",
+     "砗磲项链",
+     "和煦",
+     "",
+     "",
+     "尊魔",
+     "",
+     "",
+     "嘶风逐日驹",
+     "",
+     "",
+     ""
+    ],
+    "secrets": [
+     489,
+     2471,
+     2480,
+     6139,
+     6159
+    ],
+    "trumpet": [
+     2
+    ]
+   },
+   "forced": true,
+   "input_name": "虚式「茈」·放",
+   "input_skill": 10641,
+   "ledger_violations": 0,
+   "lianyu": {
+    "cast_peaks": [
+     {
+      "actor": 180,
+      "atk": 3257.0,
+      "input_name": "咒力打击",
+      "input_skill": 10634,
+      "mat": 6781.0,
+      "mhp": 333241.0,
+      "peak": 24078,
+      "peak_base": 24078,
+      "peak_single": 24078,
+      "segments": [
+       24078.0
+      ],
+      "segs_base": 1,
+      "skill": 10634,
+      "skill_name": "咒力打击",
+      "variance": 0
+     },
+     {
+      "actor": 180,
+      "atk": 3257.0,
+      "input_name": "术式顺转「苍」",
+      "input_skill": 10635,
+      "mat": 6781.0,
+      "mhp": 333241.0,
+      "peak": 79957,
+      "peak_base": 79957,
+      "peak_single": 79957,
+      "segments": [
+       79957.0
+      ],
+      "segs_base": 1,
+      "skill": 10635,
+      "skill_name": "术式顺转「苍」",
+      "variance": 0
+     },
+     {
+      "actor": 180,
+      "atk": 3257.0,
+      "input_name": "术式反转「赫」",
+      "input_skill": 10636,
+      "mat": 6781.0,
+      "mhp": 333241.0,
+      "peak": 159914,
+      "peak_base": 159914,
+      "peak_single": 159914,
+      "segments": [
+       159914.0
+      ],
+      "segs_base": 1,
+      "skill": 10636,
+      "skill_name": "术式反转「赫」",
+      "variance": 0
+     },
+     {
+      "actor": 180,
+      "atk": 3257.0,
+      "input_name": "苍·最大出力",
+      "input_skill": 10638,
+      "mat": 6781.0,
+      "mhp": 333241.0,
+      "peak": 159914,
+      "peak_base": 159914,
+      "peak_single": 159914,
+      "segments": [
+       159914.0
+      ],
+      "segs_base": 1,
+      "skill": 10638,
+      "skill_name": "苍·最大出力",
+      "variance": 0
+     },
+     {
+      "actor": 180,
+      "atk": 3257.0,
+      "input_name": "赫·最大出力",
+      "input_skill": 10639,
+      "mat": 6781.0,
+      "mhp": 333241.0,
+      "peak": 279849,
+      "peak_base": 279849,
+      "peak_single": 279849,
+      "segments": [
+       279849.0
+      ],
+      "segs_base": 1,
+      "skill": 10639,
+      "skill_name": "赫·最大出力",
+      "variance": 0
+     },
+     {
+      "actor": 180,
+      "atk": 3257.0,
+      "input_name": "领域展开「无量空处」",
+      "input_skill": 10642,
+      "mat": 6781.0,
+      "mhp": 333241.0,
+      "peak": 119935,
+      "peak_base": 119935,
+      "peak_single": 119935,
+      "segments": [
+       119935.0
+      ],
+      "segs_base": 1,
+      "skill": 10642,
+      "skill_name": "领域展开「无量空处」",
+      "variance": 0
+     }
+    ],
+    "forced_diagnostics": [],
+    "forced_main": [
+     {
+      "actor": 180,
+      "atk": 3257.0,
+      "forced": true,
+      "input_name": "虚式「茈」·收",
+      "input_skill": 10640,
+      "mat": 6781.0,
+      "mhp": 333241.0,
+      "peak": 533713,
+      "peak_base": 533713,
+      "peak_single": 533713,
+      "segments": [
+       533713.0
+      ],
+      "segs_base": 1,
+      "skill": 10640,
+      "skill_name": "虚式「茈」·收",
+      "variance": 0
+     },
+     {
+      "actor": 180,
+      "atk": 3257.0,
+      "forced": true,
+      "input_name": "虚式「茈」·放",
+      "input_skill": 10641,
+      "mat": 6781.0,
+      "mhp": 333241.0,
+      "peak": 1087716,
+      "peak_base": 1087716,
+      "peak_single": 271929,
+      "segments": [
+       271929.0,
+       271929.0,
+       271929.0,
+       271929.0
+      ],
+      "segs_base": 4,
+      "skill": 10641,
+      "skill_name": "虚式「茈」·放",
+      "variance": 0
+     }
+    ],
+    "gear": [
+     {
+      "actor": 180,
+      "etype": 1,
+      "grade": 6,
+      "grade_name": "神话",
+      "name": "【真印】送行",
+      "qiyin": true,
+      "req_level": 80,
+      "true_seal": true
+     },
+     {
+      "actor": 180,
+      "etype": 2,
+      "grade": 5,
+      "grade_name": "不朽",
+      "name": "双鱼念气瓶",
+      "qiyin": false,
+      "req_level": 75,
+      "true_seal": false
+     },
+     {
+      "actor": 180,
+      "etype": 3,
+      "grade": 6,
+      "grade_name": "神话",
+      "name": "【真印】阴府随行·头",
+      "qiyin": true,
+      "req_level": 80,
+      "true_seal": true
+     },
+     {
+      "actor": 180,
+      "etype": 4,
+      "grade": 6,
+      "grade_name": "神话",
+      "name": "【真印】阴府随行·甲",
+      "qiyin": true,
+      "req_level": 80,
+      "true_seal": true
+     },
+     {
+      "actor": 180,
+      "etype": 5,
+      "grade": 6,
+      "grade_name": "神话",
+      "name": "【真印】阴府随行·裤",
+      "qiyin": true,
+      "req_level": 80,
+      "true_seal": true
+     },
+     {
+      "actor": 180,
+      "etype": 6,
+      "grade": 6,
+      "grade_name": "神话",
+      "name": "阴府随行·手",
+      "qiyin": true,
+      "req_level": 80,
+      "true_seal": false
+     },
+     {
+      "actor": 180,
+      "etype": 7,
+      "grade": 6,
+      "grade_name": "神话",
+      "name": "阴府随行·鞋",
+      "qiyin": true,
+      "req_level": 80,
+      "true_seal": false
+     },
+     {
+      "actor": 180,
+      "etype": 8,
+      "grade": 6,
+      "grade_name": "神话",
+      "name": "阴府随行·腰",
+      "qiyin": true,
+      "req_level": 80,
+      "true_seal": false
+     },
+     {
+      "actor": 180,
+      "etype": 9,
+      "grade": 5,
+      "grade_name": "不朽",
+      "name": "砗磲项链",
+      "qiyin": false,
+      "req_level": 75,
+      "true_seal": false
+     },
+     {
+      "actor": 180,
+      "etype": 10,
+      "grade": 5,
+      "grade_name": "不朽",
+      "name": "和煦",
+      "qiyin": false,
+      "req_level": 70,
+      "true_seal": false
+     }
+    ],
+    "mastery": 8,
+    "mastery_cap": 10,
+    "race_rank": 5,
+    "secret_limit": 5,
+    "skill_learned": true
+   },
+   "lottery_count": 0,
+   "mat": 6781.0,
+   "mhp": 333241.0,
+   "peak": 1087716,
+   "peak_base": 1087716,
+   "peak_single": 271929,
+   "segments": [
+    271929.0,
+    271929.0,
+    271929.0,
+    271929.0
+   ],
+   "segs_base": 4,
+   "skill": 10641,
+   "skill_name": "虚式「茈」·放",
+   "tier": "超强者",
+   "variance": 0
+  },
+  {
+   "actor": 1,
+   "atk": 7275.0,
+   "battle_tier": "强者",
+   "brand_mult": 1.375,
+   "build": {
+    "equips": [
+     "【真印】止戈",
+     "三环剑",
+     "【真印】天卷·头",
+     "【真印】天卷·甲",
+     "【真印】天卷·裤",
+     "天卷·手",
+     "天卷·鞋",
+     "天卷·腰",
+     "邪龙饰物",
+     "苍苍白骨",
+     "",
+     "",
+     "紫电",
+     "",
+     "",
+     "嘶风逐日驹",
+     "",
+     "",
+     ""
+    ],
+    "secrets": [
+     488,
+     489,
+     2471,
+     2480,
+     6139,
+     6159
+    ],
+    "trumpet": [
+     2
+    ]
+   },
+   "input_name": "万剑归一",
+   "input_skill": 3632,
+   "ledger_violations": 0,
+   "lianyu": {
+    "cast_peaks": [
+     {
+      "actor": 1,
+      "atk": 7275.0,
+      "input_name": "万剑诀",
+      "input_skill": 160,
+      "mat": 1700.0,
+      "mhp": 306792.0,
+      "peak": 124692,
+      "peak_base": 124692,
+      "peak_single": 31173,
+      "segments": [
+       31173.0,
+       31173.0,
+       31173.0,
+       31173.0
+      ],
+      "segs_base": 4,
+      "skill": 160,
+      "skill_name": "万剑诀",
+      "variance": 0
+     },
+     {
+      "actor": 1,
+      "atk": 7275.0,
+      "input_name": "天剑",
+      "input_skill": 311,
+      "mat": 1700.0,
+      "mhp": 306792.0,
+      "peak": 277096,
+      "peak_base": 277096,
+      "peak_single": 69274,
+      "segments": [
+       69274.0,
+       69274.0,
+       69274.0,
+       69274.0
+      ],
+      "segs_base": 4,
+      "skill": 311,
+      "skill_name": "天剑",
+      "variance": 0
+     },
+     {
+      "actor": 1,
+      "atk": 7275.0,
+      "input_name": "剑神诀",
+      "input_skill": 502,
+      "mat": 1700.0,
+      "mhp": 306792.0,
+      "peak": 554192,
+      "peak_base": 554192,
+      "peak_single": 138548,
+      "segments": [
+       138548.0,
+       138548.0,
+       138548.0,
+       138548.0
+      ],
+      "segs_base": 4,
+      "skill": 502,
+      "skill_name": "剑神诀",
+      "variance": 0
+     },
+     {
+      "actor": 1,
+      "atk": 7275.0,
+      "input_name": "万剑归宗",
+      "input_skill": 1233,
+      "mat": 1700.0,
+      "mhp": 306792.0,
+      "peak": 748164,
+      "peak_base": 748164,
+      "peak_single": 62347,
+      "segments": [
+       62347.0,
+       62347.0,
+       62347.0,
+       62347.0,
+       62347.0,
+       62347.0,
+       62347.0,
+       62347.0,
+       62347.0,
+       62347.0,
+       62347.0,
+       62347.0
+      ],
+      "segs_base": 12,
+      "skill": 1233,
+      "skill_name": "万剑归宗",
+      "variance": 0
+     },
+     {
+      "actor": 1,
+      "atk": 7275.0,
+      "input_name": "万剑归一",
+      "input_skill": 3632,
+      "mat": 1700.0,
+      "mhp": 306792.0,
+      "peak": 831291,
+      "peak_base": 831291,
+      "peak_single": 277097,
+      "segments": [
+       277097.0,
+       277097.0,
+       277097.0
+      ],
+      "segs_base": 3,
+      "skill": 3632,
+      "skill_name": "万剑归一",
+      "variance": 0
+     },
+     {
+      "actor": 1,
+      "atk": 7275.0,
+      "input_name": "万剑归一",
+      "input_skill": 3632,
+      "mat": 1700.0,
+      "mhp": 306792.0,
+      "peak": 670395,
+      "peak_base": 670395,
+      "peak_single": 223465,
+      "segments": [
+       223465.0,
+       223465.0,
+       223465.0
+      ],
+      "segs_base": 3,
+      "skill": 3633,
+      "skill_name": "万剑归一*破",
+      "variance": 0
+     },
+     {
+      "actor": 1,
+      "atk": 7275.0,
+      "input_name": "万剑归一",
+      "input_skill": 3632,
+      "mat": 1700.0,
+      "mhp": 306792.0,
+      "peak": 670395,
+      "peak_base": 670395,
+      "peak_single": 223465,
+      "segments": [
+       223465.0,
+       223465.0,
+       223465.0
+      ],
+      "segs_base": 3,
+      "skill": 3631,
+      "skill_name": "万剑归一*灭",
+      "variance": 0
+     },
+     {
+      "actor": 1,
+      "atk": 7275.0,
+      "input_name": "御剑术",
+      "input_skill": 101,
+      "mat": 1700.0,
+      "mhp": 306792.0,
+      "peak": 223465,
+      "peak_base": 223465,
+      "peak_single": 223465,
+      "segments": [
+       223465.0
+      ],
+      "segs_base": 1,
+      "skill": 101,
+      "skill_name": "御剑术",
+      "variance": 0
+     }
+    ],
+    "forced_diagnostics": [
+     {
+      "actor": 1,
+      "atk": 7275.0,
+      "input_name": "万剑归一*破魂",
+      "input_skill": 4749,
+      "mat": 1700.0,
+      "mhp": 306792.0,
+      "peak": 670396,
+      "peak_base": 670396,
+      "peak_single": 335198,
+      "segments": [
+       335198.0,
+       335198.0
+      ],
+      "segs_base": 2,
+      "skill": 4749,
+      "skill_name": "万剑归一*破魂",
+      "variance": 0
+     }
+    ],
+    "forced_main": [],
+    "gear": [
+     {
+      "actor": 1,
+      "etype": 1,
+      "grade": 6,
+      "grade_name": "神话",
+      "name": "【真印】止戈",
+      "qiyin": true,
+      "req_level": 80,
+      "true_seal": true
+     },
+     {
+      "actor": 1,
+      "etype": 2,
+      "grade": 5,
+      "grade_name": "不朽",
+      "name": "三环剑",
+      "qiyin": false,
+      "req_level": 70,
+      "true_seal": false
+     },
+     {
+      "actor": 1,
+      "etype": 3,
+      "grade": 6,
+      "grade_name": "神话",
+      "name": "【真印】天卷·头",
+      "qiyin": true,
+      "req_level": 80,
+      "true_seal": true
+     },
+     {
+      "actor": 1,
+      "etype": 4,
+      "grade": 6,
+      "grade_name": "神话",
+      "name": "【真印】天卷·甲",
+      "qiyin": true,
+      "req_level": 80,
+      "true_seal": true
+     },
+     {
+      "actor": 1,
+      "etype": 5,
+      "grade": 6,
+      "grade_name": "神话",
+      "name": "【真印】天卷·裤",
+      "qiyin": true,
+      "req_level": 80,
+      "true_seal": true
+     },
+     {
+      "actor": 1,
+      "etype": 6,
+      "grade": 6,
+      "grade_name": "神话",
+      "name": "天卷·手",
+      "qiyin": true,
+      "req_level": 80,
+      "true_seal": false
+     },
+     {
+      "actor": 1,
+      "etype": 7,
+      "grade": 6,
+      "grade_name": "神话",
+      "name": "天卷·鞋",
+      "qiyin": true,
+      "req_level": 80,
+      "true_seal": false
+     },
+     {
+      "actor": 1,
+      "etype": 8,
+      "grade": 6,
+      "grade_name": "神话",
+      "name": "天卷·腰",
+      "qiyin": true,
+      "req_level": 80,
+      "true_seal": false
+     },
+     {
+      "actor": 1,
+      "etype": 9,
+      "grade": 5,
+      "grade_name": "不朽",
+      "name": "邪龙饰物",
+      "qiyin": false,
+      "req_level": 70,
+      "true_seal": false
+     },
+     {
+      "actor": 1,
+      "etype": 10,
+      "grade": 5,
+      "grade_name": "不朽",
+      "name": "苍苍白骨",
+      "qiyin": false,
+      "req_level": 70,
+      "true_seal": false
+     }
+    ],
+    "mastery": 8,
+    "mastery_cap": 10,
+    "race_rank": 5,
+    "secret_limit": 6,
+    "skill_learned": true
+   },
+   "lottery_count": 0,
+   "mat": 1700.0,
+   "mhp": 306792.0,
+   "peak": 831291,
+   "peak_base": 831291,
+   "peak_single": 277097,
+   "segments": [
+    277097.0,
+    277097.0,
+    277097.0
+   ],
+   "segs_base": 3,
+   "skill": 3632,
+   "skill_name": "万剑归一",
+   "tier": "强者",
+   "variance": 0
+  },
+  {
+   "actor": 2,
+   "atk": 2905.0,
+   "battle_tier": "强者",
+   "brand_mult": 1.375,
+   "build": {
+    "equips": [
+     "【真印】危楼",
+     "双鱼念气瓶",
+     "【真印】阴府随行·头",
+     "【真印】阴府随行·甲",
+     "【真印】阴府随行·裤",
+     "阴府随行·手",
+     "阴府随行·鞋",
+     "阴府随行·腰",
+     "砗磲项链",
+     "和煦",
+     "",
+     "",
+     "含莲",
+     "",
+     "",
+     "嘶风逐日驹",
+     "",
+     "",
+     ""
+    ],
+    "secrets": [
+     488,
+     489,
+     2480,
+     2780,
+     6139,
+     6159
+    ],
+    "trumpet": [
+     2
+    ]
+   },
+   "input_name": "绿光普照",
+   "input_skill": 504,
+   "ledger_violations": 0,
+   "lianyu": {
+    "cast_peaks": [
+     {
+      "actor": 2,
+      "atk": 2905.0,
+      "input_name": "奥义·大绿帽术",
+      "input_skill": 161,
+      "mat": 5998.0,
+      "mhp": 348941.0,
+      "peak": 50648,
+      "peak_base": 50648,
+      "peak_single": 50648,
+      "segments": [
+       50648.0
+      ],
+      "segs_base": 1,
+      "skill": 161,
+      "skill_name": "奥义·大绿帽术",
+      "variance": 0
+     },
+     {
+      "actor": 2,
+      "atk": 2905.0,
+      "input_name": "绿光普照",
+      "input_skill": 504,
+      "mat": 5998.0,
+      "mhp": 348941.0,
+      "peak": 455832,
+      "peak_base": 455832,
+      "peak_single": 455832,
+      "segments": [
+       455832.0
+      ],
+      "segs_base": 1,
+      "skill": 504,
+      "skill_name": "绿光普照",
+      "variance": 0
+     },
+     {
+      "actor": 2,
+      "atk": 2905.0,
+      "input_name": "绿帽术",
+      "input_skill": 102,
+      "mat": 5998.0,
+      "mhp": 348941.0,
+      "peak": 122535,
+      "peak_base": 122535,
+      "peak_single": 122535,
+      "segments": [
+       122535.0
+      ],
+      "segs_base": 1,
+      "skill": 102,
+      "skill_name": "绿帽术",
+      "variance": 0
+     }
+    ],
+    "forced_diagnostics": [
+     {
+      "actor": 2,
+      "atk": 2905.0,
+      "input_name": "绿光普照",
+      "input_skill": 4759,
+      "mat": 5998.0,
+      "mhp": 348941.0,
+      "peak": 375774,
+      "peak_base": 375774,
+      "peak_single": 49014,
+      "segments": [
+       40845.0,
+       49014.0,
+       49014.0,
+       49014.0,
+       49014.0,
+       49014.0,
+       49014.0,
+       40845.0
+      ],
+      "segs_base": 8,
+      "skill": 4760,
+      "skill_name": "绿光普照*苍琉",
+      "variance": 0
+     },
+     {
+      "actor": 2,
+      "atk": 2905.0,
+      "input_name": "绿光普照*苍琉",
+      "input_skill": 4760,
+      "mat": 5998.0,
+      "mhp": 348941.0,
+      "peak": 375774,
+      "peak_base": 375774,
+      "peak_single": 49014,
+      "segments": [
+       40845.0,
+       49014.0,
+       49014.0,
+       49014.0,
+       49014.0,
+       49014.0,
+       49014.0,
+       40845.0
+      ],
+      "segs_base": 8,
+      "skill": 4760,
+      "skill_name": "绿光普照*苍琉",
+      "variance": 0
+     }
+    ],
+    "forced_main": [],
+    "gear": [
+     {
+      "actor": 2,
+      "etype": 1,
+      "grade": 6,
+      "grade_name": "神话",
+      "name": "【真印】危楼",
+      "qiyin": true,
+      "req_level": 80,
+      "true_seal": true
+     },
+     {
+      "actor": 2,
+      "etype": 2,
+      "grade": 5,
+      "grade_name": "不朽",
+      "name": "双鱼念气瓶",
+      "qiyin": false,
+      "req_level": 75,
+      "true_seal": false
+     },
+     {
+      "actor": 2,
+      "etype": 3,
+      "grade": 6,
+      "grade_name": "神话",
+      "name": "【真印】阴府随行·头",
+      "qiyin": true,
+      "req_level": 80,
+      "true_seal": true
+     },
+     {
+      "actor": 2,
+      "etype": 4,
+      "grade": 6,
+      "grade_name": "神话",
+      "name": "【真印】阴府随行·甲",
+      "qiyin": true,
+      "req_level": 80,
+      "true_seal": true
+     },
+     {
+      "actor": 2,
+      "etype": 5,
+      "grade": 6,
+      "grade_name": "神话",
+      "name": "【真印】阴府随行·裤",
+      "qiyin": true,
+      "req_level": 80,
+      "true_seal": true
+     },
+     {
+      "actor": 2,
+      "etype": 6,
+      "grade": 6,
+      "grade_name": "神话",
+      "name": "阴府随行·手",
+      "qiyin": true,
+      "req_level": 80,
+      "true_seal": false
+     },
+     {
+      "actor": 2,
+      "etype": 7,
+      "grade": 6,
+      "grade_name": "神话",
+      "name": "阴府随行·鞋",
+      "qiyin": true,
+      "req_level": 80,
+      "true_seal": false
+     },
+     {
+      "actor": 2,
+      "etype": 8,
+      "grade": 6,
+      "grade_name": "神话",
+      "name": "阴府随行·腰",
+      "qiyin": true,
+      "req_level": 80,
+      "true_seal": false
+     },
+     {
+      "actor": 2,
+      "etype": 9,
+      "grade": 5,
+      "grade_name": "不朽",
+      "name": "砗磲项链",
+      "qiyin": false,
+      "req_level": 75,
+      "true_seal": false
+     },
+     {
+      "actor": 2,
+      "etype": 10,
+      "grade": 5,
+      "grade_name": "不朽",
+      "name": "和煦",
+      "qiyin": false,
+      "req_level": 70,
+      "true_seal": false
+     }
+    ],
+    "mastery": 8,
+    "mastery_cap": 10,
+    "race_rank": 5,
+    "secret_limit": 6,
+    "skill_learned": true
+   },
+   "lottery_count": 0,
+   "mat": 5998.0,
+   "mhp": 348941.0,
+   "peak": 455832,
+   "peak_base": 455832,
+   "peak_single": 455832,
+   "segments": [
+    455832.0
+   ],
+   "segs_base": 1,
+   "skill": 504,
+   "skill_name": "绿光普照",
+   "tier": "强者",
+   "variance": 0
+  },
+  {
+   "actor": 22,
+   "atk": 7075.0,
+   "battle_tier": "强者",
+   "brand_mult": 1.375,
+   "build": {
+    "equips": [
+     "【真印】一力降十会",
+     "三环剑",
+     "【真印】阴府随行·头",
+     "【真印】阴府随行·甲",
+     "【真印】阴府随行·裤",
+     "阴府随行·手",
+     "阴府随行·鞋",
+     "阴府随行·腰",
+     "邪龙饰物",
+     "苍苍白骨",
+     "",
+     "",
+     "魂骨",
+     "",
+     "",
+     "嘶风逐日驹",
+     "",
+     "",
+     ""
+    ],
+    "secrets": [
+     488,
+     489,
+     2471,
+     2480,
+     6139,
+     6159
+    ],
+    "trumpet": [
+     2
+    ]
+   },
+   "input_name": "百式观音*九式",
+   "input_skill": 3768,
+   "ledger_violations": 0,
+   "lianyu": {
+    "cast_peaks": [
+     {
+      "actor": 22,
+      "atk": 7075.0,
+      "input_name": "连环腿",
+      "input_skill": 212,
+      "mat": 1700.0,
+      "mhp": 312791.0,
+      "peak": 192766,
+      "peak_base": 192766,
+      "peak_single": 192766,
+      "segments": [
+       192766.0
+      ],
+      "segs_base": 1,
+      "skill": 212,
+      "skill_name": "连环腿",
+      "variance": 0
+     },
+     {
+      "actor": 22,
+      "atk": 7075.0,
+      "input_name": "百式观音*九式",
+      "input_skill": 3768,
+      "mat": 1700.0,
+      "mhp": 312791.0,
+      "peak": 642552,
+      "peak_base": 642552,
+      "peak_single": 321276,
+      "segments": [
+       321276.0,
+       321276.0
+      ],
+      "segs_base": 2,
+      "skill": 3768,
+      "skill_name": "百式观音*九式",
+      "variance": 0
+     },
+     {
+      "actor": 22,
+      "atk": 7075.0,
+      "input_name": "连斗拳",
+      "input_skill": 211,
+      "mat": 1700.0,
+      "mhp": 312791.0,
+      "peak": 207276,
+      "peak_base": 207276,
+      "peak_single": 103638,
+      "segments": [
+       103638.0,
+       103638.0
+      ],
+      "segs_base": 2,
+      "skill": 211,
+      "skill_name": "连斗拳",
+      "variance": 0
+     }
+    ],
+    "forced_diagnostics": [
+     {
+      "actor": 22,
+      "atk": 7075.0,
+      "input_name": "百式观音*一式",
+      "input_skill": 3776,
+      "mat": 1700.0,
+      "mhp": 312791.0,
+      "peak": 466371,
+      "peak_base": 466371,
+      "peak_single": 51819,
+      "segments": [
+       51819.0,
+       51819.0,
+       51819.0,
+       51819.0,
+       51819.0,
+       51819.0,
+       51819.0,
+       51819.0,
+       51819.0
+      ],
+      "segs_base": 9,
+      "skill": 3776,
+      "skill_name": "百式观音*一式",
+      "variance": 0
+     }
+    ],
+    "forced_main": [],
+    "gear": [
+     {
+      "actor": 22,
+      "etype": 1,
+      "grade": 6,
+      "grade_name": "神话",
+      "name": "【真印】一力降十会",
+      "qiyin": true,
+      "req_level": 80,
+      "true_seal": true
+     },
+     {
+      "actor": 22,
+      "etype": 2,
+      "grade": 5,
+      "grade_name": "不朽",
+      "name": "三环剑",
+      "qiyin": false,
+      "req_level": 70,
+      "true_seal": false
+     },
+     {
+      "actor": 22,
+      "etype": 3,
+      "grade": 6,
+      "grade_name": "神话",
+      "name": "【真印】阴府随行·头",
+      "qiyin": true,
+      "req_level": 80,
+      "true_seal": true
+     },
+     {
+      "actor": 22,
+      "etype": 4,
+      "grade": 6,
+      "grade_name": "神话",
+      "name": "【真印】阴府随行·甲",
+      "qiyin": true,
+      "req_level": 80,
+      "true_seal": true
+     },
+     {
+      "actor": 22,
+      "etype": 5,
+      "grade": 6,
+      "grade_name": "神话",
+      "name": "【真印】阴府随行·裤",
+      "qiyin": true,
+      "req_level": 80,
+      "true_seal": true
+     },
+     {
+      "actor": 22,
+      "etype": 6,
+      "grade": 6,
+      "grade_name": "神话",
+      "name": "阴府随行·手",
+      "qiyin": true,
+      "req_level": 80,
+      "true_seal": false
+     },
+     {
+      "actor": 22,
+      "etype": 7,
+      "grade": 6,
+      "grade_name": "神话",
+      "name": "阴府随行·鞋",
+      "qiyin": true,
+      "req_level": 80,
+      "true_seal": false
+     },
+     {
+      "actor": 22,
+      "etype": 8,
+      "grade": 6,
+      "grade_name": "神话",
+      "name": "阴府随行·腰",
+      "qiyin": true,
+      "req_level": 80,
+      "true_seal": false
+     },
+     {
+      "actor": 22,
+      "etype": 9,
+      "grade": 5,
+      "grade_name": "不朽",
+      "name": "邪龙饰物",
+      "qiyin": false,
+      "req_level": 70,
+      "true_seal": false
+     },
+     {
+      "actor": 22,
+      "etype": 10,
+      "grade": 5,
+      "grade_name": "不朽",
+      "name": "苍苍白骨",
+      "qiyin": false,
+      "req_level": 70,
+      "true_seal": false
+     }
+    ],
+    "mastery": 8,
+    "mastery_cap": 10,
+    "race_rank": 5,
+    "secret_limit": 6,
+    "skill_learned": true
+   },
+   "lottery_count": 0,
+   "mat": 1700.0,
+   "mhp": 312791.0,
+   "peak": 642552,
+   "peak_base": 642552,
+   "peak_single": 321276,
+   "segments": [
+    321276.0,
+    321276.0
+   ],
+   "segs_base": 2,
+   "skill": 3768,
+   "skill_name": "百式观音*九式",
+   "tier": "强者",
+   "variance": 0
+  },
+  {
+   "actor": 3,
+   "atk": 4646.0,
+   "battle_tier": "弱者",
+   "brand_mult": 1.375,
+   "build": {
+    "equips": [
+     "【真印】危楼",
+     "双鱼念气瓶",
+     "【真印】天卷·头",
+     "【真印】天卷·甲",
+     "【真印】天卷·裤",
+     "天卷·手",
+     "天卷·鞋",
+     "天卷·腰",
+     "砗磲项链",
+     "和煦",
+     "",
+     "",
+     "袖声",
+     "",
+     "",
+     "嘶风逐日驹",
+     "",
+     "",
+     ""
+    ],
+    "secrets": [
+     488,
+     489,
+     490,
+     2471,
+     2474,
+     2480,
+     6139,
+     6159
+    ],
+    "trumpet": [
+     2
+    ]
+   },
+   "input_name": "大灌篮！",
+   "input_skill": 506,
+   "ledger_violations": 0,
+   "lianyu": {
+    "cast_peaks": [
+     {
+      "actor": 3,
+      "atk": 4646.0,
+      "input_name": "带球灌篮",
+      "input_skill": 162,
+      "mat": 6703.0,
+      "mhp": 345291.0,
+      "peak": 91521,
+      "peak_base": 91521,
+      "peak_single": 91521,
+      "segments": [
+       91521.0
+      ],
+      "segs_base": 1,
+      "skill": 162,
+      "skill_name": "带球灌篮",
+      "variance": 0
+     },
+     {
+      "actor": 3,
+      "atk": 4646.0,
+      "input_name": "暴扣！",
+      "input_skill": 312,
+      "mat": 6703.0,
+      "mhp": 345291.0,
+      "peak": 118716,
+      "peak_base": 118716,
+      "peak_single": 39572,
+      "segments": [
+       39572.0,
+       39572.0,
+       39572.0
+      ],
+      "segs_base": 3,
+      "skill": 312,
+      "skill_name": "暴扣！",
+      "variance": 0
+     },
+     {
+      "actor": 3,
+      "atk": 4646.0,
+      "input_name": "大灌篮！",
+      "input_skill": 506,
+      "mat": 6703.0,
+      "mhp": 345291.0,
+      "peak": 356145,
+      "peak_base": 356145,
+      "peak_single": 118715,
+      "segments": [
+       118715.0,
+       118715.0,
+       118715.0
+      ],
+      "segs_base": 3,
+      "skill": 506,
+      "skill_name": "大灌篮！",
+      "variance": 0
+     },
+     {
+      "actor": 3,
+      "atk": 4646.0,
+      "input_name": "投球术",
+      "input_skill": 103,
+      "mat": 6703.0,
+      "mhp": 345291.0,
+      "peak": 95738,
+      "peak_base": 95738,
+      "peak_single": 95738,
+      "segments": [
+       95738.0
+      ],
+      "segs_base": 1,
+      "skill": 103,
+      "skill_name": "投球术",
+      "variance": 0
+     }
+    ],
+    "forced_diagnostics": [],
+    "forced_main": [],
+    "gear": [
+     {
+      "actor": 3,
+      "etype": 1,
+      "grade": 6,
+      "grade_name": "神话",
+      "name": "【真印】危楼",
+      "qiyin": true,
+      "req_level": 80,
+      "true_seal": true
+     },
+     {
+      "actor": 3,
+      "etype": 2,
+      "grade": 5,
+      "grade_name": "不朽",
+      "name": "双鱼念气瓶",
+      "qiyin": false,
+      "req_level": 75,
+      "true_seal": false
+     },
+     {
+      "actor": 3,
+      "etype": 3,
+      "grade": 6,
+      "grade_name": "神话",
+      "name": "【真印】天卷·头",
+      "qiyin": true,
+      "req_level": 80,
+      "true_seal": true
+     },
+     {
+      "actor": 3,
+      "etype": 4,
+      "grade": 6,
+      "grade_name": "神话",
+      "name": "【真印】天卷·甲",
+      "qiyin": true,
+      "req_level": 80,
+      "true_seal": true
+     },
+     {
+      "actor": 3,
+      "etype": 5,
+      "grade": 6,
+      "grade_name": "神话",
+      "name": "【真印】天卷·裤",
+      "qiyin": true,
+      "req_level": 80,
+      "true_seal": true
+     },
+     {
+      "actor": 3,
+      "etype": 6,
+      "grade": 6,
+      "grade_name": "神话",
+      "name": "天卷·手",
+      "qiyin": true,
+      "req_level": 80,
+      "true_seal": false
+     },
+     {
+      "actor": 3,
+      "etype": 7,
+      "grade": 6,
+      "grade_name": "神话",
+      "name": "天卷·鞋",
+      "qiyin": true,
+      "req_level": 80,
+      "true_seal": false
+     },
+     {
+      "actor": 3,
+      "etype": 8,
+      "grade": 6,
+      "grade_name": "神话",
+      "name": "天卷·腰",
+      "qiyin": true,
+      "req_level": 80,
+      "true_seal": false
+     },
+     {
+      "actor": 3,
+      "etype": 9,
+      "grade": 5,
+      "grade_name": "不朽",
+      "name": "砗磲项链",
+      "qiyin": false,
+      "req_level": 75,
+      "true_seal": false
+     },
+     {
+      "actor": 3,
+      "etype": 10,
+      "grade": 5,
+      "grade_name": "不朽",
+      "name": "和煦",
+      "qiyin": false,
+      "req_level": 70,
+      "true_seal": false
+     }
+    ],
+    "mastery": 8,
+    "mastery_cap": 10,
+    "race_rank": 5,
+    "secret_limit": 8,
+    "skill_learned": true
+   },
+   "lottery_count": 0,
+   "mat": 6703.0,
+   "mhp": 345291.0,
+   "peak": 356145,
+   "peak_base": 356145,
+   "peak_single": 118715,
+   "segments": [
+    118715.0,
+    118715.0,
+    118715.0
+   ],
+   "segs_base": 3,
+   "skill": 506,
+   "skill_name": "大灌篮！",
+   "tier": "弱者",
+   "variance": 0
+  },
+  {
+   "actor": 12,
+   "atk": 5976.0,
+   "battle_tier": "弱者",
+   "brand_mult": 1.375,
+   "build": {
+    "equips": [
+     "【真印】止戈",
+     "三环剑",
+     "【真印】阴府随行·头",
+     "【真印】阴府随行·甲",
+     "【真印】阴府随行·裤",
+     "阴府随行·手",
+     "阴府随行·鞋",
+     "阴府随行·腰",
+     "邪龙饰物",
+     "苍苍白骨",
+     "",
+     "",
+     "求道",
+     "",
+     "",
+     "嘶风逐日驹",
+     "",
+     "",
+     ""
+    ],
+    "secrets": [
+     488,
+     489,
+     490,
+     2471,
+     2472,
+     2480,
+     6139,
+     6159
+    ],
+    "trumpet": [
+     2
+    ]
+   },
+   "input_name": "龙魂强击",
+   "input_skill": 318,
+   "ledger_violations": 0,
+   "lianyu": {
+    "cast_peaks": [
+     {
+      "actor": 12,
+      "atk": 5976.0,
+      "input_name": "龙之魔法:龙炎",
+      "input_skill": 66,
+      "mat": 2769.0,
+      "mhp": 331336.0,
+      "peak": 44791,
+      "peak_base": 44791,
+      "peak_single": 44791,
+      "segments": [
+       44791.0
+      ],
+      "segs_base": 1,
+      "skill": 66,
+      "skill_name": "龙之魔法:龙炎",
+      "variance": 0
+     },
+     {
+      "actor": 12,
+      "atk": 5976.0,
+      "input_name": "龙魂强击",
+      "input_skill": 318,
+      "mat": 2769.0,
+      "mhp": 331336.0,
+      "peak": 281216,
+      "peak_base": 281216,
+      "peak_single": 70304,
+      "segments": [
+       70304.0,
+       70304.0,
+       70304.0,
+       70304.0
+      ],
+      "segs_base": 4,
+      "skill": 318,
+      "skill_name": "龙魂强击",
+      "variance": 0
+     },
+     {
+      "actor": 12,
+      "atk": 5976.0,
+      "input_name": "幻化龙爪",
+      "input_skill": 65,
+      "mat": 2769.0,
+      "mhp": 331336.0,
+      "peak": 85045,
+      "peak_base": 85045,
+      "peak_single": 85045,
+      "segments": [
+       85045.0
+      ],
+      "segs_base": 1,
+      "skill": 65,
+      "skill_name": "幻化龙爪",
+      "variance": 0
+     }
+    ],
+    "forced_diagnostics": [],
+    "forced_main": [],
+    "gear": [
+     {
+      "actor": 12,
+      "etype": 1,
+      "grade": 6,
+      "grade_name": "神话",
+      "name": "【真印】止戈",
+      "qiyin": true,
+      "req_level": 80,
+      "true_seal": true
+     },
+     {
+      "actor": 12,
+      "etype": 2,
+      "grade": 5,
+      "grade_name": "不朽",
+      "name": "三环剑",
+      "qiyin": false,
+      "req_level": 70,
+      "true_seal": false
+     },
+     {
+      "actor": 12,
+      "etype": 3,
+      "grade": 6,
+      "grade_name": "神话",
+      "name": "【真印】阴府随行·头",
+      "qiyin": true,
+      "req_level": 80,
+      "true_seal": true
+     },
+     {
+      "actor": 12,
+      "etype": 4,
+      "grade": 6,
+      "grade_name": "神话",
+      "name": "【真印】阴府随行·甲",
+      "qiyin": true,
+      "req_level": 80,
+      "true_seal": true
+     },
+     {
+      "actor": 12,
+      "etype": 5,
+      "grade": 6,
+      "grade_name": "神话",
+      "name": "【真印】阴府随行·裤",
+      "qiyin": true,
+      "req_level": 80,
+      "true_seal": true
+     },
+     {
+      "actor": 12,
+      "etype": 6,
+      "grade": 6,
+      "grade_name": "神话",
+      "name": "阴府随行·手",
+      "qiyin": true,
+      "req_level": 80,
+      "true_seal": false
+     },
+     {
+      "actor": 12,
+      "etype": 7,
+      "grade": 6,
+      "grade_name": "神话",
+      "name": "阴府随行·鞋",
+      "qiyin": true,
+      "req_level": 80,
+      "true_seal": false
+     },
+     {
+      "actor": 12,
+      "etype": 8,
+      "grade": 6,
+      "grade_name": "神话",
+      "name": "阴府随行·腰",
+      "qiyin": true,
+      "req_level": 80,
+      "true_seal": false
+     },
+     {
+      "actor": 12,
+      "etype": 9,
+      "grade": 5,
+      "grade_name": "不朽",
+      "name": "邪龙饰物",
+      "qiyin": false,
+      "req_level": 70,
+      "true_seal": false
+     },
+     {
+      "actor": 12,
+      "etype": 10,
+      "grade": 5,
+      "grade_name": "不朽",
+      "name": "苍苍白骨",
+      "qiyin": false,
+      "req_level": 70,
+      "true_seal": false
+     }
+    ],
+    "mastery": 8,
+    "mastery_cap": 10,
+    "race_rank": 5,
+    "secret_limit": 8,
+    "skill_learned": true
+   },
+   "lottery_count": 0,
+   "mat": 2769.0,
+   "mhp": 331336.0,
+   "peak": 281216,
+   "peak_base": 281216,
+   "peak_single": 70304,
+   "segments": [
+    70304.0,
+    70304.0,
+    70304.0,
+    70304.0
+   ],
+   "segs_base": 4,
+   "skill": 318,
+   "skill_name": "龙魂强击",
+   "tier": "弱者",
+   "variance": 0
+  },
+  {
+   "actor": 18,
+   "atk": 5976.0,
+   "battle_tier": "弱者",
+   "brand_mult": 1.375,
+   "build": {
+    "equips": [
+     "【真印】止戈",
+     "三环剑",
+     "【真印】阴府随行·头",
+     "【真印】阴府随行·甲",
+     "【真印】阴府随行·裤",
+     "阴府随行·手",
+     "阴府随行·鞋",
+     "阴府随行·腰",
+     "邪龙饰物",
+     "苍苍白骨",
+     "",
+     "",
+     "冰凝",
+     "",
+     "",
+     "嘶风逐日驹",
+     "",
+     "",
+     ""
+    ],
+    "secrets": [
+     488,
+     489,
+     490,
+     2471,
+     2473,
+     2480,
+     6139,
+     6159
+    ],
+    "trumpet": [
+     2
+    ]
+   },
+   "input_name": "飞霜落雪剑",
+   "input_skill": 814,
+   "ledger_violations": 0,
+   "lianyu": {
+    "cast_peaks": [
+     {
+      "actor": 18,
+      "atk": 5976.0,
+      "input_name": "飞雪剑法·连剑式",
+      "input_skill": 195,
+      "mat": 2769.0,
+      "mhp": 320291.0,
+      "peak": 198080,
+      "peak_base": 99040,
+      "peak_single": 9904,
+      "segments": [
+       9904.0,
+       9904.0,
+       9904.0,
+       9904.0,
+       9904.0,
+       9904.0,
+       9904.0,
+       9904.0,
+       9904.0,
+       9904.0,
+       9904.0,
+       9904.0,
+       9904.0,
+       9904.0,
+       9904.0,
+       9904.0,
+       9904.0,
+       9904.0,
+       9904.0,
+       9904.0
+      ],
+      "segs_base": 10,
+      "skill": 195,
+      "skill_name": "飞雪剑法·连剑式",
+      "variance": 0
+     },
+     {
+      "actor": 18,
+      "atk": 5976.0,
+      "input_name": "飞雪连天",
+      "input_skill": 324,
+      "mat": 2769.0,
+      "mhp": 320291.0,
+      "peak": 247610,
+      "peak_base": 123805,
+      "peak_single": 24761,
+      "segments": [
+       24761.0,
+       24761.0,
+       24761.0,
+       24761.0,
+       24761.0,
+       24761.0,
+       24761.0,
+       24761.0,
+       24761.0,
+       24761.0
+      ],
+      "segs_base": 5,
+      "skill": 324,
+      "skill_name": "飞雪连天",
+      "variance": 0
+     },
+     {
+      "actor": 18,
+      "atk": 5976.0,
+      "input_name": "冰锥雨",
+      "input_skill": 689,
+      "mat": 2769.0,
+      "mhp": 320291.0,
+      "peak": 132048,
+      "peak_base": 66024,
+      "peak_single": 16506,
+      "segments": [
+       16506.0,
+       16506.0,
+       16506.0,
+       16506.0,
+       16506.0,
+       16506.0,
+       16506.0,
+       16506.0
+      ],
+      "segs_base": 4,
+      "skill": 689,
+      "skill_name": "冰锥雨",
+      "variance": 0
+     },
+     {
+      "actor": 18,
+      "atk": 5976.0,
+      "input_name": "飞霜落雪剑",
+      "input_skill": 814,
+      "mat": 2769.0,
+      "mhp": 320291.0,
+      "peak": 396192,
+      "peak_base": 198096,
+      "peak_single": 33016,
+      "segments": [
+       33016.0,
+       33016.0,
+       33016.0,
+       33016.0,
+       33016.0,
+       33016.0,
+       33016.0,
+       33016.0,
+       33016.0,
+       33016.0,
+       33016.0,
+       33016.0
+      ],
+      "segs_base": 6,
+      "skill": 814,
+      "skill_name": "飞霜落雪剑",
+      "variance": 0
+     },
+     {
+      "actor": 18,
+      "atk": 5976.0,
+      "input_name": "飞雪剑法",
+      "input_skill": 194,
+      "mat": 2769.0,
+      "mhp": 320291.0,
+      "peak": 177480,
+      "peak_base": 88740,
+      "peak_single": 29580,
+      "segments": [
+       29580.0,
+       29580.0,
+       29580.0,
+       29580.0,
+       29580.0,
+       29580.0
+      ],
+      "segs_base": 3,
+      "skill": 194,
+      "skill_name": "飞雪剑法",
+      "variance": 0
+     }
+    ],
+    "forced_diagnostics": [],
+    "forced_main": [],
+    "gear": [
+     {
+      "actor": 18,
+      "etype": 1,
+      "grade": 6,
+      "grade_name": "神话",
+      "name": "【真印】止戈",
+      "qiyin": true,
+      "req_level": 80,
+      "true_seal": true
+     },
+     {
+      "actor": 18,
+      "etype": 2,
+      "grade": 5,
+      "grade_name": "不朽",
+      "name": "三环剑",
+      "qiyin": false,
+      "req_level": 70,
+      "true_seal": false
+     },
+     {
+      "actor": 18,
+      "etype": 3,
+      "grade": 6,
+      "grade_name": "神话",
+      "name": "【真印】阴府随行·头",
+      "qiyin": true,
+      "req_level": 80,
+      "true_seal": true
+     },
+     {
+      "actor": 18,
+      "etype": 4,
+      "grade": 6,
+      "grade_name": "神话",
+      "name": "【真印】阴府随行·甲",
+      "qiyin": true,
+      "req_level": 80,
+      "true_seal": true
+     },
+     {
+      "actor": 18,
+      "etype": 5,
+      "grade": 6,
+      "grade_name": "神话",
+      "name": "【真印】阴府随行·裤",
+      "qiyin": true,
+      "req_level": 80,
+      "true_seal": true
+     },
+     {
+      "actor": 18,
+      "etype": 6,
+      "grade": 6,
+      "grade_name": "神话",
+      "name": "阴府随行·手",
+      "qiyin": true,
+      "req_level": 80,
+      "true_seal": false
+     },
+     {
+      "actor": 18,
+      "etype": 7,
+      "grade": 6,
+      "grade_name": "神话",
+      "name": "阴府随行·鞋",
+      "qiyin": true,
+      "req_level": 80,
+      "true_seal": false
+     },
+     {
+      "actor": 18,
+      "etype": 8,
+      "grade": 6,
+      "grade_name": "神话",
+      "name": "阴府随行·腰",
+      "qiyin": true,
+      "req_level": 80,
+      "true_seal": false
+     },
+     {
+      "actor": 18,
+      "etype": 9,
+      "grade": 5,
+      "grade_name": "不朽",
+      "name": "邪龙饰物",
+      "qiyin": false,
+      "req_level": 70,
+      "true_seal": false
+     },
+     {
+      "actor": 18,
+      "etype": 10,
+      "grade": 5,
+      "grade_name": "不朽",
+      "name": "苍苍白骨",
+      "qiyin": false,
+      "req_level": 70,
+      "true_seal": false
+     }
+    ],
+    "mastery": 8,
+    "mastery_cap": 10,
+    "race_rank": 5,
+    "secret_limit": 8,
+    "skill_learned": true
+   },
+   "lottery_count": 0,
+   "mat": 2769.0,
+   "mhp": 320291.0,
+   "peak": 396192,
+   "peak_base": 198096,
+   "peak_single": 33016,
+   "segments": [
+    33016.0,
+    33016.0,
+    33016.0,
+    33016.0,
+    33016.0,
+    33016.0,
+    33016.0,
+    33016.0,
+    33016.0,
+    33016.0,
+    33016.0,
+    33016.0
+   ],
+   "segs_base": 6,
+   "skill": 814,
+   "skill_name": "飞霜落雪剑",
+   "tier": "弱者",
+   "variance": 0
+  }
+ ],
+ "tiers": {
+  "弱者": {
+   "max": 396192.0,
+   "max_brand": 396192.0,
+   "median": 356145.0,
+   "n": 3
+  },
+  "强者": {
+   "max": 831291.0,
+   "max_brand": 831291.0,
+   "median": 642552.0,
+   "n": 3
+  },
+  "超强者": {
+   "max": 1435615.0,
+   "max_brand": 1435615.0,
+   "median": 1087716.0,
+   "n": 17
+  }
+ },
+ "tune_d189": true,
+ "tune_d198": true,
+ "tune_d208": true,
+ "tune_d209": true
+}
