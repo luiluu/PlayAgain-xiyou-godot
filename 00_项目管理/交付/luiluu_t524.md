@@ -70,8 +70,10 @@
 
 ## 云端选测
 
-- 通过：提交 cd6d3df58a（ci/luiluu/t524），基准 c6c4303175，21 个场景、4 片，最长一片 2.6 分钟。`gh run watch` 前台等到结束，退出码 0。
-- 运行页：https://github.com/luiluu/PlayAgain-xiyou-godot/actions/runs/45727152231
+- 返修后：通过。提交 614237e5f8（ci/luiluu/t524），选测基准 653e0ae1a6（上一轮已验），8 个场景、1 片，最长一片 3.2 分钟。`gh run watch` 前台等到结束，退出码 0；`云端选测.py wait` 汇总通过。
+  - 运行页：https://github.com/luiluu/PlayAgain-xiyou-godot/actions/runs/45730479867
+- 返修前：通过。提交 cd6d3df58a，基准 c6c4303175，21 个场景、4 片，最长一片 2.6 分钟。
+  - 运行页：https://github.com/luiluu/PlayAgain-xiyou-godot/actions/runs/45727152231
 
 ## 扫描结果逐条过
 
