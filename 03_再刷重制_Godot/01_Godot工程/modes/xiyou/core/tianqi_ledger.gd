@@ -153,6 +153,10 @@ static func switch_on(name: String) -> bool:
 		"COMBAT_RULES": return COMBAT_RULES
 		"NO_PILLS": return NO_PILLS
 		"CAP_NINE": return CAP_NINE
+		"SPLIT_CAPS": return SPLIT_CAPS
+		"REBUILD_SOURCES": return REBUILD_SOURCES
+		"ELEM_RESIST_CAP": return ELEM_RESIST_CAP
+		"NO_ENEMY_FLAT_MIT": return NO_ENEMY_FLAT_MIT
 		"TURN_BUDGET": return TURN_BUDGET
 		# 期四（T083）：16 个旧模块行归池＝卡开着时 MODULE_CAP_ALL 把增伤拦掉；卡或收口关着就是回退中
 		"MODULE_CAP": return XTianqiSkills.MODULE_CAP and XTianqiSkills.MODULE_CAP_ALL and XTianqiSkills.cards_on()
@@ -519,11 +523,11 @@ static func audit(item: Dictionary, a, trace: Array, facts: Dictionary, extras: 
 			found.append({"source": source, "field": str(op.field), "op": str(op.op), "value": float(op.get("value", 0.0)), "ok": why == ""})
 			if why != "":
 				_flag(source, str(op.field), why, ctx)
-	for pair in [["skill_pass", "skillMultiplier"], ["race", "race"], ["independent", "independent"]]:
+	for pair in [["skill_pass", "skillMultiplier"], ["race", "race"], ["independent", "independent"], ["suit", "suitMultiplier"]]:
 		var v := float(extras.get(pair[0], 1.0))
 		if v == 1.0:
 			continue
-		var source: String = {"skill_pass": "skill_pass", "race": "enemy_race_bonus", "independent": "self_rate"}[pair[0]]
+		var source: String = {"skill_pass": "skill_pass", "race": "enemy_race_bonus", "independent": "self_rate", "suit": "suit_template"}[pair[0]]
 		var why := check(source, pair[1])
 		found.append({"source": source, "field": pair[1], "op": "mul", "value": v, "ok": why == ""})
 		if why != "":
@@ -636,9 +640,31 @@ static func whitelisted(module: String, skill: int, field: String) -> bool:
 	return false
 
 
-# ---- 来源分桶（第五节第 4 条（3））----
+# ---- 来源分桶（第五节第 4 条（3）；T530 补系别法宝 fabao、强化 enhance 拆出单记）----
 const BUCKET_NAMES := {"secret": "秘籍格（功法、通用被动书）", "runeword": "符文之语", "orb": "宝珠", "equip": "原版装备", "race": "种族",
-	"hubris": "成长装备", "tianqi": "天启篇自己的", "actor": "角色自带、技能", "state": "状态", "suit": "原版套装", "zhenqi": "真气"}
+	"hubris": "成长装备", "tianqi": "天启篇自己的", "actor": "角色自带、技能", "state": "状态", "suit": "原版套装", "zhenqi": "真气",
+	"fabao": "系别法宝", "enhance": "强化（符石／晶石／神文）"}
+
+
+## T530（v0.16 六.3）：这件装备是不是系别法宝（4543～4552＋8101／8102），从 equip 桶拆出单记
+static func is_element_fabao(o: Dictionary) -> bool:
+	if str(o.get("kind", "")) != "armor":
+		return false
+	if int(o.get("_tq_efabao_v", 0)) > 0:
+		return true
+	var bid := int(o.get("base", o.get("id", 0)))
+	return bid > 0 and XTianqiGear.element_fabao_ids().has(bid)
+
+
+## 装备本体的基础桶（不含符文之语覆盖，用于老装备按来源重建后的残余归属）
+static func _base_gear_bucket(o: Dictionary) -> String:
+	if o.has("qiyin") or o.has("tq_reward"):
+		return "tianqi"
+	if XHubris.is_gear(o):
+		return "hubris"
+	if is_element_fabao(o):
+		return "fabao"
+	return "equip"
 
 
 ## 一个特性对象（装备实例、技能、状态）归哪个桶
@@ -654,6 +680,8 @@ static func bucket_of(o: Dictionary, a = null) -> String:
 			return "hubris"
 		if not (o.get("runewords", []) as Array).is_empty() or str(o.get("runewordName", "")) != "":
 			return "runeword"
+		if is_element_fabao(o):
+			return "fabao"
 		return "equip"
 	if a is XActor and o.has("id") and not o.has("stypeId") and not is_same(o, a.data()) and not is_same(o, a.class_data()) \
 			and XEquipSuits.ids(a, "states").has(int(o.id)):
@@ -740,6 +768,84 @@ static func _add(d: Dictionary, key, bucket: String, v: float) -> void:
 	d[key] = row
 
 
+## T530（v0.16 六.2 第 4 条）：老装备按来源重建开关（false＝回到整件按 bucket_of 归桶，只拆宝珠）
+static var REBUILD_SOURCES := true
+
+
+## 装备上已做成的符文之语模板记录（按配方号或名字回查 Runewords 表）；没有返回 {}
+static func _runeword_template(eq: Dictionary) -> Dictionary:
+	if not (eq.has("kind") and str(eq.kind) in ["weapon", "armor"]):
+		return {}
+	var rws: Array = eq.get("runewords", [])
+	var rname := str(eq.get("runewordName", ""))
+	if rws.is_empty() and rname == "":
+		return {}
+	var recipes = XDB.table("Runewords")
+	if not recipes is Array:
+		return {}
+	var tbl := "Weapons" if str(eq.kind) == "weapon" else "Armors"
+	for r in recipes:
+		if not r is Dictionary:
+			continue
+		var rid := int(r.get("id", -1))
+		var matched := (not rws.is_empty() and int(rws[0]) == rid)
+		if not matched and rws.is_empty() and rname != "":
+			var tid0 := XRunewords.template_id(r, eq)
+			if tid0 > 0 and str(XDB.rec(tbl, tid0).get("name", "")) == rname:
+				matched = true
+		if matched:
+			var tid := XRunewords.template_id(r, eq)
+			return XDB.rec(tbl, tid) if tid > 0 else {}
+	return {}
+
+
+## 扫描单条对象的备注／meta 被动份额（用于老装备按来源重建时扣除符文之语模板份额）
+static func _scan_passive_obj(o: Dictionary) -> Dictionary:
+	var res := {"globalHarmRi": 0.0, "critHarmRi": 0.0, "skillTypeDvup": {}, "SkETypeHarmRi": {}, "skillPass": {}, "passiveELUP": {}}
+	if o.is_empty():
+		return res
+	var sc := XActor._note_scans(str(o.get("note", "")))
+	for m in sc[4]:
+		res.globalHarmRi = float(res.globalHarmRi) + float(m[0]) / 100.0
+	for m in sc[5]:
+		res.critHarmRi = float(res.critHarmRi) + float(m[0]) / 100.0
+	for m in sc[2]:
+		var k := str(m[0])
+		res.skillTypeDvup[k] = float(res.skillTypeDvup.get(k, 0.0)) + XActor._num(m[1]) / 100.0
+	for m in sc[3]:
+		var k := int(m[0])
+		res.SkETypeHarmRi[k] = float(res.SkETypeHarmRi.get(k, 0.0)) + XActor._num(m[1]) / 100.0
+	var meta: Dictionary = o.get("meta", {})
+	for k in meta:
+		var tag := str(k)
+		if tag.begins_with("SkillPass") and str(meta[k]).contains("%"):
+			var sid := int(tag.substr(9))
+			res.skillPass[sid] = float(res.skillPass.get(sid, 0.0)) + XActor._num(meta[k]) / 100.0
+		elif tag.begins_with("passiveELUP"):
+			var eid := int(tag.substr(11))
+			res.passiveELUP[eid] = float(res.passiveELUP.get(eid, 0.0)) + XActor._num(meta[k]) / 100.0
+	return res
+
+
+## 装备镶嵌历史（upgrades）加的元素增幅（符石／晶石／神文等 op=="element" 项），用于老装备按来源重建
+static func upgrade_amplify(eq: Dictionary) -> Dictionary:
+	var out := {}
+	if not (eq.has("kind") and str(eq.kind) in ["weapon", "armor"]):
+		return out
+	var kind := str(eq.kind)
+	for u in eq.get("upgrades", []):
+		if not u is Dictionary:
+			continue
+		var item := XDB.rec("Items", int(u.get("item", 0)))
+		if item.is_empty():
+			continue
+		for eff in XGearUpgrade.rule(item).get(kind, []):
+			if eff is Dictionary and str(eff.get("op", "")) == "element":
+				var k := str(int(eff.get("element", 0)))
+				out[k] = float(out.get(k, 0.0)) + float(eff.get("value", 0.0))
+	return out
+
+
 ## 被动缓存的按来源分桶：和 _refresh_passive_now 同一批对象、同样的扫描，求和前按对象的桶分开记。
 ## 返回 {globalHarmRi: {桶: 值}, critHarmRi, skillTypeDvup: {类型: {桶: 值}}, SkETypeHarmRi, skillPass: {技能: {桶: rate}}, passiveELUP: {元素: {桶}}, elementAmplify: {元素: {桶}}}
 static func passive_buckets(a, objs: Array) -> Dictionary:
@@ -749,8 +855,45 @@ static func passive_buckets(a, objs: Array) -> Dictionary:
 	for o in objs:
 		if o.has("stypeId") and XTianqiSecrets.is_sealed(a, int(o.get("id", 0))):
 			continue
+		var is_gear := o.has("kind") and str(o.kind) in ["weapon", "armor"]
 		var bucket := bucket_of(o, a)
 		var book := "#%d" % int(o.get("id", 0)) if bucket == "secret" else ""
+		if REBUILD_SOURCES and is_gear and bucket == "runeword":
+			var rw_tpl := _runeword_template(o)
+			var tot := _scan_passive_obj(o)
+			var rwp := _scan_passive_obj(rw_tpl)
+			var base_b := _base_gear_bucket(o)
+			var g_rw := float(rwp.globalHarmRi)
+			var g_rem := float(tot.globalHarmRi) - g_rw
+			if absf(g_rw) > 1e-9:
+				_add(out, "globalHarmRi", "runeword", g_rw)
+			if absf(g_rem) > 1e-9:
+				_add(out, "globalHarmRi", base_b, g_rem)
+			var c_rw := float(rwp.critHarmRi)
+			var c_rem := float(tot.critHarmRi) - c_rw
+			if absf(c_rw) > 1e-9:
+				_add(out, "critHarmRi", "runeword", c_rw)
+			if absf(c_rem) > 1e-9:
+				_add(out, "critHarmRi", base_b, c_rem)
+			for sub_key in ["skillTypeDvup", "SkETypeHarmRi", "skillPass"]:
+				var tmap: Dictionary = tot[sub_key]
+				var rmap: Dictionary = rwp[sub_key]
+				var keys := {}
+				for k in tmap:
+					keys[k] = true
+				for k in rmap:
+					keys[k] = true
+				for k in keys:
+					var rv := float(rmap.get(k, 0.0))
+					var rem := float(tmap.get(k, 0.0)) - rv
+					if absf(rv) > 1e-9:
+						_add(out[sub_key], k, "runeword", rv)
+					if absf(rem) > 1e-9:
+						_add(out[sub_key], k, base_b, rem)
+			if XTianqiSkills.is_passive_elup_obj(o):
+				for eid in tot.passiveELUP:
+					_add(out.passiveELUP, int(eid), "tianqi", float(tot.passiveELUP[eid]))
+			continue
 		var sc := XActor._note_scans(str(o.get("note", "")))
 		var meta: Dictionary = o.get("meta", {})
 		var put := func(key: String, sub, v: float) -> void:
@@ -779,18 +922,39 @@ static func passive_buckets(a, objs: Array) -> Dictionary:
 				var eb := "state" if bucket == "state" else "tianqi"  # T451：skill_rework 改写装备的 passiveELUP 属天启篇改写数，不计进九线 equip 桶
 				_add(out.passiveELUP, int(tag.substr(11)), eb, XActor._num(meta[k]) / 100.0)
 	out["books"] = books
-	# 元素增幅（damage.own_bonus 的 elementAmplify 来源：状态＋装备＋角色＋职业）；宝珠镶进装备的那份单列
+	# 元素增幅（damage.own_bonus 的 elementAmplify 来源：状态＋装备＋角色＋职业）；老装备按来源重建（宝珠、强化、符文之语、剩余本体各拆各的）
 	var amp_objs: Array = a.states() + (a.stat_equips() if a.has_method("stat_equips") else []) + ([a.data(), a.class_data()] if a is XActor else [])
 	for o in amp_objs:
 		var amp: Dictionary = o.get("yep", {}).get("elementAmplify", {})
 		if amp.is_empty():
 			continue
+		var is_gear := o is Dictionary and o.has("kind") and str(o.kind) in ["weapon", "armor"]
 		var bucket := bucket_of(o, a) if not (o is Dictionary and (is_same(o, a.data()) or is_same(o, a.class_data()))) else "actor"
 		var orb := orb_amplify(o)
-		for e in amp:
-			var own := float(amp[e]) - float(orb.get(str(e), 0.0))
-			_add(out.elementAmplify, int(e), bucket, own)
-			_add(out.elementAmplify, int(e), "orb", float(orb.get(str(e), 0.0)))
+		if REBUILD_SOURCES and is_gear:
+			var enh := upgrade_amplify(o)
+			var rw_tpl := _runeword_template(o)
+			var rw_amp: Dictionary = rw_tpl.get("yep", {}).get("elementAmplify", {})
+			var base_b := _base_gear_bucket(o)
+			for e in amp:
+				var ek := str(e)
+				var v_orb := float(orb.get(ek, 0.0))
+				var v_enh := float(enh.get(ek, 0.0))
+				var v_rw := float(rw_amp.get(ek, 0.0))
+				var rem := float(amp[e]) - v_orb - v_enh - v_rw
+				if absf(rem) > 1e-9:
+					_add(out.elementAmplify, int(e), base_b, rem)
+				if absf(v_orb) > 1e-9:
+					_add(out.elementAmplify, int(e), "orb", v_orb)
+				if absf(v_enh) > 1e-9:
+					_add(out.elementAmplify, int(e), "enhance", v_enh)
+				if absf(v_rw) > 1e-9:
+					_add(out.elementAmplify, int(e), "runeword", v_rw)
+		else:
+			for e in amp:
+				var own := float(amp[e]) - float(orb.get(str(e), 0.0))
+				_add(out.elementAmplify, int(e), bucket, own)
+				_add(out.elementAmplify, int(e), "orb", float(orb.get(str(e), 0.0)))
 	return out
 
 
@@ -1065,12 +1229,97 @@ static func nine_aplus_values(a) -> Array:
 ## （3）属性 ＋30%：原版套装的属性倍率 × 符文之语、成长装备上的属性倍率特性（param_cap）；宝珠镶进装备的、原版装备本身的分不出来源，不封。
 ## 白印「持续伤害 ＋20%」（疫，不过伤害帧）不封（期二补记 3）。超出的量记在伤害详情 nineCap（「九线封顶」）。
 static var CAP_NINE := true
+## T530（v0.16 六.2～4 / 九.1·7甲·8·9甲·19·21②）：九线分池各线独立额度＋自动回复分线封顶（与 CAP_NINE 并存、各自独立可开关；拆旧顶归 T536）
+static var SPLIT_CAPS := true
+## T530（v0.16 六.4 / 九.19 甲）：4 件整系免疫武器折 −30% 抗性＋固定词条元素抗性每系封 −30%（角色主动限时无敌保留）
+static var ELEM_RESIST_CAP := true
+## T530（v0.16 九.9 甲 / 附表二 / 21②）：清敌人固定减伤（读时跳过不删数据）、首领机制免伤不吃穿透、牌局开打敌旧百分比穿透 4:1 转无视防御（≤15%，合计上限 40%／无我 45% 含狂妄）
+static var NO_ENEMY_FLAT_MIT := true
+
 const NINE_BUCKETS := ["runeword", "orb", "equip", "suit", "race", "hubris", "zhenqi"]
+const SPLIT_BUCKETS := ["equip", "fabao", "orb", "runeword", "suit", "race", "hubris", "zhenqi", "enhance"]
 const NINE_DEFAULTS := {"skill": 0.15, "element": 0.30, "bonus": 0.35, "param": 0.30, "secret_slot": 0.08}
 
 
 static func nine_cap(key: String) -> float:
 	return float(data().get("nine_caps", {}).get(key, NINE_DEFAULTS[key]))
+
+
+static func split_caps_on() -> bool:
+	return SPLIT_CAPS and active() and XTianqiBase.on()
+
+
+static func elem_resist_cap_on() -> bool:
+	return ELEM_RESIST_CAP and active()
+
+
+static func no_enemy_flat_mit_on() -> bool:
+	return NO_ENEMY_FLAT_MIT and active()
+
+
+static func split_caps() -> Dictionary:
+	var sc = data().get("split_caps", {})
+	return sc if sc is Dictionary else {}
+
+
+## 读取某条线的单项额度（返回 0～1 小数，没定义返回 fallback）
+static func split_cap_line(bucket: String, pct_key: String, fallback := -1.0) -> float:
+	var lines = split_caps().get("lines", {})
+	if lines is Dictionary and lines.has(bucket) and lines[bucket] is Dictionary and (lines[bucket] as Dictionary).has(pct_key):
+		return float(lines[bucket][pct_key]) / 100.0
+	return fallback
+
+
+## 读取随机词条防守／回复／吸血／再释上限（返回百分数）
+static func split_cap_affix(key: String, fallback: float) -> float:
+	var ad = split_caps().get("affix_def", {})
+	return float(ad.get(key, fallback)) if ad is Dictionary else fallback
+
+
+## 读取自动回复各线上限（返回 0～1 小数）
+static func split_cap_regen(key: String, fallback_pct: float) -> float:
+	var reg = split_caps().get("regen", {})
+	return float(reg.get(key, fallback_pct)) / 100.0 if reg is Dictionary else fallback_pct / 100.0
+
+
+## 读取无视防御换算与封顶参数
+static func def_ignore_cfg() -> Dictionary:
+	var di = split_caps().get("def_ignore", {})
+	var d: Dictionary = di if di is Dictionary else {}
+	return {
+		"ratio": maxf(1.0, float(d.get("percent_pen_ratio", 4))),
+		"pen_cap": float(d.get("percent_pen_cap_pct", 15)) / 100.0,
+		"total_cap": float(d.get("total_cap_pct", 40)) / 100.0,
+		"ataraxia_cap": float(d.get("ataraxia_cap_pct", 45)) / 100.0,
+	}
+
+
+## 首领机制固定免伤状态号名单（T538/N15 填入；这些状态的 passiveHarmRe 不被清、也不吃穿透）
+static var BOSS_MECH_FLAT_STATES: Array = []
+
+static func boss_mech_flat_states() -> Array:
+	if not BOSS_MECH_FLAT_STATES.is_empty():
+		return BOSS_MECH_FLAT_STATES
+	var arr = split_caps().get("boss_mech_flat_states", [])
+	return arr if arr is Array else []
+
+
+## 首领机制免伤中由状态挂上的那一份（只认名单内状态；不吃穿透）
+static func boss_mech_state_flat(b, e: int) -> float:
+	var ids := boss_mech_flat_states()
+	if ids.is_empty() or not (b is XEnemy):
+		return 0.0
+	var total := 0.0
+	for st in b.states():
+		if not (st is Dictionary):
+			continue
+		var sid := int(st.get("id", 0))
+		if not ids.any(func(x): return int(x) == sid):
+			continue
+		for m in XActor._scan(str(st.get("note", "")), "<passiveHarmRe(\\d+):\\s*([\\d.]+)>"):
+			if int(m[0]) == e:
+				total += float(m[1])
+	return total
 
 
 static func secret_slots(a, s: XState = null) -> int:
@@ -1157,9 +1406,11 @@ static func _max_nested(d: Dictionary, b: String) -> float:
 
 
 ## damage._calculate：钩子之后、算乘区之前调用。扣掉这一下九线超出的部分（frame 的 normalAdd、finalAdd、criticalAdd、elementAdd），
-## 记在 frame.nineCap。hooks＝{race, orb, suit, live, live_books}：种族祝福、宝珠共鸣、套装确认阶段这一下进③的量（钩子帧里分不出，调用方给）。
+## 记在 frame.nineCap（及 T530 各线分池裁切 frame.splitCap）。hooks＝{race, orb, suit, live, live_books}。
 static func apply_nine_cap(item: Dictionary, a, frame: Dictionary, cache: Dictionary, hooks: Dictionary) -> Dictionary:
-	if not CAP_NINE or not a is XActor or not active() or not cache.has("bySource"):
+	var use_split := split_caps_on()
+	var use_nine := CAP_NINE and active()
+	if not (use_split or use_nine) or not a is XActor or not cache.has("bySource"):
 		return {}
 	var by: Dictionary = _with_live_books(cache.bySource, hooks.get("live_books", {}))
 	var types := []
@@ -1188,25 +1439,75 @@ static func apply_nine_cap(item: Dictionary, a, frame: Dictionary, cache: Dictio
 		var x := maxf(0.0, float(raw_secret.element[e]) - float(kept.element.get(e, 0.0)))
 		if x > 0.0:
 			cut.element[e] = x
-	# （2）其余九线合计
-	var nine := {"skill": 0.0, "bonus": float(hooks.get("race", 0.0)) + float(hooks.get("orb", 0.0)) + float(hooks.get("suit", 0.0)) + float(hooks.get("live", 0.0)), "crit": 0.0, "element": {}}
-	for b in NINE_BUCKETS:
+	# （2）九线分池各线独立额度（T530：SPLIT_CAPS，与旧合用顶 CAP_NINE 并存；fabao／enhance 拆出九线合用桶单记）
+	var hook_map := {
+		"race": float(hooks.get("race", 0.0)),
+		"orb": float(hooks.get("orb", 0.0)),
+		"suit": float(hooks.get("suit", 0.0)),
+		"equip": float(hooks.get("live", 0.0)),
+	}
+	var kept_lines := {}
+	var split_cut := {}
+	for b in SPLIT_BUCKETS:
 		var sh := _hit_share(by, b, hit)
-		nine.skill += sh.skill
-		nine.bonus += sh.bonus
-		nine.crit += sh.crit
-		for e in sh.element:
-			nine.element[e] = float(nine.element.get(e, 0.0)) + float(sh.element[e])
-	cut.skill += maxf(0.0, nine.skill - nine_cap("skill"))
-	cut.bonus += maxf(0.0, nine.bonus - nine_cap("bonus"))
-	var crit_cap := XTianqiBase.nine_crit_cap()  # 期四：九线爆伤合计封顶（phase4.nine_crit_dmg_cap）；关着 −1 不封（现在 nine_caps 没有这一项）
-	if crit_cap >= 0.0:
-		cut.crit += maxf(0.0, nine.crit - crit_cap)
-	for e in nine.element:
-		var x := maxf(0.0, float(nine.element[e]) - nine_cap("element"))
-		if x > 0.0:
-			cut.element[e] = float(cut.element.get(e, 0.0)) + x
+		sh.bonus = float(sh.bonus) + float(hook_map.get(b, 0.0))
+		if use_split:
+			var bc := {}
+			var cs := split_cap_line(b, "skill_pct")
+			if cs >= 0.0 and float(sh.skill) > cs:
+				var ex := float(sh.skill) - cs
+				cut.skill += ex
+				sh.skill = cs
+				bc["skill"] = ex
+			var cb := split_cap_line(b, "bonus_pct")
+			if cb >= 0.0 and float(sh.bonus) > cb:
+				var ex := float(sh.bonus) - cb
+				cut.bonus += ex
+				sh.bonus = cb
+				bc["bonus"] = ex
+			var cc := split_cap_line(b, "crit_pct")
+			if cc >= 0.0 and float(sh.crit) > cc:
+				var ex := float(sh.crit) - cc
+				cut.crit += ex
+				sh.crit = cc
+				bc["crit"] = ex
+			var ce := split_cap_line(b, "element_pct")
+			if ce >= 0.0:
+				var ecut := {}
+				for e in sh.element:
+					var ev := float(sh.element[e])
+					if ev > ce:
+						var ex := ev - ce
+						cut.element[e] = float(cut.element.get(e, 0.0)) + ex
+						sh.element[e] = ce
+						ecut[e] = ex
+				if not ecut.is_empty():
+					bc["element"] = ecut
+			if not bc.is_empty():
+				split_cut[b] = bc
+		kept_lines[b] = sh
+	# （3）旧九线合用封顶（留给 T536/N13 拆；汇总各线分池后的余量，避免重复扣减）
+	if use_nine:
+		var nine := {"skill": 0.0, "bonus": 0.0, "crit": 0.0, "element": {}}
+		for b in NINE_BUCKETS:
+			var sh: Dictionary = kept_lines.get(b, _hit_share(by, b, hit))
+			nine.skill += float(sh.skill)
+			nine.bonus += float(sh.bonus)
+			nine.crit += float(sh.crit)
+			for e in sh.element:
+				nine.element[e] = float(nine.element.get(e, 0.0)) + float(sh.element[e])
+		cut.skill += maxf(0.0, nine.skill - nine_cap("skill"))
+		cut.bonus += maxf(0.0, nine.bonus - nine_cap("bonus"))
+		var crit_cap := XTianqiBase.nine_crit_cap()  # 期四：九线爆伤合计封顶（phase4.nine_crit_dmg_cap）；关着 −1 不封
+		if crit_cap >= 0.0:
+			cut.crit += maxf(0.0, nine.crit - crit_cap)
+		for e in nine.element:
+			var x := maxf(0.0, float(nine.element[e]) - nine_cap("element"))
+			if x > 0.0:
+				cut.element[e] = float(cut.element.get(e, 0.0)) + x
 	_cap_derived_elements(a, cut.element)
+	if not split_cut.is_empty():
+		frame.splitCap = split_cut
 	if cut.skill == 0.0 and cut.bonus == 0.0 and cut.crit == 0.0 and cut.element.is_empty():
 		return {}
 	frame.normalAdd = float(frame.normalAdd) - cut.skill
@@ -1273,9 +1574,14 @@ static func hook_bonus(trace: Array, module: String) -> float:
 ## 九线的份：符文之语、成长装备整件的特性 21；别的装备上宝珠镶进去的特性 21（XOrbs 打的 _codexOrb 标记）；套装倍率 (suit−1)。
 ## 超出的先从特性那份扣、不够再从套装那份扣；base＝不含套装的特性倍率（super.param_rate）。返回要再乘的系数。
 static func param_cap(a, i: int, base: float, suit_rate: float) -> float:
-	if not CAP_NINE or not a is XActor or not active():
+	var use_split := split_caps_on()
+	var use_nine := CAP_NINE and active()
+	if not (use_split or use_nine) or not a is XActor:
 		return 1.0
-	var from_traits := 0.0
+	var orb_traits := 0.0
+	var rw_traits := 0.0
+	var hub_traits := 0.0
+	var eq_traits := 0.0
 	# 同族宝珠超过上限丢掉的那几颗（XActor.all_traits 经 XOrbs.filter_traits 不算），这里也不算（复核 P1）。
 	# stat_equips 可能是视图拷贝，按「装备实例号|宝珠标记」认，不靠同一对象
 	var drops := XOrbs.cap_drops((a as XActor).equips)
@@ -1285,33 +1591,244 @@ static func param_cap(a, i: int, base: float, suit_rate: float) -> float:
 			if eq0 is Dictionary and str(eq0.get("instanceId", "")) != "" and (eq0.get("traits", []) as Array).any(func(t): return is_same(t, d)):
 				dropped["%s|%s|%d" % [str(eq0.instanceId), str(d.get("_codexOrb", "")), int(d.get("dataId", -1))]] = true
 	for eq in (a as XActor).stat_equips():
-		var whole := bucket_of(eq) in ["runeword", "hubris"]
+		var bkt := bucket_of(eq)
+		var rw_param := 0.0
+		if REBUILD_SOURCES and bkt == "runeword":
+			for rt in _runeword_template(eq).get("traits", []):
+				if rt is Dictionary and int(rt.get("code", 0)) == 21 and int(rt.get("dataId", -1)) == i:
+					rw_param += float(rt.get("value", 1.0)) - 1.0
+		var non_orb := 0.0
 		for t in eq.get("traits", []):
-			if t.has("_codexOrb") and (drops.any(func(d): return is_same(d, t)) or (str(eq.get("instanceId", "")) != "" \
-					and dropped.has("%s|%s|%d" % [str(eq.instanceId), str(t._codexOrb), int(t.get("dataId", -1))]))):
+			if t.has("_codexOrb"):
+				if drops.any(func(d): return is_same(d, t)) or (str(eq.get("instanceId", "")) != "" \
+						and dropped.has("%s|%s|%d" % [str(eq.instanceId), str(t._codexOrb), int(t.get("dataId", -1))])):
+					continue
+				if int(t.get("code", 0)) == 21 and int(t.get("dataId", -1)) == i:
+					orb_traits += float(t.get("value", 1.0)) - 1.0
 				continue
-			if int(t.get("code", 0)) == 21 and int(t.get("dataId", -1)) == i and (whole or t.has("_codexOrb")):
-				from_traits += float(t.get("value", 1.0)) - 1.0
-	var excess := from_traits + (suit_rate - 1.0) - nine_cap("param")
-	if excess <= 0.0:
+			if int(t.get("code", 0)) == 21 and int(t.get("dataId", -1)) == i:
+				non_orb += float(t.get("value", 1.0)) - 1.0
+		if bkt == "hubris":
+			hub_traits += non_orb
+		elif bkt == "runeword":
+			if REBUILD_SOURCES:
+				rw_traits += rw_param
+				if _base_gear_bucket(eq) == "equip":
+					eq_traits += non_orb - rw_param
+				elif _base_gear_bucket(eq) == "hubris":
+					hub_traits += non_orb - rw_param
+			else:
+				rw_traits += non_orb
+		elif bkt == "equip":
+			eq_traits += non_orb
+	var split_cut_t := 0.0
+	if use_split:
+		var eq_cap := split_cap_line("equip", "param_pct", 0.10)
+		if eq_cap >= 0.0 and eq_traits > eq_cap:
+			split_cut_t += eq_traits - eq_cap
+			eq_traits = eq_cap
+		var hub_cap := split_cap_line("hubris", "param_pct", 0.30)
+		if hub_cap >= 0.0 and hub_traits > hub_cap:
+			split_cut_t += hub_traits - hub_cap
+			hub_traits = hub_cap
+	var from_traits := rw_traits + hub_traits + orb_traits
+	var nine_cut_t := 0.0
+	var nine_cut_s := 0.0
+	if use_nine:
+		var excess := from_traits + (suit_rate - 1.0) - nine_cap("param")
+		if excess > 0.0:
+			nine_cut_t = minf(excess, maxf(0.0, from_traits))
+			nine_cut_s = excess - nine_cut_t
+	var cut_t := split_cut_t + nine_cut_t
+	var cut_s := nine_cut_s
+	if cut_t <= 0.0 and cut_s <= 0.0:
 		return 1.0
-	var cut_t := minf(excess, maxf(0.0, from_traits))
-	var cut_s := excess - cut_t
 	var f := 1.0
-	if base > 0.0:
+	if base > 0.0 and cut_t > 0.0:
 		f *= maxf(0.0, base - cut_t) / base
-	if suit_rate > 0.0:
+	if suit_rate > 0.0 and cut_s > 0.0:
 		f *= maxf(0.0, suit_rate - cut_s) / suit_rate
 	return f
 
 
-# ---- 五池明细（第四节第 1 条）----
+# ---- T530：免疫折抗、自动回复分线封顶、旧百分比穿透 4:1 转无视防御（v0.16 六.4 / 九.7甲·9甲·19·21② / 附表二）----
+
+## 构建装备同族超上限丢弃宝珠的查找表（和 param_cap 同口径）
+static func _dropped_orbs_map(a: XActor) -> Dictionary:
+	var drops := XOrbs.cap_drops(a.equips)
+	var dropped := {}
+	for d in drops:
+		for eq0 in a.equips:
+			if eq0 is Dictionary and str(eq0.get("instanceId", "")) != "" and (eq0.get("traits", []) as Array).any(func(t): return is_same(t, d)):
+				dropped["%s|%s|%d" % [str(eq0.instanceId), str(d.get("_codexOrb", "")), int(d.get("dataId", -1))]] = true
+	return {"drops": drops, "dropped": dropped}
+
+
+static func _orb_trait_dropped(eq: Dictionary, t: Dictionary, dm: Dictionary) -> bool:
+	if not t.has("_codexOrb"):
+		return false
+	if (dm.drops as Array).any(func(d): return is_same(d, t)):
+		return true
+	var iid := str(eq.get("instanceId", ""))
+	return iid != "" and (dm.dropped as Dictionary).has("%s|%s|%d" % [iid, str(t._codexOrb), int(t.get("dataId", -1))])
+
+
+## 天启篇我方角色元素有效度（XBattler.element_rate 调；西游档／ELEM_RESIST_CAP 关不走）：
+## - 4 件整系免疫武器（94、2021、2022、2023，及其余装备级 value<=0 的常驻免疫）折成该系 −30%（0.70）
+## - 固定词条装备来源的同系元素抗性合计封在 −30%（最低 0.70），易伤（>1）照加
+## - 角色主动放的限时无敌／免疫状态（如佛祖金身 1375）保留 0
+static func actor_element_rate(a: XActor, e: int) -> float:
+	var imm: Dictionary = split_caps().get("immunity_fold", {}) if split_caps().get("immunity_fold") is Dictionary else {}
+	var fold_res := float(imm.get("resist_pct", 30)) / 100.0
+	var fixed_cap := split_cap_line("equip", "element_resist_pct", 0.30)
+	if fixed_cap < 0.0:
+		fixed_cap = 0.30
+	var dm := _dropped_orbs_map(a)
+	var gear_res := 0.0
+	var gear_weak := 0.0
+	var other_delta := 0.0
+	for o in a.trait_objects():
+		if not (o is Dictionary):
+			continue
+		var is_gear := o.has("kind") and str(o.kind) in ["weapon", "armor"]
+		for t in o.get("traits", []):
+			if not (t is Dictionary) or int(t.get("code", 0)) != XBattler.TRAIT_ELEMENT_RATE or int(t.get("dataId", 0)) != e:
+				continue
+			if is_gear and _orb_trait_dropped(o, t, dm):
+				continue
+			var v := float(t.get("value", 1.0))
+			if is_gear:
+				if v <= 0.0:
+					v = 1.0 - fold_res
+				if v < 1.0:
+					gear_res += 1.0 - v
+				elif v > 1.0:
+					gear_weak += v - 1.0
+			else:
+				if v == 0.0:
+					return 0.0  # 角色主动放的限时无敌／免疫状态保留
+				other_delta += v - 1.0
+	for p in a.passive_element_values(e):
+		var pv := float(p)
+		if pv == 0.0:
+			return 0.0
+		other_delta += pv - 1.0
+	var eff_gear_res := minf(fixed_cap, gear_res)
+	var sum := 1.0 - eff_gear_res + gear_weak + other_delta
+	if a.is_absorb_element(e) and sum > 0.0:
+		return XYomiJingliu.element_rate(a, e, minf(sum - 2.0, -0.01))
+	return XYomiJingliu.element_rate(a, e, maxf(0.0, sum))
+
+
+## 天启篇我方每回合自动回复分线封顶（XTianqiAffixBattle.xparam(a, 7, value) 调；九.7甲）：
+## 词条 ≤15% ＋ 长生宝珠 ≤9% ＋ 回复套（全身只算一套）≤5% ＋ 恢复光环 ≤6% ＋ 角色自带 ≤10% ＝ 合计 ≤45%；
+## 负再生（中毒／灼烧／流血等）完整保留、不折。心之钢回合末是另一路，不经这里。
+static func cap_actor_hrg(a: XActor, base_v: float, affix_hrg_pct: float, suit_hrg_pct: float, aura_hrg_pct: float) -> float:
+	var cap_affix := split_cap_regen("affix_pct", 15.0)
+	var cap_orb := split_cap_regen("orb_pct", 9.0)
+	var cap_suit := split_cap_regen("suit_pct", 5.0)
+	var cap_aura := split_cap_regen("aura_pct", 6.0)
+	var cap_actor := split_cap_regen("actor_pct", 10.0)
+	var cap_total := split_cap_regen("total_pct", 45.0)
+	var dm := _dropped_orbs_map(a)
+	var neg_sum := 0.0
+	var orb_pos := 0.0
+	var suit_pos_orig := maxf(0.0, XEquipSuits.value(a, "xparam", 7, false) / 100.0)
+	for o in a.trait_objects():
+		if not (o is Dictionary):
+			continue
+		var is_gear := o.has("kind") and str(o.kind) in ["weapon", "armor"]
+		var is_suit_st := not is_gear and bucket_of(o, a) == "suit"
+		for t in o.get("traits", []):
+			if not (t is Dictionary) or int(t.get("code", 0)) != XBattler.TRAIT_XPARAM or int(t.get("dataId", -1)) != 7:
+				continue
+			if is_gear and _orb_trait_dropped(o, t, dm):
+				continue
+			var tv := float(t.get("value", 0.0))
+			if tv < 0.0:
+				neg_sum += tv
+			elif tv > 0.0:
+				if is_gear and t.has("_codexOrb"):
+					orb_pos += tv
+				elif is_suit_st:
+					suit_pos_orig += tv
+	var actor_pos := maxf(0.0, base_v - neg_sum - orb_pos - suit_pos_orig)
+	var c_affix := minf(maxf(0.0, affix_hrg_pct) / 100.0, cap_affix)
+	var c_orb := minf(orb_pos, cap_orb)
+	var c_suit := minf(suit_pos_orig + maxf(0.0, suit_hrg_pct) / 100.0, cap_suit)
+	var c_aura := minf(maxf(0.0, aura_hrg_pct) / 100.0, cap_aura)
+	var c_actor := minf(actor_pos, cap_actor)
+	var pos_total := minf(c_affix + c_orb + c_suit + c_aura + c_actor, cap_total)
+	return pos_total + neg_sum
+
+
+## T530（九.9 甲 / 附表二 / 21②）：我方打敌人时的无视防御合计与封顶：
+## - 牌局开（XTianqiElements.deck_on()）时旧百分比穿透按 4:1 转无视防御，上限 15%；牌局关时不换算（留给旧抗性穿透）
+## - 与种族无视防御（妖族／神族）、狂妄／杰作无我物防穿透相加封顶：上限 40%（穿杰作无我 45%）
+## - 角色技能机制自带的无视防御（五条悟、宿傩、逆骨等非额度来源）按原倍率保留，不被 40%/45% 误截
+static func def_ignore_summary(a, b, element: int, frame: Dictionary, trace: Array, facts: Dictionary) -> Dictionary:
+	var p_raw := maxf(0.0, float(frame.physicalDefenseRate))
+	var m_raw := maxf(0.0, float(frame.magicalDefenseRate))
+	if not (no_enemy_flat_mit_on() and a is XActor and b is XEnemy):
+		return {"active": false, "eff_p_rate": p_raw, "eff_m_rate": m_raw}
+	var cfg := def_ignore_cfg()
+	var race_p_rate := 1.0
+	var race_m_rate := 1.0
+	var hubris_p_rate := 1.0
+	for t in trace:
+		var mod := str(t.get("module", ""))
+		var ops: Array = t.get("ops", [])
+		if mod == "race-blessings":
+			for op in ops:
+				if op is Dictionary and str(op.get("op", "")) == "mul":
+					var f := str(op.get("field", ""))
+					if f == "physicalDefenseRate":
+						race_p_rate *= float(op.get("value", 1.0))
+					elif f == "magicalDefenseRate":
+						race_m_rate *= float(op.get("value", 1.0))
+		elif mod == "actor-modules":
+			var tags: Array = facts.get("actorModules", {}).get("tags", [])
+			for idx in ops.size():
+				var op = ops[idx]
+				if idx < tags.size() and str(tags[idx]) == "hubris" and op is Dictionary and str(op.get("op", "")) == "mul" and str(op.get("field", "")) == "physicalDefenseRate":
+					hubris_p_rate *= float(op.get("value", 1.0))
+	var race_p_ign := clampf(1.0 - race_p_rate, 0.0, 1.0)
+	var race_m_ign := clampf(1.0 - race_m_rate, 0.0, 1.0)
+	var hubris_p_ign := clampf(1.0 - hubris_p_rate, 0.0, 1.0)
+	var denom_p := race_p_rate * hubris_p_rate
+	var non_q_p := 0.0 if p_raw <= 0.0 else (p_raw / denom_p if denom_p > 1e-9 else 1.0)
+	var non_q_m := 0.0 if m_raw <= 0.0 else (m_raw / race_m_rate if race_m_rate > 1e-9 else 1.0)
+	var pen_ignore := 0.0
+	if XTianqiElements.deck_on() and element > 0:
+		var pct := maxf(0.0, float(a.passive_cache().get("penetratePercent", {}).get(element, 0.0)))
+		pen_ignore = minf(pct / (100.0 * float(cfg.ratio)), float(cfg.pen_cap))
+	var cap := float(cfg.ataraxia_cap) if XHubris.is_ataraxia(XHubris.gear(a)) else float(cfg.total_cap)
+	var quota_p := minf(cap, pen_ignore + race_p_ign + hubris_p_ign)
+	var quota_m := minf(cap, pen_ignore + race_m_ign)
+	return {
+		"active": true,
+		"pen": pen_ignore,
+		"race_p": race_p_ign,
+		"race_m": race_m_ign,
+		"hubris": hubris_p_ign,
+		"cap": cap,
+		"quota_p": quota_p,
+		"quota_m": quota_m,
+		"eff_p_rate": maxf(0.0, non_q_p * (1.0 - quota_p)),
+		"eff_m_rate": maxf(0.0, non_q_m * (1.0 - quota_m)),
+	}
+
+
+# ---- 五池明细（第四节第 1 条；T530 补 T529 P2-1 suit_mult 与 splitCap）----
 ## element_pool＝(1＋自身元素增幅＋elementAdd)（不含 elementMultiplier），其余照 damage._calculate 那一行的值
-static func pools(frame: Dictionary, element: int, element_pool: float, normal: float, crit: float, tier: float, race: float, independent: float) -> Dictionary:
+static func pools(frame: Dictionary, element: int, element_pool: float, normal: float, crit: float, tier: float, race: float, independent: float, suit_mult: float = 1.0) -> Dictionary:
 	var out := {"pools": {"skill": normal, "element": element_pool, "bonus": maxf(0.0, 1.0 + float(frame.finalAdd)), "crit": crit, "tier": tier},
 		"residual": {"skillMultiplier": float(frame.skillMultiplier), "elementMultiplier": float(frame.elementMultiplier.get(str(element), 1.0)),
 			"finalMultiplier": maxf(0.0, float(frame.finalMultiplier)), "race": race, "independent": independent,
+			"suitMultiplier": suit_mult,
 			"physicalDamageMultiplier": float(frame.physicalDamageMultiplier), "magicalDamageMultiplier": float(frame.magicalDamageMultiplier)}}
 	if frame.has("nineCap"):
 		out["nineCap"] = frame.nineCap  # 「九线封顶」：这一下各池扣掉的量（期三）
+	if frame.has("splitCap"):
+		out["splitCap"] = frame.splitCap  # 「九线分池」：这一下各线各自扣掉的量（T530）
 	return out

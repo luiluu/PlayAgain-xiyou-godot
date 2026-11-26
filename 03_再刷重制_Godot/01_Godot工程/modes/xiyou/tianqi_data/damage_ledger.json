@@ -16,6 +16,90 @@
   "secret_slot": 0.08,
   "note": "九线三期各自做完一条，就把那条从封顶里拿掉（XTianqiLedger.NINE_BUCKETS）；秘籍格数读 balance_table 档位行 secret_cap"
  },
+ "split_caps": {
+  "_note": "T530（v0.16 六.2～4 / 九.1·7甲·8·9甲·19·21② / 附表四）：九线分池各线独立额度（整数百分比），与旧合用封顶 nine_caps 并存，拆旧顶归 T536（草稿 N13）。",
+  "lines": {
+   "equip": {
+    "name": "固定词条（原版装备残余）",
+    "skill_pct": 12,
+    "bonus_pct": 10,
+    "crit_pct": 20,
+    "param_pct": 10,
+    "element_resist_pct": 30,
+    "def_ignore_pct": 15
+   },
+   "fabao": {
+    "name": "系别法宝（拆出装备桶单记）",
+    "element_pct": 10
+   },
+   "orb": {
+    "name": "宝珠",
+    "element_pct": 30,
+    "hrg_pct": 9
+   },
+   "runeword": {
+    "name": "符文之语",
+    "skill_pct": 15,
+    "bonus_pct": 15
+   },
+   "suit": {
+    "name": "原版套装",
+    "def_reduce_single_pct": 15,
+    "def_reduce_two_pct": 19,
+    "hrg_pct": 5,
+    "hrg_max_suits": 1
+   },
+   "race": {
+    "name": "种族",
+    "bonus_pct": 15
+   },
+   "enhance": {
+    "name": "强化（符石／晶石／神文）",
+    "element_per_slot_pct": 5
+   },
+   "hubris": {
+    "name": "成长神器",
+    "param_pct": 30
+   },
+   "zhenqi": {
+    "name": "真气七境",
+    "bonus_pct": 12
+   }
+  },
+  "affix_def": {
+   "damage_reduction_pct": 25,
+   "element_resist_pct": 40,
+   "hrg_pct": 15,
+   "recast_pct": 20,
+   "lifesteal_per_hit_pct": 10,
+   "lifesteal_per_cast_pct": 20,
+   "offense_uncapped": true
+  },
+  "regen": {
+   "affix_pct": 15,
+   "orb_pct": 9,
+   "suit_pct": 5,
+   "aura_pct": 6,
+   "actor_pct": 10,
+   "total_pct": 45
+  },
+  "def_ignore": {
+   "percent_pen_ratio": 4,
+   "percent_pen_cap_pct": 15,
+   "total_cap_pct": 40,
+   "ataraxia_cap_pct": 45
+  },
+  "immunity_fold": {
+   "weapon_ids": [
+    94,
+    2021,
+    2022,
+    2023
+   ],
+   "resist_pct": 30
+  },
+  "boss_mech_flat_states": []
+ },
  "rows": [
   {
    "id": "module.raven",
@@ -334,6 +418,17 @@
    "switch": "POOL_SUIT",
    "pool": "③",
    "phase2": "天启篇我方打敌人时 ＋(k−1) 进③（XTianqiLedger.suit_confirm_add），确认阶段那一步对敌人不再乘（suit_confirm_rows 加 skipTypes）；治疗、打自己人照旧。核过：原版套装改伤害只走这一条路——套装属性倍率乘能力值（属），套装技能是 passiveHarmRi／ELUP／CrHarmRi 等加项（已在池里）"
+  },
+  {
+   "id": "suit_template",
+   "name": "套装模板攻类单独乘 XTianqiSuits.attack_mult（T529 / 九.6甲）",
+   "ref": "v0.16 六.3",
+   "fields": [
+    "suitMultiplier"
+   ],
+   "status": "allowed",
+   "pool": "独立乘区（攻·伤害／攻·本系同区相加）",
+   "note": "T530 补记（T529 核 P2-1）：damage.gd gross 乘 suit_mult，breakdown.row.suit 与 XTianqiLedger.pools residual.suitMultiplier 同步记账"
   },
   {
    "id": "pill_passives",
