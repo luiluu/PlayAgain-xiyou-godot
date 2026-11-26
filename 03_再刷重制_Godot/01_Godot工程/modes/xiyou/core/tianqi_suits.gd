@@ -33,7 +33,7 @@ static var ENABLED := true
 static var NEWER_FIRST := true
 ## 回退开关（O-672）：false＝原版套装照原效果（回到 T515 之前），模板表不读
 static var TEMPLATE := true
-## 回退开关（O-待定，T529）：false＝攻类模板套退回 T515 做法（进终伤／元素词条池，共用默认 values 排，attack_mult 恒 1）
+## 回退开关（O-675，T529）：false＝攻类模板套退回 T515 做法（进终伤／元素词条池，共用默认 values 排，attack_mult 恒 1）
 static var ATTACK_STANDALONE := true
 ## 一人最多生效几套（养成线 v0.3 第三节第 3 条：一人最多两套）
 const CAP := 2
