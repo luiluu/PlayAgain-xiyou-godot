@@ -1,0 +1,27 @@
+{
+ "sha": "eecd7d8657654b77392a7a36a6407d3810e0b784",
+ "branch": "luiluu/t511",
+ "mode": "scenes",
+ "base": "",
+ "passed": true,
+ "scenes": 6,
+ "failed": [],
+ "flaky": [],
+ "lostShards": [],
+ "jobStatus": "success",
+ "shards": 1,
+ "longestShardSeconds": 64.7,
+ "testSeconds": 124,
+ "generatedRef": "refs/ci/generated/main",
+ "generatedCommit": "7f7cc73cc504821d93480d517c372a4708690bec",
+ "runUrl": "https://github.com/luiluu/PlayAgain-xiyou-godot/actions/runs/45907567757",
+ "sceneNames": [
+  "xiyou_battle_lag.tscn",
+  "xiyou_battle_layout.tscn",
+  "xiyou_battle_pixel.tscn",
+  "xiyou_battle_ui.tscn",
+  "xiyou_rift_alien.tscn",
+  "xiyou_rift_alien_parts.tscn"
+ ],
+ "time": "2026-11-26T22:59:15+00:00"
+}
