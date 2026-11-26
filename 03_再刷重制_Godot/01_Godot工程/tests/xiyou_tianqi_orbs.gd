@@ -146,8 +146,70 @@ func _run() -> void:
 	for i in 4:
 		amp_sum += _amp(vs[i], "2") - _amp(XGear.create("weapon", DAGGER, s), "2")
 	_check("tq_cap_amp", absf(amp_sum - 0.3) < 1e-6, amp_sum)
-	_check("tq_cap_trait_identity", is_same(vs[3].traits.filter(func(t): return t.has("_codexOrb"))[0], four[3].traits.filter(func(t): return t.has("_codexOrb"))[0])
-		and not is_same(vs[0].traits.filter(func(t): return t.has("_codexOrb"))[0], four[0].traits.filter(func(t): return t.has("_codexOrb"))[0]))
+	# 超上限那颗在视图里直接不给（核查 P1-2：不靠下游按身份剔）；前置深拷贝视图（特效吸取、技能重构改写）也一样
+	_check("tq_cap_skip", _mat_orb_trait(vs[3].traits) == [] and [0, 1, 2].all(func(i): return _mat_orb_trait(vs[i].traits) == [1.06]),
+		vs.map(func(e): return _mat_orb_trait(e.traits)))
+	var deep := XTianqiOrbs.views([four[0], four[1], four[2], four[3].duplicate(true)])
+	_check("tq_cap_deep_copy", _mat_orb_trait(deep[3].traits) == [] and _amp(deep[3], "2") == _amp(XGear.create("weapon", DAGGER, s), "2"),
+		[_mat_orb_trait(deep[3].traits), _amp(deep[3], "2")])
+
+	# 同一项属性跨族只算阶最高 3 颗（九.6）：烈焰、寒霜、厚土、雷霆各一颗归真，魔法攻击只算 3 颗；寒霜的魔防、雷霆的雷电伤害照给
+	var fams := [1, 2, 3, 4]
+	var cross := []
+	for f in fams:
+		var gc := _blade(s, "x%d" % f)
+		_inlay(s, gc, int(cfg.families[f].ids[4]))
+		cross.append(gc)
+	var vc := XTianqiOrbs.views(cross)
+	var mats := vc.map(func(e): return _mat_orb_trait(e.traits))
+	_check("tq_attr_cap_cross", mats == [[1.06], [1.06], [1.06], []], mats)
+	_check("tq_attr_cap_others", vc[1].traits.any(func(t): return t.has("_codexOrb") and int(t.code) == 21 and int(t.dataId) == 5 and absf(float(t.value) - 1.06) < 1e-6)
+		and _amp(vc[3], "5") == snappedf(_amp(XGear.create("weapon", DAGGER, s), "5") + 0.1, 0.0001), [vc[1].traits, _amp(vc[3], "5")])
+	XTianqiOrbs.ATTR_CAP = false
+	_check("tq_attr_cap_off", XTianqiOrbs.views(cross).map(func(e): return _mat_orb_trait(e.traits)) == [[1.06], [1.06], [1.06], [1.06]])
+	XTianqiOrbs.ATTR_CAP = true
+
+	# 特性 22 小表（九.6，协调默认 C）：长生归真 最大生命 +6%、每回合回复 +3%；三颗 9%
+	_check("tq_small_table", [1, 2, 3, 4, 5].map(func(r): return XTianqiOrbs.line_value("HRG", r)) == [1, 1, 2, 3, 3]
+		and XTianqiOrbs.line_value("CRI", 5) == 3 and XTianqiOrbs.line_value("MRG", 5) == 3 and XTianqiOrbs.line_value("MHP", 5) == 6)
+	var lifes := []
+	for i in 4:
+		var ga := _blade(s, "l%d" % i)
+		ga["augmentSlots"] = [XOrbs.ARMOR_TYPE]
+		XOrbs.ensure(ga)
+		_inlay(s, ga, int(cfg.families[11].ids[4]))
+		lifes.append(ga)
+	var hrg := 0.0
+	for e in XTianqiOrbs.views(lifes):
+		for t in e.traits:
+			if t.has("_codexOrb") and int(t.code) == 22 and int(t.dataId) == 7:
+				hrg += float(t.value)
+	_check("tq_small_hrg_9", absf(hrg - 0.09) < 1e-6, hrg)
+	_check("tq_small_item_text", cfg.items[str(int(cfg.families[11].ids[4]))].effects == ["最大生命+6%", "每回合生命回复（最大生命）+3%"], cfg.items[str(int(cfg.families[11].ids[4]))].effects)
+	XTianqiOrbs.SMALL_ON = false
+	_check("tq_small_off", XTianqiOrbs.line_value("HRG", 5) == 6)
+	XTianqiOrbs.SMALL_ON = true
+
+	# 小猫持剑翻倍（协调默认 A：新表值也 ×2，翻倍后封顶照算，超的从翻倍那份扣）
+	var base_d := _amp(XGear.create("weapon", DAGGER, s), "2")
+	var sv := XCat.sword_view(four[0])
+	_check("tq_cat_mark", XTianqiOrbs.sword_mult(sv) == 2 and XTianqiOrbs.sword_mult(four[0]) == 1)
+	var v1: Dictionary = XTianqiOrbs.views([sv])[0]
+	_check("tq_cat_x2", _mat_orb_trait(v1.traits) == [1.12] and _amp(v1, "2") == snappedf(base_d * 2 + 0.2, 0.0001), [_mat_orb_trait(v1.traits), _amp(v1, "2")])
+	var v3 := XTianqiOrbs.views([sv, four[1], four[2]])
+	_check("tq_cat_x2_capped", _mat_orb_trait(v3[0].traits) == [1.06] and _amp(v3[0], "2") == snappedf(base_d * 2 + 0.1, 0.0001)
+		and XTianqiLedger.orb_amplify(v3[0]).get("2", 0.0) + XTianqiLedger.orb_amplify(v3[1]).get("2", 0.0) + XTianqiLedger.orb_amplify(v3[2]).get("2", 0.0) - 0.3 < 1e-9,
+		[_mat_orb_trait(v3[0].traits), _amp(v3[0], "2")])
+	XTianqiOrbs.CAT_SWORD_X2 = false
+	var v0: Dictionary = XTianqiOrbs.views([sv])[0]
+	_check("tq_cat_x2_off", _mat_orb_trait(v0.traits) == [1.06] and _amp(v0, "2") == snappedf(base_d * 2 + 0.1, 0.0001), [_mat_orb_trait(v0.traits), _amp(v0, "2")])
+	XTianqiOrbs.CAT_SWORD_X2 = true
+
+	# 说明卡（P2-1）：单件按新表，已是视图的不重复换
+	var cv = XTianqiOrbs.card_view(four[0])
+	_check("tq_card_view", _amp(cv, "2") == snappedf(base_d + 0.1, 0.0001) and _amp(XTianqiOrbs.card_view(cv), "2") == _amp(cv, "2"), _amp(cv, "2"))
+	_check("tq_cap_text", str(XDB.rec("Items", 2947).note).contains("text=" + XTianqiOrbs.CAP_TEXT + " size=")
+		and str(XDB.rec("Items", 3301).note).contains("text=" + XTianqiOrbs.CAP_TEXT + " size="))
 	_check("tq_cap_filter", XOrbs.filter_traits(vs.reduce(func(acc, e): return acc + e.traits, []), four).filter(func(t): return t.has("_codexOrb") and int(t.dataId) == 4).size() == 3)
 
 	# 鉴定不出旧宝珠
@@ -170,7 +232,7 @@ func _run() -> void:
 				frag_cmds.append(int(c.parameters[3]))
 				toasts.append(str(p.list[k + 1].parameters[0]))
 	_check("tq_map_no_legacy", _legacy_gifts(m64).is_empty() and _legacy_gifts(XDB.map(132)).is_empty() and _legacy_gifts(XDB.map(155)).is_empty())
-	_check("tq_map_fragments", frag_cmds.size() >= 4 and frag_cmds.all(func(n): return n == 9) and toasts.all(func(t): return t.contains("窃取了9枚宝珠残片！") and not t.contains("黑荆棘")), [frag_cmds, toasts])
+	_check("tq_map_fragments", frag_cmds.size() >= 4 and frag_cmds.all(func(n): return n == 9) and toasts.all(func(t): return t.contains("获得了9枚宝珠残片！") and not t.contains("黑荆棘")), [frag_cmds, toasts])
 
 	# ---- 三、回退开关 ----
 	XTianqiOrbs.TABLE = false

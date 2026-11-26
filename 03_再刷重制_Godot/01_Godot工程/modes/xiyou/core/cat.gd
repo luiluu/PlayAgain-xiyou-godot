@@ -165,6 +165,7 @@ static func sword_view(e: Dictionary) -> Dictionary:
 	if _views.size() > 256:
 		_views.clear()
 	var o := e.duplicate(true)
+	o["_xcat_sword"] = 2  # T518：天启篇宝珠新表视图按这个倍数扣原表、翻新表（XTianqiOrbs.sword_mult）
 	o.params = (e.get("params", []) as Array).map(func(v): return float(v) * 2.0)
 	var traits := []
 	for t in e.get("traits", []):

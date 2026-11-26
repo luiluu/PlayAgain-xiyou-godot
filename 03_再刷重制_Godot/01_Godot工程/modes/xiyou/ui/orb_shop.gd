@@ -175,7 +175,13 @@ func identify_menu() -> void:
 			home()
 		else:
 			identify_detail(int(row.id)),
-		home, ["鉴定神秘珠", "副本首领每场胜利" + pct(float(cfg().dropRate)) + "掉落；一半鉴定为原作宝珠，一半为新宝珠（楼层决定阶位）"], crumb(["鉴定神秘珠"]))
+		home, ["鉴定神秘珠", ("副本首领每场胜利%s掉落；鉴定必得新宝珠（%d类等概率，楼层决定阶位）" % [pct(float(cfg().dropRate)), cfg().families.size()]) if no_legacy()
+			else "副本首领每场胜利" + pct(float(cfg().dropRate)) + "掉落；一半鉴定为原作宝珠，一半为新宝珠（楼层决定阶位）"], crumb(["鉴定神秘珠"]))
+
+
+## 天启篇（T518）：原作宝珠不再产出（legacyShare 0），说明按新宝珠类数写，不提原作宝珠；西游档原样
+func no_legacy() -> bool:
+	return XOrbs.legacy_share() <= 0.0
 
 
 func identify_detail(id: int) -> void:
@@ -185,7 +191,7 @@ func identify_detail(id: int) -> void:
 		rows.append({"label": "背包空间不足，请先分解宝珠", "enabled": false})
 	rows.append({"label": "返回", "back": true})
 	var b := XOrbs.seal(id)
-	var info := [name_of(id), "持有 %d 枚" % count(id),
+	var info := [name_of(id), "持有 %d 枚" % count(id), "新宝珠%d类等概率，阶位：" % cfg().families.size()] if no_legacy() else [name_of(id), "持有 %d 枚" % count(id),
 		"原作宝珠 %s%%（%s档 %d种等概率）" % [_num(XOrbs.legacy_share()), XOrbs.LEGACY_TIER_NAME.get(str(b.get("legacy", "")), ""), XOrbs.legacy_pool(b).size()],
 		"新宝珠 %s%%（16类等概率），阶位：" % _num(100.0 - XOrbs.legacy_share())]
 	info.append_array(XOrbs.probabilities(id))
@@ -277,8 +283,11 @@ func guide() -> void:
 		var b := XOrbs.seal(int(row.id))
 		var lines := [name_of(int(row.id)), "新宝珠阶位："]
 		lines.append_array(XOrbs.probabilities(int(row.id)))
-		lines.append_array(["新宝珠16类等概率；另有%s%%鉴定为原作宝珠（%s档 %d种）" % [_num(XOrbs.legacy_share()), XOrbs.LEGACY_TIER_NAME.get(str(b.get("legacy", "")), ""), XOrbs.legacy_pool(b).size()],
-			"原作宝珠：1～12层弱档，13～18层中档，19层起强档"])
+		if no_legacy():
+			lines.append("新宝珠%d类等概率（本模式不产出原作宝珠）" % cfg().families.size())
+		else:
+			lines.append_array(["新宝珠16类等概率；另有%s%%鉴定为原作宝珠（%s档 %d种）" % [_num(XOrbs.legacy_share()), XOrbs.LEGACY_TIER_NAME.get(str(b.get("legacy", "")), ""), XOrbs.legacy_pool(b).size()],
+				"原作宝珠：1～12层弱档，13～18层中档，19层起强档"])
 		choose([{"label": "返回分布表"}], func(_r): guide(), guide, lines, crumb(["楼层与品质分布", name_of(int(row.id))])),
 		home, ["神秘珠掉落与鉴定", "副本首领胜利后每场独立" + pct(float(cfg().dropRate)) + "，最多1枚", "不受掉率、熟练度或洪荒诅咒倍率影响", "高层封印保留到鉴定时；未鉴定不能镶嵌"],
 		crumb(["楼层与品质分布"]))
@@ -357,7 +366,8 @@ func home() -> void:
 	for b in cfg().bands:
 		sealed += count(int(b.itemId))
 	choose(rows, _home_pick, close, ["宝珠坊", "未鉴定 %d 枚　宝珠残片 %d" % [sealed, count(int(cfg().fragment))],
-			"武器、副手、神武为武器孔（0～3），其余防具孔（0～2）", "玄甲、长生、藏气、流风镶防具孔；全身同类只算最高3颗"], crumb())
+			"武器、副手、神武为武器孔（0～3），其余防具孔（0～2）", "玄甲、长生、藏气、流风镶防具孔；全身同类、同项属性各只算最高3颗" if no_legacy() and XTianqiOrbs.ATTR_CAP
+				else "玄甲、长生、藏气、流风镶防具孔；全身同类只算最高3颗"], crumb())
 
 
 func _home_pick(row: Dictionary) -> void:
