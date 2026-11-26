@@ -304,19 +304,30 @@ static func draw(s: XState, tier, g := "") -> Variant:
 
 ## M.generate：去掉模板自带的词缀表，换成「这条特效 100%」的前缀，照 DreamX makeItem 生成；随机数全用 random，
 ## 预掷池（RomDreamX 等）这次从空开始、用完还原
+## O-674（T547，Kyo 11-26「深渊的装备也会随机词条」）：西游档商人买的装备保留底装备自带的随机词条行，照普通掉落掷
+## （同一张词条表、同样的概率与行数），买的那条特效先合进去、照旧必出；随机数照旧用本轮种子。只管新买的，旧装备不动。
+## 天启篇不走这里（XTianqiMerchant）。false＝原版：删掉底装备的词条表，只留买的那一条。
+static var KEEP_BASE_AFFIXES := true
+
+
 static func generate(s: XState, d: Dictionary, affix: Dictionary, random: Callable, source := "") -> Dictionary:
 	var kind := "weapon" if str(d.db) == "Weapons" else "armor"
 	var blue := XGear.template(kind, int(d.id))
 	if blue.is_empty():
 		return {}
-	var eq: Dictionary = blue.get("equipment", {}).duplicate(true)
-	eq.affixes = [{"kind": "prefix", "choices": [{"chance": 100, "ids": [int(affix.id)]}]}]
-	blue.equipment = eq
-	var meta: Dictionary = blue.get("meta", {})
-	for k in ["prefix", "suffix", "prefixSuffixUseWeaponDatabase", "prefixSuffixUseArmorDatabase"]:
-		meta.erase(k)
-	meta["prefixSuffixUseArmorDatabase" if str(affix.db) == "Armors" else "prefixSuffixUseWeaponDatabase"] = true
-	blue.meta = meta
+	var keep := KEEP_BASE_AFFIXES and not XTianqi.active(s)
+	var forced := []
+	if keep:
+		forced = [{"table": str(affix.db), "id": int(affix.id), "kind": "prefix"}]
+	else:
+		var eq: Dictionary = blue.get("equipment", {}).duplicate(true)
+		eq.affixes = [{"kind": "prefix", "choices": [{"chance": 100, "ids": [int(affix.id)]}]}]
+		blue.equipment = eq
+		var meta: Dictionary = blue.get("meta", {})
+		for k in ["prefix", "suffix", "prefixSuffixUseWeaponDatabase", "prefixSuffixUseArmorDatabase"]:
+			meta.erase(k)
+		meta["prefixSuffixUseArmorDatabase" if str(affix.db) == "Armors" else "prefixSuffixUseWeaponDatabase"] = true
+		blue.meta = meta
 	var saved := {}
 	for k in ["x", "xn", "xs", "xsn"]:
 		saved[k] = s.rom.get(k)
@@ -326,7 +337,7 @@ static func generate(s: XState, d: Dictionary, affix: Dictionary, random: Callab
 	s.rom.xsn = 0
 	var saved_fn := XGear.roll_fn
 	XGear.roll_fn = random
-	var made := XGear.roll_item(blue, s)
+	var made := XGear.roll_item(blue, s, [], forced)
 	XGear.roll_fn = saved_fn
 	for k in saved:
 		if saved[k] == null:
