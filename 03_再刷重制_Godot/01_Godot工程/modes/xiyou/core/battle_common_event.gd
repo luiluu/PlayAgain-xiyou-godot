@@ -23,11 +23,18 @@ const CHAIN_LIMIT := 64
 ## 概率连发（每次再放都重掷，可连多次）照原版（审查第 75 期 P1-1）。
 static var EXTRA_ONCE := true
 const EXTRA_ONCE_IDS := [1365]
-## T523：天启篇里 7492 气傲天苍是空壳（天熄乱舞／气伤链未实装），天虎令的 CE1406／1408 却照样会领悟并弹提示。
-## 只在天启篇存档删掉这两个事件里领悟它的那一支（条件、领悟、记开关、提示整段），剑思和其他领悟支照跑；
+## T523：天启篇里 7492 气傲天苍是空壳（天熄乱舞／气伤链未实装），下面这些公共事件却照样会领悟它。只在天启篇存档收口，
 ## 西游档拿原事件。false＝回退。
+## CE1406／1408（天虎令红尘一步）、CE9022（首领版 10503，写给炭治郎但他不在队也会弹提示）：删掉领悟它的那一支
+## （条件、领悟、记开关、提示整段），剑思和其他领悟支照跑。
+## CE1627（西西卡流派选择的火遁）：原版拿 7492 当「学过火遁」的记号。只删领悟它的那一条，随机领悟、次数和提示照旧；
+## 重复判定改认火遁给的 7517／7518（原来的 7492 判定留着，认修之前学到过它的存档）。
+## 读 7492 的 CE1625 只由遁术招 7826／7827 触发，这批招没有任何领悟来源，不用改。
 static var TIANQI_SKIP_SHELL_LEARN := true
-const TIANQI_SHELL_LEARN := {1406: 7492, 1408: 7492}
+const TIANQI_SHELL_LEARN := {1406: 7492, 1408: 7492, 9022: 7492}
+const TIANQI_FIRE_CE := 1627
+const TIANQI_FIRE_MARK := 7492
+const TIANQI_FIRE_LEARNED := [7517, 7518]
 ## 本版 BattleManager.startBattle 每场开战预约的公共事件「战斗开始时调整变量」（调 1315／1372／1373／1375，变量 13＝1 时截上限）
 const START_EVENT := 1320
 
@@ -56,9 +63,40 @@ static func run_or_reserve(logic, id: int) -> void:
 ## 公共事件实际要跑的指令表（天启篇收口见 TIANQI_SKIP_SHELL_LEARN；只返回副本，不改数据库）
 static func command_list(id: int, ce: Dictionary) -> Array:
 	var list: Array = ce.get("list", [])
-	if not TIANQI_SKIP_SHELL_LEARN or not TIANQI_SHELL_LEARN.has(id) or not XTianqi.active(XState.current):
+	if not TIANQI_SKIP_SHELL_LEARN or not XTianqi.active(XState.current):
 		return list
-	return _without_learn_branch(list, int(TIANQI_SHELL_LEARN[id]))
+	if id == TIANQI_FIRE_CE:
+		return _without_fire_mark(list)
+	if TIANQI_SHELL_LEARN.has(id):
+		return _without_learn_branch(list, int(TIANQI_SHELL_LEARN[id]))
+	return list
+
+
+## 火遁分支「111 会 7492 → 已经学过了（跳回流派选择） 411 → 领悟 7492 …」：删掉领悟 7492，并在原判定前按
+## TIANQI_FIRE_LEARNED 各插一份「会它 → 已经学过了」（那段以跳转标签结尾，不会往下走）；找不到就原样返回
+static func _without_fire_mark(list: Array) -> Array:
+	var guard := -1
+	var other := -1
+	for i in list.size():
+		var code := int(list[i].code)
+		var p: Array = list[i].get("parameters", [])
+		if code == 111 and int(p[0]) == 4 and int(p[2]) == 3 and int(p[3]) == TIANQI_FIRE_MARK:
+			guard = i
+			other = -1
+		elif guard >= 0 and other < 0 and code == 411 and int(list[i].indent) == int(list[guard].indent):
+			other = i
+		elif other >= 0 and code == 318 and int(p[2]) == 0 and int(p[3]) == TIANQI_FIRE_MARK:
+			var depth := int(list[guard].indent)
+			var already := list.slice(guard + 1, other)
+			var extra := []
+			for sid in TIANQI_FIRE_LEARNED:
+				var cond: Array = list[guard].parameters.duplicate()
+				cond[3] = sid
+				extra.append({"code": 111, "indent": depth, "parameters": cond})
+				extra.append_array(already)
+				extra.append({"code": 412, "indent": depth, "parameters": []})
+			return list.slice(0, guard) + extra + list.slice(guard, i) + list.slice(i + 1)
+	return list
 
 
 ## 删掉直接包着「318 领悟 skill」的最内层条件分支（111 起到同缩进的 412）；找不到就原样返回

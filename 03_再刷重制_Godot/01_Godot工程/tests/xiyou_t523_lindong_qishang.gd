@@ -96,6 +96,8 @@ func _run() -> void:
 	_test_tianqi_common_event_learn()
 	_test_xiyou_regression()
 	_test_xiyou_common_event_learn()
+	_test_tianqi_fire_ce1627()
+	_test_xiyou_fire_ce1627()
 
 	XMagicWeapon.TIANQI_SKIP_LEARN_SKILL = was_skip
 	XTianqiBase.TUNE_D200 = was_d200
@@ -303,13 +305,14 @@ func _test_tianqi_qishang_1341() -> void:
 
 
 ## 真跑公共事件 1406／1408：同一固定种子反复预约执行，直到领悟抽签覆盖全部分支；记下提示与学会的技能
-func _run_learn_ce(s: XState, ce_id: int, seed_hex: String) -> Dictionary:
-	var th: XActor = s.actor(104)
+func _run_learn_ce(s: XState, ce_id: int, seed_hex: String, learner := 104) -> Dictionary:
+	var th: XActor = s.actor(learner)
 	th.change_level(60)
 	var lg := XBattleLogic.new()
 	lg.elite_roll = 100.0
 	lg.setup(2, s, XBattleRandom.create(seed_hex))
-	for sid in range(7490, 7503) + [7520]:
+	var pool := _ce_learns(ce_id)
+	for sid in pool:
 		th.forget_skill(sid)
 	for sw in range(2241, 2255):
 		s.set_switch(sw, false)
@@ -328,14 +331,108 @@ func _run_learn_ce(s: XState, ce_id: int, seed_hex: String) -> Dictionary:
 			if x.get("type") == "toast" and str(x.get("text")).contains("领悟技能"):
 				toasts.append(str(x.get("text")))
 		rolls[int(s.variable(1166))] = true
-	var learned := (range(7490, 7503) + [7520]).filter(func(sid): return th.skill_ids.has(sid))
+	var learned := pool.filter(func(sid): return th.skill_ids.has(sid))
 	return {"toasts": toasts, "learned": learned, "rolled_3": rolls.has(3), "switch_2243": s.switch(2243), "skipped": skipped}
 
 
+## 原版事件里所有「318 领悟」的技能号（升序）
+func _ce_learns(ce_id: int) -> Array:
+	var out := []
+	for c in XDB.rec("CommonEvents", ce_id).list:
+		if int(c.code) == 318 and int(c.parameters[2]) == 0:
+			out.append(int(c.parameters[3]))
+	out.sort()
+	return out
+
+
+## 真跑公共事件 1627「全新拷贝」：选全新遁术 → 火遁；回到流派菜单后选最后一项退出
+func _run_fire(s: XState, seed_hex: String) -> Dictionary:
+	var a: XActor = s.actor(88)
+	var lg := XBattleLogic.new()
+	lg.elite_roll = 100.0
+	lg.setup(2, s, XBattleRandom.create(seed_hex))
+	lg._check = {}
+	XBattleCommonEvent.reserve(lg, 1627)
+	var r := XBattleCommonEvent.take(lg)
+	var lines := []
+	var toasts := []
+	var menus := 0
+	var fire_picked := false
+	for i in range(100):
+		var q: Dictionary = r.advance()
+		for x in r.take_logs():
+			if x.get("type") == "toast":
+				toasts.append(str(x.get("text")))
+		if str(q.kind) == "done":
+			break
+		var msg: Dictionary = q.get("msg", {})
+		lines.append_array(msg.get("lines", []))
+		var choices: Array = msg.get("choices", [])
+		var pick = null
+		if choices.has("我要玩全新遁术流派"):
+			menus += 1
+			pick = 0 if menus == 1 else choices.find("我先问问万能的群友")
+		elif choices.has("来个火遁看看"):
+			pick = 0
+			fire_picked = true
+		r.resume(pick)
+	return {"picked": fire_picked, "menus": menus, "already": lines.any(func(t): return str(t).contains("已经学过了")),
+		"toasts": toasts, "learned": [7492, 7517, 7518].filter(func(sid): return a.skill_ids.has(sid)),
+		"count": int(s.variable(1233)), "skipped": r.skipped}
+
+
+func _fire_state(s: XState, known: Array, count: int) -> XState:
+	var a: XActor = s.actor(88)
+	a.change_level(60)
+	for sid in [7492, 7517, 7518]:
+		a.forget_skill(sid)
+	for sid in known:
+		a.learn_skill(sid)
+	for v in [1229, 1230, 1231, 1232, 1235]:
+		s.set_variable(v, 0)
+	s.set_variable(1233, count)
+	return s
+
+
+func _test_tianqi_fire_ce1627() -> void:
+	var got := {}
+	for i in range(12):
+		var res := _run_fire(_fire_state(_make_tianqi([88, 1, 2, 3], 25), [], 0), "%016x" % (0x1627 + i * 7919))
+		var ok: bool = res.picked and not res.already and res.count == 1 and res.learned.size() == 1 and res.learned[0] != 7492 \
+			and res.toasts == ["学会全新忍术‘火遁’"]
+		check("tq.ce1627.first_fire.%d" % i, ok, res)
+		if res.learned.size() == 1:
+			got[res.learned[0]] = true
+	check("tq.ce1627.both_rolls_seen", got.has(7517) and got.has(7518), got)
+	for known in [7517, 7518, 7492]:
+		var res := _run_fire(_fire_state(_make_tianqi([88, 1, 2, 3], 25), [known], 1), "0000000000001627")
+		check("tq.ce1627.repeat_blocked.%d" % known, res.picked and res.already and res.menus == 2 and res.count == 1
+			and res.learned == [known] and res.toasts.is_empty(), res)
+	XBattleCommonEvent.TIANQI_SKIP_SHELL_LEARN = false
+	var back := _run_fire(_fire_state(_make_tianqi([88, 1, 2, 3], 25), [], 0), "0000000000001627")
+	check("tq.ce1627.rollback_switch", back.learned.has(7492) and back.learned.size() == 2, back)
+	XBattleCommonEvent.TIANQI_SKIP_SHELL_LEARN = true
+
+
+func _test_xiyou_fire_ce1627() -> void:
+	var s := _fire_state(_make_xiyou([88, 5], 25), [], 0)
+	var rec := XDB.rec("CommonEvents", 1627)
+	check("xy.ce1627.list_untouched", XBattleCommonEvent.command_list(1627, rec) == rec.list)
+	var res := _run_fire(s, "0000000000001627")
+	check("xy.ce1627.learns_7492", res.learned.has(7492) and res.learned.size() == 2 and res.count == 1
+		and res.toasts == ["学会全新忍术‘火遁’"], res)
+	# 快照拍在实跑之后：解释器跑选项会原地重写 402 序号（原有行为），这里只看天启篇收口有没有改原表
+	var before := JSON.stringify(rec.list)
+	_make_tianqi([88, 1, 2, 3], 25)
+	XBattleCommonEvent.command_list(1627, rec)
+	check("tq.ce1627.db_not_mutated", JSON.stringify(rec.list) == before)
+
+
 func _test_tianqi_common_event_learn() -> void:
-	var others: Array = (range(7490, 7503) + [7520]).filter(func(sid): return sid != 7492)
-	for ce_id in [1406, 1408]:
-		var res := _run_learn_ce(_make_tianqi([104, 1, 2, 3], 25), ce_id, "0000000000000525")
+	for ce_id in [1406, 1408, 9022]:
+		var learner: int = 93 if ce_id == 9022 else 104
+		var others: Array = _ce_learns(ce_id).filter(func(sid): return sid != 7492)
+		var res := _run_learn_ce(_make_tianqi([104, 1, 2, 3], 25), ce_id, "0000000000000525", learner)
 		check("tq.ce%d.no_7492_no_toast" % ce_id, res.rolled_3 and not res.learned.has(7492) and not res.switch_2243
 			and not res.toasts.any(func(t): return t.contains("气傲天苍")), res)
 		check("tq.ce%d.other_learns_kept" % ce_id, res.learned == others and res.toasts.size() == others.size(), res)
@@ -346,8 +443,8 @@ func _test_tianqi_common_event_learn() -> void:
 
 
 func _test_xiyou_common_event_learn() -> void:
-	for ce_id in [1406, 1408]:
-		var res := _run_learn_ce(_make_xiyou([104, 5], 25), ce_id, "0000000000000525")
+	for ce_id in [1406, 1408, 9022]:
+		var res := _run_learn_ce(_make_xiyou([104, 5], 25), ce_id, "0000000000000525", 93 if ce_id == 9022 else 104)
 		check("xy.ce%d.learns_7492_with_toast" % ce_id, res.learned.has(7492) and res.switch_2243 and res.learned.size() == 14
 			and res.toasts.any(func(t): return t.contains("气傲天苍")), res)
 		var rec := XDB.rec("CommonEvents", ce_id)
