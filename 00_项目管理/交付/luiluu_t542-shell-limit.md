@@ -52,7 +52,8 @@ T524 交付单随合并归并删除，从 a19c2d24e 取原文。
 
 ## 云端选测
 
-（待跑）
+通过。提交 0c8ef9d928（ci/luiluu/t542-shell-limit），选测基准 c55af7bdd3，1 个场景、1 片。运行页：https://github.com/luiluu/PlayAgain-xiyou-godot/actions/runs/45828028054
+`gh run watch` 前台等待，中途一次因 GitHub HTTP 500 退出，重跑后退出码 0；`云端选测.py wait` 汇总通过。之后只改了本交付单。
 
 ## 本分支提交
 
