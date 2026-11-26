@@ -102,7 +102,7 @@
 
 | 函数／开关 | 调用方 1 处（`git grep -nE 'skin\.sync\(\)' -- '*.gd'`） | 逐处结论 |
 | --- | --- | --- |
-| `XSkinSkillPage.sync` | 技能页 `_refresh_now`（另有探针和测试可直接调） | 调用方 1 处逐处结论：已在窗口里，再开一层只加深度计数，关到最外层才丢缓存 |
+| `XSkinSkillPage.sync` | 生产代码里是 `skill_scene.gd` 的 `_refresh_now`（grep 其余命中是别的页面各自的 `skin.sync`；测试、探针另有直接调用） | 调用方 1 处逐处结论：已在窗口里，再开一层只加深度计数，关到最外层才丢缓存 |
 
 ## 截图
 
