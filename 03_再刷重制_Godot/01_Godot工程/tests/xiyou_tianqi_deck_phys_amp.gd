@@ -168,7 +168,7 @@ func _run() -> void:
 	var elup := a.passive_values("passiveELUP01")
 	var pa := _hit(phys, a, b)
 	var na := _hit(none, a, b)
-	_check("passive_41_elup01_applies_on_deck", elup.size() > before_elup and pa > pb * 1.05 and absf(na - nb) < 1e-6, [elup, pb, pa, nb, na])
+	_check("passive_41_elup01_applies_on_deck", elup.size() > before_elup and pa > pb * 1.04 and absf(na - nb) < 1e-6, [elup, pb, pa, nb, na])
 
 	# 三、DECK=false：行为不变（物理照原版吃物理增伤，跟修前一样）
 	XTianqiElements.DECK = false
@@ -177,8 +177,8 @@ func _run() -> void:
 	var r_df_old := _ratios(a, b, 0.5)
 	XDamage.PHYS_AMP_ON_DECK = true
 	XTianqiElements.DECK = true
-	# 此时已学技能 41（物理 +10%），挂 +50% 后比值＝1.6/1.1
-	_check("deck_off_unchanged", absf(float(r_df[0]) - 1.6 / 1.1) < 0.02 and JSON.stringify(r_df) == JSON.stringify(r_df_old), [r_df, r_df_old])
+	# 此时已学技能 41（T528 入池压数后物理 +5%），挂 +50% 后比值＝1.55/1.05
+	_check("deck_off_unchanged", absf(float(r_df[0]) - 1.55 / 1.05) < 0.02 and JSON.stringify(r_df) == JSON.stringify(r_df_old), [r_df, r_df_old])
 
 	# 西游档：行为不变
 	var ws := _west_state()
@@ -233,9 +233,9 @@ func _run() -> void:
 	var conv_on_v := float(conv_res_on.get("value", 0.0))
 	var conv_off_v := float(conv_res_off.get("value", 0.0))
 	var conv_elem := int(conv_res_on.get("breakdown", {}).get("row", {}).get("element", -1))
-	# 注意 a 已学技能 41 (+10% 物理)，挂 +50% 后物理共 +60%，修前转换后按原属性无物理读 1.0 → 比值 1.60
+	# 注意 a 已学技能 41 (T528 入池压数后 +5% 物理)，挂 +50% 后物理共 +55%，修前转换后按原属性无物理读 1.0 → 比值 1.55
 	_check("p3_conv_plus_orig_phys",
-		conv_elem == 2 and conv_off_v > 0.0 and absf(conv_on_v / conv_off_v - 1.6) < 0.02,
+		conv_elem == 2 and conv_off_v > 0.0 and absf(conv_on_v / conv_off_v - 1.55) < 0.02,
 		[conv_elem, conv_off_v, conv_on_v, conv_on_v / conv_off_v if conv_off_v > 0.0 else 0.0])
 
 	# 4b) 目标挂物理免疫/抗性（trait code=11, dataId=1, value=0.0）：DECK 开下目标侧按无属性 0 结算（不免疫），攻击方照吃物理增伤
@@ -247,9 +247,9 @@ func _run() -> void:
 	var r_imm := _ratios(a, b, 0.5)
 	b.data()["traits"] = b_traits_keep
 	_touch(a)
-	# 已学 41 (+10%)，再加 +50% → 1.6/1.1 ≈ 1.4545，且基础伤害非 0（未吃物理免疫）
+	# 已学 41 (T528 入池压数后 +5%)，再加 +50% → 1.55/1.05 ≈ 1.4762，且基础伤害非 0（未吃物理免疫）
 	_check("p3_target_phys_immune_ignored_on_deck",
-		float(r_imm[3][0]) > 100.0 and float(r_imm[3][1]) > float(r_imm[3][0]) * 1.4 and absf(float(r_imm[0]) - 1.6 / 1.1) < 0.02,
+		float(r_imm[3][0]) > 100.0 and float(r_imm[3][1]) > float(r_imm[3][0]) * 1.4 and absf(float(r_imm[0]) - 1.55 / 1.05) < 0.02,
 		r_imm)
 
 	# 五、T451 验收 6：gear_view 60 件专武/防具＋weapon:2222＋armor:4518/4519/4520/4521/4579＋rec_state 36 状态重算 yep（含宝珠增量保留与回退开关）
