@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
-"""天启篇技能改写漏项扫描脚本（T524）。
+"""天启篇技能改写漏项扫描脚本（T524／T541）。
 
-扫两类候选，兜底天启篇数值止血同类漏网之鱼：
-1. 改写后残留旧数值标签：
+扫三类候选，兜底天启篇数值止血同类漏网之鱼：
+1. A 类——改写后残留旧数值标签：
    覆盖 skill_rework.json（叠加全部启用的 tune 层）的 skills / gear / states
    以及 general_books.json 的 skills / states；
    - 列出改写后仍残留 >= min_pct（默认 50%）的旧标签（SkillPass、passiveHarmRi、
@@ -10,7 +10,7 @@
      DepassiveHarmRe、SkETypeHarmRi、Element Amplify/Magnify、Critical Multiplier、
      CodexParamRate、ConsumeReduce、AgainUseAll、passiveAPLUS 等）；
    - 同时检查 note_add 与原版残留同名标签冲突（如 7516 ConsumeReduceZj 双标签）。
-2. 经公共事件（CommonEvents）学到未改写技能：
+2. B 类——经公共事件（CommonEvents）学到未改写技能：
    - 学习来源：CommonEvents 里的 318「学会」（固定角色／全队／变量指定角色）与脚本 learnSkill(…)；
      脚本按括号配平取参数（可套多层括号，注释里的不算）；参数是变量／表达式的尽量还原（常量、$dataSkills[N]、
      按备注标签 filter），变量被重赋值／复合赋值／自增／循环改过就不还原，还原不了或调用写法解析不了都列人工核对；
@@ -24,6 +24,13 @@
    - 目标角色追不到的（318 全队／变量、脚本没写死单个角色号、写死号旁边还有别的取角色方式）进 manual；
    - 标出每个未改写技能携带的危险旧标签、原版伤害公式及未改写强力状态；
      已由别的天启篇模块接管的技能（KNOWN_HANDLED_SKILLS）只标注、不算高危。
+3. C 类（T541）——装备赋予／触发的未改写技能：
+   - 覆盖 Weapons / Armors 经 5 条运行期通道带出的技能：
+     特性 code 43（Add Skill）、<ShareLearnSkill:N>、<Replace Attack: N>／<Attack Replace: N>、
+     <Weapon Unleash X%: N>、<Magic Weapon Learn Skill N: …>；
+   - 按 XTianqiSkills.gear_view 同序先叠加 skill_rework.gear 的 traits_remove／traits_set 与 note_remove／note_sub／note_add：
+     被 skill_rework.gear 明确移除且未再加回、或 <req_actors> 全部落在 tiers.不开放 的条目显式列进 dropped（不静默丢）；
+   - 标签值不是纯技能号（表达式、技能名、缺参）、未知 *LearnSkill*／*AddSkill* 标签、或 <req_actors> 无法解析的，一律进 manual 人工核对，不静默判 dropped。
 
 用法：
   python3 03_再刷重制_Godot/03_转换工具/天启篇漏项扫描.py
@@ -272,13 +279,114 @@ def scan_class_a(
     }
 
 
-# B 类：已由天启篇别的模块接管（不走 skill_rework）的技能，人工核过；只标注、不算高危
+# B/C 类：已由天启篇别的模块接管（不走 skill_rework）的技能，人工核过；只标注、不算高危
 KNOWN_HANDLED_SKILLS: dict[int, str] = {
     6168: "XTianqiNoDiffPassive：天启篇不学（拦在 XActor.learn_skill），净效果改读 balance_table.legacy_passive",
     6178: "XTianqiSect：挣脱枷锁三个被动天启篇只留抽奖被动上限 +1",
     6179: "XTianqiSect：挣脱枷锁三个被动天启篇只留抽奖被动上限 +1",
     6180: "XTianqiSect：挣脱枷锁三个被动天启篇只留抽奖被动上限 +1",
+    7510: "XMagicWeapon.TIANQI_SKIP_LEARN_SKILL：天启篇停用 3550 烽舞按等级领悟（T523）",
+    7511: "XMagicWeapon.TIANQI_SKIP_LEARN_SKILL：天启篇停用 3550 烽舞按等级领悟（T523）",
+    7512: "XMagicWeapon.TIANQI_SKIP_LEARN_SKILL：天启篇停用 3550 烽舞按等级领悟（T523）",
+    7513: "XMagicWeapon.TIANQI_SKIP_LEARN_SKILL：天启篇停用 3550 烽舞按等级领悟（T523）",
 }
+
+
+def _reworked_skill_ids(eff_sr: dict, gb: dict, sb: dict, trumpet: dict) -> set[int]:
+    out: set[int] = set()
+    for k in eff_sr.get("skills", {}):
+        if str(k).isdigit():
+            out.add(int(k))
+    for k in gb.get("skills", {}):
+        if str(k).isdigit():
+            out.add(int(k))
+    for k, g in (sb.get("skills", {}) or {}).items():
+        if str(k).isdigit():
+            out.add(int(k))
+        if isinstance(g, dict) and g.get("skill"):
+            out.add(int(g["skill"]))
+    for s in trumpet.get("scrolls", []) or []:
+        if isinstance(s, dict) and s.get("skill"):
+            out.add(int(s["skill"]))
+    return out
+
+
+def _reworked_state_ids(eff_sr: dict, gb: dict) -> set[int]:
+    return {
+        int(k) for k in eff_sr.get("states", {}) if str(k).isdigit()
+    } | {int(k) for k in gb.get("states", {}) if str(k).isdigit()}
+
+
+def _summarize_skill(
+    sid: int | None,
+    skills: dict[int, dict],
+    states: dict[int, dict],
+    reworked_states: set[int],
+    expr: str = "",
+) -> dict:
+    if sid is None:
+        return {
+            "id": None,
+            "handled_by": "",
+            "name": f"动态技能号 learnSkill({expr})，追不到",
+            "dynamic_expr": expr,
+            "stype": 0,
+            "damage_formula": "",
+            "combat_tags": [],
+            "states": [],
+            "high_risk": True,
+        }
+    sk = skills.get(sid, {})
+    note = str(sk.get("note", ""))
+    tags = [m.group(0) for m in COMBAT_TAG_RE.finditer(note)]
+    push_states = [int(m.group(1)) for m in re.finditer(r"PushState0*(\d+)", note)]
+    eff_states = [int(e["dataId"]) for e in sk.get("effects", []) if e.get("code") == 21]
+    st_details = []
+    high_risk = False
+    for stid in sorted(set(push_states + eff_states)):
+        if stid <= 0:
+            continue
+        st = states.get(stid, {})
+        in_sr = stid in reworked_states
+        big_tr = [
+            f"c{t['code']}d{t['dataId']}={t['value']}"
+            for t in st.get("traits", [])
+            if (t.get("code") == 21 and float(t.get("value", 1)) >= 1.3)
+            or (t.get("code") == 22 and abs(float(t.get("value", 0))) >= 0.3)
+            or t.get("code") == 61
+        ]
+        has_confirm = "Custom Confirm Effect" in str(st.get("note", ""))
+        if not in_sr and (big_tr or has_confirm):
+            high_risk = True
+        st_details.append({
+            "id": stid,
+            "name": st.get("name", ""),
+            "reworked": in_sr,
+            "big_traits": big_tr,
+            "custom_confirm": has_confirm,
+        })
+    dmg = sk.get("damage", {})
+    dmg_formula = dmg.get("formula", "") if dmg.get("type", 0) in (1, 2, 5, 6) else ""
+    if dmg_formula:
+        high_risk = True
+    for m in COMBAT_TAG_RE.finditer(note):
+        mag, _ = parse_tag_magnitude(m.group(1), m.group(2))
+        if mag >= 50 or m.group(1).lower() in ("againuseall", "passiveaplus"):
+            high_risk = True
+    handled_by = KNOWN_HANDLED_SKILLS.get(sid, "")
+    if handled_by:
+        high_risk = False
+    return {
+        "id": sid,
+        "dynamic_expr": expr,
+        "handled_by": handled_by,
+        "name": sk.get("name", ""),
+        "stype": sk.get("stypeId", 0),
+        "damage_formula": dmg_formula[:60],
+        "combat_tags": tags,
+        "states": st_details,
+        "high_risk": high_risk,
+    }
 
 SCRIPT_ACTOR_RE = re.compile(r"\$gameActors\.actor\(\s*(\d+)\s*\)")
 LEARN_TOKEN_RE = re.compile(r"(?<![\w$])learnSkill(?![\w$])")
@@ -499,27 +607,8 @@ def scan_class_b(
     略过的也列在 dropped 里，不静默丢。目标角色追不到的（全队、变量、脚本没写死角色）进 manual 人工核对清单。
     """
     items = items or {}
-    reworked_skills: set[int] = set()
-    for k in eff_sr.get("skills", {}):
-        if str(k).isdigit():
-            reworked_skills.add(int(k))
-    for k in gb.get("skills", {}):
-        if str(k).isdigit():
-            reworked_skills.add(int(k))
-    # 功法：secret_books.skills 键＝技能号（值里 skill 字段同号）
-    for k, g in (sb.get("skills", {}) or {}).items():
-        if str(k).isdigit():
-            reworked_skills.add(int(k))
-        if isinstance(g, dict) and g.get("skill"):
-            reworked_skills.add(int(g["skill"]))
-    # 号卷：trumpet.scrolls[].skill
-    for s in trumpet.get("scrolls", []) or []:
-        if isinstance(s, dict) and s.get("skill"):
-            reworked_skills.add(int(s["skill"]))
-
-    reworked_states: set[int] = {
-        int(k) for k in eff_sr.get("states", {}) if str(k).isdigit()
-    } | {int(k) for k in gb.get("states", {}) if str(k).isdigit()}
+    reworked_skills = _reworked_skill_ids(eff_sr, gb, sb, trumpet)
+    reworked_states = _reworked_state_ids(eff_sr, gb)
 
     hidden_actors = {int(x) for x in eff_sr.get("tiers", {}).get("不开放", [])}
     open_actors: set[int] = set()
@@ -674,70 +763,7 @@ def scan_class_b(
         }
 
     def summarize_skill(sid: int | None, expr: str = "") -> dict:
-        if sid is None:
-            # 动态技能号追不到：按高危列人工核对，不静默丢
-            return {
-                "id": None,
-                "handled_by": "",
-                "name": f"动态技能号 learnSkill({expr})，追不到",
-                "dynamic_expr": expr,
-                "stype": 0,
-                "damage_formula": "",
-                "combat_tags": [],
-                "states": [],
-                "high_risk": True,
-            }
-        sk = skills.get(sid, {})
-        note = str(sk.get("note", ""))
-        tags = [m.group(0) for m in COMBAT_TAG_RE.finditer(note)]
-        push_states = [int(m.group(1)) for m in re.finditer(r"PushState0*(\d+)", note)]
-        eff_states = [int(e["dataId"]) for e in sk.get("effects", []) if e.get("code") == 21]
-        st_details = []
-        high_risk = False
-        for stid in sorted(set(push_states + eff_states)):
-            if stid <= 0:
-                continue
-            st = states.get(stid, {})
-            in_sr = stid in reworked_states
-            big_tr = [
-                f"c{t['code']}d{t['dataId']}={t['value']}"
-                for t in st.get("traits", [])
-                if (t.get("code") == 21 and float(t.get("value", 1)) >= 1.3)
-                or (t.get("code") == 22 and abs(float(t.get("value", 0))) >= 0.3)
-                or t.get("code") == 61
-            ]
-            has_confirm = "Custom Confirm Effect" in str(st.get("note", ""))
-            if not in_sr and (big_tr or has_confirm):
-                high_risk = True
-            st_details.append({
-                "id": stid,
-                "name": st.get("name", ""),
-                "reworked": in_sr,
-                "big_traits": big_tr,
-                "custom_confirm": has_confirm,
-            })
-        dmg = sk.get("damage", {})
-        dmg_formula = dmg.get("formula", "") if dmg.get("type", 0) in (1, 2, 5, 6) else ""
-        if dmg_formula:
-            high_risk = True
-        for m in COMBAT_TAG_RE.finditer(note):
-            mag, _ = parse_tag_magnitude(m.group(1), m.group(2))
-            if mag >= 50 or m.group(1).lower() in ("againuseall", "passiveaplus"):
-                high_risk = True
-        handled_by = KNOWN_HANDLED_SKILLS.get(sid, "")
-        if handled_by:
-            high_risk = False
-        return {
-            "id": sid,
-            "dynamic_expr": expr,
-            "handled_by": handled_by,
-            "name": sk.get("name", ""),
-            "stype": sk.get("stypeId", 0),
-            "damage_formula": dmg_formula[:60],
-            "combat_tags": tags,
-            "states": st_details,
-            "high_risk": high_risk,
-        }
+        return _summarize_skill(sid, skills, states, reworked_states, expr)
 
     # ---- 每个公共事件里学到的技能，按目标分：固定角色／追不到 ----
     # taught_fixed[cid][aid] = {sid}；taught_unresolved[cid] = [(how, sid)]
@@ -847,7 +873,229 @@ def scan_class_b(
     }
 
 
-def print_text_report(res_a: dict, res_b: dict) -> None:
+# ---- C 类（T541）：装备赋予／触发的未改写技能 ----
+GEAR_SHARE_LEARN_RE = re.compile(r"<\s*ShareLearnSkill\b(?:\s*:\s*([^>]*))?>", re.I)
+GEAR_REPLACE_ATTACK_RE = re.compile(r"<\s*(?:ATTACK\s+REPLACE|REPLACE\s+ATTACK)\b(?:\s*:\s*([^>]*))?>", re.I)
+GEAR_WEAPON_UNLEASH_RE = re.compile(r"<\s*WEAPON\s+UNLEASH\b([^>]*)>", re.I)
+GEAR_WEAPON_UNLEASH_OK_RE = re.compile(r"^\s+\d+\s*[%％]\s*:\s*(\d+)\s*$")
+GEAR_WEAPON_UNLEASH_RATE_RE = re.compile(r"^\s*:\s*[+-]?\d+(?:\.\d+)?\s*[%％]\s*$")
+GEAR_MW_LEARN_RE = re.compile(r"<\s*Magic\s+Weapon\s+Learn\s+Skill\b([^>]*)>", re.I)
+GEAR_MW_LEARN_OK_RE = re.compile(r"^\s+(\d+)\s*:\s*\S")
+GEAR_UNKNOWN_LEARN_RE = re.compile(r"<\s*(?:learningSkill\w*|LearnSkill\w*|AddSkill\w*)\b(?:\s*:\s*([^>]*))?>", re.I)
+GEAR_REQ_ACTORS_RE = re.compile(r"<\s*req_actors\s*:\s*([^>]*)>", re.I)
+
+
+def _apply_gear_spec(row: dict, sp: dict | None) -> tuple[list[dict], str]:
+    """与 XTianqiSkills.gear_view 同序：note_remove/note_sub + note_add；traits_remove + traits_set。"""
+    traits = [dict(t) for t in (row.get("traits", []) or []) if isinstance(t, dict)]
+    note = str(row.get("note", ""))
+    if not isinstance(sp, dict):
+        return traits, note
+    note = note_edit(note, sp) + str(sp.get("note_add", ""))
+    rem = {(int(e[0]), int(e[1])) for e in sp.get("traits_remove", [])}
+    if rem:
+        traits = [t for t in traits if (int(t.get("code", -1)), int(t.get("dataId", -1))) not in rem]
+    for e in sp.get("traits_set", []):
+        if not isinstance(e, dict):
+            continue
+        code, did, val = int(e.get("code", -1)), int(e.get("dataId", -1)), float(e.get("value", 0))
+        hit = False
+        for t in traits:
+            if int(t.get("code", -1)) == code and int(t.get("dataId", -1)) == did:
+                t["value"] = val
+                hit = True
+        if not hit:
+            traits.append({"code": code, "dataId": did, "value": val})
+    return traits, note
+
+
+def _extract_gear_skill_grants(traits: list[dict], note: str) -> tuple[list[tuple[str, int, str]], list[tuple[str, str, str]]]:
+    """返回 (resolved[(channel, sid, raw)], manual[(channel, raw, reason)])。解析不了的一律进 manual，不静默丢。"""
+    resolved: list[tuple[str, int, str]] = []
+    manual: list[tuple[str, str, str]] = []
+
+    for t in traits:
+        if int(t.get("code", -1)) != 43:
+            continue
+        raw_id = t.get("dataId")
+        if isinstance(raw_id, int) and not isinstance(raw_id, bool) and raw_id > 0:
+            resolved.append(("trait_43", raw_id, f"trait 43:{raw_id}"))
+        elif raw_id not in (None, 0):
+            manual.append(("trait_43", repr(t), "特性 43 dataId 非正整数，追不到"))
+
+    for m in GEAR_SHARE_LEARN_RE.finditer(note):
+        val = (m.group(1) or "").strip()
+        if val.isdecimal() and int(val) > 0:
+            resolved.append(("share_learn", int(val), m.group(0)))
+        else:
+            manual.append(("share_learn", m.group(0), "ShareLearnSkill 参数非纯技能号，追不到"))
+
+    for m in GEAR_REPLACE_ATTACK_RE.finditer(note):
+        val = (m.group(1) or "").strip()
+        if val.isdecimal() and int(val) > 0:
+            resolved.append(("replace_attack", int(val), m.group(0)))
+        else:
+            manual.append(("replace_attack", m.group(0), "Replace Attack 参数非纯技能号，追不到"))
+
+    for m in GEAR_WEAPON_UNLEASH_RE.finditer(note):
+        body = m.group(1)
+        if GEAR_WEAPON_UNLEASH_RATE_RE.match(body):
+            continue  # <Weapon Unleash: +10%> 是触发几率加成，不是技能号
+        m_ok = GEAR_WEAPON_UNLEASH_OK_RE.match(body)
+        if m_ok and int(m_ok.group(1)) > 0:
+            resolved.append(("weapon_unleash", int(m_ok.group(1)), m.group(0)))
+        else:
+            manual.append(("weapon_unleash", m.group(0), "Weapon Unleash 参数非纯技能号，追不到"))
+
+    for m in GEAR_MW_LEARN_RE.finditer(note):
+        body = m.group(1)
+        m_ok = GEAR_MW_LEARN_OK_RE.match(body)
+        if m_ok and int(m_ok.group(1)) > 0:
+            resolved.append(("magic_weapon_learn", int(m_ok.group(1)), m.group(0)))
+        else:
+            manual.append(("magic_weapon_learn", m.group(0), "Magic Weapon Learn Skill 参数解析不了，追不到"))
+
+    for m in GEAR_UNKNOWN_LEARN_RE.finditer(note):
+        manual.append(("unknown_learn_tag", m.group(0), "未知技能学习标签，人工核对"))
+
+    return resolved, manual
+
+
+def scan_class_c(
+    eff_sr: dict,
+    gb: dict,
+    sb: dict,
+    trumpet: dict,
+    skills: dict[int, dict],
+    states: dict[int, dict],
+    weapons: dict[int, dict],
+    armors: dict[int, dict],
+) -> dict:
+    """扫描 C 类（T541）：装备（Weapons / Armors）经 5 条通道赋予或触发的未改写技能。
+
+    通道：trait_43（特性 43）、share_learn（<ShareLearnSkill>）、replace_attack（<Replace Attack>）、
+    weapon_unleash（<Weapon Unleash X%>）、magic_weapon_learn（<Magic Weapon Learn Skill>）。
+    先按 XTianqiSkills.gear_view 口径叠加 eff_sr.gear；明确移除或仅不开放角色可用的列在 dropped，
+    解析不了的标签／<req_actors> 一律进 manual，不静默判 dropped。
+    """
+    reworked_skills = _reworked_skill_ids(eff_sr, gb, sb, trumpet)
+    reworked_states = _reworked_state_ids(eff_sr, gb)
+    hidden_actors = {int(x) for x in eff_sr.get("tiers", {}).get("不开放", [])}
+    gear_specs = eff_sr.get("gear", {})
+
+    by_skill: dict[int, list[dict]] = defaultdict(list)
+    manual: list[dict] = []
+    dropped: list[dict] = []
+
+    for gtype, tbl in (("weapon", weapons), ("armor", armors)):
+        for gid in sorted(tbl):
+            row = tbl[gid]
+            if not isinstance(row, dict):
+                continue
+            gkey = f"{gtype}:{gid}"
+            gname = str(row.get("name", ""))
+            sp = gear_specs.get(gkey)
+
+            raw_grants, _ = _extract_gear_skill_grants(
+                [dict(t) for t in (row.get("traits", []) or []) if isinstance(t, dict)],
+                str(row.get("note", "")),
+            )
+            eff_traits, eff_note = _apply_gear_spec(row, sp)
+            eff_grants, eff_manual = _extract_gear_skill_grants(eff_traits, eff_note)
+
+            # 解析 <req_actors: ...>：全部是不开放角色才判 hidden_actor_only；解析不了绝不静默丢，记进 manual
+            req_matches = GEAR_REQ_ACTORS_RE.findall(eff_note)
+            hidden_only = False
+            req_unparseable = False
+            if req_matches:
+                toks = [t for p in req_matches for t in re.split(r"[\s,，]+", p.strip()) if t]
+                if toks and all(t.isdecimal() and int(t) > 0 for t in toks):
+                    hidden_only = all(int(t) in hidden_actors for t in toks)
+                else:
+                    req_unparseable = True
+
+            eff_pairs = {(ch, sid) for ch, sid, _ in eff_grants}
+            for ch, sid, raw in raw_grants:
+                if (ch, sid) not in eff_pairs and sid not in reworked_skills:
+                    sk_info = _summarize_skill(sid, skills, states, reworked_states)
+                    dropped.append({
+                        "gear": gkey,
+                        "gear_name": gname,
+                        "channel": ch,
+                        "raw": raw,
+                        "reason": "removed_by_skill_rework_gear",
+                        "skill": sk_info,
+                    })
+
+            seen_eff: set[tuple[str, int]] = set()
+            has_unreworked_eff = False
+            for ch, sid, raw in eff_grants:
+                if (ch, sid) in seen_eff:
+                    continue
+                seen_eff.add((ch, sid))
+                if sid in reworked_skills:
+                    continue
+                has_unreworked_eff = True
+                if hidden_only:
+                    sk_info = _summarize_skill(sid, skills, states, reworked_states)
+                    dropped.append({
+                        "gear": gkey,
+                        "gear_name": gname,
+                        "channel": ch,
+                        "raw": raw,
+                        "reason": "hidden_actor_only",
+                        "skill": sk_info,
+                    })
+                else:
+                    by_skill[sid].append({
+                        "gear": gkey,
+                        "gear_name": gname,
+                        "channel": ch,
+                        "raw": raw,
+                    })
+
+            for ch, raw, reason in eff_manual:
+                manual.append({
+                    "gear": gkey,
+                    "gear_name": gname,
+                    "channel": ch,
+                    "raw": raw,
+                    "reason": reason,
+                    "high_risk": True,
+                })
+            if req_unparseable and (has_unreworked_eff or eff_manual):
+                manual.append({
+                    "gear": gkey,
+                    "gear_name": gname,
+                    "channel": "req_actors",
+                    "raw": "; ".join(f"<req_actors:{m}>" for m in req_matches),
+                    "reason": "req_actors 含非角色号，未判不开放，人工核对",
+                    "high_risk": True,
+                })
+
+    items: list[dict] = []
+    for sid in sorted(by_skill):
+        sk_info = _summarize_skill(sid, skills, states, reworked_states)
+        sources = sorted(by_skill[sid], key=lambda x: (x["gear"], x["channel"]))
+        items.append({
+            **sk_info,
+            "sources": sources,
+            "source_count": len(sources),
+            "channels": sorted({s["channel"] for s in sources}),
+        })
+
+    return {
+        "skill_count": len(items),
+        "high_risk_count": sum(1 for it in items if it["high_risk"]),
+        "items": items,
+        "manual_count": len(manual),
+        "manual": manual,
+        "dropped_count": len(dropped),
+        "dropped": dropped,
+    }
+
+
+def print_text_report(res_a: dict, res_b: dict, res_c: dict | None = None) -> None:
     print(f"=== A 类扫描：改写后残留旧数值标签（阈值 >= {res_a['min_pct']:g}%）===")
     unex = [r for r in res_a["residuals"] if r["status"] == "unexempted"]
     pend = [r for r in res_a["residuals"] if r["status"] == "pending"]
@@ -911,9 +1159,33 @@ def print_text_report(res_a: dict, res_b: dict) -> None:
     for g in res_b["dropped"]:
         print(f"  - 角色 {g['actor_id']}({g['actor_name']}) CE {g['ce_id']}({g['ce_name']}) 删掉的调用={g['removed_callers']} 公共事件调用={g['ce_callers']} -> {g['taught_count']} 招")
 
+    if res_c is not None:
+        print(f"\n=== C 类扫描：装备赋予／触发的未改写技能（共 {res_c['skill_count']} 招，其中高危 {res_c['high_risk_count']} 招）===")
+        for it in res_c["items"]:
+            flag = "高危" if it["high_risk"] else "低危"
+            srcs = "、".join(f"{s['gear']}({s['gear_name']}|{s['channel']})" for s in it["sources"][:4])
+            if it["source_count"] > 4:
+                srcs += f" 等{it['source_count']}件"
+            parts = []
+            if it.get("handled_by"):
+                parts.append("已接管=" + it["handled_by"])
+            if it["damage_formula"]:
+                parts.append(f"公式={it['damage_formula']}")
+            if it["combat_tags"]:
+                parts.append("标签=" + ",".join(it["combat_tags"][:4]))
+            if it["states"]:
+                parts.append("状态=" + ",".join(f"{s['id']}({s['name']},sr={s['reworked']})" for s in it["states"][:3]))
+            print(f"  [{flag}] {it['id']} {it['name']} 来源={srcs}" + (f" | {'; '.join(parts)}" if parts else ""))
+        print(f"\n=== C 类人工核对：装备技能标签追不到 {res_c['manual_count']} 条 ===")
+        for m in res_c["manual"]:
+            print(f"  - {m['gear']}({m['gear_name']}) [{m['channel']}] {m['raw']} -> {m['reason']}")
+        print(f"\n=== C 类显式略过（gear 改写已移除或仅不开放角色可用）：{res_c['dropped_count']} 条 ===")
+        for d in res_c["dropped"]:
+            print(f"  - {d['gear']}({d['gear_name']}) [{d['channel']}|{d['reason']}] -> {d['skill']['id']} {d['skill']['name']}")
+
 
 def main(argv: list[str] | None = None) -> int:
-    ap = argparse.ArgumentParser(description="天启篇技能改写漏项扫描（T524）")
+    ap = argparse.ArgumentParser(description="天启篇技能改写漏项扫描（T524／T541）")
     ap.add_argument("--min-pct", type=float, default=50.0, help="A 类残留旧标签阈值（默认 50）")
     ap.add_argument("--json", action="store_true", help="输出 JSON")
     ap.add_argument("--strict", action="store_true", help="存在未豁免 A 类漏项或 note_add 冲突时退出码 1")
@@ -941,11 +1213,12 @@ def main(argv: list[str] | None = None) -> int:
         eff_sr, gb, sb, trumpet, skills, states, actors, classes, ces, items, troops, maps,
         note_tables={"armor": armors, "weapon": weapons},
     )
+    res_c = scan_class_c(eff_sr, gb, sb, trumpet, skills, states, weapons, armors)
 
     if args.json:
-        print(json.dumps({"class_a": res_a, "class_b": res_b}, ensure_ascii=False, indent=2))
+        print(json.dumps({"class_a": res_a, "class_b": res_b, "class_c": res_c}, ensure_ascii=False, indent=2))
     else:
-        print_text_report(res_a, res_b)
+        print_text_report(res_a, res_b, res_c)
 
     if args.strict:
         unex = [r for r in res_a["residuals"] if r["status"] == "unexempted"]
