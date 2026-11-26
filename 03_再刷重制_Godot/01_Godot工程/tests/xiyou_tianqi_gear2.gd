@@ -3,7 +3,7 @@ extends Node
 ## 一、删除栏位清理（CLEAN_DELETED）：商店进货去掉删除栏位防具、原版档照旧；随机掉落抽到的在同品质、同等级段、保留栏位里重抽一次，池空不给。
 ## 二、坐骑（MOUNT_STATS）：七档品质的敏捷百分比、先制几率对上 gear_table.json；全队取上场最高一件不相加、助力位不算、总上限；
 ##     普通坐骑原来的属性不算；原版档坐骑照旧。
-## 三、神器上限（ARTIFACT_CAP）：心钢／狂妄阶数 15 时按 10 算、"头顶"按 +300% 算；存档里的层数、盛名、成长不截；说明写「已达上限」；原版档不夹。
+## 三、神器上限（ARTIFACT_CAP，T526 止血五按预算稿 v0.16＋D290 收紧）：心钢阶数 15 时按 5 算、狂妄按 1 算、"头顶"按 +30% 算；存档里的层数、盛名、成长不截；说明写「已达上限」；原版档（XTianqi.active 为假）不夹。
 ## 四、三个开关各设 false，行为回到第一批。
 ## 五、（D205 起不再避 4，原「表里的设计数值不带 4」断言已删）。
 ## 验收方式：天启篇新规则没有 mv_oracle 参照，按交接单的占位表逐项比；反向验证清单在 04_验证/反向验证清单/xiyou_tianqi_gear2.json。
@@ -89,8 +89,8 @@ func _table() -> void:
 	_check("table_mount", m.get("agi_pct", []) == [5.0, 10.0, 15.0, 20.0, 25.0, 30.0, 33.0]
 		and m.get("preempt_pct", []) == [3.0, 5.0, 6.0, 8.0, 10.0, 12.0, 15.0] and float(m.get("preempt_cap_pct", 0)) == 33.0, m)
 	var c: Dictionary = t.get("artifact_cap", {})
-	_check("table_cap", float(c.get("heartsteel_stage", 0)) == 10.0 and float(c.get("hubris_stage", 0)) == 10.0
-		and float(c.get("crown_bonus_pct", 0)) == 300.0, c)
+	_check("table_cap", float(c.get("heartsteel_stage", 0)) == 5.0 and float(c.get("hubris_stage", 0)) == 1.0
+		and float(c.get("crown_bonus_pct", 0)) == 30.0, c)
 	_check("table_draft", bool(t.get("draft", false)))
 
 
@@ -223,7 +223,7 @@ func _preempt() -> void:
 	_check("preempt_legacy", XTianqiGear.apply_preempt(old, {"pre": 0.05, "sur": 0.03}).pre == 0.05)
 
 
-# ---- 三、神器上限 ----
+# ---- 三、神器上限（T526 止血五：心之钢 5／狂妄 1／头顶 30） ----
 func _artifact() -> void:
 	var s := _tianqi_state()
 	var n15 := XHeartsteel.stage_need(15)
@@ -231,35 +231,70 @@ func _artifact() -> void:
 	heart[XHeartsteel.STACKS] = n15
 	var lev := XGear.template("armor", XHeartsteel.LEVIATHAN).duplicate(true)
 	lev[XHeartsteel.STACKS] = n15
-	_check("heart_stage_raw", XHeartsteel.stage(heart) == 15 and XHeartsteel.stacks(heart) == n15)
-	_check("heart_capped", is_equal_approx(XHeartsteel.hp_rate(heart), 2.0) and is_equal_approx(XHeartsteel.hp_rate(lev), 2.1),
+	_check("heart_stage_raw", XHeartsteel.stage(heart) == 15 and XHeartsteel.stacks(heart) == n15 and XHeartsteel.eff_stage(heart) == 5,
+		[XHeartsteel.stage(heart), XHeartsteel.eff_stage(heart)])
+	_check("heart_capped", is_equal_approx(XHeartsteel.hp_rate(heart), 1.5) and is_equal_approx(XHeartsteel.hp_rate(lev), 1.6),
 		[XHeartsteel.hp_rate(heart), XHeartsteel.hp_rate(lev)])
+	var a := s.actor(1)
+	_wear(a, heart)
+	_check("heart_cast_scale_capped", is_equal_approx(XHeartsteel.cast_scale(a), 1.5), XHeartsteel.cast_scale(a))
+	_undress(a, XTianqiGear.ARTIFACT)
 	var hub := XGear.template("armor", XHubris.ARMOR).duplicate(true)
 	hub[XHubris.FAME] = n15
 	var atx := XGear.template("armor", XHubris.ATARAXIA).duplicate(true)
-	_check("hubris_capped", is_equal_approx(XHubris.rate_for(hub, XHubris.growth(hub)), 2.1) and is_equal_approx(XHubris.rate_for(atx, n15), 2.2)
-		and XHubris.growth(hub) == n15, XHubris.rate_for(hub, XHubris.growth(hub)))
+	_check("hubris_capped", is_equal_approx(XHubris.rate_for(hub, XHubris.growth(hub)), 1.2) and is_equal_approx(XHubris.rate_for(atx, n15), 1.3)
+		and XHubris.growth(hub) == n15 and XTianqiGear.hubris_stage(15) == 1, [XHubris.rate_for(hub, XHubris.growth(hub)), XHubris.rate_for(atx, n15)])
 	var rows: Array = XGrowthHelp.heart_rows(heart)
-	_check("heart_cap_text", str(rows[0]).contains(XTianqiGear.CAP_TEXT) and str(rows[1]).contains("已达上限"), rows.slice(0, 2))
+	_check("heart_cap_text", str(rows[0]).contains("×1.5" + XTianqiGear.CAP_TEXT) and str(rows[1]).contains("已达上限"), rows.slice(0, 2))
 	var hrows: Array = XGrowthHelp.hubris_rows(hub)
-	_check("hubris_cap_text", str(hrows[0]).contains(XTianqiGear.CAP_TEXT), hrows.slice(0, 2))
+	_check("hubris_cap_text", str(hrows[0]).contains("×1.2" + XTianqiGear.CAP_TEXT) and str(hrows[1]).contains("已达上限"), hrows.slice(0, 2))
+	var flev: Array = XGrowthForge.detail_lines(XGrowthForge.LEVIATHAN_RECIPE, heart)
+	var fatx: Array = XGrowthForge.detail_lines(XGrowthForge.ATARAXIA_RECIPE, hub)
+	_check("forge_preview_capped", flev.has("最大生命×1.6") and fatx.has("扬名时物理攻击×1.3"), [flev, fatx])
+	# 边界：心钢 4 阶未达上限、5 阶恰好达上限；狂妄 0 阶未达上限、1 阶恰好达上限
 	var below := XGear.template("armor", XHeartsteel.ARMOR).duplicate(true)
-	below[XHeartsteel.STACKS] = XHeartsteel.stage_need(9)
-	_check("heart_below_cap", is_equal_approx(XHeartsteel.hp_rate(below), 1.9) and not str(XGrowthHelp.heart_rows(below)[0]).contains(XTianqiGear.CAP_TEXT))
-	# "头顶"：成长 900 → 按 300 算；实例上的成长值不截
+	below[XHeartsteel.STACKS] = XHeartsteel.stage_need(4)
+	var exact_h := XGear.template("armor", XHeartsteel.ARMOR).duplicate(true)
+	exact_h[XHeartsteel.STACKS] = XHeartsteel.stage_need(5)
+	_check("heart_below_cap", is_equal_approx(XHeartsteel.hp_rate(below), 1.4) and not str(XGrowthHelp.heart_rows(below)[0]).contains(XTianqiGear.CAP_TEXT)
+		and is_equal_approx(XHeartsteel.hp_rate(exact_h), 1.5) and str(XGrowthHelp.heart_rows(exact_h)[0]).contains(XTianqiGear.CAP_TEXT))
+	var hub0 := XGear.template("armor", XHubris.ARMOR).duplicate(true)
+	hub0[XHubris.FAME] = 0
+	var hub1 := XGear.template("armor", XHubris.ARMOR).duplicate(true)
+	hub1[XHubris.FAME] = XHeartsteel.stage_need(1)
+	_check("hubris_boundary", is_equal_approx(XHubris.rate_for(hub0, 0), 1.1) and not str(XGrowthHelp.hubris_rows(hub0)[0]).contains(XTianqiGear.CAP_TEXT)
+		and is_equal_approx(XHubris.rate_for(hub1, XHubris.growth(hub1)), 1.2) and str(XGrowthHelp.hubris_rows(hub1)[0]).contains(XTianqiGear.CAP_TEXT))
+	# "头顶"：成长 900 → 按 30 算；20 未达上限、30 恰好达上限；实例上的成长值不截
 	var crown := XGear.template("armor", XDemonCrown.ARMOR).duplicate(true)
 	crown[XDemonCrown.BONUS] = 900.0
 	XDemonCrown.describe(crown)
 	var t21: Array = (crown.traits as Array).filter(func(t): return bool(t.get("_codexCrown", false)))
-	_check("crown_capped", t21.size() == 8 and t21.all(func(t): return is_equal_approx(float(t.value), 4.0)) and float(crown[XDemonCrown.BONUS]) == 900.0,
+	_check("crown_capped", t21.size() == 8 and t21.all(func(t): return is_equal_approx(float(t.value), 1.3)) and float(crown[XDemonCrown.BONUS]) == 900.0,
 		t21.map(func(t): return t.value))
-	_check("crown_cap_text", str(crown.note).contains("＋300%" + XTianqiGear.CAP_TEXT), str(crown.note).right(80))
-	# 原版档不夹
-	_legacy_state()
-	_check("legacy_heart", is_equal_approx(XHeartsteel.hp_rate(heart), 2.5) and is_equal_approx(XHubris.rate_for(hub, n15), 2.6))
+	_check("crown_cap_text", str(crown.note).contains("＋30%" + XTianqiGear.CAP_TEXT), str(crown.note).right(80))
+	var crown20 := XGear.template("armor", XDemonCrown.ARMOR).duplicate(true)
+	crown20[XDemonCrown.BONUS] = 20.0
+	XDemonCrown.describe(crown20)
+	var t20: Array = (crown20.traits as Array).filter(func(t): return bool(t.get("_codexCrown", false)))
+	var crown30 := XGear.template("armor", XDemonCrown.ARMOR).duplicate(true)
+	crown30[XDemonCrown.BONUS] = 30.0
+	XDemonCrown.describe(crown30)
+	var t30: Array = (crown30.traits as Array).filter(func(t): return bool(t.get("_codexCrown", false)))
+	_check("crown_boundary", t20.size() == 8 and t20.all(func(t): return is_equal_approx(float(t.value), 1.2))
+		and str(crown20.note).contains("＋20%") and not str(crown20.note).contains(XTianqiGear.CAP_TEXT)
+		and t30.size() == 8 and t30.all(func(t): return is_equal_approx(float(t.value), 1.3))
+		and str(crown30.note).contains("＋30%" + XTianqiGear.CAP_TEXT))
+	# 西游档零改动（XTianqi.active 为假不夹）
+	var old := _legacy_state()
+	_check("legacy_guard", not XTianqi.active(old) and not XTianqiGear.cap_on())
+	_check("legacy_heart", is_equal_approx(XHeartsteel.hp_rate(heart), 2.5) and is_equal_approx(XHeartsteel.hp_rate(lev), 2.6)
+		and is_equal_approx(XHubris.rate_for(hub, n15), 2.6) and is_equal_approx(XHubris.rate_for(atx, n15), 2.7)
+		and not str(XGrowthHelp.heart_rows(heart)[0]).contains(XTianqiGear.CAP_TEXT)
+		and not str(XGrowthHelp.hubris_rows(hub)[0]).contains(XTianqiGear.CAP_TEXT))
 	XDemonCrown.describe(crown)
 	t21 = (crown.traits as Array).filter(func(t): return bool(t.get("_codexCrown", false)))
-	_check("legacy_crown", t21.all(func(t): return is_equal_approx(float(t.value), 10.0)) and not str(crown.note).contains(XTianqiGear.CAP_TEXT),
+	_check("legacy_crown", t21.all(func(t): return is_equal_approx(float(t.value), 10.0)) and str(crown.note).contains("＋900%")
+		and not str(crown.note).contains(XTianqiGear.CAP_TEXT),
 		t21.map(func(t): return t.value))
 
 
@@ -282,8 +317,31 @@ func _switches() -> void:
 	XTianqiGear.MOUNT_STATS = true
 	_check("switch_mount_on", XTianqiGear.plain_mount(horse) and not a.trait_objects().any(func(o): return is_same(o, horse)))
 	XTianqiGear.ARTIFACT_CAP = false
+	var n15 := XHeartsteel.stage_need(15)
 	var heart := XGear.template("armor", XHeartsteel.ARMOR).duplicate(true)
-	heart[XHeartsteel.STACKS] = XHeartsteel.stage_need(15)
-	_check("switch_cap_off", is_equal_approx(XHeartsteel.hp_rate(heart), 2.5) and XTianqiGear.crown_bonus(900.0) == 900.0)
+	heart[XHeartsteel.STACKS] = n15
+	var lev := XGear.template("armor", XHeartsteel.LEVIATHAN).duplicate(true)
+	lev[XHeartsteel.STACKS] = n15
+	var hub := XGear.template("armor", XHubris.ARMOR).duplicate(true)
+	hub[XHubris.FAME] = n15
+	var atx := XGear.template("armor", XHubris.ATARAXIA).duplicate(true)
+	var crown := XGear.template("armor", XDemonCrown.ARMOR).duplicate(true)
+	crown[XDemonCrown.BONUS] = 900.0
+	XDemonCrown.describe(crown)
+	var t_off: Array = (crown.traits as Array).filter(func(t): return bool(t.get("_codexCrown", false)))
+	_check("switch_cap_off", not XTianqiGear.cap_on()
+		and is_equal_approx(XHeartsteel.hp_rate(heart), 2.5) and is_equal_approx(XHeartsteel.hp_rate(lev), 2.6)
+		and is_equal_approx(XHubris.rate_for(hub, n15), 2.6) and is_equal_approx(XHubris.rate_for(atx, n15), 2.7)
+		and XTianqiGear.crown_bonus(900.0) == 900.0 and t_off.all(func(t): return is_equal_approx(float(t.value), 10.0))
+		and XTianqiGear.cap_note("heartsteel_stage", 15) == "" and XTianqiGear.cap_note("hubris_stage", 15) == ""
+		and XTianqiGear.cap_note("crown_bonus_pct", 900.0) == "")
 	XTianqiGear.ARTIFACT_CAP = true
-	_check("switch_cap_on", is_equal_approx(XHeartsteel.hp_rate(heart), 2.0) and XTianqiGear.crown_bonus(900.0) == 300.0)
+	XDemonCrown.describe(crown)
+	var t_on: Array = (crown.traits as Array).filter(func(t): return bool(t.get("_codexCrown", false)))
+	_check("switch_cap_on", XTianqiGear.cap_on()
+		and is_equal_approx(XHeartsteel.hp_rate(heart), 1.5) and is_equal_approx(XHeartsteel.hp_rate(lev), 1.6)
+		and is_equal_approx(XHubris.rate_for(hub, n15), 1.2) and is_equal_approx(XHubris.rate_for(atx, n15), 1.3)
+		and XTianqiGear.crown_bonus(900.0) == 30.0 and t_on.all(func(t): return is_equal_approx(float(t.value), 1.3))
+		and XTianqiGear.cap_note("heartsteel_stage", 15) == XTianqiGear.CAP_TEXT
+		and XTianqiGear.cap_note("hubris_stage", 15) == XTianqiGear.CAP_TEXT
+		and XTianqiGear.cap_note("crown_bonus_pct", 900.0) == XTianqiGear.CAP_TEXT)
