@@ -1018,7 +1018,7 @@ func _snapshot_bases(f: int) -> Array:
 		if revive_team:
 			XState._become_current(st)
 			# T239 第 5 轮：先用原队在本层量一遍各人出伤（同 --both 量法、存档副本上打），换下的按实测出伤最低挑，主力不动
-			var probe := XState.from_dict(st.to_dict())
+			var probe := _clone(st)
 			for a in probe.battle_members():
 				a.recover_all()
 			var dmg_by: Dictionary = _fight_both(probe, 0).byActor
@@ -1110,7 +1110,8 @@ static func _team_key(team: Array) -> String:
 
 
 static func _clone(st: XState) -> XState:
-	var c := XState.from_dict(st.to_dict())
+	# T541：to_dict() 内 equips/gear/flags 为原数组/字典引用，from_dict 会直接挂回；先深拷贝避免多阵容 _relineup 互相串装备
+	var c := XState.from_dict(st.to_dict().duplicate(true))
 	c.set_variable(20, st.variable(20))
 	return c
 

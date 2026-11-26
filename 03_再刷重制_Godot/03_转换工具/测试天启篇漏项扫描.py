@@ -304,6 +304,113 @@ class TestLeakScanner(unittest.TestCase):
         block = SCAN._script_blocks([{"code": 355, "parameters": ["// 用 learnSkill 函数学会技能"]}, {"code": 655, "parameters": ["a.learnSkill(Math.max(1, f(101)));"]}])
         self.assertEqual(SCAN._call_args(block[0], SCAN.LEARN_TOKEN_RE), [("Math.max(1, f(101))", "learnSkill(Math.max(1, f(101)));")])
 
+    def test_class_c_all_five_channels_and_reworked_filter(self) -> None:
+        skills = {
+            201: {"id": 201, "name": "特性招", "stypeId": 1, "damage": {"type": 1, "formula": "a.atk * 20"}, "effects": [], "note": ""},
+            202: {"id": 202, "name": "共享学招", "stypeId": 2, "damage": {"type": 1, "formula": "a.mat * 20 + a.mhp"}, "effects": [], "note": ""},
+            203: {"id": 203, "name": "替普攻招", "stypeId": 2, "damage": {"type": 1, "formula": "a.mat * 27"}, "effects": [], "note": ""},
+            204: {"id": 204, "name": "解放招", "stypeId": 1, "damage": {"type": 1, "formula": "a.atk * 15"}, "effects": [], "note": ""},
+            205: {"id": 205, "name": "法宝领悟招", "stypeId": 1, "damage": {"type": 1, "formula": "a.atk * 10"}, "effects": [], "note": ""},
+            206: {"id": 206, "name": "已改写招", "stypeId": 1, "damage": {"type": 1, "formula": "a.atk * 30"}, "effects": [], "note": ""},
+            207: {"id": 207, "name": "通用书已改", "stypeId": 2, "damage": {"type": 1, "formula": "a.mat * 30"}, "effects": [], "note": ""},
+        }
+        weapons = {
+            1: {"id": 1, "name": "武器A", "traits": [{"code": 43, "dataId": 201}], "note": "<Replace Attack: 203>\n<Weapon Unleash: +10%>"},
+            2: {"id": 2, "name": "武器B", "traits": [{"code": 43, "dataId": 206}], "note": "<Weapon Unleash 50%: 204>\n<Replace Attack: 207>"},
+        }
+        armors = {
+            10: {"id": 10, "name": "防具A", "traits": [], "note": "<ShareLearnSkill:202>\n<Magic Weapon Learn Skill 205: 10, 99>"},
+        }
+        eff_sr = {"tiers": {"不开放": []}, "skills": {"206": {"name": "已改写招"}}, "gear": {}, "states": {}}
+        gb = {"skills": {"207": {"name": "通用书已改"}}, "states": {}}
+        res = SCAN.scan_class_c(eff_sr, gb, {}, {}, skills, {}, weapons, armors)
+        by_id = {it["id"]: it for it in res["items"]}
+        self.assertEqual(set(by_id), {201, 202, 203, 204, 205})
+        self.assertEqual(res["high_risk_count"], 5)
+        self.assertEqual(by_id[201]["channels"], ["trait_43"])
+        self.assertEqual(by_id[202]["channels"], ["share_learn"])
+        self.assertEqual(by_id[203]["channels"], ["replace_attack"])
+        self.assertEqual(by_id[204]["channels"], ["weapon_unleash"])
+        self.assertEqual(by_id[205]["channels"], ["magic_weapon_learn"])
+        self.assertEqual(res["manual_count"], 0)
+        self.assertEqual(res["dropped_count"], 0)
+
+    def test_class_c_gear_edit_dropped_readd_and_hidden_actor(self) -> None:
+        skills = {
+            301: {"id": 301, "name": "被移除特性招", "stypeId": 1, "damage": {"type": 1, "formula": "a.atk * 10"}, "effects": [], "note": ""},
+            302: {"id": 302, "name": "先删后加招", "stypeId": 1, "damage": {"type": 1, "formula": "a.atk * 10"}, "effects": [], "note": ""},
+            303: {"id": 303, "name": "被移除替普攻", "stypeId": 1, "damage": {"type": 1, "formula": "a.atk * 10"}, "effects": [], "note": ""},
+            304: {"id": 304, "name": "不开放专属招", "stypeId": 1, "damage": {"type": 1, "formula": "a.atk * 10"}, "effects": [], "note": ""},
+            305: {"id": 305, "name": "混合专属招", "stypeId": 1, "damage": {"type": 1, "formula": "a.atk * 10"}, "effects": [], "note": ""},
+        }
+        weapons = {
+            1: {"id": 1, "name": "改写武器", "traits": [{"code": 43, "dataId": 301}, {"code": 43, "dataId": 302}], "note": "<Replace Attack: 303>"},
+            2: {"id": 2, "name": "不开放武器", "traits": [], "note": "<req_actors: 99>\n<Replace Attack: 304>"},
+            3: {"id": 3, "name": "混合武器", "traits": [], "note": "<req_actors: 10, 99>\n<Replace Attack: 305>"},
+        }
+        eff_sr = {
+            "tiers": {"强者": [10], "不开放": [99]},
+            "skills": {},
+            "states": {},
+            "gear": {
+                "weapon:1": {
+                    "traits_remove": [[43, 301], [43, 302]],
+                    "traits_set": [{"code": 43, "dataId": 302, "value": 1}],
+                    "note_remove": ["Replace Attack"],
+                },
+            },
+        }
+        res = SCAN.scan_class_c(eff_sr, {}, {}, {}, skills, {}, weapons, {})
+        active_ids = {it["id"] for it in res["items"]}
+        self.assertEqual(active_ids, {302, 305})
+        dropped_keys = {(d["gear"], d["skill"]["id"], d["reason"]) for d in res["dropped"]}
+        self.assertEqual(
+            dropped_keys,
+            {
+                ("weapon:1", 301, "removed_by_skill_rework_gear"),
+                ("weapon:1", 303, "removed_by_skill_rework_gear"),
+                ("weapon:2", 304, "hidden_actor_only"),
+            },
+        )
+
+    def test_class_c_unparseable_and_unknown_tags_go_manual(self) -> None:
+        skills = {
+            401: {"id": 401, "name": "普通未改招", "stypeId": 1, "damage": {"type": 1, "formula": "a.atk * 10"}, "effects": [], "note": ""},
+        }
+        weapons = {
+            1: {
+                "id": 1,
+                "name": "奇异武器",
+                "traits": [],
+                "note": "<ShareLearnSkill: dynVar>\n<Replace Attack: 某技能名>\n<Weapon Unleash 50%: pick()>\n<Magic Weapon Learn Skill X: 1, 10>",
+            },
+            2: {
+                "id": 2,
+                "name": "动态专属武器",
+                "traits": [],
+                "note": "<req_actors: actorVar>\n<Replace Attack: 401>",
+            },
+        }
+        armors = {
+            10: {"id": 10, "name": "未知标签装", "traits": [], "note": "<learningSkill00:7770>"},
+        }
+        res = SCAN.scan_class_c({"tiers": {"不开放": [99]}, "skills": {}, "gear": {}, "states": {}}, {}, {}, {}, skills, {}, weapons, armors)
+        channels = {(m["gear"], m["channel"]) for m in res["manual"]}
+        self.assertEqual(
+            channels,
+            {
+                ("weapon:1", "share_learn"),
+                ("weapon:1", "replace_attack"),
+                ("weapon:1", "weapon_unleash"),
+                ("weapon:1", "magic_weapon_learn"),
+                ("weapon:2", "req_actors"),
+                ("armor:10", "unknown_learn_tag"),
+            },
+        )
+        # req_actors 解析不了的武器不能静默判 dropped，招式 401 必须保留在 items
+        self.assertEqual({it["id"] for it in res["items"]}, {401})
+        self.assertEqual(res["dropped"], [])
+
     def test_real_repo_ce1445_honghuang_listed(self) -> None:
         import contextlib
         import io
@@ -315,6 +422,13 @@ class TestLeakScanner(unittest.TestCase):
         res = json.loads(buf.getvalue())
         ids = {t["id"] for m in res["class_b"]["manual"] if m["ce_id"] == 1445 for t in m["taught"]}
         self.assertIn(10300, ids)  # learnSkill(hh.id)＝洪荒压制，不能漏
+        # T541 C 类：3624/1968/3549/995 补改写后不再出现在未改写装备招清单；未知标签 armor:5180 进 manual
+        c_ids = {it["id"] for it in res["class_c"]["items"]}
+        for fixed_id in (3624, 1968, 3549, 995):
+            self.assertNotIn(fixed_id, c_ids)
+        self.assertIn(3650, c_ids)  # weapon:1613 徘徊 → 3650 雷行（仍未改写的高危装备招，验证真库可扫出）
+        c_manual = {(m["gear"], m["channel"]) for m in res["class_c"]["manual"]}
+        self.assertIn(("armor:5180", "unknown_learn_tag"), c_manual)
 
     def test_real_repo_strict_passes(self) -> None:
         rc = SCAN.main(["--strict", "--json"])
