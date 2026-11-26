@@ -3,6 +3,6 @@
  "_note": "T505 返修 P2-2：按实战外观键的单独锚点覆盖（XRiftAlienParts.OVERRIDES）。root_uv 换根点（身体可见范围归一坐标），k_mul 整体倍数，k_max 倍数上限，back_mul 后件再乘，back_flip 后件绕根点左右翻，hide 不挂的件。",
  "by_key": {
   "sv_enemies/OT02_02_Treant_b-export": {"_who": "癫舞狂信者（118）", "root_uv": [0.5, 0.5], "k_mul": 0.6, "back_mul": 0.7, "back_flip": true},
-  "sv_enemies/OT_10_Behemoth_a": {"_who": "撼地神牛之影（152）、撼地神牛（156）", "root_uv": [0.35, 0.35], "back_mul": 0.5, "back_flip": true}
+  "sv_enemies/OT_10_Behemoth_a": {"_who": "撼地神牛之影（152）、撼地神牛（156）", "root_uv": [0.35, 0.35], "back_mul": 0.38, "back_flip": true}
  }
 }
