@@ -82,7 +82,7 @@
 - 战斗日志摘要：开关两态在 20／120／400 三档逐字相同（上表）；另在 20、120 两档连跑 5 次（关 2 次、开 3 次）摘要全部相同。
 - `语法检查.py` 1244 个脚本 0 问题；`工具回归.py` 全部通过；`发行空壳.py check` 退出 0。
 - 云端选测第一轮（f8bdf569b）：469 个场景失败 1 个，`xiyou_battle_speed` 的 `window_stores`。原因是这条断言查的是实现细节：读能力值时窗口里要记下 `sk0`，现在 `passive_values` 直接用跨调用缓存，窗口里就不再另记 `sk0`，读到的值不变。已把断言改成认两种存法，本机过了。https://github.com/luiluu/PlayAgain-xiyou-godot/actions/runs/45849769952
-- 云端选测第二轮：待写
+- 云端选测第二轮（746ad29e6，含上面改好的断言）：469 个场景、16 片全部通过：https://github.com/luiluu/PlayAgain-xiyou-godot/actions/runs/45854321950
 
 ## 能否进西游修复补丁（patch/v0.04）
 
