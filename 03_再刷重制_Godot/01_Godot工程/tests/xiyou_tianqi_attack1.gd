@@ -53,6 +53,8 @@ func _run() -> void:
 	# 一：我方
 	a.change_level(99)
 	_check("actor_lv99_x1", is_equal_approx(_val(atk1, a, b), a.atk * 1.0), [_val(atk1, a, b), a.atk])
+	var pv := XDamage.eval_formula(atk1, a, b, [])  # AI 估伤／预估快路径（pure 程序）同正式结算
+	_check("actor_preview_x1", is_equal_approx(pv, a.atk * 1.0), [pv, a.atk])
 	a.change_level(1)
 	_check("actor_lv1_half", is_equal_approx(_val(atk1, a, b), a.atk * 0.5), [_val(atk1, a, b), a.atk])
 	a.change_level(50)
@@ -65,6 +67,7 @@ func _run() -> void:
 	# 三：回退
 	_check("rollback_actor_x4", is_equal_approx(_val(atk1, a, b), a.atk * 4.0), [_val(atk1, a, b), a.atk])
 	XTianqiSkills.ATTACK1 = true
+	_check("enemy_preview_x4", is_equal_approx(XDamage.eval_formula(atk1, b, a, []), b.atk * 4.0))
 	_check("enemy_unchanged", is_equal_approx(e_on, e_off) and is_equal_approx(e_on, b.atk * 4.0), [e_on, e_off, b.atk])
 	# 五：普攻变 X 不倒挂
 	var base := _val(atk1, a, b)
