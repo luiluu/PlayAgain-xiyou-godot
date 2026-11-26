@@ -65,6 +65,7 @@ static func data() -> Dictionary:
 
 
 static func reload_table() -> void:
+	XActor.skills_touch()  # T546 R1 P3-1：技能记录读这张表，重载后角色技能表缓存作废
 	_data = {}
 	_load_failed = false
 	_index_ready = false
@@ -517,6 +518,14 @@ static func sealed_ids(a, s: XState = null) -> Array[int]:
 				out.append(id)
 	out.sort()
 	return out
+
+
+## 技能表跨调用缓存（XActor.SKILLS_XCALL，T546）的键：is_sealed 读的那份原始封印表（没开＝[]）。is_sealed 改读别的东西时这里一起改
+static func sealed_raw(a, s: XState = null) -> Array:
+	if not on(s) or not (a is XActor):
+		return []
+	var raw = _peek_actor(s if s != null else XState.current, a.actor_id).get("sealed", [])
+	return (raw as Array).duplicate() if raw is Array else []
 
 
 static func is_sealed(a, skill_id: int, s: XState = null) -> bool:

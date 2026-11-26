@@ -203,7 +203,8 @@ func _window_rules() -> void:
 	XActor.read_begin()
 	var in_window := a.mhp
 	check("window_same_value", in_window == before)
-	check("window_stores", XActor._memo_store.has(a) and XActor._memo_store[a].has("pa0:0") and XActor._memo_store[a].has("sk0"))
+	# 技能表：T546 起读能力值时 passive_values 直接用跨调用缓存（XActor.SKILLS_XCALL），窗口里不再另记 sk0；关掉它时照旧记 sk0
+	check("window_stores", XActor._memo_store.has(a) and XActor._memo_store[a].has("pa0:0") and (XActor._memo_store[a].has("sk0") or (XActor.SKILLS_XCALL and XActor._skc_store.has(a.get_instance_id()))))
 	# 学技能：缓存当场作废，技能表跟上
 	var count := a.skills().size()
 	var extra := 0
