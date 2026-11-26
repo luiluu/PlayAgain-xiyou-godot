@@ -426,9 +426,48 @@ class TestLeakScanner(unittest.TestCase):
         c_ids = {it["id"] for it in res["class_c"]["items"]}
         for fixed_id in (3624, 1968, 3549, 995):
             self.assertNotIn(fixed_id, c_ids)
-        self.assertIn(3650, c_ids)  # weapon:1613 徘徊 → 3650 雷行（仍未改写的高危装备招，验证真库可扫出）
+        # T549 批 1／批 2：3650 雷行（weapon:1613 徘徊）、替换普攻 12、武器触发 127、套装伤害主动 485 都已改写，不再出现
+        for fixed_id in (3650, 12, 127, 485, 3647, 6243):
+            self.assertNotIn(fixed_id, c_ids)
         c_manual = {(m["gear"], m["channel"]) for m in res["class_c"]["manual"]}
         self.assertIn(("armor:5180", "unknown_learn_tag"), c_manual)
+        # T549：第 6 通道（套装给技能）真库扫得到；剩下的条目逐条都有登记理由、没有未登记的
+        chans = {ch for it in res["class_c"]["items"] for ch in it["channels"]}
+        self.assertIn("suit_skill", chans)
+        self.assertEqual(res["class_c"]["unexempted_count"], 0)
+        self.assertTrue(all(it["exempt"] for it in res["class_c"]["items"]))
+        # 天启篇有原版模板的套装（勇士 9 等）多件档 skills 记 dropped，不算漏项
+        self.assertTrue(any(d["reason"] == "suit_template_replaced" for d in res["class_c"]["dropped"]))
+
+    def test_class_c_suit_channel_and_registry(self) -> None:
+        skills = {
+            501: {"id": 501, "name": "套装招", "stypeId": 1, "damage": {"type": 1, "formula": "a.atk * 20"}, "effects": [], "note": ""},
+            502: {"id": 502, "name": "模板套多件档招", "stypeId": 1, "damage": {"type": 1, "formula": "a.atk * 20"}, "effects": [], "note": ""},
+            503: {"id": 503, "name": "模板套一件档招", "stypeId": 1, "damage": {"type": 1, "formula": "a.atk * 20"}, "effects": [], "note": ""},
+        }
+        suits = {
+            7: {"id": 7, "name": "无模板套", "bonuses": [{"requirePieces": 3, "skills": [501]}]},
+            8: {"id": 8, "name": "有模板套", "bonuses": [{"requirePieces": 1, "skills": [503]}, {"requirePieces": 2, "skills": [502]}]},
+            9: {"id": 9, "name": "坏数据套", "bonuses": [{"requirePieces": 2, "skills": ["x"]}]},
+        }
+        eff_sr = {"tiers": {"不开放": []}, "skills": {}, "gear": {}, "states": {}}
+        res = SCAN.scan_class_c(eff_sr, {}, {}, {}, skills, {}, {}, {}, suits, {"suits": {"8": {"kind": "atk_final"}}})
+        by_id = {it["id"]: it for it in res["items"]}
+        self.assertEqual(set(by_id), {501, 503})
+        self.assertEqual(by_id[501]["channels"], ["suit_skill"])
+        self.assertEqual([d["skill"]["id"] for d in res["dropped"]], [502])
+        self.assertEqual(res["dropped"][0]["reason"], "suit_template_replaced")
+        self.assertEqual([m["channel"] for m in res["manual"]], ["suit_skill"])
+        # 501／503 不在登记表里 → 未登记 2 招＋坏数据 1 条
+        self.assertEqual(res["unexempted_count"], 3)
+        old = dict(SCAN.CLASS_C_EXEMPT)
+        try:
+            SCAN.CLASS_C_EXEMPT.update({501: "夹具", 503: "夹具"})
+            res2 = SCAN.scan_class_c(eff_sr, {}, {}, {}, skills, {}, {}, {}, suits, {"suits": {"8": {}}})
+            self.assertEqual(res2["unexempted_count"], 1)
+        finally:
+            SCAN.CLASS_C_EXEMPT.clear()
+            SCAN.CLASS_C_EXEMPT.update(old)
 
     def test_real_repo_strict_passes(self) -> None:
         rc = SCAN.main(["--strict", "--json"])

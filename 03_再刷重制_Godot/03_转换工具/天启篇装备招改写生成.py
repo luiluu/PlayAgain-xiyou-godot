@@ -378,12 +378,22 @@ def _skill_pass(gear_name, sid, old, new, card_re, card_to):
             '_note': f'{TAG}：本装备给的技能已按爆发档重标，专属技能增伤 +{old}% 压到 +{new}%（同 weapon:1687 绝世好剑先例），卡面同步'}
 
 
+def _mo_rui(gear_name, yan, tan, new):
+    """墨锐四件：湮灭黑洞（2639，本批改写）＋坍缩黑洞（0939／0971）的专属增伤一起按档压到 5／10／15／20%（避 4），卡面同步"""
+    row = _skill_pass(gear_name, 2639, yan, new, rf'湮灭黑洞伤害\+{yan}%', f'湮灭黑洞伤害+{new}%')
+    row['note_sub'] += [[rf'<SkillPass0939:\s*{tan}%>', f'<SkillPass0939: {new}%>'],
+                        [rf'<SkillPass0971:\s*{tan}%>', f'<SkillPass0971: {new}%>'],
+                        [rf'坍缩黑洞伤害\+{tan}%', f'坍缩黑洞伤害+{new}%']]
+    row['_note'] += '；同件的坍缩黑洞（0939／0971）专属增伤同档一起压'
+    return row
+
+
 # T541 核 P2-2 卡面不说假话＋本批专属技能增伤（SkillPass）封顶
 BATCH1_GEAR = {
-    'armor:3663': _skill_pass('墨锐', 2639, 130, 5, r'湮灭黑洞伤害\+130%', '湮灭黑洞伤害+5%'),
-    'armor:3722': _skill_pass('进化:墨锐', 2639, 260, 10, r'湮灭黑洞伤害\+260%', '湮灭黑洞伤害+10%'),
-    'armor:3741': _skill_pass('超进化:墨锐', 2639, 360, 15, r'湮灭黑洞伤害\+360%', '湮灭黑洞伤害+15%'),
-    'armor:4253': _skill_pass('究极进化:墨锐', 2639, 720, 20, r'湮灭黑洞伤害\+720%', '湮灭黑洞伤害+20%'),
+    'armor:3663': _mo_rui('墨锐', 130, 100, 5),
+    'armor:3722': _mo_rui('进化:墨锐', 260, 200, 10),
+    'armor:3741': _mo_rui('超进化:墨锐', 360, 300, 15),
+    'armor:4253': _mo_rui('究极进化:墨锐', 720, 720, 20),
 }
 # 已在 gear_elem_amp.json（T451）里的装备不能再进 skill_rework.gear（校验：两表不重叠）：在它的 subs 里追加（整条备注逐字替换，
 # 能力值与 SkillPass 由 XTianqiGear.stat_list → elem_amp_view 重读备注生效）

@@ -86,6 +86,14 @@ PENDING_CLASS_A: list[tuple[str, str, str, str]] = [
 ]
 
 
+# C 类豁免登记（T549）：技能号 → 理由。未改写又没登记的，--strict 退出码 1
+# 登记在 天启篇漏项扫描_C类登记.json（skills：技能号→理由；manual：[{gear, raw, reason}]）
+_C_REG = json.loads((HERE / "天启篇漏项扫描_C类登记.json").read_text(encoding="utf-8"))
+CLASS_C_EXEMPT: dict[int, str] = {int(k): str(v) for k, v in _C_REG.get("skills", {}).items()}
+# C 类人工核对条目豁免：(来源, 原文) → 理由
+CLASS_C_MANUAL_EXEMPT: dict[tuple[str, str], str] = {(m["gear"], m["raw"]): m["reason"] for m in _C_REG.get("manual", [])}
+
+
 def classify_class_a_tag(source: str, sec: str, sid: str, tag: str, reworked_states: set[int] | None = None) -> tuple[str, str]:
     if source != "skill_rework":
         return ("unexempted", "")
@@ -970,6 +978,8 @@ def scan_class_c(
     states: dict[int, dict],
     weapons: dict[int, dict],
     armors: dict[int, dict],
+    suits: dict[int, dict] | None = None,
+    suit_templates: dict | None = None,
 ) -> dict:
     """扫描 C 类（T541）：装备（Weapons / Armors）经 5 条通道赋予或触发的未改写技能。
 
@@ -1073,6 +1083,31 @@ def scan_class_c(
                     "high_risk": True,
                 })
 
+    # 第 6 通道（T549，T541 核 P2-3）：套装给技能（actor.gd native_skill_ids → XEquipSuits.ids(self, "skills")）。
+    # 天启篇有原版套装模板（suit_template.json suits）的套装只留 1 件档（XTianqiSuits.bonuses_of），多件档的 skills 记 dropped
+    tpl_ids = {str(k) for k in (suit_templates or {}).get("suits", {})}
+    for suit_id in sorted(suits or {}):
+        srow = (suits or {})[suit_id]
+        if not isinstance(srow, dict):
+            continue
+        sname = str(srow.get("name", ""))
+        for b in srow.get("bonuses", []) or []:
+            n = int(b.get("requirePieces", 0) or 0)
+            for sid in b.get("skills", []) or []:
+                if not isinstance(sid, int) or sid <= 0:
+                    manual.append({"gear": f"suit:{suit_id}", "gear_name": sname, "channel": "suit_skill",
+                                   "raw": repr(sid), "reason": "套装 skills 不是正整数技能号，追不到", "high_risk": True})
+                    continue
+                if sid in reworked_skills:
+                    continue
+                raw = f"套装{suit_id}（{n}件）skills:{sid}"
+                if str(suit_id) in tpl_ids and n > 1:
+                    dropped.append({"gear": f"suit:{suit_id}", "gear_name": sname, "channel": "suit_skill", "raw": raw,
+                                    "reason": "suit_template_replaced",
+                                    "skill": _summarize_skill(sid, skills, states, reworked_states)})
+                    continue
+                by_skill[sid].append({"gear": f"suit:{suit_id}", "gear_name": sname, "channel": "suit_skill", "raw": raw})
+
     items: list[dict] = []
     for sid in sorted(by_skill):
         sk_info = _summarize_skill(sid, skills, states, reworked_states)
@@ -1082,11 +1117,15 @@ def scan_class_c(
             "sources": sources,
             "source_count": len(sources),
             "channels": sorted({s["channel"] for s in sources}),
+            "exempt": CLASS_C_EXEMPT.get(sid, ""),
         })
+    for m in manual:
+        m["exempt"] = CLASS_C_MANUAL_EXEMPT.get((m["gear"], m["raw"]), "")
 
     return {
         "skill_count": len(items),
         "high_risk_count": sum(1 for it in items if it["high_risk"]),
+        "unexempted_count": sum(1 for it in items if not it["exempt"]) + sum(1 for m in manual if not m["exempt"]),
         "items": items,
         "manual_count": len(manual),
         "manual": manual,
@@ -1160,7 +1199,7 @@ def print_text_report(res_a: dict, res_b: dict, res_c: dict | None = None) -> No
         print(f"  - 角色 {g['actor_id']}({g['actor_name']}) CE {g['ce_id']}({g['ce_name']}) 删掉的调用={g['removed_callers']} 公共事件调用={g['ce_callers']} -> {g['taught_count']} 招")
 
     if res_c is not None:
-        print(f"\n=== C 类扫描：装备赋予／触发的未改写技能（共 {res_c['skill_count']} 招，其中高危 {res_c['high_risk_count']} 招）===")
+        print(f"\n=== C 类扫描：装备赋予／触发的未改写技能（共 {res_c['skill_count']} 招，其中高危 {res_c['high_risk_count']} 招；未登记豁免 {res_c.get('unexempted_count', 0)} 条）===")
         for it in res_c["items"]:
             flag = "高危" if it["high_risk"] else "低危"
             srcs = "、".join(f"{s['gear']}({s['gear_name']}|{s['channel']})" for s in it["sources"][:4])
@@ -1175,11 +1214,13 @@ def print_text_report(res_a: dict, res_b: dict, res_c: dict | None = None) -> No
                 parts.append("标签=" + ",".join(it["combat_tags"][:4]))
             if it["states"]:
                 parts.append("状态=" + ",".join(f"{s['id']}({s['name']},sr={s['reworked']})" for s in it["states"][:3]))
+            if it.get("exempt"):
+                parts.append("豁免=" + it["exempt"])
             print(f"  [{flag}] {it['id']} {it['name']} 来源={srcs}" + (f" | {'; '.join(parts)}" if parts else ""))
         print(f"\n=== C 类人工核对：装备技能标签追不到 {res_c['manual_count']} 条 ===")
         for m in res_c["manual"]:
-            print(f"  - {m['gear']}({m['gear_name']}) [{m['channel']}] {m['raw']} -> {m['reason']}")
-        print(f"\n=== C 类显式略过（gear 改写已移除或仅不开放角色可用）：{res_c['dropped_count']} 条 ===")
+            print(f"  - {m['gear']}({m['gear_name']}) [{m['channel']}] {m['raw']} -> {m['reason']}" + (f"｜豁免={m['exempt']}" if m.get("exempt") else ""))
+        print(f"\n=== C 类显式略过（gear 改写已移除、仅不开放角色可用或天启篇套装模板替换的多件档）：{res_c['dropped_count']} 条 ===")
         for d in res_c["dropped"]:
             print(f"  - {d['gear']}({d['gear_name']}) [{d['channel']}|{d['reason']}] -> {d['skill']['id']} {d['skill']['name']}")
 
@@ -1188,7 +1229,7 @@ def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(description="天启篇技能改写漏项扫描（T524／T541）")
     ap.add_argument("--min-pct", type=float, default=50.0, help="A 类残留旧标签阈值（默认 50）")
     ap.add_argument("--json", action="store_true", help="输出 JSON")
-    ap.add_argument("--strict", action="store_true", help="存在未豁免 A 类漏项或 note_add 冲突时退出码 1")
+    ap.add_argument("--strict", action="store_true", help="存在未豁免 A 类漏项、note_add 冲突或未登记的 C 类漏项时退出码 1")
     args = ap.parse_args(argv)
 
     skills = load_table("Skills")
@@ -1213,7 +1254,9 @@ def main(argv: list[str] | None = None) -> int:
         eff_sr, gb, sb, trumpet, skills, states, actors, classes, ces, items, troops, maps,
         note_tables={"armor": armors, "weapon": weapons},
     )
-    res_c = scan_class_c(eff_sr, gb, sb, trumpet, skills, states, weapons, armors)
+    suits = load_table("EquipSuits")
+    suit_tpl = json.loads((TQ_DIR / "suit_template.json").read_text(encoding="utf-8"))
+    res_c = scan_class_c(eff_sr, gb, sb, trumpet, skills, states, weapons, armors, suits, suit_tpl)
 
     if args.json:
         print(json.dumps({"class_a": res_a, "class_b": res_b, "class_c": res_c}, ensure_ascii=False, indent=2))
@@ -1223,6 +1266,8 @@ def main(argv: list[str] | None = None) -> int:
     if args.strict:
         unex = [r for r in res_a["residuals"] if r["status"] == "unexempted"]
         if unex or res_a["duplicates"]:
+            return 1
+        if res_c["unexempted_count"]:  # T549：C 类未改写又没登记豁免理由的也拦
             return 1
     return 0
 
