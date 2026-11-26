@@ -235,18 +235,49 @@ func _run() -> void:
 	_check("listed_eight", XTraining.listed().size() == 8 and XTraining.listed()[0].get("tianqi", false))
 	var a: XActor = s.members()[0]
 	var b: XActor = s.members()[1]
+	# T531：确保角色有明显装备／加值白板（加永久物攻 2000，测试完还原），验证修炼乘白板合计每级 1%
+	XParamPlus.add(s, a.actor_id, 2, 2000.0)
+	var wb0 := a.param_whiteboard(2)
 	var atk0 := a.param_base(2)
+	_check("train_wb_includes_plus", wb0 >= a.param_base_direct(2) + 2000.0, [wb0, a.param_base_direct(2), a.param_plus(2)])
 	s.gold = 100000000
 	var g0 := s.gold
 	var msg := XTraining.confirm(s, a.actor_id, 2)
 	_check("train_ok", msg == "强化成功" and M.training_level(s, 2) == 1 and s.gold == g0 - M.training_price(s, 1), [msg, s.gold])
 	_check("train_shared", XTraining.level(s, b.actor_id, 2) == 1)
-	var want_bonus := floorf(a.param_base_direct(2) * 0.01)
-	_check("train_bonus", is_equal_approx(XTraining.param_bonus(a, 2), want_bonus), [XTraining.param_bonus(a, 2), want_bonus, atk0])
+	var want_bonus := floorf(wb0 * 0.01)
+	var old_bonus := floorf(a.param_base_direct(2) * 0.01)
+	_check("train_bonus", is_equal_approx(XTraining.param_bonus(a, 2), want_bonus) and want_bonus > old_bonus, [XTraining.param_bonus(a, 2), want_bonus, old_bonus, atk0])
+	_check("train_base_plus_sum", is_equal_approx(a.param_base(2) + a.param_plus(2), wb0 + want_bonus), [a.param_base(2) + a.param_plus(2), wb0 + want_bonus])
+	# 回退开关 TRAINING_WHITEBOARD = false 时退回只乘本体基础值
+	M.TRAINING_WHITEBOARD = false
+	_check("train_wb_fallback", not M.training_whiteboard_on(s) and is_equal_approx(XTraining.param_bonus(a, 2), old_bonus), [XTraining.param_bonus(a, 2), old_bonus])
+	M.TRAINING_WHITEBOARD = true
 	M.train(s, 2)
 	_check("train_capped_by_floor", M.train(s, 2).begins_with("本层只开放") and M.training_level(s, 2) == 2)
 	_check("train_price_step", M.training_price(s, 2) == M.price(s, 30 * 1.3))
 	_check("train_line", XTraining.lines(s, a.actor_id)[0].contains("下一级费用"), XTraining.lines(s, a.actor_id)[0])
+	# T531 满级（10 级）：白板 +10%，在基准攻防比（def ≈ 0.35×atk，同 v0.16 预算测算）下伤害增益约 +13%
+	var saved_lv := M.training_level(s, 2)
+	M.money(s).training["2"] = M.training_levels()
+	var full_bonus := XTraining.param_bonus(a, 2)
+	var want_full := floorf(wb0 * 0.10)
+	var atk_before := wb0
+	var atk_after := wb0 + full_bonus
+	var def_ref := wb0 * 0.35
+	var dmg_gain := ((atk_after * atk_after / (atk_after + def_ref)) / (atk_before * atk_before / (atk_before + def_ref))) - 1.0
+	_check("train_full_10pct", is_equal_approx(full_bonus, want_full) and dmg_gain >= 0.12 and dmg_gain <= 0.14, [full_bonus, want_full, dmg_gain])
+	# T531 镜流星魂：35 级星魂只翻倍本体 param_base，不把装备白板修炼也翻倍
+	var jl := XActor.new().setup(XYomiJingliu.JINGLIU)
+	jl.change_level(40)
+	jl.learn_skill(10194)
+	XParamPlus.add(s, jl.actor_id, 2, 5000.0)
+	var jl_wb := jl.param_whiteboard(2)
+	var jl_expected := floorf(jl_wb * 0.10)
+	_check("train_jingliu_no_double", XYomiJingliu.soul(jl, 35) and is_equal_approx(XTraining.param_bonus(jl, 2), jl_expected) and is_equal_approx(jl.param_base(2) + jl.param_plus(2), jl_wb + jl_expected), [XYomiJingliu.soul(jl, 35), jl.param_base(2) + jl.param_plus(2), jl_wb + jl_expected])
+	XParamPlus.add(s, jl.actor_id, 2, -5000.0)
+	M.money(s).training["2"] = saved_lv
+	XParamPlus.add(s, a.actor_id, 2, -2000.0)
 	s.set_variable(20, 10)
 	# ---- 天平 ----（大厅买、只在买时那一层的地图里生效）
 	var m10 := _map_of_floor(10)
@@ -332,7 +363,13 @@ func _run() -> void:
 	# ---- 原版档、总开关 ----
 	var plain := XState.new_game(3, 1, [8, 9, 10])
 	XState.current = plain
-	_check("plain_off", not M.on(plain) and M.sell_price(hi, plain) == -1 and M.advance_gold(plain, 0) == -1 and not M.training_on(plain) and not M.intercepts(plain, 4, 43))
+	_check("plain_off", not M.on(plain) and M.sell_price(hi, plain) == -1 and M.advance_gold(plain, 0) == -1 and not M.training_on(plain) and not M.training_whiteboard_on(plain) and not M.intercepts(plain, 4, 43))
+	# 西游档零改动：原版修炼只读 XState.training 固定表项，不受装备／加值白板影响
+	var pa: XActor = plain.members()[0]
+	var p_base0 := pa.param_base(2)
+	XParamPlus.add(plain, pa.actor_id, 2, 3000.0)
+	_check("plain_train_unchanged", is_equal_approx(pa.param_base(2), p_base0), [pa.param_base(2), p_base0])
+	XParamPlus.add(plain, pa.actor_id, 2, -3000.0)
 	_check("plain_reward", is_equal_approx(XTianqiBalance.reward_mult(plain), 1.0))
 	XState.current = s
 	M.ENABLED = false

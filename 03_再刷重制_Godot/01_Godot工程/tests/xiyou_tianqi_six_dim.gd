@@ -58,6 +58,12 @@ func _run() -> void:
 		for d in XTianqiSixDim.DIMS:
 			all_ok = all_ok and XTianqiSixDim.LETTERS.has(rows[k].get(d, ""))
 	_check("all_actors_valid", all_ok, rows.size())
+	# T531：预算带 super 改 24～30、weak 下移 2 分至 11～20（改带子不改人）
+	var bd: Dictionary = XTianqiSixDim.data().get("budgets", {})
+	var band := func(k: String, lo: int, hi: int) -> bool:
+		var a = bd.get(k, [])
+		return a is Array and a.size() == 2 and int(a[0]) == lo and int(a[1]) == hi
+	_check("budgets_t531", band.call("super", 24, 30) and band.call("weak", 11, 20) and band.call("strong", 18, 25) and band.call("minion", 10, 18) and band.call("elite", 18, 25) and band.call("knight", 20, 26), bd)
 	_check("guyu_recorded", XTianqiSixDim.of_actor(175) != XTianqiSixDim.neutral())
 	# T278（Kyo 11-19）：谷雨输出 S、生存至少 S（辅助降档待定，现仍 S）
 	var guyu := XTianqiSixDim.of_actor(175)

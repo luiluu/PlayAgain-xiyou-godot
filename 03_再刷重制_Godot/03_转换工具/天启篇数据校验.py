@@ -2924,7 +2924,8 @@ def check_brand(_args) -> bool:
 SIX_LETTERS = ['E', 'D', 'C', 'B', 'A', 'S', 'SS', 'SSS']
 SIX_DIMS = ['output', 'survive', 'speed', 'wit', 'resolve', 'support']
 SIX_CLASSES = ['minion', 'weak', 'strong', 'super', 'elite', 'knight']
-SIX_BUDGETS = {'minion': (10, 18), 'weak': (13, 22), 'strong': (18, 25), 'super': (20, 26), 'elite': (18, 25), 'knight': (20, 26)}
+# T531（预算稿 v0.16 九.15／D290／D238）：超强者预算带改 24～30，弱者下移 2 分至 11～20（改带子不改人）
+SIX_BUDGETS = {'minion': (10, 18), 'weak': (11, 20), 'strong': (18, 25), 'super': (24, 30), 'elite': (18, 25), 'knight': (20, 26)}
 
 
 def six_dim_row_rules(name: str, row: dict, cls: str) -> list:

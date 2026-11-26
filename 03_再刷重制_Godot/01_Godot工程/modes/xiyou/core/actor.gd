@@ -1222,7 +1222,8 @@ func param_base_direct(i: int) -> float:
 	var params: Array = class_data().params
 	return float(params[i][_lv])
 
-func param_base(i: int) -> float:
+## 不含修炼的基础值（本体＋passivePBST／passivePBSTEX）
+func _param_base_core(i: int) -> float:
 	var base := param_base_direct(i)
 	var v := base
 	for m in passive_values(_tag("passivePBST", i)):
@@ -1231,6 +1232,17 @@ func param_base(i: int) -> float:
 		var parts := str(m).split(",")
 		if parts.size() >= 3 and _condition(parts[1].strip_edges(), float(parts[2])):
 			v += _param_boost(base, parts[0])
+	return v
+
+## 天启篇白板合计（T531，预算稿 v0.16 九.4／D290）：不含修炼的基础值（含 XActorModules.param_base）＋装备／加值白板 param_plus
+func param_whiteboard(i: int) -> float:
+	return XActorModules.param_base(self, i, _param_base_core(i)) + param_plus(i)
+
+func param_base(i: int) -> float:
+	var v := _param_base_core(i)
+	if XTianqiMoney.training_whiteboard_on():
+		# 天启篇白板修炼（T531）：先经 XActorModules.param_base（镜流星魂等）再叠修炼，避免装备白板修炼被翻倍；西游档或回退关时走下方原路径
+		return XActorModules.param_base(self, i, v) + XTraining.param_bonus(self, i)
 	v += XTraining.param_bonus(self, i)
 	return XActorModules.param_base(self, i, v)  # 专属角色模块的 paramBase 包装（镜流星魂）
 
