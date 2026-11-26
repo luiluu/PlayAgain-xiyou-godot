@@ -283,10 +283,14 @@ static func unrace(a, i: int, before: float, after: float) -> float:
 static func floor_ok_facts(f: Dictionary) -> bool:
 	if not ENABLED:
 		return true
+	return _floor_ok_window(f, int(data().get("floor_rule", {}).get("window", 5)))
+
+
+## 同一套口径，窗口由调用方给（三人用 floor_rule.window＝5，魔冠头顶用 floor_rule.crown_window＝3）
+static func _floor_ok_window(f: Dictionary, window: int) -> bool:
 	if bool(f.get("king", false)) or bool(f.get("qiyin", false)) or bool(f.get("finale", false)):
 		return true
 	var r: Dictionary = data().get("floor_rule", {})
-	var window := int(r.get("window", 5))
 	var progress := int(f.get("progress", 0))
 	var mf := int(f.get("map_floor", 0))
 	if bool(f.get("abyss", false)):
@@ -323,3 +327,54 @@ static func floor_ok(s: XState, logic = null) -> bool:
 	if not ENABLED or s == null:
 		return true
 	return floor_ok_facts(facts(s, logic))
+
+
+# ---- 魔冠头顶（T548，Kyo 11-26 事项 79「最高层往下 3 层内。改到启封档」）----
+## 天启篇里头顶（XDemonCrown 7940）胜利成长只算 地图层 ≥ 已通主塔层 − crown_window（默认 3）的战斗；
+## 深渊、王者副本、七印里副本、34～36 终局战的口径与 floor_ok_facts 完全相同，只是窗口换成头顶自己的（不动三人的 5）。
+## 不受 ENABLED（三人无限成长总开关）管，自有回退开关 CROWN_FLOOR（O-待定）：false＝天启篇头顶照旧场场涨（回到 T548 之前）。
+## 西游档（XTianqi.active 为假）、表缺失恒 true。
+static var CROWN_FLOOR := true
+
+
+static func crown_window() -> int:
+	return maxi(0, int(data().get("floor_rule", {}).get("crown_window", 3)))
+
+
+static func crown_floor_ok_facts(f: Dictionary) -> bool:
+	if not CROWN_FLOOR:
+		return true
+	return _floor_ok_window(f, crown_window())
+
+
+static func crown_floor_ok(s: XState, logic = null) -> bool:
+	if not CROWN_FLOOR or s == null or not XTianqi.active(s) or data().is_empty():
+		return true
+	return crown_floor_ok_facts(facts(s, logic))
+
+
+## T548 返修（小A 核查 P1-1）：开战时（XBattleLogic.setup 里各特殊战 setup 之后）取这一场的事实留给结算用。
+## 结算在 endBattle 最外层，那时四骑士／七印里副本已清掉 logic 上的标记，现取会把七印里副本、终局战当成普通低层。
+## 西游档、表缺失返回 null（结算照 crown_floor_ok 恒 true）。
+static func crown_facts(s: XState, logic = null):
+	if s == null or not XTianqi.active(s) or data().is_empty():
+		return null
+	return facts(s, logic)
+
+
+## 结算用：有开战快照按快照判，没有（直接调 begin／finish 的旧单测）退回现取
+static func crown_floor_ok_snap(s: XState, snap, logic = null) -> bool:
+	if not CROWN_FLOOR or s == null or not XTianqi.active(s) or data().is_empty():
+		return true
+	if snap is Dictionary:
+		return crown_floor_ok_facts(snap)
+	return crown_floor_ok_facts(facts(s, logic))
+
+
+## 说明卡提示（玩家可见文字，待小A 审）：天启篇里开关开着时给一句，西游档空串
+static func crown_hint(s: XState = null) -> String:
+	if s == null:
+		s = XState.current
+	if not CROWN_FLOOR or s == null or not XTianqi.active(s) or data().is_empty():
+		return ""
+	return "仅在当前最高层往下%d层内（及高难／终局副本）获胜才会成长" % crown_window()  # 小A 文字审（Neon 11-26）定稿；打头的 ※ 由 XDemonCrown.describe 拼

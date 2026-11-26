@@ -15,8 +15,9 @@
     "max_layer": 200
   },
   "floor_rule": {
-    "_note": "哪些战斗算成长（Q6 乙，稿 v0.2 第 2.1 节）：超出基础段的累加才判。主塔、野外：地图层号 ≥ 已通主塔层 − window；深渊（地图名以 abyss_prefix 开头）：层号 ≥ min(已通主塔层, abyss_cap) − window，层号 0 的深渊不算；王者难度副本（副本档位 king_tier）、七印里副本、34～36 层终局战一律算。",
+    "_note": "哪些战斗算成长（Q6 乙，稿 v0.2 第 2.1 节）：超出基础段的累加才判。主塔、野外：地图层号 ≥ 已通主塔层 − window；深渊（地图名以 abyss_prefix 开头）：层号 ≥ min(已通主塔层, abyss_cap) − window，层号 0 的深渊不算；王者难度副本（副本档位 king_tier）、七印里副本、34～36 层终局战一律算。crown_window：魔冠头顶（7940）胜利成长用的窗口（T548，Kyo 11-26「最高层往下3层内」），其余口径与上面相同、不进基础段判断（头顶没有基础段，每场都判）。",
     "window": 5,
+    "crown_window": 3,
     "abyss_cap": 29,
     "abyss_prefix": "深渊",
     "king_tier": 4

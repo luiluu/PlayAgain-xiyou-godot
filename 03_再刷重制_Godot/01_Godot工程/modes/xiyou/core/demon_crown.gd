@@ -10,6 +10,8 @@ extends RefCounted
 ## - 实例：名字、底名、说明、图标 290000、品质 12（备注里有 14／15 取大的）、成长行「成长：八项全属性＋N%」、八项 code21 特性 ×(1＋b/100)；
 ##   账本不可用时特性 1，提示一次（原版 fail）。
 ## - 胜利：开战时穿着、活着、在出战里，结束时仍活着、仍在出战、穿的还是这件、中途没换过装备的，b ＋ (1 − b/1000)；失败／逃跑不涨。
+##   T548（Kyo 11-26 事项 79）：天启篇里只有 当前地图层 ≥ 已通主塔层 − 3 的战斗胜利才涨（XTianqiGrowth.crown_floor_ok，口径同三人的
+##   floor_ok_facts、窗口单独配 floor_rule.crown_window）；层数不够时这一场照常结算（settled、掉落照旧），只是不涨、不减。西游档不判。
 ## - 死亡（addNewState 死亡）：战斗中按「角色:第几次:uid」、战斗外按世界序号各记一次，b 减半。
 ## - 掉落：Map162、敌群 539～542、不朽的未知战斗（XYunshangOrders.immortal_clear），开战掷一次，胜利且 <3% 发一件，提示「获得了"头顶"！」。
 ## - 得到数据库那件 7940（事件、商店）改由账本发；带 uid 的被直接失去（卖出、存仓库、分解）记 removed。按底子扣（事件）不记，原版独立物品留在
@@ -35,6 +37,7 @@ const NAME := "\"头顶\""
 const DESCRIPTION := "神武\n欲加冕成王，必承其重"
 const STORAGE_TEXT := "\"头顶\"成长记录暂不可用，请恢复对应成长记录后重开游戏"
 const DROP_TEXT := "获得了\"头顶\"！"
+const HINT_MARK := "※"  # T548 天启篇提示行的打头字（describe 重写说明时按它去掉旧行）
 
 ## O-458：账本压缩（Kyo 2026-11-14，存档与缓存清理 ②）：原版每场战斗在账本里留一行明细、永不删，开战、结算各整份重写一次，
 ## 长期穿着头顶挂机的档账本只增不减（每场约 157 字节）、每场两次整份读写。true（默认）：
@@ -175,6 +178,10 @@ static func describe(item: Dictionary) -> void:
 		traits.append({"code": 21, "dataId": n, "value": 1.0 if storage_error != "" else rate, "_codexCrown": true})
 	item.traits = traits
 	note = RegEx.create_from_string("<pos=APs text=成长[：:]八项全属性[^>]*>\\s*").sub(note, "", true)
+	note = RegEx.create_from_string("<pos=APs text=%s[^>]*>\\s*" % HINT_MARK).sub(note, "", true)
+	var hint := XTianqiGrowth.crown_hint()  # T548：天启篇提示低层不涨（西游档空串，说明照旧）。同位置后插的在前，提示行写在成长行之前＝显示在它下面
+	if hint != "":
+		note += "\n<pos=APs text=%s%s size=18 color=rgba(200,200,200,1) line=false align=0>" % [HINT_MARK, hint]
 	item.note = note + "\n<pos=APs text=成长：八项全属性＋%s%%%s size=18 color=rgba(255,255,255,1) line=false align=0>\n" % [display(XTianqiGear.crown_bonus(bonus(item))), XTianqiGear.cap_note("crown_bonus_pct", bonus(item))]
 
 
@@ -429,7 +436,7 @@ static func lost(s: XState, item: Dictionary) -> bool:
 			p.items[uid].removed = true))
 
 ## startBattle 包装（原 startBattle 之前）：收编、记穿着的人；掉落战斗或有人穿着才建这一场的账（roll 只在新建且是掉落战斗时调）
-static func begin(s: XState, troop: int, roll: Callable) -> void:
+static func begin(s: XState, troop: int, roll: Callable, logic = null) -> void:
 	_for(s)
 	battle = null
 	if storage_error != "" or s == null:
@@ -463,7 +470,7 @@ static func begin(s: XState, troop: int, roll: Callable) -> void:
 		var list := []
 		for x in wears:
 			list.append({"actor": x.actor, "uid": x.uid, "valid": (r.get("wears", []) as Array).any(func(y): return int(y.actor) == x.actor and str(y.uid) == x.uid)})
-		battle = {"key": key, "ordinal": ordinal, "wears": list, "serial": {}, "same": int(r.get("map", -1)) == s.map_id and int(r.get("troop", -1)) == troop, "finished": false, "row": pending}
+		battle = {"key": key, "ordinal": ordinal, "wears": list, "serial": {}, "same": int(r.get("map", -1)) == s.map_id and int(r.get("troop", -1)) == troop, "finished": false, "row": pending, "floor": XTianqiGrowth.crown_facts(s, logic) if logic != null else null}  # T548 返修 P1-1：开战取层数事实（结算时四骑士／七印标记已清）
 		return true)
 
 static func _drop_battle(s: XState, troop: int) -> bool:
@@ -486,13 +493,14 @@ static func finish(s: XState, result: int) -> void:
 			var winners := (b.wears as Array).filter(func(x):
 				var a: XActor = s.actors.get(int(x.actor))
 				return bool(x.valid) and a != null and a.is_alive() and members.has(a) and str(gear(a).get(UID, "")) == str(x.uid))
+			var grow := result == 0 and XTianqiGrowth.crown_floor_ok_snap(s, b.get("floor"), XRaceBattle.active_logic())  # T548：天启篇低层不涨（西游档恒 true）；按开战快照判
 			var ok := transaction(s, func(n):
 				var r: Dictionary = _materialize(n, b)
 				r.settled = true
 				r.result = result
 				if result != 0 or not bool(b.same):
 					return
-				for x in winners:
+				for x in (winners if grow else []):
 					var g = n.items.get(str(x.uid))
 					if g != null and not bool(g.get("removed", false)):
 						g.bonus = next(float(g.bonus))
