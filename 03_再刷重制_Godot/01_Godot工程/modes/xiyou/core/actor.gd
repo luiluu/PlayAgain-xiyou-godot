@@ -637,6 +637,12 @@ func skills() -> Array:
 	return _skills_now()
 
 func _skills_now() -> Array:
+	if not SKILLS_XCALL:
+		return _skill_records(_skill_ids_now())
+	return (_skills_entry().recs as Array).duplicate()
+
+## 技能表的 id 部分（各 skills 包装都在这里）：跨调用缓存也每次现算，读别的角色、背包、战斗中与否、异化记录的都在这一段，所以这些变了不用挂作废
+func _skill_ids_now() -> Array[int]:
 	var ids: Array[int] = native_skill_ids()
 	ids.assign(XHeartsteel.skill_ids(self, ids))  # 心钢 skills 包装（第 15 个，在云裳、异化之内）：穿着时换成对应的巨人吞噬
 	XYunshang.skill_ids(self, ids)  # 云裳 skills 包装（在异化之内）：天衣给的赠行／收存余光
@@ -649,7 +655,65 @@ func _skills_now() -> Array:
 		ids.append(XAlienBattle.devour_id())
 	if ids.has(AFFIX_ABSORB_SKILL) and not has_absorb_weapon():
 		ids.erase(AFFIX_ABSORB_SKILL)  # installBalanceShopV041Runtime skills 包装：背包和全体角色身上都没有本人开放专武时不列
-	return _skill_records(ids)
+	return ids
+
+
+# ---- 技能表跨调用缓存（T546，接 O-348 只读窗口）----
+## 一张技能表＝id 表（各 skills 包装，便宜：400 个被动约 0.8 ms）＋逐条建记录（XDB.rec、真气／天启篇装备／弱者词条三层视图，
+## 贵：400 个被动约 7 ms）。读一次能力值要建两三遍（param_base 的 passive_values 两次……），只读窗口外每次都从头建。
+## 这里按角色记住上一次建好的记录：id 表每次现算、跟上次逐项相同，且「记录这一步的全部输入」(_skills_key) 也相同，就直接用上次的。
+## 记录这一步的输入（逐个对过 XDB.rec 的各层改写和三层视图，T546 交付单有清单）：
+##   当前存档（对象）、天启篇档（rules）、_cat_bare、真气道法缩放（XZhenqi.daofa_scale）、
+##   弱者词条投影规格（XTianqiWeakAffix.view_sig）、各层改写的回退开关（_skills_switches）；其余只跟载入的数据表走——这些靠 _skills_epoch：
+##   read_touch／state_touch／passive_touch／read_reset／batch_begin（已有的全部写入点）和 skills_touch()（测试切开关、重载数据后调）都换代。
+## 按标签取的被动值跟着同一份记录记住。
+## 返回的是浅复制（记录对象本来就是共享的，同原来每次现算拿到的是同一批对象）。
+## 回退：SKILLS_XCALL = false（每次现算，同原来）。XIYOU_READ_VERIFY=1：每次命中都现算比对，不一样当场崩。
+static var SKILLS_XCALL := true
+static var _skills_epoch := 0
+## 角色实例号 → 缓存项（不挂在角色身上：公式预览的影子克隆照抄全部字段，见 _memo_store）
+static var _skc_store := {}
+static var skills_xcall_hits := 0
+static var skills_xcall_builds := 0
+
+## 测试切了影响技能记录的回退开关、重载了数据表之后调：所有角色的技能表缓存作废
+static func skills_touch() -> void:
+	_skills_epoch += 1
+
+func _skills_key() -> Array:
+	var cur := XState.current
+	return [_skills_epoch, cur.get_instance_id() if cur != null else 0, XTianqi.active(cur), _cat_bare,
+		XZhenqi.daofa_scale(self), XTianqiWeakAffix.view_sig(self), _skills_switches()]
+
+## XDB.rec 技能各层改写、三层视图用到的回退开关（切了自动作废，测试切开关不用记得调 skills_touch）。
+## 新加一层改写／视图带了新开关的，加进这里
+static func _skills_switches() -> int:
+	var bits := 0
+	for v in [XTianqi.RELEASE_OPEN, XTianqiSkills.ENABLED, XTianqiSkills.CARDS, XTianqiBase.PHASE4, XTianqiBase.REALM_OFF,
+			XTianqiSect.YI, XTianqiTrumpet.ENABLED, XGuardianRework.GROWTH_NERF, XXufeng.REWORK,
+			XXiyouNerf.ENABLED, XTianqiElements.ENABLED, XTianqiElements.SKILL_SHIFTS,
+			XFestRoad.ENABLED, XFest.ENABLED, XTianqiGear.ENABLED, XTianqiWeakAffix.ENABLED]:
+		bits = bits * 2 + (1 if v else 0)
+	return bits
+
+func _skills_entry() -> Dictionary:
+	var ids := _skill_ids_now()
+	var key := _skills_key()
+	var me := get_instance_id()
+	var c = _skc_store.get(me)
+	if c != null and c.ids == ids and c.key == key:
+		skills_xcall_hits += 1
+		if READ_VERIFY:
+			_read_verify("skills_xcall", c.recs, _skill_records(ids))
+		return c
+	var epoch := _skills_epoch
+	c = {"ids": ids, "key": key, "recs": _skill_records(ids), "pv": {}}
+	skills_xcall_builds += 1
+	if epoch == _skills_epoch:  # 建的过程里换了代就不留
+		if _skc_store.size() >= 64:
+			_skc_store = {}  # 旧存档、影子克隆留下的项：攒多了整表丢
+		_skc_store[me] = c
+	return c
 
 func _skill_records(ids: Array[int]) -> Array:
 	var out := []
@@ -744,12 +808,14 @@ static func read_reset() -> void:
 		_read_depth = 0
 	_read_gen += 1
 	_write_gen += 1
+	_skills_epoch += 1
 	batch_reset()
 
 ## 已知的写入：作废所有角色的窗口缓存
 static func read_touch() -> void:
 	_read_gen += 1
 	_write_gen += 1
+	_skills_epoch += 1
 
 
 # ---- 整批加减状态（O-398，进出战斗卡顿 C 车道）----
@@ -772,6 +838,7 @@ static var _passive_owed: Array = []
 static var carry_hits := 0
 
 static func batch_begin() -> void:
+	_skills_epoch += 1
 	if _batch_depth == 0:
 		_write_gen += 1
 	_batch_depth += 1
@@ -797,6 +864,7 @@ static func batch_reset() -> void:
 
 ## 加减状态：批里不是 STATE_HARD 的只换代（只读窗口作废；跨步保留的表下次取用时按指纹的出入丢该丢的）；其余同 read_touch
 static func state_touch(id: int) -> void:
+	_skills_epoch += 1  # 技能表跨调用缓存（T546）：加减状态一律换代（不分类别，宁可多建）
 	if STATE_BATCH and _batch_depth > 0 and XBattler.state_class(id) != XBattler.STATE_HARD:
 		_read_gen += 1
 	else:
@@ -804,6 +872,7 @@ static func state_touch(id: int) -> void:
 
 ## 被动缓存换新：它不是技能表、特性表的输入，批里只作废只读窗口
 static func passive_touch() -> void:
+	_skills_epoch += 1
 	if STATE_BATCH and _batch_depth > 0:
 		_read_gen += 1
 	else:
@@ -1053,10 +1122,22 @@ func passive_values(tag: String) -> Array:
 
 func _passive_values_now(tag: String) -> Array:
 	var out := []
-	for s in skills():
-		var m: Dictionary = s.get("meta", {})
-		if m.has(tag):
-			out.append(m[tag])
+	if SKILLS_XCALL and get_script() == XActor:  # 测试里改写了 skills() 的子类照旧走 skills()
+		var e := _skills_entry()
+		var pv: Dictionary = e.pv
+		if not pv.has(tag):
+			var vals := []
+			for s in e.recs:
+				var m: Dictionary = s.get("meta", {})
+				if m.has(tag):
+					vals.append(m[tag])
+			pv[tag] = vals
+		out = (pv[tag] as Array).duplicate()
+	else:
+		for s in skills():
+			var m: Dictionary = s.get("meta", {})
+			if m.has(tag):
+				out.append(m[tag])
 	return out
 
 ## Game_Actor.replaceAttackSkillId：状态 → 装备（按槽序）→ 技能 → 职业 → 角色
