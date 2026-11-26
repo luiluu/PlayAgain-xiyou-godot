@@ -1141,6 +1141,16 @@ class SixDim(unittest.TestCase):
         self.assertTrue(any('不在 base_line.json' in x for x in b))
         self.assertTrue(any('同 horsemen.json' in x for x in b))
 
+    def test_budgets_t531(self):
+        # T531（预算稿 v0.16 九.15／D290／D238）：超强者 24～30、弱者 11～20（下移 2 分）
+        self.assertEqual(self.t['budgets']['super'], [24, 30])
+        self.assertEqual(self.t['budgets']['weak'], [11, 20])
+        self.t['budgets']['super'] = [20, 26]
+        self.assertTrue(any('budgets' in x for x in self.bad()))
+        self.t['budgets']['super'] = [24, 30]
+        self.t['budgets']['weak'] = [13, 22]
+        self.assertTrue(any('budgets' in x for x in self.bad()))
+
 
 class K5SixTables(unittest.TestCase):
     """T391（K5）：drop_table／gojo_trials／money_table／ring_styles／trumpet／weak_affix_table 六份表的规则；每份先正例再多条反例（形状、范围、引用）。"""
@@ -1403,6 +1413,42 @@ class ElementEffectsRules(unittest.TestCase):
             mut(t)
             bad = chk.element_effects_rules(t)
             self.assertTrue(any(word in b for b in bad), (word, bad))
+
+
+class SuitTemplateT515(unittest.TestCase):
+    """原版套装模板表（2B）：现表通过；改坏几处要报。"""
+    def setUp(self):
+        self.t = json.loads((chk.DATA_DIR / 'suit_template.json').read_text(encoding='utf-8'))
+        self.affix = json.loads((chk.DATA_DIR / 'affix_table.json').read_text(encoding='utf-8'))
+        self.db = json.loads(chk.EQUIP_SUITS_DB.read_text(encoding='utf-8')) if chk.EQUIP_SUITS_DB.is_file() else None
+
+    def test_current_passes(self):
+        self.assertEqual(chk.suit_template_rules(self.t, self.affix, self.db), [])
+
+    def test_broken(self):
+        cases = [
+            (lambda t: t['values']['3'].__setitem__(3, 14), '不出 4'),
+            (lambda t: t['values'].__setitem__('5', [8, 10, 12, 12]), '往前每阶挪一格'),
+            (lambda t: t['values'].__setitem__('3', [1, 2, 2, 3]), '不小于上一档'),
+            (lambda t: t['kinds']['drop'].__setitem__('cap', 15), '掉率单件封顶'),
+            (lambda t: t['kinds']['atk_final'].__setitem__('affix', 'no_such'), 'affix 在 affix_table'),
+            (lambda t: t['suits']['14'].pop('element'), '带元素'),
+            (lambda t: t['suits'].__setitem__('9', {'kind': 'nope'}), 'kind 认识'),
+            (lambda t: t.__setitem__('steps', [1, 3]), 'steps'),
+        ]
+        for mut, word in cases:
+            t = copy.deepcopy(self.t)
+            mut(t)
+            bad = chk.suit_template_rules(t, self.affix, self.db)
+            self.assertTrue(any(word in b for b in bad), (word, bad))
+
+    def test_single_piece_suit_rejected(self):
+        if self.db is None:
+            self.skipTest('没有转换产物 EquipSuits.json')
+        single = next(i for i, r in enumerate(self.db) if r and r.get('bonuses') and all(b['requirePieces'] <= 1 for b in r['bonuses']))
+        t = copy.deepcopy(self.t)
+        t['suits'][str(single)] = {'kind': 'atk_final'}
+        self.assertTrue(any('多件档' in b for b in chk.suit_template_rules(t, self.affix, self.db)))
 
 
 if __name__ == '__main__':

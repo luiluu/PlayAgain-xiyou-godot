@@ -14,12 +14,13 @@
 - summit.json（31～36 层重做）：只有 B 组，34～36 层齐全、台词齐全。
 - seg_alien.json（按段异化，四线共用）：只有 B 组，1～36 层段表连续不重叠、级名和难度键齐全、几率在 0～100。
 - qiyin_gear.json、qiyin_drop.json、qiyin_dragon.json、qiyin_altar.json（七印祭坛）：只有 B 组，印键只有七个、部位键只有六个、几率在 0～1、权重非负且不全为 0；qiyin_gear 另查类型号在 core/tianqi_gear.gd 的 ORDER 里、七套各 6 件、毕业武器 13 把、神器 5 件；跨表查另三张引用的套装、武器、神器、印、部位都在 qiyin_gear 里。只查表里现有的字段，不认识的键不报错。
-- skill_rework.json（全角色技能重构）：forced_copy_pending（T255 登记：技能号→原因）、forced_copy_unreachable（T261：副本分支天启篇走不到，技能号→原因）；卡里技能的效果 44 调公共事件强制放副本、副本没进卡的，要 effects_remove 或副本进卡或登记；只有 B 组，超强者 17（含五条悟）／强者 54 不重叠、技能行系数大于 0、覆盖层全开后系数和属性权重不得有小数（整数或整数百分比，T191）、治疗比例与追加几率在 0～1；状态行 battle_end 是布尔（T263）；技能行 self_states_on_hit 只能是 true 且要带 self_states（T264）；技能行 cast_pick、seg_elements_of、伤害条件 stat_floor 的格式（T268）。
+- skill_rework.json（全角色技能重构）：forced_copy_pending（T255 登记：技能号→原因）、forced_copy_unreachable（T261：副本分支天启篇走不到，技能号→原因）；卡里技能的效果 44 调公共事件强制放副本、副本没进卡的，要 effects_remove 或副本进卡或登记；只有 B 组，超强者 17（含五条悟）／强者 54 不重叠、技能行系数大于 0、覆盖层全开后系数和属性权重不得有小数（整数或整数百分比，T191）、治疗比例与追加几率在 0～1；技能行 tags（T519）只能填持续伤害／减益、不重复、只给主动招打；状态行 battle_end 是布尔（T263）；技能行 self_states_on_hit 只能是 true 且要带 self_states（T264）；技能行 cast_pick、seg_elements_of、伤害条件 stat_floor 的格式（T268）。
 - reforge.json、alien_gear.json、abyss_shelves.json、qiyin_equip.json、qiyin_show.json、qiyin_dragon_run.json（重铸、异化装备、深渊商人货架、七印装备底子、七印演出、七首之龙流程）：只有 B 组，只查代码读的字段，类型和范围（几率 0～1、百分比 0～100、花费非负、随阶／随级不降、颜色 #RRGGBB、能力值 8 项）；跨表查货架的层和阶在 affix_table、品质在 tianqi_affix_roll.gd 的 QUALITY_KEYS、异化词条在 rewards.json 的 finale.lines、七印装备的部位和武器类型与 qiyin_gear 对得上、演出的印齐七个；参照表不在就跳过那一项。
 - brand.json（烙印，T073-a）：只有 B 组，节点递增且末项 100、配满加成不超过 0.5、不刻印封顶是节点之一且正好是 uncarved_max_realm 那境、换伤支四条且伤害＝承伤、常驻六条发作六种齐且 over 照节点、熟的花样名单是六种的子集且不含抽自己／六亲不认／换人、灼痕各级递增、首通加起来不超过 100 且每 5 层末等于节点、折法＝满了才算、带 _range 的数落在范围里。稿定的数带 4。realm 段（T514 境底＋境支）：七行境底、19 支、换伤支对 trade、别的支两项属性不带攻。
 - balance_table.json 的 guardian_phase4（守层者三表，T239）：hp_base／atk_scale／resist 层号 1～34、值为正；focus 层号 5～33、{skill: 正整数, scale: 正数[, single: 1]}（T363）。lifesteal_cap {skills: 正整数列表, pct: {五档难度键齐全: 正整数}}（T392）。dot_pct {层号 1～34: {状态号: 1～100 整数}}（T402）。hp_pct {层号 1～34: 1～100 整数}（T406）。
 - guardian_params.json（守层者能力值重锚，T237／T245）：只有 B 组，ref_enemy 是正整数、stats 八项对 0～7、floors 只有 31～34 层、qiyin 行（可没有）和每层只写 stats 里的项（下划线开头的注释键除外）、取值是正整数百分比（附则 E）。
 - growth.json（渡鸦、奈叶、流萤无限成长，T256）：只有 B 组，全表整数（附则 E）、层价分段从 1 层起连续且份数不降、翻倍倍数 ≥2、拐点在分段里、Q6 判定四项范围、三人行齐全且角色号对、一份是正整数、平加只认能力编号 0～7 且渡鸦只加魔攻、奈叶只加生命魔法、流萤不走平加。
+- suit_template.json（原版套装模板，T515）：只有 B 组，件数档、一排数（不出 4）、各档四阶取数是一排往前挪、类型与词条键、掉率单件封顶 ≤10、样板套装号在 EquipSuits 且有多件档（转换产物不在就跳过这一项）。
 - six_dim.json（天启篇六维，T275）：只有 B 组，八档刻度、全整数（附则 E）、韧性抗控表 −10～+10 随档不降、R1～R3（SSS 唯一极化、SS 其余五维至少 2 项 ≤C、S 稀有度）逐份过，R4 分档总分只报告不拦（T280）、普通怪模板 8～10 个、样板角色号在 base_line.json、骑士键同 horsemen.json。\n有不一致就逐条打印「项、游戏数据、参数.json」，退出码 1；全过退出码 0。
 """
 import argparse
@@ -1210,6 +1211,11 @@ def check_qiyin_refs(_args) -> bool:
 
 # ---- skill_rework.json（全角色技能重构，XTianqiSkills） ----
 
+SKILL_TAGS = ('持续伤害', '减益')
+# 不是主动招的 kind（缺 kind 或空串同属此类），带不了 tags
+PASSIVE_KINDS = ('被动', '心法', '领袖', '领袖说明', '血脉', '光环', '进阶', '', None)
+
+
 def skill_rework_rules(table: dict) -> list:
     """档位名单人数和不重叠、技能行的系数／比例／几率范围（D205 起不再查数字避开 4）。"""
     bad = []
@@ -1231,6 +1237,12 @@ def skill_rework_rules(table: dict) -> list:
         d = row.get('damage')
         if d is not None and not float(d.get('coef', 0)) > 0:
             bad.append('skills/%s 伤害系数要大于 0' % sid)
+        if 'tags' in row:  # T519（T013 2J）：招式类别补标，符文之语认；只给主动招打
+            tags = row['tags']
+            if not (isinstance(tags, list) and tags and all(t in SKILL_TAGS for t in tags) and len(set(tags)) == len(tags)):
+                bad.append('skills/%s tags 要是非空、不重复的数组，只能填 %s' % (sid, '／'.join(SKILL_TAGS)))
+            if row.get('kind') in PASSIVE_KINDS:
+                bad.append('skills/%s tags 只给主动招打（被动、心法、领袖、血脉、光环、进阶、kind 为空的不打）' % sid)
         h = row.get('heal')
         if h is not None and not all(0 <= float(v) <= 1 for v in h.values()):
             bad.append('skills/%s 治疗比例要在 0～1' % sid)
@@ -1500,6 +1512,12 @@ def element_effects_rules(table: dict) -> list:
         boss = v.get('boss', {})
         if 'turns' in boss and not (isinstance(boss['turns'], int) and 1 <= boss['turns'] <= 5):
             bad.append('element_effects[%s].boss.turns 应为 1～5 的整数' % k)
+        if 'chance' in boss:  # T516：首领档单列几率，直接替代「档几率 × boss_chance_rate」
+            c = boss['chance']
+            if not (isinstance(c, (int, float)) and not isinstance(c, bool) and 0 <= c <= 1 and abs(c * 100 - round(c * 100)) < 1e-9):
+                bad.append('element_effects[%s].boss.chance 应为 [0, 1] 内的整数百分比：%r' % (k, c))
+            if not (isinstance(boss.get('chance_source'), str) and boss['chance_source']):
+                bad.append('element_effects[%s].boss.chance 要带 chance_source 写来源' % k)
     if len(keys) != len(eff):
         bad.append('element_effects 的 key 有重复')
     tiers = table.get('effect_tiers', {})
@@ -2906,7 +2924,8 @@ def check_brand(_args) -> bool:
 SIX_LETTERS = ['E', 'D', 'C', 'B', 'A', 'S', 'SS', 'SSS']
 SIX_DIMS = ['output', 'survive', 'speed', 'wit', 'resolve', 'support']
 SIX_CLASSES = ['minion', 'weak', 'strong', 'super', 'elite', 'knight']
-SIX_BUDGETS = {'minion': (10, 18), 'weak': (13, 22), 'strong': (18, 25), 'super': (20, 26), 'elite': (18, 25), 'knight': (20, 26)}
+# T531（预算稿 v0.16 九.15／D290／D238）：超强者预算带改 24～30，弱者下移 2 分至 11～20（改带子不改人）
+SIX_BUDGETS = {'minion': (10, 18), 'weak': (11, 20), 'strong': (18, 25), 'super': (24, 30), 'elite': (18, 25), 'knight': (20, 26)}
 
 
 def six_dim_row_rules(name: str, row: dict, cls: str) -> list:
@@ -4159,6 +4178,79 @@ def check_gear_elem_amp(_args) -> bool:
     return _run_table('gear_elem_amp.json', lambda t: gear_elem_amp_rules(t, _load_opt('skill_rework.json'), _load_opt('gear_table.json')))
 
 
+# ---- 原版套装模板 suit_template.json（养成线二期 2B，T515；XTianqiSuits 读）----
+EQUIP_SUITS_DB = PROJECT / 'modes' / 'xiyou' / 'generated' / 'db' / 'EquipSuits.json'
+SUIT_TEMPLATE_TYPES = ('atk', 'def', 'func', 'drop')
+SUIT_DROP_CAP = 10  # 九线共规第 4 条：掉率、金钱加成单件不超过 +10%
+
+
+def suit_template_rules(t: dict, affix: dict = None, suits_db: list = None) -> list:
+    """steps 正整数升序且 ≥2；values 每档 4 个（一～四阶）正整数、随阶不降、随档不降、不出 4、都在 row 里且四阶取数是 row 往前挪一格；
+    kinds 类型四种、affix 在 affix_table（给了才查）、掉率类 cap ≤10；suits 的 kind 认识、要元素的带元素（在 affix_table elements 里）、
+    套装号在 EquipSuits（给了才查）且有多件档、不是 12 套招牌之外的单件套。"""
+    bad, check = _checker()
+    for h in ('version', 'source'):
+        check('表头 ' + h, str(t.get(h, '')) != '')
+    steps = t.get('steps', [])
+    check('steps 正整数、升序、≥2', isinstance(steps, list) and steps and all(_is_int(x) and x >= 2 for x in steps)
+          and steps == sorted(set(steps)), steps)
+    row = t.get('row', [])
+    check('row 正整数升序、不出 4', isinstance(row, list) and row and all(_is_int(x) and x > 0 and '4' not in str(x) for x in row)
+          and row == sorted(set(row)), row)
+    vals = t.get('values', {})
+    check('values 每个件数档都有', isinstance(vals, dict) and sorted(vals) == sorted(str(x) for x in steps), sorted(vals) if isinstance(vals, dict) else vals)
+    prev = None
+    for st in steps if isinstance(steps, list) else []:
+        v = vals.get(str(st)) if isinstance(vals, dict) else None
+        ok = isinstance(v, list) and len(v) == 4 and all(_is_int(x) and x > 0 and '4' not in str(x) for x in v) and v == sorted(v)
+        check('values[%s] 四阶正整数、随阶不降、不出 4' % st, ok, v)
+        if ok and isinstance(row, list) and v[-1] in row:
+            i = row.index(v[-1])
+            check('values[%s] 是 row 从四阶往前每阶挪一格' % st, i >= 3 and row[i - 3:i + 1] == v, (v, row))
+        elif ok:
+            check('values[%s] 四阶的数在 row 里' % st, False, v)
+        if ok and prev is not None:
+            check('values[%s] 每阶不小于上一档' % st, all(a >= b for a, b in zip(v, prev)), (v, prev))
+        prev = v if ok else prev
+    kinds = t.get('kinds', {})
+    akeys = {a.get('key') for a in (affix or {}).get('affixes', [])}
+    elems = {e.get('key') for e in (affix or {}).get('elements', [])}
+    check('kinds 非空', isinstance(kinds, dict) and kinds)
+    for k, d in (kinds.items() if isinstance(kinds, dict) else []):
+        check('kinds.%s 类型' % k, d.get('type') in SUIT_TEMPLATE_TYPES, d.get('type'))
+        check('kinds.%s 名字' % k, str(d.get('name', '')) != '')
+        drop = d.get('drop') is True
+        check('kinds.%s affix 和 drop 二选一' % k, drop != bool(d.get('affix')), d)
+        if d.get('affix') and affix is not None:
+            check('kinds.%s affix 在 affix_table' % k, d['affix'] in akeys, d['affix'])
+        if 'cap' in d:
+            check('kinds.%s cap 正整数' % k, _is_int(d['cap']) and d['cap'] > 0, d['cap'])
+        if drop:
+            check('kinds.%s 掉率单件封顶 ≤%d' % (k, SUIT_DROP_CAP), _is_int(d.get('cap')) and d['cap'] <= SUIT_DROP_CAP, d.get('cap'))
+        check('kinds.%s 类型 drop 才是掉率' % k, drop == (d.get('type') == 'drop'), d)
+    suits = t.get('suits', {})
+    check('suits 是字典', isinstance(suits, dict), type(suits).__name__)
+    for sid, e in (suits.items() if isinstance(suits, dict) else []):
+        check('suits.%s 号是正整数' % sid, str(sid).isdigit() and int(sid) > 0, sid)
+        kd = kinds.get(e.get('kind'), None) if isinstance(kinds, dict) else None
+        check('suits.%s kind 认识' % sid, kd is not None, e.get('kind'))
+        if kd and kd.get('needs_element'):
+            check('suits.%s 带元素' % sid, str(e.get('element', '')) != '' and (affix is None or e.get('element') in elems), e.get('element'))
+        if suits_db is not None and str(sid).isdigit():
+            i = int(sid)
+            rec = suits_db[i] if 0 < i < len(suits_db) else None
+            check('suits.%s 在 EquipSuits' % sid, isinstance(rec, dict), sid)
+            if isinstance(rec, dict):
+                tiers = [b.get('requirePieces', 0) for b in rec.get('bonuses', [])]
+                check('suits.%s 有多件档（单件套归 2E，不进模板）' % sid, any(x >= 2 for x in tiers), tiers)
+    return bad
+
+
+def check_suit_template(_args) -> bool:
+    suits_db = json.loads(EQUIP_SUITS_DB.read_text(encoding='utf-8')) if EQUIP_SUITS_DB.is_file() else None
+    return _run_table('suit_template.json', lambda t: suit_template_rules(t, _load_opt('affix_table.json'), suits_db))
+
+
 # 每张表一个检查函数：(名字, 函数(args) -> 是否通过)。词条表那张单加 affix_table 时往这里登记。
 CHECKS = [
     ('balance_table', lambda args: check_balance_table(args.params)),
@@ -4208,6 +4300,7 @@ CHECKS = [
     ('secret_books', check_secret_books),
     ('general_books', check_general_books),
     ('gear_elem_amp', check_gear_elem_amp),
+    ('suit_template', check_suit_template),
 ]
 
 

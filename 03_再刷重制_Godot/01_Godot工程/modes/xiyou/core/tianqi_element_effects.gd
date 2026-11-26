@@ -140,6 +140,15 @@ static func tier_chance(elem: int) -> float:
 	return float(data().get("effect_tiers", {}).get(tier, {}).get("chance", 0.15))
 
 
+## 我方施效几率（未乘体质增幅、状态有效度）：中少多档几率；打首领时该系 boss.chance 有值就直接用它（T516），否则 × boss_chance_rate
+static func actor_chance(elem: int, target_boss: bool) -> float:
+	var chance := tier_chance(elem)
+	if not target_boss:
+		return chance
+	var bs: Dictionary = _spec(elem).get("boss", {})
+	return float(bs.chance) if bs.has("chance") else chance * float(_rules().get("boss_chance_rate", 0.5))
+
+
 # ---- 战斗生命周期 ----
 
 static func start(logic) -> void:
@@ -616,9 +625,7 @@ static func _try_apply(logic, src, t, elem: int, base_hp: float, budget := {}) -
 		if not imm:
 			_stat(fx, elem, "blocked")
 		return
-	var chance := float(_enemy_rules().get("base_chance", 0.11)) if enemy_src else tier_chance(elem)
-	if not enemy_src and target_boss:
-		chance *= float(_rules().get("boss_chance_rate", 0.5))
+	var chance := float(_enemy_rules().get("base_chance", 0.11)) if enemy_src else actor_chance(elem, target_boss)
 	if elem == 5:
 		var rate := _boost(t, elem)
 		if not target_boss and t.state_ids.has(ST_SOAK):

@@ -13,11 +13,23 @@ extends RefCounted
 ## - 老存档：存档里什么都不改，算效果时按件数多的两套算（同节「老存档」）。
 ## 入口：XEquipSuits._active_now（filter_suits）、XTianqiQiyinEffects.live_set_counts（filter_seals）、装备页说明牌（note）。
 ## 只对天启篇存档生效（XTianqi.active）；西游档、开关关时原样。
+##
+## 【cc·T515·未经审查】原版套装模板引擎（养成线二期 2B；同稿同节「模板套」）：表 tianqi_data/suit_template.json。
+## - 归了类的套装（表 suits）多件档不再读原效果，按「类型 × 件数档 × 阶」从表里取一条：攻（伤害、本系伤害）、守（减承伤、生命）、
+##   功能（技能消耗、生命回复、异常抵抗）、掉率。名字、部件、存档都不动，算效果时读表（老存档也一样）。
+## - 件数档只取够到的最高一档、不累加，且不超过原套最高件数；原套最低多件档没穿够不算成套（和名额判定同一口径）。1 件档照原样。
+## - 阶＝这套身上部件里最低的那一阶（部件 req_level 按词条四阶分界，同宝珠共鸣「按最低阶算」；协调 11-25）。
+## - 效果不新开伤害钩子：除掉率外记成词条（XTianqiAffixBattle.personal 并进去，数值直接用表的），走词条现成的池子；
+##   掉率记在套装档的 bResultPlus[2]，XTianqiDrop.sources_of 按表值进掉落线加成池（不再落档），单件封顶见表 cap。
+## - 没归类的套装照旧（表没填完不会全灭套装）。
+## 入口：XEquipSuits._active_now（bonuses_of）、XTianqiAffixBattle.personal（affix_entries）、XTianqiDrop.sources_of（tqTemplate 标记）。
 
 ## 回退开关（O-669）：false＝天启篇也不限套数（回到 T513 之前：原版套装与七印各自全部生效）
 static var ENABLED := true
 ## 回退开关（O-669，同号）：false＝同件数时原版套装号小的优先（T513 首版口径）
 static var NEWER_FIRST := true
+## 回退开关（O-672）：false＝原版套装照原效果（回到 T515 之前），模板表不读
+static var TEMPLATE := true
 ## 一人最多生效几套（养成线 v0.3 第三节第 3 条：一人最多两套）
 const CAP := 2
 const QIYIN_MIN := 2
@@ -167,3 +179,130 @@ static func note(a, rec: Dictionary) -> String:
 		if crowded_out(a, int(sid)):
 			return TEXT_CROWDED
 	return ""
+
+
+# ---- 原版套装模板（2B，T515） ----
+
+const TEMPLATE_DATA := "res://modes/xiyou/tianqi_data/suit_template.json"
+static var _tpl := {}
+static var _tpl_failed := false
+## 合成出来的套装档（键「套装号|件数档|阶」）；表换了清掉
+static var _tpl_bonus := {}
+
+
+static func template_table() -> Dictionary:
+	if _tpl.is_empty() and not _tpl_failed:
+		var d = JSON.parse_string(FileAccess.get_file_as_string(TEMPLATE_DATA)) if FileAccess.file_exists(TEMPLATE_DATA) else null
+		_tpl = d if d is Dictionary else {}
+		_tpl_failed = _tpl.is_empty()
+	return _tpl
+
+
+## 测试用：换掉表（传空字典＝下次重新读文件）
+static func reload_template(d := {}) -> void:
+	_tpl = d
+	_tpl_failed = false
+	_tpl_bonus.clear()
+
+
+static func template_on(a) -> bool:
+	return TEMPLATE and on(a)
+
+
+## 这套归了哪一类：{kind, element?…}；没归类返回空
+static func template_of(suit_id: int) -> Dictionary:
+	var e = template_table().get("suits", {}).get(str(suit_id), null)
+	return e if e is Dictionary else {}
+
+
+## 件数档：穿 n 件（原套最高档封顶）够到的最高一档；原套最低多件档没穿够、或一档都不够返回 0
+static func template_step(suit_id: int, n: int) -> int:
+	var low := _multi_low(suit_id)
+	if low <= 0 or n < low:
+		return 0
+	var eff := mini(n, int(_tiers(suit_id)[-1]))
+	var out := 0
+	for s in template_table().get("steps", []):
+		if int(s) <= eff and int(s) > out:
+			out = int(s)
+	return out
+
+
+## 身上这套部件里最低的那一阶（1～4）；一件都没有返回 0
+static func suit_tier(a, suit_id: int) -> int:
+	var out := 0
+	if not a is XActor:
+		return out
+	for e in (a as XActor).equip_list():
+		if not e is Dictionary:
+			continue
+		var ids: Array = e.get("equipment", {}).get("suits", [])
+		if not ids.has(suit_id) and not ids.has(float(suit_id)):
+			continue
+		var t := XTianqiAffixRoll.tier_of(e)
+		out = t if out == 0 else mini(out, t)
+	return out
+
+
+## 表里的数：件数档 step、阶 tier（1～4，越界夹住），再按这一类的 cap 封顶
+static func template_value(kind: String, step: int, tier: int) -> float:
+	var row = template_table().get("values", {}).get(str(step), null)
+	if not row is Array or (row as Array).is_empty():
+		return 0.0
+	var v := float(row[clampi(tier, 1, row.size()) - 1])
+	var k: Dictionary = template_table().get("kinds", {}).get(kind, {})
+	if k.has("cap"):
+		v = minf(v, float(k.cap))
+	return v
+
+
+## 合成一档套装效果（字段和原版套装档一样，数都是空的）：掉率类填 bResultPlus[2]，其余带 tqAffix（词条汇总用）
+static func _template_bonus(suit_id: int, step: int, tier: int) -> Dictionary:
+	var key := "%d|%d|%d" % [suit_id, step, tier]
+	if _tpl_bonus.has(key):
+		return _tpl_bonus[key]
+	var t := template_of(suit_id)
+	var kind := str(t.get("kind", ""))
+	var k: Dictionary = template_table().get("kinds", {}).get(kind, {})
+	var v := template_value(kind, step, tier)
+	var b := {"requirePieces": step, "states": [], "statesResist": [], "skills": [],
+		"paramPlus": [0, 0, 0, 0, 0, 0, 0, 0], "paramRate": [1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0],
+		"xparamPlus": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0], "xparamRate": [1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0],
+		"sparamPlus": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0], "sparamRate": [1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0],
+		"bResultPlus": [0, 0, 0], "bResultRate": [1.0, 1.0, 1.0],
+		"tqTemplate": {"suit": suit_id, "kind": kind, "step": step, "tier": tier, "value": v}}
+	if bool(k.get("drop", false)):
+		b.bResultPlus[2] = v
+	elif str(k.get("affix", "")) != "":
+		var x := {"key": str(k.affix), "value": v, "suit": suit_id}
+		if bool(k.get("needs_element", false)):
+			x["extra"] = {"element": str(t.get("element", ""))}
+		b["tqAffix"] = x
+	_tpl_bonus[key] = b
+	return b
+
+
+## XEquipSuits._active_now 用：这套（穿 n 件，已过名额筛）该读的档。归了类的：1 件档照原样＋够到的那一个模板档；
+## 没归类、不在天启篇、开关关：原样返回 bonuses
+static func bonuses_of(a, suit_id: int, n: int, bonuses: Array) -> Array:
+	if not template_on(a) or template_of(suit_id).is_empty():
+		return bonuses
+	var out := []
+	for b in bonuses:
+		if int(b.requirePieces) <= 1:
+			out.append(b)
+	var step := template_step(suit_id, n)
+	if step > 0:
+		out.append(_template_bonus(suit_id, step, maxi(1, suit_tier(a, suit_id))))
+	return out
+
+
+## XTianqiAffixBattle.personal 用：生效的模板档记成的词条 [{key, value, extra?}]
+static func affix_entries(a) -> Array:
+	var out := []
+	if not template_on(a):
+		return out
+	for b in XEquipSuits.active(a):
+		if b.has("tqAffix"):
+			out.append(b.tqAffix)
+	return out

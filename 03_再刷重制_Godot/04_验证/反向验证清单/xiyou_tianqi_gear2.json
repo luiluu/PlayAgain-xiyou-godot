@@ -2,7 +2,9 @@
   "tests": ["xiyou_tianqi_gear2"],
   "items": [
     {"name": "坐骑神话敏捷改成 34%", "file": "03_再刷重制_Godot/01_Godot工程/modes/xiyou/tianqi_data/gear_table.json", "find": "\"agi_pct\": [5, 10, 15, 20, 25, 30, 33]", "replace": "\"agi_pct\": [5, 10, 15, 20, 25, 30, 34]"},
-    {"name": "心钢上限改成 15", "file": "03_再刷重制_Godot/01_Godot工程/modes/xiyou/tianqi_data/gear_table.json", "find": "\"heartsteel_stage\": 10", "replace": "\"heartsteel_stage\": 15"},
+    {"name": "心钢上限改成 15", "file": "03_再刷重制_Godot/01_Godot工程/modes/xiyou/tianqi_data/gear_table.json", "find": "\"heartsteel_stage\": 5", "replace": "\"heartsteel_stage\": 15"},
+    {"name": "狂妄上限改成 10", "file": "03_再刷重制_Godot/01_Godot工程/modes/xiyou/tianqi_data/gear_table.json", "find": "\"hubris_stage\": 1", "replace": "\"hubris_stage\": 10"},
+    {"name": "头顶上限改成 300", "file": "03_再刷重制_Godot/01_Godot工程/modes/xiyou/tianqi_data/gear_table.json", "find": "\"crown_bonus_pct\": 30", "replace": "\"crown_bonus_pct\": 300"},
     {"name": "先制改成相加", "file": "03_再刷重制_Godot/01_Godot工程/modes/xiyou/core/tianqi_gear.gd", "find": "\t\t\tbest = maxf(best, float(mount_row(m).preempt))", "replace": "\t\t\tbest += float(mount_row(m).preempt)"},
     {"name": "助力位也算先制", "file": "03_再刷重制_Godot/01_Godot工程/modes/xiyou/core/tianqi_gear.gd", "find": "\tfor a in s.battle_members():\n\t\tvar m := mount_of(a)", "replace": "\tfor a in s.battle_members() + ([s.helper()] if s.helper() != null else []):\n\t\tvar m := mount_of(a)"},
     {"name": "去掉先制总上限", "file": "03_再刷重制_Godot/01_Godot工程/modes/xiyou/core/tianqi_gear.gd", "find": "\trate.pre = maxf(float(rate.pre), minf(float(rate.pre) + bonus, cap))", "replace": "\trate.pre = float(rate.pre) + bonus"},

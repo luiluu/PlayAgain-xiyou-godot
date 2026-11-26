@@ -141,7 +141,7 @@
     "6": {"key": "parasite", "name": "寄生", "category": "dot", "turns": 3, "value": 0.08, "boss": {"turns": 2}},
     "7": {"key": "arcane", "name": "魔蚀", "category": "debuff", "turns": 2, "value": 0.15, "boss": {"turns": 1}},
     "8": {"key": "holy", "name": "圣护", "category": "buff", "turns": 2},
-    "9": {"key": "veil", "name": "遮蔽锋芒", "category": "debuff", "turns": 2, "value": 0.33, "boss": {"turns": 1}},
+    "9": {"key": "veil", "name": "遮蔽锋芒", "category": "debuff", "turns": 2, "value": 0.33, "boss": {"turns": 1, "chance": 0.15, "chance_source": "Kyo 11-25 事项 64"}},
     "14": {"key": "soak", "name": "浸湿", "category": "debuff", "turns": 2, "value": 0.11, "boss": {"turns": 1}},
     "15": {"key": "gust", "name": "乱流", "category": "debuff", "turns": 2, "value": 0.15, "borrow": 37, "boss": {"turns": 1}}
   },

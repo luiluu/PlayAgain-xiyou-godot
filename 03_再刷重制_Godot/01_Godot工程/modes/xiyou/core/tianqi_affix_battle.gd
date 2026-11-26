@@ -95,7 +95,7 @@ static func fold(entries: Array) -> Dictionary:
 			continue
 		var tier := int(x.get("tier", DEFAULT_TIER))
 		var grade := str(x.get("grade", "normal"))
-		var v = XTianqiAffixTable.value(key, tier, grade)
+		var v = x.value if x.has("value") else XTianqiAffixTable.value(key, tier, grade)  # 直接给数的（原版套装模板，T515）不按成色取
 		if v == null:
 			continue
 		var k := _key_of(x)
@@ -119,6 +119,7 @@ static func personal(a) -> Dictionary:
 		for x in item_affixes(e):
 			if str(XTianqiAffixTable.affix(str(x.get("key", ""))).get("layer", "")) != "aura":
 				list.append(x)
+	list.append_array(XTianqiSuits.affix_entries(a))  # 天启篇原版套装模板的效果（T515）
 	return fold(list)
 
 

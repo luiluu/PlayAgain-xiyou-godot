@@ -1,0 +1,31 @@
+{
+  "version": 1,
+  "source": "天启篇_原版养成线重做方案_v0.3 第三节第 3 条（模板套）、第二节第 3 小节第 4 条（掉率单件不超过 +10%）；低阶取数、阶的算法、件数档不累加、五套样板：协调 11-25 回 T515",
+  "dev": "dev.929",
+  "_note": "原版套装模板（养成线二期 2B）。只天启篇；归了类的套装多件档按「类型 × 件数档 × 阶」从本表取，1 件档和没归类的套装照旧。steps＝件数档（只取够到的最高一档，不累加，且不超过原套最高件数）。row＝取数用的一排（四阶是 values 每排最后一个，每低一阶往前挪一格）。values[件数档]＝一～四阶的数（百分数）。阶＝这套身上部件里最低的那一阶（部件 req_level 按词条四阶分界）。kinds[键].affix＝记进哪条词条的池子（数值直接用本表的，不按词条成色取）；drop＝进掉落线的加成池；cap＝这一类单件封顶。数值暂定，Kyo 可改，只动本表。",
+  "digit_check_exempt": ["version", "steps"],
+  "steps": [2, 3, 5],
+  "row": [1, 2, 3, 5, 6, 8, 10, 12, 15],
+  "values": {
+    "2": [1, 2, 3, 5],
+    "3": [5, 6, 8, 10],
+    "5": [8, 10, 12, 15]
+  },
+  "kinds": {
+    "atk_final": {"type": "atk", "name": "攻·伤害", "affix": "final_damage"},
+    "atk_element": {"type": "atk", "name": "攻·本系伤害", "affix": "element_damage", "needs_element": true},
+    "def_reduce": {"type": "def", "name": "守·减承伤", "affix": "damage_reduction"},
+    "def_hp": {"type": "def", "name": "守·生命", "affix": "mhp"},
+    "func_cost": {"type": "func", "name": "功能·技能消耗", "affix": "skill_cost"},
+    "func_regen": {"type": "func", "name": "功能·生命回复", "affix": "hrg", "cap": 5},
+    "func_state": {"type": "func", "name": "功能·异常抵抗", "affix": "state_resist"},
+    "drop": {"type": "drop", "name": "掉率", "drop": true, "cap": 10}
+  },
+  "suits": {
+    "9": {"kind": "def_hp", "_from": "勇士（2）：生命 +500、攻击次数 +1"},
+    "14": {"kind": "atk_element", "element": "fire", "_from": "高阶火焰（3）：火焰伤害 +45%"},
+    "23": {"kind": "atk_final", "_from": "所有伤害板甲（3）：所有伤害 +25%"},
+    "143": {"kind": "drop", "_from": "xx套装（1／2）：2 件掉率 +10%、经验 +20%"},
+    "188": {"kind": "func_cost", "_from": "战魂（3／5）：战技消耗 −35%"}
+  }
+}

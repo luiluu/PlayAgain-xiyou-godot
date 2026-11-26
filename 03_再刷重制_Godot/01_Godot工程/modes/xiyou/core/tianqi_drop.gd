@@ -146,7 +146,7 @@ static func sources_of(a: XActor) -> Array:
 	for b in XEquipSuits.active(a):
 		var plus: Array = b.get("bResultPlus", [])
 		if plus.size() > 2 and float(plus[2]) != 0.0:
-			out.append({"name": "套装", "value": tier(float(plus[2]))})
+			out.append({"name": "套装", "value": float(plus[2]) if b.has("tqTemplate") else tier(float(plus[2]))})  # 原版套装模板（T515）已按表值封顶，不再落档
 	out.append_array(XTianqiTrumpet.drop_sources(a))  # 天启篇号卷七号·赏赐（定值，不落档）
 	return out
 

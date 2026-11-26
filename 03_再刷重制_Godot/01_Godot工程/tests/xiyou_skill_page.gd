@@ -178,7 +178,122 @@ func _run() -> void:
 	level_actor.recover_all()
 	level_actor.change_level_mv(int(level_ref.get("to", 1)))
 	check("level_down_clamps_resources", level_actor.hp == float(level_ref.get("hp", -1)) and level_actor.mp == float(level_ref.get("mp", -1)), [level_actor.hp, level_actor.mp, level_ref])
+	await _read_window_check(false)
+	await _read_window_check(true)
 	finish()
+
+
+## 记下 painter 画的每一笔（不真画）
+class RecCanvas extends XMVCanvas:
+	var log := []
+
+	func text(s: String, x: float, y: float, max_w: float, align := "left", color := XUI.TEXT, size := XUI.FONT_SIZE, lh := XUI.LINE_HEIGHT, alpha := 1.0, _zoom := 1.0, _pivot := Vector2.ZERO, _outline := OUTLINE) -> void:
+		log.append(["text", s, x, y, max_w, align, color, size, lh, alpha])
+
+	func icon(index: int, x: float, y: float, alpha := 1.0, size := 32.0) -> void:
+		log.append(["icon", index, x, y, alpha, size])
+
+	func face(face_name: String, index: int, x: float, y: float, _w := 144.0, _h := 144.0, _alpha := 1.0) -> void:
+		log.append(["face", face_name, index, x, y])
+
+	func cursor(r: Rect2, active := true) -> void:
+		log.append(["cursor", r, active])
+
+	func fill_rect(r: Rect2, color: Color) -> void:
+		log.append(["fill", r, color])
+
+	func gradient(r: Rect2, c1: Color, c2: Color) -> void:
+		log.append(["gradient", r, c1, c2])
+
+	func gauge(dx: float, dy: float, dw: float, rate: float, _c1: Color, _c2: Color, _lh := XUI.LINE_HEIGHT) -> void:
+		log.append(["gauge", dx, dy, dw, rate])
+
+
+## T545：技能页整段包只读窗口（XSkillScene.PAGE_READ_MEMO）。同一页面状态开关两态各出一份快照——旧界面是列表／类型／状态／选人窗
+## 画的每一笔（含消耗数字、能不能用的半透明）和说明卡的行，新皮肤是列表行与详情牌——必须逐项相同；
+## 开着时打开命中比对（READ_VERIFY），零不一致，窗口刷新完必须关严。
+func _page_snapshot(page: XSkillScene) -> Array:
+	var out := []
+	var types := page.types()
+	for ti in types.size():
+		for pick in [0, 7, 20]:
+			page.mode = "list"
+			page.type_index = ti
+			var n := page.entries().size()
+			if n == 0 or (pick > 0 and pick >= n):
+				continue
+			page.index = pick
+			page.top = maxi(pick / 2 - 5, 0)
+			page._refresh()
+			var row := [page.type_name(types[ti]), pick]
+			for painter in [page._paint_types, page._paint_status, page._paint_list, page._paint_actors]:
+				var rec := RecCanvas.new()
+				rec.size = XSkillScene.LIST_RECT.size
+				rec.font = page.list_win.canvas.font
+				painter.call(rec)
+				row.append(var_to_str(rec.log))
+				rec.free()
+			row.append(var_to_str(page.help_card.rows) if page.help_card.visible or page.skin != null else "")
+			if page.skin != null:
+				var card: XSkinCard = page.skin.card
+				row.append(var_to_str(page.skin.list.items.map(func(r): return [r.text, r.get("right", ""), r.disabled, r.get("sub", ""), r.get("reason", "")])))
+				row.append(var_to_str([card.title, card.subtitle, card.desc, card.sections, card.buttons]))
+			out.append(row)
+	return out
+
+
+func _read_window_check(skin_on: bool) -> void:
+	var tag := "skin" if skin_on else "classic"
+	var force: bool = XUiSkin.FORCE
+	XUiSkin.FORCE = skin_on
+	var s := XState.new_game(3, 1, [8, 9, 10])
+	XState.current = s
+	var a := s.actor(1)
+	var rows: Array = XDB.table("Skills")
+	var learned := 0
+	for i in range(1, rows.size()):
+		var r = rows[i]
+		if learned < 60 and r is Dictionary and int(r.get("stypeId", 0)) == 4 and str(r.get("name", "")) != "" and not XTianqiSkills.is_shell(i):
+			a.learn_skill(i)
+			learned += 1
+	for k in [499, 2000, 2001, 2017]:
+		a.learn_skill(k)
+	a.change_level(80)
+	a.refresh_passive()
+	a.recover_all()
+	var verify: bool = XActor.READ_VERIFY
+	var fatal: bool = XActor.READ_VERIFY_FATAL
+	XSkillScene.PAGE_READ_MEMO = false
+	var page := XSkillScene.new()
+	page.actor_index = 0
+	add_child(page)
+	await frames(2)
+	check("read_window_%s_skin_matches" % tag, (page.skin != null) == skin_on)
+	var old := _page_snapshot(page)
+	XSkillScene.PAGE_READ_MEMO = true
+	XActor.READ_VERIFY = true
+	XActor.READ_VERIFY_FATAL = false
+	XActor.read_mismatches.clear()
+	var hits: int = XActor.read_hits
+	var new := _page_snapshot(page)
+	page.index = 0
+	page._move(1, false, false)
+	await frames(2)  # 真画一遍（painter 走窗口）
+	check("read_window_%s_hits" % tag, XActor.read_hits > hits, XActor.read_hits - hits)
+	check("read_window_%s_no_mismatch" % tag, XActor.read_mismatches.is_empty(), XActor.read_mismatches.slice(0, 3))
+	check("read_window_%s_closed" % tag, XActor._read_depth == 0, XActor._read_depth)
+	var diff := -1
+	for i in maxi(old.size(), new.size()):
+		if i >= old.size() or i >= new.size() or old[i] != new[i]:
+			diff = i
+			break
+	check("read_window_%s_same" % tag, old.size() > 5 and diff == -1, [old.size(), new.size(), diff, old[diff].slice(0, 2) if diff >= 0 and diff < old.size() else []])
+	check("read_window_%s_has_costs" % tag, old.any(func(r): return r[4].contains("MP") or r[4].contains("TP")))
+	XActor.READ_VERIFY = verify
+	XActor.READ_VERIFY_FATAL = fatal
+	XUiSkin.FORCE = force
+	page.queue_free()
+	await frames(1)
 
 
 func finish() -> void:

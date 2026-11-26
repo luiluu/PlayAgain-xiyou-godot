@@ -50,6 +50,7 @@ func _force(chance := 1.0, boss_rate := 1.0) -> void:
 	for k in d.effect_tiers:
 		d.effect_tiers[k].chance = chance
 	d.effect_rules.boss_chance_rate = boss_rate
+	d.element_effects["9"].boss.chance = chance * boss_rate  # T516：暗系首领档单列几率，跟着一起拨
 	d.enemy_effect_rules.base_chance = 2.0 if chance >= 1.0 else chance
 
 
@@ -123,6 +124,7 @@ func _run() -> void:
 	_test_stop_slots()
 	_test_freeze_immune()
 	_test_boss_table()
+	_test_t516_veil_boss_chance()
 	_test_higher_regression()
 	_test_holy()
 	_test_holy_real_db()
@@ -451,6 +453,40 @@ func _test_boss_table() -> void:
 	_hit(lb2, a, _stub(98544, ok_elem, "3000"), b2)
 	_check("boss_cooldown_2_turns", not c0 and not c2 and b2.state_ids.has(sid2))
 	_check("effect_boss_predicate", XTianqiElementEffects.effect_boss(lb2, b2) and not XTianqiElementEffects.effect_boss(lb2, a))
+
+
+## T516（Kyo 11-25 事项 64）：首领线暗系遮蔽锋芒 15%；非首领与其余系（含火、冰）不变
+func _test_t516_veil_boss_chance() -> void:
+	_reset()
+	var E := XTianqiElementEffects
+	_check("t516_boss_veil_15", is_equal_approx(E.actor_chance(9, true), 0.15), E.actor_chance(9, true))
+	var bad := []
+	for elem in [2, 3, 4, 5, 6, 7, 8, 9, 14, 15]:
+		if not is_equal_approx(E.actor_chance(elem, false), E.tier_chance(elem)):
+			bad.append(["normal", elem, E.actor_chance(elem, false)])
+		if elem != 9 and not is_equal_approx(E.actor_chance(elem, true), E.tier_chance(elem) * 0.5):
+			bad.append(["boss", elem, E.actor_chance(elem, true)])
+	_check("t516_normal_and_other_elements_unchanged", bad.is_empty() and is_equal_approx(E.actor_chance(9, false), 0.15)
+		and is_equal_approx(E.actor_chance(2, true), 0.055) and is_equal_approx(E.actor_chance(3, true), 0.075), bad)
+	# 实际结算读的是这个字段：拨成 0／1 看首领挂不挂得上，非首领不吃它
+	var s := _tq_state()
+	var a: XActor = s.battle_members()[0]
+	var hits := []
+	for v in [0.0, 1.0]:
+		_reset()
+		_force(1.0 - v, 1.0)
+		XTianqiElements.data().element_effects["9"].boss.chance = v
+		var lb := _boss_logic(s)
+		var boss: XEnemy = lb.enemies[0]
+		_natures({})
+		_hit(lb, a, _stub(98600, 9, "3000"), boss)
+		var ln := _normal_logic(s)
+		var e: XEnemy = ln.enemies[0]
+		_natures({})
+		_hit(ln, a, _stub(98601, 9), e)
+		hits.append([boss.state_ids.has(E.ST_VEIL), e.state_ids.has(E.ST_VEIL), _st(lb, 9, "rolled")])
+	_check("t516_resolution_reads_boss_chance", hits == [[false, true, 1], [true, false, 1]], hits)
+	_reset()
 
 
 ## §3.3 高等回归两条

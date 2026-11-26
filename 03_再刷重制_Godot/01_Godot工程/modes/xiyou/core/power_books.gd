@@ -86,8 +86,8 @@ static func forget_paid(s: XState, a: XActor, id: int) -> Dictionary:
 static func param_rate_bonus(a: XActor, param: int) -> float:
 	var sum := 0.0
 	for id in a.skill_ids:
-		if XTianqiTrumpet.skips_rate(id):
-			continue  # 天启篇号卷：原洪荒权能的属性倍率不算
+		if XTianqiTrumpet.skips_rate(id) or XTianqiSecrets.is_sealed(a, int(id)):
+			continue  # 天启篇号卷：原洪荒权能的属性倍率不算；天启篇秘籍格：已封印的书不再加属性
 		var key := XTianqiGeneralBooks.rate_key(int(id))
 		if not _rates.has(key):
 			var values := {}
