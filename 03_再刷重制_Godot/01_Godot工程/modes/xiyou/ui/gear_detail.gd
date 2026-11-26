@@ -129,6 +129,7 @@ static func socket_rows(e: Dictionary) -> Array:
 		var gem := XOrbs.gem_in_slot(e, n)
 		out.append(["%d．%s：%s" % [n + 1, str(slots[n]), str(gem.get("name", "")) if not gem.is_empty() else "空槽"], ROW_SIZE, "#ffffff", false, 0])
 		out.append_array(XTianqiGemPower.orb_slot_lines(e, n, ROW_SIZE))
+		out.append_array(XTianqiOrbs.slot_lines(e, n, ROW_SIZE, XTianqiGemPower.LINE_COLOR))  # T518 宝珠新表效果
 	out.append(["符文镶嵌：剩余 %d 孔" % maxi(0, int(e.get("upgradeSlots", 0))), ROW_SIZE, "#ffffff", false, 0])
 	var history: Array = e.get("upgrades", [])
 	for n in history.size():

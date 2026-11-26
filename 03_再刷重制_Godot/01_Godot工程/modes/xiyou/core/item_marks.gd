@@ -355,8 +355,8 @@ const ORB_SHOP_TEXT := "宝珠已改为副本掉落：刷副本首领得神秘�
 
 
 static func is_orb_item(id: int) -> bool:
-	var cfg = XDB.table("CodexOrbs")
-	if not cfg is Dictionary:
+	var cfg = XOrbs.config()  # T518：天启篇读新表（含水风两族 3301～3310）；西游档同原表
+	if cfg.is_empty():
 		return false
 	var key := str(id)
 	return cfg.get("items", {}).has(key) or cfg.get("legacyRefund", {}).has(key) \
@@ -364,8 +364,8 @@ static func is_orb_item(id: int) -> bool:
 
 
 static func _orb_filtered(g: Array) -> bool:
-	var cfg = XDB.table("CodexOrbs")
-	return cfg is Dictionary and int(g[0]) == 0 and is_orb_item(int(g[1])) \
+	var cfg = XOrbs.config()
+	return not cfg.is_empty() and int(g[0]) == 0 and is_orb_item(int(g[1])) \
 		and not cfg.get("shopKeep", []).any(func(k): return int(k) == int(g[1]))
 
 

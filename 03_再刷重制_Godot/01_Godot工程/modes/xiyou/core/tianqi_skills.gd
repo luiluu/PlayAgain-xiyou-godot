@@ -132,6 +132,7 @@ static func tune_merge(base: Dictionary, patch: Dictionary) -> Dictionary:
 
 ## 测试用：清掉缓存，下次重新读文件
 static func reload_table() -> void:
+	XActor.skills_touch()  # T546 R1 P3-1：技能记录读这张表，重载后角色技能表缓存作废
 	_data = {}
 	_skills = {}
 	_states = {}

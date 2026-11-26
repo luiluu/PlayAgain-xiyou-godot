@@ -46,9 +46,12 @@ func _run() -> void:
 	XGuide.MILESTONE_ENABLED = false
 	XBattleScene.force_auto = true   # 战斗全自动（同 xiyou_floor_run）
 	XShop.auto_close = true          # 商店一开就记进 auto_log 并关掉
+	XTianqiOrbs.TABLE = false        # 本专项核 T236 照原版给的那几颗宝珠；T518 换成宝珠残片另由 xiyou_tianqi_orbs 核
+	XTextFix.clear_cache()
 	_data()
 	await _live()
 	XTianqiGuardianGift.ENABLED = true
+	XTianqiOrbs.TABLE = true
 	var passed := results.filter(func(r): return r.passed).size()
 	for r in results:
 		if not r.passed:

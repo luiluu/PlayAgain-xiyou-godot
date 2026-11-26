@@ -1,0 +1,3 @@
+BATTLE={"act_avg_ms":21.789375,"acts":8,"builds":509,"end_ms":18.001,"hits":4478,"n":20,"read_mmp_ms":0.3635,"read_param_base_ms":0.2543,"read_skills_ms":0.11585,"setup_ms":108.125,"sha":"7fe86db3c2a78152","window_read_ms":0.8836,"xcall":true}
+BATTLE={"act_avg_ms":38.2698333333333,"acts":12,"builds":1119,"end_ms":180.826,"hits":9126,"n":120,"read_mmp_ms":0.92855,"read_param_base_ms":0.5433,"read_skills_ms":0.2464,"setup_ms":266.561,"sha":"d9cf3dd29e8c1262","window_read_ms":2.2208,"xcall":true}
+BATTLE={"act_avg_ms":123.016111111111,"acts":9,"builds":1887,"end_ms":1261.291,"hits":14571,"n":400,"read_mmp_ms":2.41845,"read_param_base_ms":1.32165,"read_skills_ms":0.60685,"setup_ms":1682.848,"sha":"2faa4b536168843c","window_read_ms":5.8583,"xcall":true}

@@ -213,9 +213,18 @@ func lottery_stream() -> void:
 	XLotteryRework.SAVED_STREAM = true
 
 
+## 期望抽样钉死的种子（T551）。不钉时 orb_seed（抽奖流由它派生）与 random_master（世界随机流）每次现取，样本每跑都不同：
+## 1434 单抽标准差约 730、4000 抽标准误约 11，而原版均值只有十几，「> 5」偶发挂（云端实测 −1.8）；1433「> 2」同理（标准差约 470、标准误约 7.5）。
+## 钉住后同一份数据与代码结果固定。事件数据或取数顺序改了等于换了一批样本：这两格若挂，先按上面的标准误看是不是抽样波动
+## （范围是否回原版由 range.xiyou_* 逐项确定地核）。
+const MC_SEED := 551
+
+
 ## 批量模式（文字跳过、选项选第 0 项「赢下所有」）真跑整条事件 n 次，返回平均积分变化
 func _mean(ce: int, n: int, tianqi := false) -> float:
 	var s := _blank()
+	s.orb_seed = MC_SEED
+	s.random_master = XRandomStream.hex64(MC_SEED)
 	if tianqi:
 		s.flags["tianqi"] = {"rules": 1}
 	s.set_switch(XCasinoBatch.SWITCH_OPEN, true)
