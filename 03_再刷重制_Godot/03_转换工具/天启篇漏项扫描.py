@@ -396,6 +396,7 @@ def _summarize_skill(
         "high_risk": high_risk,
     }
 
+CHANGE_TO_RE = re.compile(r"<ChangeTo\[(\d+)\]:[^>]*>")
 SCRIPT_ACTOR_RE = re.compile(r"\$gameActors\.actor\(\s*(\d+)\s*\)")
 LEARN_TOKEN_RE = re.compile(r"(?<![\w$])learnSkill(?![\w$])")
 # 脚本里「目标角色不止一个写死号」的迹象：非字面 actor()、队伍／战斗对象、循环。出现任何一个都不归给块内唯一字面角色号
@@ -1107,6 +1108,21 @@ def scan_class_c(
                                     "skill": _summarize_skill(sid, skills, states, reworked_states)})
                     continue
                 by_skill[sid].append({"gear": f"suit:{suit_id}", "gear_name": sname, "channel": "suit_skill", "raw": raw})
+
+    # T549：装备招带 <ChangeTo[号]: 条件> 的（红牌 3651 两成变黄牌 3652／蓝牌 3653），变出来的招同样要改写，沿链追
+    queue = list(by_skill)
+    seen_ct = set(queue)
+    while queue:
+        src = queue.pop()
+        for m in CHANGE_TO_RE.finditer(str(skills.get(src, {}).get("note", ""))):
+            tid = int(m.group(1))
+            if tid in reworked_skills or tid in seen_ct and tid in by_skill:
+                continue
+            by_skill[tid].append({"gear": f"skill:{src}", "gear_name": str(skills.get(src, {}).get("name", "")),
+                                  "channel": "change_to", "raw": m.group(0)})
+            if tid not in seen_ct:
+                seen_ct.add(tid)
+                queue.append(tid)
 
     items: list[dict] = []
     for sid in sorted(by_skill):

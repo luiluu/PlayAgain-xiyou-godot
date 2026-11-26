@@ -55,15 +55,15 @@ BATCH1_MANUAL = {
           'desc': ['效果：恢复自身 10% 最大魔法', '冷却：3回合'],
           '_note': 'T549 装备招批 1：原固定回 1500 魔法、无冷却 → 最大魔法 10%（附则 E），冷却 3'},
     499: {'name': '先祖之魂', 'kind': '复活', 'heal': {'mhp_pct': 0.3},
-          'effects': [{'code': 11, 'dataId': 0, 'value1': 0.3, 'value2': 0}],
+          'effects_remove': [[11, 0]],  # 原版效果 11 回固定 2000；复活后伤害段的 30% 治疗照样生效，两个都留会回 60%（T549 专项实测）
           'desc': ['效果：复活一名友方并恢复 30% 最大生命', '冷却：10回合'],
           '_note': 'T549 装备招批 1：原复活回固定 2000 生命 → 30%（技能重构 v0.2 §一.3 复活标准），冷却照原 10'},
     861: {'name': '风语者祝福', 'kind': '治疗', 'heal': {'mhp_pct': 0.12}, 'mp_pct': 10,
           'desc': ['效果：恢复一名友方 12% 最大生命，并施加风之祝福（自然伤害 +20%，3回合）', '消耗：最大魔法10%'],
           '_note': 'T549 装备招批 1：原 1000＋魔攻×6 → 单体治疗 12%（同 T445 通用书单体治疗），耗蓝 300 → 最大魔法 10%'},
     6240: {'name': '龙马复活术', 'kind': '复活', 'heal': {'mhp_pct': 0.3}, 'mp_pct': 30, 'cooldown': 3,
-           'effects': [{'code': 11, 'dataId': 0, 'value1': 0.3, 'value2': 0},
-                       {'code': 12, 'dataId': 0, 'value1': 0.3, 'value2': 0}],
+           'effects_remove': [[11, 0]],  # 生命由伤害段 30% 治疗给，效果 11 去掉防叠成 60%
+           'effects': [{'code': 12, 'dataId': 0, 'value1': 0.3, 'value2': 0}],
            'desc': ['效果：复活一名友方并恢复 30% 最大生命和 30% 最大魔法', '消耗：最大魔法30%', '冷却：3回合'],
            '_note': 'T549 装备招批 1：原复活回满生命魔法、无冷却 → 30%＋冷却 3、耗最大魔法 30%（技能重构 v0.2 §一.3、§一.7 复活标准）'},
 }
@@ -161,7 +161,7 @@ def damage_row(sk, elements, states):
     gains = sorted({c[0] for ph in ('target', 'whole') for c in seq.get(ph, [])
                     if re.match(r'(?i)(?:hp|mp|tp)\s*[+-]', c[0])})
     ops += [{'op': 'drop_cmd', 'match': g} for g in gains]
-    per_target = hits_per_target(sk, ops) * max(1, int(sk.get('repeats', 1)))
+    per_target = hits_per_target(sk, ops)  # 有动作序列时引擎不按 repeats 重放（T549 专项实测 3557 repeats 2 仍是每目标 2 段）
     hits = per_target * rand
     # 每段每个属性的整数百分比（附则 E），向下取整防超档
     per_stat_pct = (total * 100) // (hits * len(stats))
@@ -264,6 +264,8 @@ BATCH2_ATTACK = [
     1872, 1946, 1969, 1970, 2252, 2284, 2440, 2442, 2443, 2602, 2635, 2636, 2815, 2816, 3181, 3188, 3189, 3190,
     3191, 3547, 3548, 3573, 3575, 3649, 3651, 3887, 3888, 3889, 3890, 4369, 4437, 4441, 4444, 4708, 4716, 4722,
     5420, 6015, 6016, 6017, 6018,
+    # 红牌 3651 的 <ChangeTo>（各 20% 变成黄牌／蓝牌），不改就漏
+    3652, 3653,
     # 武器触发
     127, 258, 259, 294, 295, 296, 309, 495, 496, 497, 638, 2802, 2806,
 ]
@@ -307,7 +309,7 @@ def attack_row(sk, elements):
     gains = sorted({c[0] for ph in ('target', 'whole') for c in seq.get(ph, [])
                     if re.match(r'(?i)(?:hp|mp|tp)\s*[+-]', c[0])})
     ops += [{'op': 'drop_cmd', 'match': g} for g in gains]
-    per_target = hits_per_target(sk, ops) * max(1, int(sk.get('repeats', 1)))
+    per_target = hits_per_target(sk, ops)  # 有动作序列时引擎不按 repeats 重放（T549 专项实测 3557 repeats 2 仍是每目标 2 段）
     hits = per_target * rand
     per = total // (hits * len(stats))
     split = 1
