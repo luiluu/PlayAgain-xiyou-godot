@@ -1,7 +1,7 @@
 extends Node
-## T524 天启篇止血专项测试（小A 起稿，cc 续：改用现有接口、补超赛只删确认阶段与西游档对照）：
+## T524 天启篇止血专项测试（小A 起稿，cc 续：改用现有接口、补反证得住的断言与西游档对照）：
 ## 1. 止血 1：艾瑞塔 5459 咒灭魔弹删旧 SkillPass538/2058（暗影毁灭弹学 5459 前后伤害一致，不再 ×3）。
-## 2. 止血 2：贝吉特 10563～10566 去两条 +100 TP；超赛状态 2771～2774 改写（物攻魔攻 ≤ ×1.15、去确认阶段 ×k、换装外观照留）。
+## 2. 止血 2：贝吉特升级链与超蓝状态先不修（协调 11-26：去留等 Kyo 在数值预算第九节定），只钉住还没改写。
 ## 3. 止血 3：破限之心全 7 阶（armor:7904～7911，含星空 7911）删 passiveHarmRi/passiveCrHarmRi。
 ## 4. 止血 4：被封印的秘籍书在 XPowerBooks.param_rate_bonus 中不再加属性，解封后恢复。
 ## 5. 扫描同类修复：Boss 血脉（SkillPass）、7499/7516 横霸千峰、armor:4514/4517/4519、state 2590/2733/2735/2737、
@@ -64,7 +64,7 @@ func _run() -> void:
 	XTianqiSecrets.reload_table()
 
 	_test_1_arita_5459()
-	_test_2_vegito_chain_and_states()
+	_test_2_vegito_untouched()
 	_test_3_garou_relics_gear()
 	_test_4_sealed_book_param_rate()
 	_test_5_scan_fixes()
@@ -101,46 +101,12 @@ func _test_1_arita_5459() -> void:
 	_check("t1_arita_5459_no_skillpass_in_battle", learned and r2058 < 0.01 and r538 < 0.01 and dmg > 0.0, [learned, sp, dmg])
 
 
-## 2. 止血 2：贝吉特升级链技能与超赛状态
-func _test_2_vegito_chain_and_states() -> void:
-	var s := _new_tianqi_state([164, 1, 2, 3, 4])
-	var bad_sk := []
-	for sid in [10563, 10564, 10565, 10566]:
-		var sk := XDB.rec("Skills", sid)
-		var has_tp := (sk.get("effects", []) as Array).any(func(e): return int(e.get("code", -1)) == 13)
-		var keeps_state := (sk.get("effects", []) as Array).any(func(e): return int(e.get("code", -1)) == 21)
-		if not XTianqiSkills.has(sid) or has_tp or not keeps_state:
-			bad_sk.append([sid, XTianqiSkills.has(sid), has_tp, keeps_state])
-	_check("t2_vegito_skills_10563_10566_reworked", bad_sk.is_empty(), bad_sk)
-
-	var bad_st := []
-	for stid in [2771, 2772, 2773, 2774]:
-		var st := XDB.rec("States", stid)
-		var effs = st.get("effects", [])
-		var max_param := 1.0
-		var has_aplus := false
-		for t in st.get("traits", []):
-			if int(t.get("code", 0)) == 21:
-				max_param = maxf(max_param, float(t.get("value", 1.0)))
-			elif int(t.get("code", 0)) == 61:
-				has_aplus = true
-		if _has_phase(effs, "confirm") or not _has_op(effs, "costume_image") or max_param > 1.15 + 1e-6 or has_aplus:
-			bad_st.append([stid, _has_phase(effs, "confirm"), _has_op(effs, "costume_image"), max_param, has_aplus])
-	_check("t2_vegito_states_2771_2774_capped", bad_st.is_empty(), bad_st)
-
-	# 实战面板：挂超蓝后物攻、魔攻约 ×1.15（原版 ×6），总账不再把超蓝当 +500% 归池
-	var vegito: XActor = s.actor(164)
-	vegito.clear_states()
-	_touch(vegito)
-	var atk0 := vegito.atk
-	var mat0 := vegito.mat
-	vegito.add_state(2774)
-	_touch(vegito)
-	var ra := vegito.atk / maxf(1.0, atk0)
-	var rm := vegito.mat / maxf(1.0, mat0)
-	var pooled := XTianqiLedger.live_pool_effects(vegito).filter(func(x): return int(x[0]) == 2774)
-	_check("t2_vegito_blue_2774_runtime", ra >= 1.10 and ra <= 1.20 and rm >= 1.10 and rm <= 1.20 and pooled.is_empty(), [atk0, vegito.atk, ra, mat0, vegito.mat, rm, pooled.size()])
-	vegito.clear_states()
+## 2. 止血 2（贝吉特升级链、超蓝状态）协调 11-26 改为先不修、等 Kyo 定：这里只钉住「卡里还没改写」，改写落地时把这一节换成真断言
+func _test_2_vegito_untouched() -> void:
+	_new_tianqi_state([164, 1, 2, 3, 4])
+	var pending := [10563, 10564, 10565, 10566].filter(func(id): return not XTianqiSkills.has(id))
+	var st_pending := [2771, 2772, 2773, 2774].filter(func(id): return not XTianqiSkills.has_state(id))
+	_check("t2_vegito_left_for_kyo", pending.size() == 4 and st_pending.size() == 4, [pending, st_pending])
 
 
 ## 3. 止血 3：破限之心全 7 阶

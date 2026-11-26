@@ -692,11 +692,7 @@ static func rec_state(id: int, base: Dictionary) -> Dictionary:
 		r.removeAtBattleEnd = bool(sp.battle_end)
 	if sp.get("dot_remove", false):  # 固定量的持续伤害／回复改成按比例（traits 里的再生率），原来的公式去掉
 		r.erase("dot")
-	var er = sp.get("effects_remove", false)
-	if er is Array:  # T524：只去掉这些阶段（如 ["confirm"]：贝吉特超赛去掉确认阶段 ×k，换装外观、移除效果照留）
-		if r.get("effects") is Array:
-			r.effects = (r.effects as Array).filter(func(e): return not (e is Dictionary and str(e.get("phase", "")) in er))
-	elif er:  # 状态脚本（Custom Apply／Regenerate…）整段去掉，改用下面的 dot（曹操霸道真气）
+	if sp.get("effects_remove", false):  # 状态脚本（Custom Apply／Regenerate…）整段去掉，改用下面的 dot（曹操霸道真气）
 		r.erase("effects")
 	if sp.has("revive") and r.get("effects") is Array:  # 自动复活（rules3 的 revive 块）：rate 回血比例（不再回满魔法、TP）、chance 几率、once 复活后自己去掉（每场一次）
 		var rv: Dictionary = sp.revive
