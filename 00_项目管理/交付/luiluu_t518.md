@@ -79,6 +79,7 @@
 - 反向验证（手做）：把「超上限直接不给」改回「留原对象」，新专项 52/56（tq_cap_skip、tq_cap_deep_copy、tq_attr_cap_cross、tq_small_hrg_9 挂），还原后 56/56。
 - 坐骑先滤（P2-3）没写专项，靠 xiyou_tianqi_gear／gear2／gear_params 原有坐骑用例。
 - 云端选测：https://github.com/luiluu/PlayAgain-xiyou-godot/actions/runs/45876580654 （提交 4bbd270b0，687 个场景 16 片）：686 过、1 挂——`xiyou_fabao_rework` 112/113，首跑挂 ev.xiyou_1433_orig、重跑挂 ev.xiyou_1434_orig（西游档抽奖期望的蒙特卡洛断言，两次挂不同格，测的是 T494 抽奖公共事件、本单宝珠视图在西游档不进），本机复跑 113/113。判为与本单无关的随机波动，没改那份测试（不是本单独占文件）；建议出这个测试的车道把抽样钉种子或放宽阈值。
+- **本轮（小表改 1/3/6/10/15%，提交 3c9d2eace）**：语法检查 1245 个 .gd 0 问题；发行空壳 check 87 脚本 856 函数都有；本地选测 9 场景全过（xiyou_tianqi_orbs 56/56，另 xiyou_orb_shop、xiyou_orb_shop_ui、xiyou_orb_ui、xiyou_cat、xiyou_help_card、xiyou_gear_detail、xiyou_tianqi_ledger、xiyou_tianqi_gear）；云端选测 https://github.com/luiluu/PlayAgain-xiyou-godot/actions/runs/45899334068 （687 个场景 16 片）全过。
 - 截图：没拍（显示改动只有文字行，专项逐字核；文字待小A 审）。
 
 ## 本分支提交
@@ -88,4 +89,4 @@
 - f4e8a2aff 合并 github/main 进 luiluu/t518
 - 4bbd270b0 T518 返修（核查 P1-1～P1-3、P2 三条、P3 四条）
 - 819cdc998 T518 交付单：返修收口、可达表、云端选测结果
-- （本轮）T518 特性 22 小表改 1/3/6/10/15%（Kyo 11-26 事项81）
+- 3c9d2eace T518 特性 22 小表改 1/3/6/10/15%（Kyo 11-26 事项81）
