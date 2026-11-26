@@ -3,6 +3,7 @@ extends Node
 ## - 纯数据：crown_floor_ok_facts 窗口 3（主塔／野外、深渊封顶 29、王者副本、七印里副本、终局战口径同 floor_ok_facts）；三人的 5 不变。
 ## - 真天启篇档：高层胜利涨、低层胜利不涨不减（这一场照常结算、遭遇序号＋1、重打不重掷）；低层倒下照旧减半。
 ## - 回退开关 CROWN_FLOOR 两态；表里 crown_window 改了跟着变；说明卡天启篇有提示行、西游档没有。
+## - 真实 XBattleLogic.setup＋end_battle(0)（返修 P1-1／P3-1）：七印 7 个里副本＋Boss 场、四骑士 36 层图本体、大厅再挑战 35 层影子／36 层本体都涨；SL 重打不重掷。
 ## - 西游档：低层照涨，说明行与改前逐字一样（隔离）。
 
 const Kit := preload("res://tests/lib/tq_save_kit.gd")
@@ -147,11 +148,12 @@ func _tianqi() -> void:
 	var note := _note(s, wearer)
 	var hint_at := note.find("text=" + XDemonCrown.HINT_MARK)
 	var grow_at := note.find("text=成长：八项全属性")
-	_check("tq_hint_note", hint_at >= 0 and grow_at > hint_at and note.count("text=" + XDemonCrown.HINT_MARK) == 1 and note.contains("往下 3 层"), note)
+	_check("tq_hint_note", hint_at >= 0 and grow_at > hint_at and note.count("text=" + XDemonCrown.HINT_MARK) == 1 and note.contains("往下3层内（及高难／终局副本）获胜"), note)
 	var card := "\n".join(XHelpCard.content(XDemonCrown.gear(wearer), "armor", false, 400.0).map(func(r): return str(r[0])))
 	var c_grow := card.find("成长：八项全属性")
-	var c_hint := card.find("往下 3 层")
+	var c_hint := card.find("往下3层")
 	_check("tq_hint_card_below_growth", c_grow >= 0 and c_hint > c_grow, card)
+	_check("tq_hint_card_text", card.replace("\n", "").contains("※仅在当前最高层往下3层内（及高难／终局副本）获胜才会成长") and not card.contains("※※"), card)  # 小A 文字审定稿，数字两侧不留空格
 	print("CARD_TEXT=", JSON.stringify(card))
 	XDemonCrown.describe(XDemonCrown.gear(wearer))
 	_check("tq_hint_once_after_redescribe", _note(s, wearer).count("text=" + XDemonCrown.HINT_MARK) == 1)
@@ -171,6 +173,80 @@ func _tianqi() -> void:
 	_check("tq_reload_low_no_grow", s != null and _bonus(s, wearer) == b4, b4)
 	_fight(s, hi)
 	_check("tq_reload_hi_grows", _bonus(s, wearer) > b4)
+
+
+## T548 返修（小A 核查 P1-1／P3-1）：走真实 XBattleLogic.setup＋end_battle(0)。
+## 结算在 endBattle 最外层，四骑士／七印里副本的标记那时已清，所以开战时留快照；这里核七印 7 个里副本、四骑士本体（36 层图）、大厅再挑战 35 层影子／36 层本体都涨，
+## 普通低层不涨，SL 读回开战前档重打同一遭遇序号不涨不重掷。
+func _real(st: XState, map_id: int, troop: int, prep = null) -> XBattleLogic:
+	st.map_id = map_id
+	if prep != null:
+		(prep as Callable).call()
+	var lg := XBattleLogic.new()
+	lg.setup(troop, st)
+	return lg
+
+
+func _real_fight(tag: String, map_id: int, troop: int, want_grow: bool, prep = null, check_meta := "", want_floor = null) -> void:
+	var a := s.actor(int(wearer.actor_id))
+	var b0 := _bonus(s, a)
+	var seq := int(s.flags.get(XDemonCrown.SEQ_FLAG, 0))
+	var lg := _real(s, map_id, troop, prep)
+	var before_ok := G.crown_floor_ok(s, lg)
+	var meta_on := check_meta == "" or lg.has_meta(check_meta)
+	lg.end_battle(0)
+	var b1 := _bonus(s, a)
+	_check("e2e_%s_meta" % tag, meta_on, check_meta)
+	_check("e2e_%s_before" % tag, before_ok == (want_grow if want_floor == null else bool(want_floor)), [before_ok, XTianqiGrowth.facts(s, lg)])
+	_check("e2e_%s_%s" % [tag, "grows" if want_grow else "no_grow"], (b1 > b0) == want_grow, [b0, b1, map_id, troop])
+	_check("e2e_%s_seq" % tag, int(s.flags.get(XDemonCrown.SEQ_FLAG, 0)) == seq + 1)
+
+
+func _e2e() -> void:
+	s = Kit.new_game()
+	s.set_variable(20, 34)  # 已通主塔 33 层
+	wearer = s.battle_members()[0]
+	_wear(s, wearer)
+	var low := _map_of_floor(1)
+	var hi := _map_of_floor(31)
+	# 普通战：高层涨、低层不涨（对照）
+	_real_fight("plain_hi", hi, 1, true)
+	_real_fight("plain_low", low, 1, false)
+	# 七印 7 个里副本（借来的地图都在 0～19 层，低于 33−3）：照样涨
+	var qd: Dictionary = XTianqiQiyin.data().get("seals", {})
+	for k in XTianqiQiyin.seal_keys():
+		var info: Dictionary = qd[k]
+		var troops: Array = info.get("troops", [])
+		var key := str(k)
+		_real_fight("qiyin_" + key, int(info.map), int(troops[0]), true, func(): XTianqiQiyinRule.prepare(key), XTianqiQiyinRule.META)
+	# 七印 Boss 场（第三场）也算
+	var mo: Dictionary = qd["mo"]
+	_real_fight("qiyin_mo_boss", int(mo.map), int(mo.troops[2]), true, func(): XTianqiQiyinRule.prepare("mo", true), XTianqiQiyinRule.META)
+	# 四骑士：36 层正打本体（Map 158，层号 20）、大厅再挑战 36 层本体、35 层影子
+	_real_fight("horse_body_158", 158, 0, true, func(): XTianqiHorsemen.prepare("war", s), XTianqiHorsemen.META)
+	_real_fight("horse_body_lobby", 4, 0, true, func(): XTianqiHorsemen.prepare("death", s), XTianqiHorsemen.META)
+	_real_fight("horse_shadow_lobby", 4, 0, true, func(): XTianqiHorsemen.prepare("plague", s, "shadow"), XTianqiHorsemen.META)
+	# 回退开关关掉：普通低层照涨（回到 T548 之前）
+	G.CROWN_FLOOR = false
+	_real_fight("off_plain_low", low, 1, true)
+	G.CROWN_FLOOR = true
+	# 结算时标记确实已清（不留快照就会判错，这条看的是根因还在、快照有用）
+	var lg := _real(s, 158, 0, func(): XTianqiHorsemen.prepare("war", s))
+	lg.end_battle(0)
+	_check("e2e_meta_cleared_after_end", not G.crown_floor_ok(s, lg), XTianqiGrowth.facts(s, lg))
+	# SL：存开战前档 → 低层赢（不涨、结算）→ 读回同一遭遇序号再打同一场：不涨、不重掷，账本那一行不变
+	_check("e2e_sl_save", kit.save())
+	var seq := int(s.flags.get(XDemonCrown.SEQ_FLAG, 0))
+	var key := "b:%d" % seq
+	_real_fight("sl_first", low, 1, false)
+	var row1: Dictionary = _rows(s).get(key, {}).duplicate(true)
+	s = kit.reload()
+	_check("e2e_sl_reload_seq", s != null and int(s.flags.get(XDemonCrown.SEQ_FLAG, 0)) == seq)
+	_real_fight("sl_again", low, 1, false)
+	_check("e2e_sl_row_same", bool(row1.get("settled", false)) and _rows(s).get(key, {}) == row1, [row1, _rows(s).get(key)])
+	# 读回再改打高层同一序号：账本那一行已结过，不涨（老规矩，防 SL 换场刷成长）
+	s = kit.reload()
+	_real_fight("sl_hi_same_ordinal", hi, 1, false, null, "", true)  # 层数够，但这一序号已结过
 
 
 func _xiyou() -> void:
@@ -206,6 +282,7 @@ func _run() -> void:
 	XDemonCrown.storage_error = ""
 	_facts()
 	_tianqi()
+	_e2e()
 	XDemonCrown.forget_ledger()
 	XDemonCrown.storage_error = ""
 	_xiyou()

@@ -353,10 +353,28 @@ static func crown_floor_ok(s: XState, logic = null) -> bool:
 	return crown_floor_ok_facts(facts(s, logic))
 
 
+## T548 返修（小A 核查 P1-1）：开战时（XBattleLogic.setup 里各特殊战 setup 之后）取这一场的事实留给结算用。
+## 结算在 endBattle 最外层，那时四骑士／七印里副本已清掉 logic 上的标记，现取会把七印里副本、终局战当成普通低层。
+## 西游档、表缺失返回 null（结算照 crown_floor_ok 恒 true）。
+static func crown_facts(s: XState, logic = null):
+	if s == null or not XTianqi.active(s) or data().is_empty():
+		return null
+	return facts(s, logic)
+
+
+## 结算用：有开战快照按快照判，没有（直接调 begin／finish 的旧单测）退回现取
+static func crown_floor_ok_snap(s: XState, snap, logic = null) -> bool:
+	if not CROWN_FLOOR or s == null or not XTianqi.active(s) or data().is_empty():
+		return true
+	if snap is Dictionary:
+		return crown_floor_ok_facts(snap)
+	return crown_floor_ok_facts(facts(s, logic))
+
+
 ## 说明卡提示（玩家可见文字，待小A 审）：天启篇里开关开着时给一句，西游档空串
 static func crown_hint(s: XState = null) -> String:
 	if s == null:
 		s = XState.current
 	if not CROWN_FLOOR or s == null or not XTianqi.active(s) or data().is_empty():
 		return ""
-	return "只有最高层往下 %d 层以内的战斗胜利才会成长" % crown_window()
+	return "仅在当前最高层往下%d层内（及高难／终局副本）获胜才会成长" % crown_window()  # 小A 文字审（Neon 11-26）定稿；打头的 ※ 由 XDemonCrown.describe 拼

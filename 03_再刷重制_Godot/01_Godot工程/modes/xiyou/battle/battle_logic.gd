@@ -246,7 +246,7 @@ func setup(troop: int, s: XState, random_context: XBattleRandom = null) -> void:
 		actors = everyone.filter(func(a): return not leaving.has(a))
 	XHonghuang.battle_started(state, int(troop_id))  # 洪荒 setup／startBattle 包装：记本场身份（权能掉落用）
 	XAbyssMerchant.battle_started(state, int(troop_id))  # 深渊商人 startBattle 包装：记本场（领战利品点用）
-	XDemonCrown.begin(state, int(troop_id), func(): return _rule().next_float("demon_crown.roll"))  # 魔冠 startBattle 包装（main.js 第 151 行，最外层、原 startBattle 之前）：收编、记穿着的人、掉落战斗开战掷点
+	XDemonCrown.begin(state, int(troop_id), func(): return _rule().next_float("demon_crown.roll"), self)  # 魔冠 startBattle 包装（main.js 第 151 行，最外层、原 startBattle 之前）：收编、记穿着的人、掉落战斗开战掷点
 	XToji.start_battle(self)  # 甚尔 startBattle 包装（原 startBattle 之前）：设第一形态（随后开战清 removeAtBattleEnd 状态）
 	XSukuna.start_battle(self)  # 宿傩 startBattle 包装（之前）：清战斗数据、同步技能
 	XGojo.start_battle(self)  # 天启篇五条悟：清苍印赫印、领域

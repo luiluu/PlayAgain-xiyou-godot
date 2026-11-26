@@ -436,7 +436,7 @@ static func lost(s: XState, item: Dictionary) -> bool:
 			p.items[uid].removed = true))
 
 ## startBattle 包装（原 startBattle 之前）：收编、记穿着的人；掉落战斗或有人穿着才建这一场的账（roll 只在新建且是掉落战斗时调）
-static func begin(s: XState, troop: int, roll: Callable) -> void:
+static func begin(s: XState, troop: int, roll: Callable, logic = null) -> void:
 	_for(s)
 	battle = null
 	if storage_error != "" or s == null:
@@ -470,7 +470,7 @@ static func begin(s: XState, troop: int, roll: Callable) -> void:
 		var list := []
 		for x in wears:
 			list.append({"actor": x.actor, "uid": x.uid, "valid": (r.get("wears", []) as Array).any(func(y): return int(y.actor) == x.actor and str(y.uid) == x.uid)})
-		battle = {"key": key, "ordinal": ordinal, "wears": list, "serial": {}, "same": int(r.get("map", -1)) == s.map_id and int(r.get("troop", -1)) == troop, "finished": false, "row": pending}
+		battle = {"key": key, "ordinal": ordinal, "wears": list, "serial": {}, "same": int(r.get("map", -1)) == s.map_id and int(r.get("troop", -1)) == troop, "finished": false, "row": pending, "floor": XTianqiGrowth.crown_facts(s, logic) if logic != null else null}  # T548 返修 P1-1：开战取层数事实（结算时四骑士／七印标记已清）
 		return true)
 
 static func _drop_battle(s: XState, troop: int) -> bool:
@@ -493,7 +493,7 @@ static func finish(s: XState, result: int) -> void:
 			var winners := (b.wears as Array).filter(func(x):
 				var a: XActor = s.actors.get(int(x.actor))
 				return bool(x.valid) and a != null and a.is_alive() and members.has(a) and str(gear(a).get(UID, "")) == str(x.uid))
-			var grow := result == 0 and XTianqiGrowth.crown_floor_ok(s, XRaceBattle.active_logic())  # T548：天启篇低层不涨（西游档恒 true）
+			var grow := result == 0 and XTianqiGrowth.crown_floor_ok_snap(s, b.get("floor"), XRaceBattle.active_logic())  # T548：天启篇低层不涨（西游档恒 true）；按开战快照判
 			var ok := transaction(s, func(n):
 				var r: Dictionary = _materialize(n, b)
 				r.settled = true
