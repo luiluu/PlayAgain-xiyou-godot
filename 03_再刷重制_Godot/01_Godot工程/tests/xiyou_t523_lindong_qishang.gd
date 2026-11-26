@@ -93,7 +93,9 @@ func _run() -> void:
 
 	_test_tianqi_lindong_169()
 	_test_tianqi_qishang_1341()
+	_test_tianqi_common_event_learn()
 	_test_xiyou_regression()
+	_test_xiyou_common_event_learn()
 
 	XMagicWeapon.TIANQI_SKIP_LEARN_SKILL = was_skip
 	XTianqiBase.TUNE_D200 = was_d200
@@ -298,6 +300,58 @@ func _test_tianqi_qishang_1341() -> void:
 	XMagicWeapon.TIANQI_SKIP_LEARN_SKILL = false
 	check("tq.1341.rollback_switch", XMagicWeapon.item_skills(fengwu) == [7513], XMagicWeapon.item_skills(fengwu))
 	XMagicWeapon.TIANQI_SKIP_LEARN_SKILL = true
+
+
+## 真跑公共事件 1406／1408：同一固定种子反复预约执行，直到领悟抽签覆盖全部分支；记下提示与学会的技能
+func _run_learn_ce(s: XState, ce_id: int, seed_hex: String) -> Dictionary:
+	var th: XActor = s.actor(104)
+	th.change_level(60)
+	var lg := XBattleLogic.new()
+	lg.elite_roll = 100.0
+	lg.setup(2, s, XBattleRandom.create(seed_hex))
+	for sid in range(7490, 7503) + [7520]:
+		th.forget_skill(sid)
+	for sw in range(2241, 2255):
+		s.set_switch(sw, false)
+	var toasts := []
+	var rolls := {}
+	var skipped := []
+	for i in range(3000):
+		lg._check = {}
+		XBattleCommonEvent.reserve(lg, ce_id)
+		var r := XBattleCommonEvent.take(lg)
+		var guard := 0
+		while str(r.advance().kind) != "done" and guard < 20:
+			guard += 1
+		skipped.append_array(r.skipped)
+		for x in r.take_logs():
+			if x.get("type") == "toast" and str(x.get("text")).contains("领悟技能"):
+				toasts.append(str(x.get("text")))
+		rolls[int(s.variable(1166))] = true
+	var learned := (range(7490, 7503) + [7520]).filter(func(sid): return th.skill_ids.has(sid))
+	return {"toasts": toasts, "learned": learned, "rolled_3": rolls.has(3), "switch_2243": s.switch(2243), "skipped": skipped}
+
+
+func _test_tianqi_common_event_learn() -> void:
+	var others: Array = (range(7490, 7503) + [7520]).filter(func(sid): return sid != 7492)
+	for ce_id in [1406, 1408]:
+		var res := _run_learn_ce(_make_tianqi([104, 1, 2, 3], 25), ce_id, "0000000000000525")
+		check("tq.ce%d.no_7492_no_toast" % ce_id, res.rolled_3 and not res.learned.has(7492) and not res.switch_2243
+			and not res.toasts.any(func(t): return t.contains("气傲天苍")), res)
+		check("tq.ce%d.other_learns_kept" % ce_id, res.learned == others and res.toasts.size() == others.size(), res)
+	XBattleCommonEvent.TIANQI_SKIP_SHELL_LEARN = false
+	var back := _run_learn_ce(_make_tianqi([104, 1, 2, 3], 25), 1406, "0000000000000525")
+	check("tq.ce.rollback_switch", back.learned.has(7492) and back.toasts.any(func(t): return t.contains("气傲天苍")), back)
+	XBattleCommonEvent.TIANQI_SKIP_SHELL_LEARN = true
+
+
+func _test_xiyou_common_event_learn() -> void:
+	for ce_id in [1406, 1408]:
+		var res := _run_learn_ce(_make_xiyou([104, 5], 25), ce_id, "0000000000000525")
+		check("xy.ce%d.learns_7492_with_toast" % ce_id, res.learned.has(7492) and res.switch_2243 and res.learned.size() == 14
+			and res.toasts.any(func(t): return t.contains("气傲天苍")), res)
+		var rec := XDB.rec("CommonEvents", ce_id)
+		check("xy.ce%d.list_untouched" % ce_id, XBattleCommonEvent.command_list(ce_id, rec) == rec.list)
 
 
 func _test_xiyou_regression() -> void:

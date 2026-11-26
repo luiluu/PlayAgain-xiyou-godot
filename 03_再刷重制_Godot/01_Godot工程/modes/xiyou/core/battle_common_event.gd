@@ -23,6 +23,11 @@ const CHAIN_LIMIT := 64
 ## 概率连发（每次再放都重掷，可连多次）照原版（审查第 75 期 P1-1）。
 static var EXTRA_ONCE := true
 const EXTRA_ONCE_IDS := [1365]
+## T523：天启篇里 7492 气傲天苍是空壳（天熄乱舞／气伤链未实装），天虎令的 CE1406／1408 却照样会领悟并弹提示。
+## 只在天启篇存档删掉这两个事件里领悟它的那一支（条件、领悟、记开关、提示整段），剑思和其他领悟支照跑；
+## 西游档拿原事件。false＝回退。
+static var TIANQI_SKIP_SHELL_LEARN := true
+const TIANQI_SHELL_LEARN := {1406: 7492, 1408: 7492}
 ## 本版 BattleManager.startBattle 每场开战预约的公共事件「战斗开始时调整变量」（调 1315／1372／1373／1375，变量 13＝1 时截上限）
 const START_EVENT := 1320
 
@@ -45,7 +50,33 @@ static func run_or_reserve(logic, id: int) -> void:
 		return
 	var ce := XDB.rec("CommonEvents", id)
 	if not ce.is_empty():
-		logic._runner.setup_child(ce.get("list", []), id)
+		logic._runner.setup_child(command_list(id, ce), id)
+
+
+## 公共事件实际要跑的指令表（天启篇收口见 TIANQI_SKIP_SHELL_LEARN；只返回副本，不改数据库）
+static func command_list(id: int, ce: Dictionary) -> Array:
+	var list: Array = ce.get("list", [])
+	if not TIANQI_SKIP_SHELL_LEARN or not TIANQI_SHELL_LEARN.has(id) or not XTianqi.active(XState.current):
+		return list
+	return _without_learn_branch(list, int(TIANQI_SHELL_LEARN[id]))
+
+
+## 删掉直接包着「318 领悟 skill」的最内层条件分支（111 起到同缩进的 412）；找不到就原样返回
+static func _without_learn_branch(list: Array, skill: int) -> Array:
+	for i in list.size():
+		var p: Array = list[i].get("parameters", [])
+		if int(list[i].code) != 318 or int(p[2]) != 0 or int(p[3]) != skill:
+			continue
+		var depth := int(list[i].indent) - 1
+		var from := i
+		while from >= 0 and not (int(list[from].code) == 111 and int(list[from].indent) == depth):
+			from -= 1
+		var to := i
+		while to < list.size() and not (int(list[to].code) == 412 and int(list[to].indent) == depth):
+			to += 1
+		if from >= 0 and to < list.size():
+			return list.slice(0, from) + list.slice(to + 1)
+	return list
 
 
 ## ACTION COMMON EVENT：这次行动的道具里每个 44 效果依次预约（单槽，最后一个生效）
@@ -113,7 +144,7 @@ static func take(logic) -> XBattleEventRunner:
 	if n > CHAIN_LIMIT:
 		push_warning("XBattleCommonEvent: 公共事件 %d 接连预约超过 %d 次，停下" % [id, CHAIN_LIMIT])
 		return null
-	var r := XBattleEventRunner.new(logic, ce.get("list", []), logic._check.get("first"))
+	var r := XBattleEventRunner.new(logic, command_list(id, ce), logic._check.get("first"))
 	r.set_meta("page", -1)
 	r.set_meta("common_event", id)
 	if user != null:
