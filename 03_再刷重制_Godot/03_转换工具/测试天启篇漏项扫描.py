@@ -244,6 +244,66 @@ class TestLeakScanner(unittest.TestCase):
         self.assertIn((102, "hh.id"), taught)  # 洪荒补强同款写法能还原
         self.assertTrue(all(m["reach"] == "reachable" for m in m3))
 
+    def _r3_fixture(self):
+        """小o R3 复核的 3 个新失败：嵌套技能参数、技能变量重赋值、变量形式的公共事件调用。"""
+        skills = {
+            100: {"id": 100, "note": "", "effects": [{"code": 44, "dataId": 1}, {"code": 44, "dataId": 2}]},
+            101: {"id": 101, "note": "<SkillPass5:300%>", "effects": []},
+            102: {"id": 102, "note": "<SkillPass5:300%>", "effects": []},
+            103: {"id": 103, "note": "", "effects": [{"code": 44, "dataId": 3}]},
+        }
+        actors = {10: {"id": 10, "classId": 1}}
+        classes = {1: {"learnings": [{"level": 1, "skillId": 100}]}}
+
+        def cmd(c, *p):
+            return {"code": c, "indent": 0, "parameters": list(p)}
+
+        ces = {
+            # 1：参数套两层括号，旧正则整句匹配不到 → 静默漏
+            1: [cmd(355, "var a = $gameActors.actor(10);"), cmd(655, "a.learnSkill(Number(String(101)));")],
+            # 2：k 先赋 101 再 += 1（实际学 102），旧逻辑只认一次赋值 → 报成 101、漏 102
+            2: [cmd(355, "var a = $gameActors.actor(10); var k = 101; k += 1;"), cmd(655, "a.learnSkill(k);")],
+            # 3：调用方只有被删的 103，但地图脚本用变量调公共事件 → 不能证实删掉
+            3: [cmd(318, 0, 10, 0, 101)],
+        }
+        ces = {k: {"id": k, "list": v} for k, v in ces.items()}
+        maps = {7: {"events": [None, {"id": 1, "pages": [{"list": [
+            cmd(355, "$gameTemp.reserveCommonEvent($gameVariables.value(5));"),
+        ]}]}]}}
+        eff_sr = {
+            "tiers": {"强者": [10], "不开放": []},
+            "skills": {"100": {"actor": 10}, "103": {"actor": 10, "effects_remove": [[44, 3]]}},
+        }
+        return SCAN.scan_class_b(eff_sr, {}, {}, {}, skills, {}, actors, classes, ces, {}, {}, maps)
+
+    def test_class_b_xiaoo_r3_fixtures(self) -> None:
+        res = self._r3_fixture()
+        groups = {g["ce_id"]: g for g in res["groups"]}
+        manual = [m for m in res["manual"]]
+        with self.subTest("嵌套技能参数不漏"):
+            listed = {(t["id"], t["dynamic_expr"]) for m in manual if m["ce_id"] == 1 for t in m["taught"]}
+            listed |= {(t["id"], "") for t in groups.get(1, {}).get("taught", [])}
+            self.assertTrue(listed, "CE1 的 learnSkill(Number(String(101))) 一条都没报")
+            self.assertTrue(any(i in (101, None) for i, _ in listed))
+        with self.subTest("技能变量重赋值不报成首次赋值"):
+            t2 = [t for m in manual if m["ce_id"] == 2 for t in m["taught"]]
+            self.assertTrue(t2, "CE2 没进人工核对")
+            self.assertEqual([(t["id"], t["dynamic_expr"]) for t in t2], [(None, "k")])
+            self.assertNotIn(2, groups)
+        with self.subTest("变量形式的公共事件调用 → 不判删掉"):
+            self.assertEqual(res["dropped"], [])
+            self.assertIn(3, groups)
+            self.assertEqual(groups[3]["reach"], "dynamic_call_possible")
+            self.assertIn((10, 3, "dynamic_call_possible"), res["no_caller"])
+
+    def test_script_helpers_loop_var_and_comment(self) -> None:
+        loop = "var a=$gameActors.actor(10); for (var k = 101; k <= 103; k++) { a.learnSkill(k); }"
+        self.assertIsNone(SCAN._resolve_script_skill("k", loop, {}))
+        self.assertEqual(SCAN._resolve_script_skill("k", "var k = 101; a.learnSkill(k);", {}), 101)
+        self.assertIsNone(SCAN._resolve_script_skill("hh.id", "var hh=$dataSkills[101]; hh=$dataSkills[102];", {}))
+        block = SCAN._script_blocks([{"code": 355, "parameters": ["// 用 learnSkill 函数学会技能"]}, {"code": 655, "parameters": ["a.learnSkill(Math.max(1, f(101)));"]}])
+        self.assertEqual(SCAN._call_args(block[0], SCAN.LEARN_TOKEN_RE), [("Math.max(1, f(101))", "learnSkill(Math.max(1, f(101)));")])
+
     def test_real_repo_ce1445_honghuang_listed(self) -> None:
         import contextlib
         import io

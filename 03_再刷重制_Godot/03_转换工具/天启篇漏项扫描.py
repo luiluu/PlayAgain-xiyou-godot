@@ -12,13 +12,15 @@
    - 同时检查 note_add 与原版残留同名标签冲突（如 7516 ConsumeReduceZj 双标签）。
 2. 经公共事件（CommonEvents）学到未改写技能：
    - 学习来源：CommonEvents 里的 318「学会」（固定角色／全队／变量指定角色）与脚本 learnSkill(…)；
-     脚本参数是变量／表达式的尽量还原（常量、$dataSkills[N]、按备注标签 filter），还原不了也列人工核对；
+     脚本按括号配平取参数（可套多层括号，注释里的不算）；参数是变量／表达式的尽量还原（常量、$dataSkills[N]、
+     按备注标签 filter），变量被重赋值／复合赋值／自增／循环改过就不还原，还原不了或调用写法解析不了都列人工核对；
    - 过滤不开放角色（tiers.不开放）及已在 skill_rework / general_books /
      secret_books.skills（功法）/ trumpet.scrolls[].skill（号卷）中改写的技能；
    - 可达性：未删技能与物品的 code 44、公共事件 117 与脚本 reserveCommonEvent、地图与敌群事件、
-     自动／并行触发作根，沿公共事件调用传递（技能效果与运行时同序：先 effects_remove 再 effects_add）；
+     状态／物品／装备备注里的 reserveCommonEvent、自动／并行触发作根，沿公共事件调用传递（技能效果与运行时同序：先 effects_remove 再 effects_add）；
      只有能证实「调用方全是天启篇删掉的技能、或已判删掉的公共事件」才略过，略过的列在 dropped 里；
      父事件找不到调用、调用成环的标「入口未证实」（parent_unconfirmed）人工核对，绝不静默判 dropped；
+     只要有变量形式的公共事件调用（117／reserveCommonEvent 调用号追不到），一个都不判删掉，改标 dynamic_call_possible；
    - 目标角色追不到的（318 全队／变量、脚本没写死单个角色号、写死号旁边还有别的取角色方式）进 manual；
    - 标出每个未改写技能携带的危险旧标签、原版伤害公式及未改写强力状态；
      已由别的天启篇模块接管的技能（KNOWN_HANDLED_SKILLS）只标注、不算高危。
@@ -279,13 +281,102 @@ KNOWN_HANDLED_SKILLS: dict[int, str] = {
 }
 
 SCRIPT_ACTOR_RE = re.compile(r"\$gameActors\.actor\(\s*(\d+)\s*\)")
-SCRIPT_LEARN_ANY_RE = re.compile(r"\blearnSkill\(\s*([^()]*?(?:\([^()]*\)[^()]*?)*)\s*\)")
+LEARN_TOKEN_RE = re.compile(r"(?<![\w$])learnSkill(?![\w$])")
 # 脚本里「目标角色不止一个写死号」的迹象：非字面 actor()、队伍／战斗对象、循环。出现任何一个都不归给块内唯一字面角色号
 SCRIPT_DYNAMIC_ACTOR_RE = re.compile(
     r"\$gameActors\.actor\(\s*(?!\d+\s*\))|\$gameParty\b|\$gameTroop\b|BattleManager\b|\$gameActors\._data|"
     r"\.forEach\b|\bfor\s*\(|\bwhile\s*\("
 )
 RESERVE_CE_RE = re.compile(r"reserveCommonEvent\(\s*(\d+)\s*\)")
+FOR_TOKEN_RE = re.compile(r"(?<![\w$.])for(?![\w$])")
+RESERVE_ANY_RE = re.compile(r"(?<![\w$])reserveCommonEvent(?![\w$])")
+
+
+def _strip_js_comments(script: str) -> str:
+    """去掉 // 与 /* */ 注释（引号里的不动），注释里提到 learnSkill／reserveCommonEvent 不算调用。"""
+    out, i, quote, n = [], 0, "", len(script)
+    while i < n:
+        ch = script[i]
+        if quote:
+            out.append(ch)
+            if ch == "\\" and i + 1 < n:
+                out.append(script[i + 1])
+                i += 2
+                continue
+            if ch == quote:
+                quote = ""
+        elif ch in "'\"`":
+            quote = ch
+            out.append(ch)
+        elif script.startswith("//", i):
+            j = script.find("\n", i)
+            i = n if j < 0 else j
+            continue
+        elif script.startswith("/*", i):
+            j = script.find("*/", i + 2)
+            i = n if j < 0 else j + 2
+            continue
+        else:
+            out.append(ch)
+        i += 1
+    return "".join(out)
+
+
+def _call_args(script: str, token_re: re.Pattern) -> list[tuple[str | None, str]]:
+    """找出脚本里每一处 token(…) 调用，按括号配平取整段参数（参数可以套多层括号）。
+    token 后面不是「(」、或括号配不平的，返回 (None, 片段)，调用方一律进人工核对，不静默丢。"""
+    out: list[tuple[str | None, str]] = []
+    for m in token_re.finditer(script):
+        snippet = script[m.start(): m.start() + 80].split("\n", 1)[0]
+        i = m.end()
+        while i < len(script) and script[i] in " \t":
+            i += 1
+        if i >= len(script) or script[i] != "(":
+            out.append((None, snippet))
+            continue
+        depth, j, quote = 0, i, ""
+        while j < len(script):
+            ch = script[j]
+            if quote:
+                if ch == "\\":
+                    j += 2
+                    continue
+                if ch == quote:
+                    quote = ""
+            elif ch in "'\"`":
+                quote = ch
+            elif ch in "([{":
+                depth += 1
+            elif ch in ")]}":
+                depth -= 1
+                if depth == 0:
+                    break
+            j += 1
+        if depth != 0 or j >= len(script):
+            out.append((None, snippet))
+        else:
+            out.append((script[i + 1: j].strip(), snippet))
+    return out
+
+
+def _name_rebound(name: str, script: str) -> bool:
+    """变量除了一次普通赋值以外还被改过：复合赋值、++/--、for 头、函数参数、解构。改过就不能按那一次赋值还原。"""
+    n = re.escape(name)
+    pats = (
+        r"(?<![\w$.])%s\s*(?:\*\*|>>>|<<|>>|&&|\|\||\?\?|[-+*/%%&|^])=" % n,
+        r"(?<![\w$.])%s\s*(?:\+\+|--)" % n,
+        r"(?:\+\+|--)\s*%s(?![\w$])" % n,
+        r"\bfunction\b[^(]*\([^)]*(?<![\w$.])%s(?![\w$])[^)]*\)" % n,
+        r"(?<![\w$.])%s\s*=>" % n,
+        r"[\[{][^\]};]*(?<![\w$.])%s(?![\w$])[^\]};]*[\]}]\s*=(?![=>])" % n,
+    )
+    if any(re.search(p, script) for p in pats):
+        return True
+    # for 头按括号配平取整段（头里可以有函数调用），名字出现在头里就算改过
+    for head, _ in _call_args(script, FOR_TOKEN_RE):
+        if head is None or re.search(r"(?<![\w$.])%s(?![\w$])" % n, head):
+            return True
+    return False
 
 
 def _script_blocks(cmds: list) -> list[str]:
@@ -301,7 +392,7 @@ def _script_blocks(cmds: list) -> list[str]:
             cur.append(str((c.get("parameters") or [""])[0]))
         else:
             cur = None
-    return ["\n".join(b) for b in blocks]
+    return [_strip_js_comments("\n".join(b)) for b in blocks]
 
 
 def _resolve_script_skill(expr: str, script: str, skills: dict[int, dict]) -> int | None:
@@ -316,17 +407,23 @@ def _resolve_script_skill(expr: str, script: str, skills: dict[int, dict]) -> in
     if not m:
         return None
     name, dot_id = m.group(1), bool(m.group(2))
+    if _name_rebound(name, script):
+        return None
     if dot_id:
         # var hh = $dataSkills.filter(function(s){return s&&/<Tag>/.test(s.note);})[0]; … learnSkill(hh.id)
+        if len(re.findall(r"(?<![\w$.])%s\s*=(?![=>])" % re.escape(name), script)) != 1:
+            return None  # 重赋值过：filter 那一次不一定是最终值
         mf = re.findall(
-            r"\b%s\s*=(?!=)\s*\$dataSkills\.filter\(.*?/(<[^/]+>)/\.test\(\s*\w+\.note\s*\).*?\)\s*\[\s*0\s*\]" % re.escape(name),
+            r"(?<![\w$.])%s\s*=(?!=)\s*\$dataSkills\.filter\(.*?/(<[^/]+>)/\.test\(\s*\w+\.note\s*\).*?\)\s*\[\s*0\s*\]" % re.escape(name),
             script,
             re.S,
         )
         if len(mf) == 1:
             hits = sorted(sid for sid, sk in skills.items() if mf[0] in str(sk.get("note", "")))
             return hits[0] if hits else None
-    assigns = re.findall(r"(?:\bvar|\blet|\bconst)?\s*\b%s\s*=(?!=)\s*([^;\n]+)" % re.escape(name), script)
+    if _name_rebound(name, script):
+        return None  # 被复合赋值／自增／循环／参数／解构改过：追不到
+    assigns = re.findall(r"(?<![\w$.])%s\s*=(?![=>])\s*([^;\n]+)" % re.escape(name), script)
     if len(assigns) != 1:
         return None  # 没赋值或多次赋值：追不到
     rhs = assigns[0].strip()
@@ -339,16 +436,30 @@ def _resolve_script_skill(expr: str, script: str, skills: dict[int, dict]) -> in
     return None
 
 
-def _ce_refs_in_cmds(cmds: list) -> set[int]:
-    """事件指令里调到的公共事件：117 直接调用＋脚本 reserveCommonEvent(N)。"""
+def _ce_refs_in_script(script: str, dynamic: list[str] | None = None) -> set[int]:
+    """脚本里 reserveCommonEvent(…)：参数是字面号的收进来；是变量／表达式的记进 dynamic（调到哪个追不到）。"""
+    out: set[int] = set()
+    # 备注不是纯脚本（夹着说明文字，单引号可能不成对），这里不去注释：注释里的调用宁可多算成根
+    for arg, snippet in _call_args(script, RESERVE_ANY_RE):
+        if arg is not None and arg.isdecimal():
+            out.add(int(arg))
+        elif dynamic is not None:
+            dynamic.append(snippet)
+    return out
+
+
+def _ce_refs_in_cmds(cmds: list, dynamic: list[str] | None = None) -> set[int]:
+    """事件指令里调到的公共事件：117 直接调用＋脚本 reserveCommonEvent(N)。调用号追不到的记进 dynamic。"""
     out: set[int] = set()
     for c in cmds:
         if c.get("code") == 117:
             p = c.get("parameters") or []
-            if p:
+            if p and re.fullmatch(r"\s*\d+\s*", str(p[0])):
                 out.add(int(p[0]))
+            elif dynamic is not None:
+                dynamic.append(f"117 {p[:1]}")
     for s in _script_blocks(cmds):
-        out.update(int(x) for x in RESERVE_CE_RE.findall(s))
+        out |= _ce_refs_in_script(s, dynamic)
     return out
 
 
@@ -378,6 +489,7 @@ def scan_class_b(
     items: dict[int, dict] | None = None,
     troops: dict[int, dict] | None = None,
     maps: dict[int, dict] | None = None,
+    note_tables: dict[str, dict[int, dict]] | None = None,
 ) -> dict:
     """扫描 B 类：经公共事件学到、未改写的技能。
 
@@ -436,6 +548,7 @@ def scan_class_b(
     # ---- 调用图 ----
     skill_active_callers: dict[int, list[int]] = defaultdict(list)
     skill_removed_callers: dict[int, list[int]] = defaultdict(list)
+    dynamic_ce_calls: list[str] = []  # 调用号是变量／表达式的公共事件调用：调到哪个追不到
     for sid, sk in skills.items():
         sp = eff_sr.get("skills", {}).get(str(sid)) or gb.get("skills", {}).get(str(sid))
         rem = {(int(e[0]), int(e[1])) for e in sp.get("effects_remove", [])} if isinstance(sp, dict) else set()
@@ -449,25 +562,39 @@ def scan_class_b(
         for e in sk.get("effects", []):
             if e.get("code") == 44 and int(e["dataId"]) not in active_ids and (44, int(e["dataId"])) in rem:
                 skill_removed_callers[int(e["dataId"])].append(sid)
-        for cid in RESERVE_CE_RE.findall(str(sk.get("note", ""))):
+        dyn: list[str] = []
+        for cid in _ce_refs_in_script(str(sk.get("note", "")), dyn):
             skill_active_callers[int(cid)].append(sid)
+        dynamic_ce_calls.extend(f"skill{sid}: {d}" for d in dyn)
     item_callers: dict[int, list[int]] = defaultdict(list)
     for iid, it in items.items():
         for e in it.get("effects", []) or []:
             if e.get("code") == 44:
                 item_callers[int(e["dataId"])].append(iid)
+    # 状态／物品／装备备注里的 reserveCommonEvent（YEP 自定义效果脚本）：按根算，宁可多列不漏
+    note_callers: dict[int, list[str]] = defaultdict(list)
+    for tname, table in {"state": states, "item": items, **(note_tables or {})}.items():
+        for rid, row in (table or {}).items():
+            dyn = []
+            for ref in _ce_refs_in_script(str((row or {}).get("note", "")), dyn):
+                note_callers[ref].append(f"{tname}{rid}")
+            dynamic_ce_calls.extend(f"{tname}{rid}: {d}" for d in dyn)
     ce_callers: dict[int, set[int]] = defaultdict(set)  # 被谁（公共事件）调
     for cid, ce in ces.items():
-        for ref in _ce_refs_in_cmds(ce.get("list", []) or []):
+        dyn = []
+        for ref in _ce_refs_in_cmds(ce.get("list", []) or [], dyn):
             ce_callers[ref].add(cid)
+        dynamic_ce_calls.extend(f"CE{cid}: {d}" for d in dyn)
     event_callers: dict[int, list[str]] = defaultdict(list)  # 地图／敌群事件
     for tag, cmds in _event_pages_cmds(maps, troops):
-        for ref in _ce_refs_in_cmds(cmds):
+        dyn = []
+        for ref in _ce_refs_in_cmds(cmds, dyn):
             event_callers[ref].append(tag)
+        dynamic_ce_calls.extend(f"{tag}: {d}" for d in dyn)
     maps_scanned = bool(maps)
 
-    # 可达：从根（未删技能、物品、地图／敌群事件、自动／并行触发）出发沿 CE→CE 传递
-    roots = set(skill_active_callers) | set(item_callers) | set(event_callers)
+    # 可达：从根（未删技能、物品、状态／装备备注、地图／敌群事件、自动／并行触发）出发沿 CE→CE 传递
+    roots = set(skill_active_callers) | set(item_callers) | set(note_callers) | set(event_callers)
     roots |= {cid for cid, ce in ces.items() if int(ce.get("trigger", 0) or 0) != 0}
     children: dict[int, set[int]] = defaultdict(set)
     for callee, callers in ce_callers.items():
@@ -497,12 +624,18 @@ def scan_class_b(
             if all(c in dropped_ces for c in ce_cs):
                 dropped_ces.add(cid)
                 changed = True
+    # 有变量形式的调用（调到哪个追不到）时，任何公共事件都可能被它调到：一个都不能证实删掉，全部改标人工核对
+    dynamic_suspect: set[int] = set()
+    if dynamic_ce_calls:
+        dynamic_suspect, dropped_ces = dropped_ces, set()
 
     def reach_kind(cid: int) -> str:
         if cid in reachable:
             return "reachable"
         if cid in dropped_ces:
             return "dropped"
+        if cid in dynamic_suspect:
+            return "dynamic_call_possible"  # 已知调用方全删了，但有变量形式的调用可能调到它：人工核对
         if skill_removed_callers.get(cid) or ce_callers.get(cid):
             return "parent_unconfirmed"  # 有调用方，但上游追到「没找到调用」或成环：入口未证实，人工核对
         return "no_caller_found"  # 一处调用都没找到：可能是插件／脚本里拼出来的调用，进人工核对
@@ -516,6 +649,8 @@ def scan_class_b(
             kind = "other_skill_chain"
         elif item_callers.get(cid):
             kind = "item"
+        elif note_callers.get(cid):
+            kind = "note_script"
         elif event_callers.get(cid):
             kind = "map_or_troop_event"
         elif ce_callers.get(cid):
@@ -532,6 +667,7 @@ def scan_class_b(
             "active_callers": callers[:8],
             "actor_callers": actor_callers[:8],
             "item_callers": item_callers.get(cid, [])[:8],
+            "note_callers": note_callers.get(cid, [])[:8],
             "event_callers": event_callers.get(cid, [])[:6],
             "ce_callers": sorted(ce_callers.get(cid, set()))[:8],
             "removed_callers": skill_removed_callers.get(cid, [])[:8],
@@ -625,9 +761,16 @@ def scan_class_b(
             else:
                 taught_unresolved[cid].append((f"318 变量{p[1]} 指定角色", sid, ""))
         for s in _script_blocks(cmds):
-            exprs = [x.strip() for x in SCRIPT_LEARN_ANY_RE.findall(s)]
-            if not exprs:
+            calls = _call_args(s, LEARN_TOKEN_RE)
+            if not calls:
                 continue
+            exprs = []
+            for arg, snippet in calls:
+                if arg is None:
+                    # learnSkill 后面不是正常调用（括号配不平、call/apply、取函数引用…）：整段列人工核对
+                    taught_unresolved[cid].append(("脚本 learnSkill（调用写法解析不了）", None, snippet))
+                else:
+                    exprs.append(arg)
             fixed = sorted({int(x) for x in SCRIPT_ACTOR_RE.findall(s)})
             # 只有「块内唯一一个写死角色号、且没有任何别的取角色方式」才归给该角色；混合目标一律人工核对
             single_actor = fixed[0] if len(fixed) == 1 and not SCRIPT_DYNAMIC_ACTOR_RE.search(s) else None
@@ -686,7 +829,7 @@ def scan_class_b(
                 "taught": sk_rows,
             })
     # 一处调用都没找到、或上游入口未证实的固定角色组也进人工核对（可能由插件／拼接脚本调用）
-    no_caller = [g for g in groups if g["reach"] in ("no_caller_found", "parent_unconfirmed")]
+    no_caller = [g for g in groups if g["reach"] in ("no_caller_found", "parent_unconfirmed", "dynamic_call_possible")]
 
     return {
         "group_count": len(groups),
@@ -700,6 +843,7 @@ def scan_class_b(
         "dropped_count": len(dropped),
         "dropped": dropped,
         "maps_scanned": maps_scanned,
+        "dynamic_ce_calls": dynamic_ce_calls,
     }
 
 
@@ -733,6 +877,8 @@ def print_text_report(res_a: dict, res_b: dict) -> None:
     if not res_b.get("maps_scanned", True):
         print("  ！地图事件没读到：只靠技能／物品／公共事件／敌群判可达，地图调用的公共事件会落进「没找到调用」")
 
+    if res_b.get("dynamic_ce_calls"):
+        print(f"  ！有 {len(res_b['dynamic_ce_calls'])} 处变量形式的公共事件调用（调到哪个追不到），本轮不判任何公共事件删掉：" + "；".join(res_b["dynamic_ce_calls"][:6]))
     if res_b.get("no_caller"):
         print(f"  ！其中入口没证实（没找到调用／父事件没找到调用）{res_b['no_caller_groups']} 组，要人工核对：" + "、".join(f"角色{a} CE{c}({r})" for a, c, r in res_b["no_caller"]))
 
@@ -791,7 +937,10 @@ def main(argv: list[str] | None = None) -> int:
     trumpet = json.loads(tr_path.read_text(encoding="utf-8")) if tr_path.exists() else {}
 
     res_a = scan_class_a(eff_sr, gb, skills, states, armors, weapons, min_pct=args.min_pct)
-    res_b = scan_class_b(eff_sr, gb, sb, trumpet, skills, states, actors, classes, ces, items, troops, maps)
+    res_b = scan_class_b(
+        eff_sr, gb, sb, trumpet, skills, states, actors, classes, ces, items, troops, maps,
+        note_tables={"armor": armors, "weapon": weapons},
+    )
 
     if args.json:
         print(json.dumps({"class_a": res_a, "class_b": res_b}, ensure_ascii=False, indent=2))
