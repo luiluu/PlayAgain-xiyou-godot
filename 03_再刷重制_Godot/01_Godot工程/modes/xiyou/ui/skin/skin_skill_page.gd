@@ -75,7 +75,12 @@ func relayout() -> void:
 	ring.position.y = maxf((lb.y - party.size.y - ring.size.y) / 2.0, 0.0)
 
 
+## 整段包只读窗口（XSkillScene.read_only，T545）：每按一下都重建本类全部行，每行读好几次能力值
 func sync() -> void:
+	XSkillScene.read_only(_sync_now)
+
+
+func _sync_now() -> void:
 	if layout == null:
 		return
 	_syncing = true
