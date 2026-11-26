@@ -1440,6 +1440,23 @@ class SuitTemplateT515(unittest.TestCase):
         t['suits'][str(single)] = {'kind': 'atk_final'}
         self.assertTrue(any('多件档' in b for b in chk.suit_template_rules(t, self.affix, self.db)))
 
+    def test_t529_standalone_and_values_by_kind(self):
+        # 攻·本系稿定排含 4 放行，其余类别 values_by_kind 含 4 仍拦、standalone 限 atk、逐阶逐档严格递增
+        self.assertEqual(self.t['values_by_kind']['atk_element']['2'], [1, 2, 4, 6])
+        cases = [
+            (lambda t: t['values_by_kind'].pop('atk_element'), '独立乘须在 values_by_kind'),
+            (lambda t: t['values_by_kind'].__setitem__('atk_final', {'2': [1, 2, 4, 6], '3': [6, 7, 10, 12], '5': [11, 13, 16, 20]}), '不出 4'),
+            (lambda t: t['values_by_kind']['atk_element'].__setitem__('3', [6, 7, 7, 12]), '严格递增'),
+            (lambda t: t['values_by_kind']['atk_element'].__setitem__('3', [1, 2, 4, 6]), '严格大于上一档'),
+            (lambda t: t['values_by_kind'].__setitem__('no_kind', {'2': [1, 2, 3, 5], '3': [5, 6, 8, 10], '5': [8, 10, 12, 15]}), '在 kinds 里'),
+            (lambda t: t['kinds']['def_hp'].__setitem__('standalone', True), '仅限 atk'),
+        ]
+        for mut, word in cases:
+            t = copy.deepcopy(self.t)
+            mut(t)
+            bad = chk.suit_template_rules(t, self.affix, self.db)
+            self.assertTrue(any(word in b for b in bad), (word, bad))
+
 
 if __name__ == '__main__':
     unittest.main()

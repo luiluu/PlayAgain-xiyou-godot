@@ -410,7 +410,8 @@ static func _calculate(item: Dictionary, a: XBattler, b: XBattler, options := {}
 			if not absorb and hp_type:
 				flat *= XTianqiNoX6.flat_unit(a, b)  # 去全队 ×6：HP 伤害、吸取的固定减伤在确认阶段之后扣，跟着缩 1/6 才和原来等价（O-470）；MP 照旧 ×6、不缩
 			var independent: float = 1.0 if absorb else _independent(a, item, oe, frame)
-			var gross: float = 0.0 if resistance == 0.0 else maxf(0.0, before_fixed) * independent * guard * tianqi
+			var suit_mult: float = 1.0 if absorb or not hp_type else XTianqiSuits.attack_mult(a, b, oe)  # T529：攻类套装模板单独乘、同区相加、混穿逐招（西游档／开关关恒 1）
+			var gross: float = 0.0 if resistance == 0.0 else maxf(0.0, before_fixed) * independent * suit_mult * guard * tianqi
 			# 固定减伤（harmRe、种族减免）在 Confirm 之后、React 之前扣（apply_fixed_mitigation），这里只算扣之前的；吸收时照原版先扣
 			var value: float = -maxf(0.0, before_fixed - flat) * guard * (XTianqiNoX6.heal_scale(b) if hp_type else 1.0) if absorb else gross  # 天启篇：敌人被元素吸收的 HP 回血跟血量同缩（MP 不缩）
 			cands.append({"gross": value, "flat": flat, "resistance": resistance})
