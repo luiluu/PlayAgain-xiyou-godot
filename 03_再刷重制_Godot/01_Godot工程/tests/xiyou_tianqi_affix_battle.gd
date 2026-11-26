@@ -230,7 +230,11 @@ func _damage() -> void:
 	var m0 := 0.97 * 0.97 * 0.90 * 0.97  # 两条减伤、磐石（血高于 70%）、庇护光环
 	_check("taken_mult", _near(_op(XTianqiAffixBattle.damage_ops(_hit(), e, t), "incomingMultiplier"), m0), XTianqiAffixBattle.damage_ops(_hit(), e, t))
 	var fire := _hit(99999, 2)
-	_check("taken_fire_resist", _near(_op(XTianqiAffixBattle.damage_ops(fire, e, t), "incomingMultiplier"), m0 * 0.90))
+	# T530（九.19 甲）：RESIST_PER_ELEMENT 开着时随机词条元素抗性退出 incomingMultiplier，改由 damage.gd 调 element_resist_mult 并入各自一系；关着回到原行为
+	_check("taken_fire_resist", _near(_op(XTianqiAffixBattle.damage_ops(fire, e, t), "incomingMultiplier"), m0) and _near(XTianqiAffixBattle.element_resist_mult(t, 2), 0.90))
+	XTianqiAffixBattle.RESIST_PER_ELEMENT = false
+	_check("taken_fire_resist_rollback", _near(_op(XTianqiAffixBattle.damage_ops(fire, e, t), "incomingMultiplier"), m0 * 0.90))
+	XTianqiAffixBattle.RESIST_PER_ELEMENT = true
 	XTianqiAffixBattle.crit_now = true
 	_check("tenacity_on_crit", _near(_op(XTianqiAffixBattle.damage_ops(_hit(), e, t), "incomingMultiplier"), m0 * 0.75))
 	XTianqiAffixBattle.crit_now = false
@@ -337,13 +341,16 @@ func _actions() -> void:
 	_check("state_resist_death", _near(XTianqiAffixBattle.state_rate(a, 1), 1.0))
 	_check("state_rate_in_logic", bad > 0 and _near(lg.state_rate(a, bad), a.traits_pi(XBattler.TRAIT_STATE_RATE, bad) * 0.88))
 	lg.end_battle(0)
-	# 再释放：堆到 100% 以上必触发；再放出来的那次不再触发
+	# 再释放：T530 CAPS_V16 开着时全身封顶 20%；测必触发链路时切 CAPS_V16=false 堆 102% 验单次不连发与画面快照
 	var lg2 := _logic()
 	var u: XActor = lg2.actors[0]
 	var rc := []
 	for i in 17:
 		rc.append(_x("recast", 4, "perfect"))  # 17×6＝102%
 	_wear(u, rc)
+	_fresh(lg2)
+	_check("recast_capped_20", _near(float(XTianqiAffixBattle.personal(u).get("recast", 0.0)), 20.0), XTianqiAffixBattle.personal(u).get("recast"))
+	XTianqiAffixBattle.CAPS_V16 = false
 	_fresh(lg2)
 	var real := _damage_skill()
 	_check("found_damage_skill", not real.is_empty())
@@ -366,6 +373,7 @@ func _actions() -> void:
 		var hits := acted.filter(func(l): return l is Dictionary and l.get("type") == "hit")
 		var acts := acted.filter(func(l): return l is Dictionary and l.get("type") == "action" and is_same(l.get("user"), u))
 		_check("review8_recast_hits_have_views", acts.size() >= 2 and hits.size() >= 2 and hits.all(func(l): return l.has("views")), [acts.size(), hits.size(), hits.map(func(l): return l.has("views"))])
+	XTianqiAffixBattle.CAPS_V16 = true
 	lg2.end_battle(0)
 
 

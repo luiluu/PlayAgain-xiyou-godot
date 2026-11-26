@@ -855,7 +855,7 @@ static func passive_buckets(a, objs: Array) -> Dictionary:
 	for o in objs:
 		if o.has("stypeId") and XTianqiSecrets.is_sealed(a, int(o.get("id", 0))):
 			continue
-		var is_gear := o.has("kind") and str(o.kind) in ["weapon", "armor"]
+		var is_gear: bool = o is Dictionary and o.has("kind") and str(o.kind) in ["weapon", "armor"]
 		var bucket := bucket_of(o, a)
 		var book := "#%d" % int(o.get("id", 0)) if bucket == "secret" else ""
 		if REBUILD_SOURCES and is_gear and bucket == "runeword":
@@ -928,7 +928,7 @@ static func passive_buckets(a, objs: Array) -> Dictionary:
 		var amp: Dictionary = o.get("yep", {}).get("elementAmplify", {})
 		if amp.is_empty():
 			continue
-		var is_gear := o is Dictionary and o.has("kind") and str(o.kind) in ["weapon", "armor"]
+		var is_gear: bool = o is Dictionary and o.has("kind") and str(o.kind) in ["weapon", "armor"]
 		var bucket := bucket_of(o, a) if not (o is Dictionary and (is_same(o, a.data()) or is_same(o, a.class_data()))) else "actor"
 		var orb := orb_amplify(o)
 		if REBUILD_SOURCES and is_gear:
@@ -1423,22 +1423,23 @@ static func apply_nine_cap(item: Dictionary, a, frame: Dictionary, cache: Dictio
 			wtypes.append(wt)
 	var hit := {"types": types, "wtypes": wtypes, "skill": int(item.get("id", 0)), "pass_pooled": pool_on("POOL_SKILL_PASS")}
 	var cut := {"skill": 0.0, "bonus": 0.0, "crit": 0.0, "element": {}}
-	# （1）秘籍格
-	var raw_secret := _hit_share(by, "secret", hit)
-	var kept := {"skill": 0.0, "bonus": 0.0, "crit": 0.0, "element": {}}
-	var per := XTianqiBase.secret_slot(nine_cap("secret_slot"))  # 期四开着读 phase4.secret_slot
-	for b in secret_kept(a, by):
-		var c := _book_capped(_hit_share(by.books, b, hit), per)
+	# （1）秘籍格（随 CAP_NINE；新秘籍格系统由 XTianqiSecrets 管）
+	if use_nine:
+		var raw_secret := _hit_share(by, "secret", hit)
+		var kept := {"skill": 0.0, "bonus": 0.0, "crit": 0.0, "element": {}}
+		var per := XTianqiBase.secret_slot(nine_cap("secret_slot"))  # 期四开着读 phase4.secret_slot
+		for b in secret_kept(a, by):
+			var c := _book_capped(_hit_share(by.books, b, hit), per)
+			for k in ["skill", "bonus", "crit"]:
+				kept[k] += float(c[k])
+			for e in c.element:
+				kept.element[e] = float(kept.element.get(e, 0.0)) + float(c.element[e])
 		for k in ["skill", "bonus", "crit"]:
-			kept[k] += float(c[k])
-		for e in c.element:
-			kept.element[e] = float(kept.element.get(e, 0.0)) + float(c.element[e])
-	for k in ["skill", "bonus", "crit"]:
-		cut[k] += maxf(0.0, float(raw_secret[k]) - float(kept[k]))
-	for e in raw_secret.element:
-		var x := maxf(0.0, float(raw_secret.element[e]) - float(kept.element.get(e, 0.0)))
-		if x > 0.0:
-			cut.element[e] = x
+			cut[k] += maxf(0.0, float(raw_secret[k]) - float(kept[k]))
+		for e in raw_secret.element:
+			var x := maxf(0.0, float(raw_secret.element[e]) - float(kept.element.get(e, 0.0)))
+			if x > 0.0:
+				cut.element[e] = x
 	# （2）九线分池各线独立额度（T530：SPLIT_CAPS，与旧合用顶 CAP_NINE 并存；fabao／enhance 拆出九线合用桶单记）
 	var hook_map := {
 		"race": float(hooks.get("race", 0.0)),
@@ -1690,7 +1691,7 @@ static func actor_element_rate(a: XActor, e: int) -> float:
 	for o in a.trait_objects():
 		if not (o is Dictionary):
 			continue
-		var is_gear := o.has("kind") and str(o.kind) in ["weapon", "armor"]
+		var is_gear: bool = o is Dictionary and o.has("kind") and str(o.kind) in ["weapon", "armor"]
 		for t in o.get("traits", []):
 			if not (t is Dictionary) or int(t.get("code", 0)) != XBattler.TRAIT_ELEMENT_RATE or int(t.get("dataId", 0)) != e:
 				continue
@@ -1737,8 +1738,8 @@ static func cap_actor_hrg(a: XActor, base_v: float, affix_hrg_pct: float, suit_h
 	for o in a.trait_objects():
 		if not (o is Dictionary):
 			continue
-		var is_gear := o.has("kind") and str(o.kind) in ["weapon", "armor"]
-		var is_suit_st := not is_gear and bucket_of(o, a) == "suit"
+		var is_gear: bool = o is Dictionary and o.has("kind") and str(o.kind) in ["weapon", "armor"]
+		var is_suit_st: bool = not is_gear and bucket_of(o, a) == "suit"
 		for t in o.get("traits", []):
 			if not (t is Dictionary) or int(t.get("code", 0)) != XBattler.TRAIT_XPARAM or int(t.get("dataId", -1)) != 7:
 				continue

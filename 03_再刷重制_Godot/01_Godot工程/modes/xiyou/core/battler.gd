@@ -884,6 +884,8 @@ func passive_element_values(_e: int) -> Array:
 func element_rate(e: int) -> float:
 	if self is XEnemy and XTianqiElements.deck_on():
 		return XTianqiElements.static_enemy_rate(self as XEnemy, e)
+	if self is XActor and XTianqiLedger.elem_resist_cap_on():
+		return XTianqiLedger.actor_element_rate(self as XActor, e)
 	# 原生链（MV 连乘＋dsPassiveSkill 再乘被动）得到 current，再交给加算池
 	var passive := passive_element_values(e)
 	var current := traits_pi(TRAIT_ELEMENT_RATE, e)

@@ -220,6 +220,27 @@ static func defense_rate(attack: float, defense: float) -> float:
 	var d := maxf(0.0, defense)
 	return 1.0 if a + d == 0.0 else maxf(0.05, a / (a + d))
 
+## 防御通过率＋物魔伤害乘区（T530 抽成独立接口，供后续 T533 按主属性算防御通过率直接接）
+static func _calc_defense(a: XBattler, b: XBattler, mode: String, kind: String, weights: Array, frame: Dictionary, phys_rate: float, mag_rate: float) -> float:
+	var defense := 1.0
+	if not ["true", "fixed", "percent"].has(kind):
+		defense = weights[0] * defense_rate(a.atk, b.def * maxf(0.0, phys_rate)) + weights[1] * defense_rate(a.mat, b.mdf * maxf(0.0, mag_rate))
+	if mode == "mixed" and kind == "normal":
+		return weights[0] * defense_rate(a.atk, b.def * maxf(0.0, phys_rate)) * float(frame.physicalDamageMultiplier) + weights[1] * defense_rate(a.mat, b.mdf * maxf(0.0, mag_rate)) * float(frame.magicalDamageMultiplier)
+	return defense * (weights[0] * float(frame.physicalDamageMultiplier) + weights[1] * float(frame.magicalDamageMultiplier))
+
+
+## 承伤率（T530 抽成独立接口，供后续 T534 必中招承伤率直接接）
+static func _calc_incoming(b: XBattler, physical: bool, magical: bool, kind: String, frame: Dictionary) -> float:
+	var incoming := 1.0
+	if kind != "true":
+		incoming = maxf(0.0, b.pdr) if physical else (maxf(0.0, b.mdr) if magical else 1.0)
+	var pierce: float = frame.physicalIncomingPierce if physical else frame.magicalIncomingPierce
+	if incoming > 0.0 and incoming < 1.0:
+		incoming = 1.0 - (1.0 - incoming) * (1.0 - clampf(pierce, 0.0, 1.0))
+	return incoming * maxf(0.0, frame.incomingMultiplier)
+
+
 static func critical_multiplier_bonus(b: XBattler) -> float:
 	var v := 0.0
 	for o in _yep_objects(b):
@@ -322,13 +343,7 @@ static func _calculate(item: Dictionary, a: XBattler, b: XBattler, options := {}
 	var weights := [0.0, 1.0] if mode == "magical" else [1.0, 0.0]
 	if mode == "mixed":
 		weights = _mixed_weights(item, a, b, vars)
-	var defense := 1.0
-	if not ["true", "fixed", "percent"].has(kind):
-		defense = weights[0] * defense_rate(a.atk, b.def * maxf(0.0, frame.physicalDefenseRate)) + weights[1] * defense_rate(a.mat, b.mdf * maxf(0.0, frame.magicalDefenseRate))
-	if mode == "mixed" and kind == "normal":
-		defense = weights[0] * defense_rate(a.atk, b.def * maxf(0.0, frame.physicalDefenseRate)) * float(frame.physicalDamageMultiplier) + weights[1] * defense_rate(a.mat, b.mdf * maxf(0.0, frame.magicalDefenseRate)) * float(frame.magicalDamageMultiplier)
-	else:
-		defense *= weights[0] * float(frame.physicalDamageMultiplier) + weights[1] * float(frame.magicalDamageMultiplier)
+	var defense := _calc_defense(a, b, mode, kind, weights, frame, float(frame.physicalDefenseRate), float(frame.magicalDefenseRate))
 
 	var race := _race_factors(a, b)
 	if race.multiplier != 1.0 and XTianqiLedger.pool_on("POOL_ENEMY_RACE"):  # 伤害加成总账期二：<EnemyRaceBo> 进③
@@ -341,7 +356,7 @@ static func _calculate(item: Dictionary, a: XBattler, b: XBattler, options := {}
 	if live.add != 0.0:  # 期四 live 增伤归池（T185 样板、T187 铺开，POOL_LIVE）：确认阶段「结果 ×k」归池改成 ＋add% 进③
 		frame.finalAdd = float(frame.finalAdd) + float(live.add)
 	frame.criticalAdd = float(frame.criticalAdd) + float(live.get("crit", 0.0))  # T205：live 暴击专属段进④（爆伤池）
-	if XTianqiLedger.CAP_NINE and b is XEnemy:  # 伤害加成总账期三：九线来源临时封顶（秘籍格单列、其余九线各池合计封顶；只扣超出的）
+	if (XTianqiLedger.CAP_NINE or XTianqiLedger.SPLIT_CAPS) and b is XEnemy:  # 伤害加成总账：九线分池（T530 SPLIT_CAPS）＋旧九线合用封顶（CAP_NINE，留给 N13 拆）
 		XTianqiLedger.apply_nine_cap(item, a, frame, cache, {"race": XTianqiLedger.hook_bonus(report.trace, "race-blessings"), "orb": XTianqiLedger.hook_bonus(report.trace, "orb-sets"), "suit": suit_add, "live": live.nine, "live_books": live.get("books", {})})
 	var critical: bool = options.get("critical", false)
 	var critical_base := 1.5 + critical_multiplier_bonus(a)
@@ -362,13 +377,7 @@ static func _calculate(item: Dictionary, a: XBattler, b: XBattler, options := {}
 			originals = [0]
 	var physical := mode == "physical" if options.has("mode") else is_physical(item)
 	var magical := mode == "magical" if options.has("mode") else is_magical(item)
-	var incoming := 1.0
-	if kind != "true":
-		incoming = maxf(0.0, b.pdr) if physical else (maxf(0.0, b.mdr) if magical else 1.0)
-	var pierce: float = frame.physicalIncomingPierce if physical else frame.magicalIncomingPierce
-	if incoming > 0.0 and incoming < 1.0:
-		incoming = 1.0 - (1.0 - incoming) * (1.0 - clampf(pierce, 0.0, 1.0))
-	incoming *= maxf(0.0, frame.incomingMultiplier)
+	var incoming := _calc_incoming(b, physical, magical, kind, frame)
 	var guard := 1.0 if kind == "true" else (1.0 / (2.0 * b.grd) if b.is_guard() else 1.0)
 	var growth := maxf(0.0, frame.growthMultiplier) * XZhenqi.damage_mult(a, b, options)
 	var tianqi := XTianqiCombat.damage_mult(a, b)  # 天启篇档位出伤／承伤、弱者协力、助力位光环（独立乘区，只乘一次；原版档恒 1）
@@ -383,6 +392,7 @@ static func _calculate(item: Dictionary, a: XBattler, b: XBattler, options := {}
 	var cands := []
 	var hp_type := int(item.get("damage", {}).get("type", 0)) in [1, 5]  # 去全队 ×6 只动 HP 伤害、HP 吸取（XTianqiNoX6）
 	var deck_phys: bool = not frame.noElement and explicit == null and deck_physical(item, a, not originals.is_empty())  # T449：DECK 下原物理招的无属性候选读物理增伤
+	var no_enemy_flat := b is XEnemy and XTianqiLedger.no_enemy_flat_mit_on()
 	for raw_e in es:
 		var e := XTianqiElements.map_element_id(int(raw_e))
 		for oe0 in (originals if not originals.is_empty() else [e]):
@@ -400,13 +410,22 @@ static func _calculate(item: Dictionary, a: XBattler, b: XBattler, options := {}
 					resistance = 1.0 if XGuardianRework.neutral(b) else XGuardianRework.resistance(b, b.element_rate(e))  # 守层者一刀切抗性折进血量（O-402 ELEM）
 					absorb = resistance < 0.0
 					resistance = apply_resistance_pierce(resistance, frame, e)
+					if not absorb and b is XActor and XTianqiAffixBattle.RESIST_PER_ELEMENT and XTianqi.active(XState.current):
+						resistance *= XTianqiAffixBattle.element_resist_mult(b, e)  # T530（九.19 甲）：随机词条元素抗性并入各自一系，双系招取伤害大的候选
+			var def_info := {}
+			var cand_defense := defense
+			if no_enemy_flat and a is XActor and not ["true", "fixed", "percent"].has(kind):
+				def_info = XTianqiLedger.def_ignore_summary(a, b, oe if oe > 0 else e, frame, report.trace, facts)
+				if bool(def_info.get("active", false)):
+					cand_defense = _calc_defense(a, b, mode, kind, weights, frame, float(def_info.eff_p_rate), float(def_info.eff_m_rate))
 			var match_rate: float = 1.0 if kind == "true" or tq_elem else matchup(e, affinity(b))
 			var bonus: float = 1.0 if frame.noElement or (not originals.is_empty() and oe <= 0) else _module_element_bonus(a, oe, frame)
 			var flat_element := 0.0 if frame.noElement or (not originals.is_empty() and oe <= 0) else _sum_yep(a, "elementAmplifyN", oe, _yep_objects(a))
 			var multiplied: float = (basis + flat_element * mastery_rate * float(frame.skillMultiplier)) * normal_mult * bonus * race.multiplier * final_mult * (1.0 if absorb else growth)
 			var crit: float = 1.0 if absorb else critical_mult
-			var before_fixed: float = multiplied * defense * match_rate * absf(resistance) * incoming * crit
-			var flat: float = 0.0 if kind == "true" else _flat_mitigation(a, b, e, frame) + race.flat
+			var before_fixed: float = multiplied * cand_defense * match_rate * absf(resistance) * incoming * crit
+			var race_flat: float = 0.0 if no_enemy_flat else race.flat
+			var flat: float = 0.0 if kind == "true" else _flat_mitigation(a, b, e, frame) + race_flat
 			if not absorb and hp_type:
 				flat *= XTianqiNoX6.flat_unit(a, b)  # 去全队 ×6：HP 伤害、吸取的固定减伤在确认阶段之后扣，跟着缩 1/6 才和原来等价（O-470）；MP 照旧 ×6、不缩
 			var independent: float = 1.0 if absorb else _independent(a, item, oe, frame)
@@ -415,19 +434,21 @@ static func _calculate(item: Dictionary, a: XBattler, b: XBattler, options := {}
 			# 固定减伤（harmRe、种族减免）在 Confirm 之后、React 之前扣（apply_fixed_mitigation），这里只算扣之前的；吸收时照原版先扣
 			var value: float = -maxf(0.0, before_fixed - flat) * guard * (XTianqiNoX6.heal_scale(b) if hp_type else 1.0) if absorb else gross  # 天启篇：敌人被元素吸收的 HP 回血跟血量同缩（MP 不缩）
 			cands.append({"gross": value, "flat": flat, "resistance": resistance})
-			var row := {"element": e, "bonus": bonus, "defense": defense, "matchup": match_rate, "resistance": resistance, "tianqiKind": tq_kind,
+			var row := {"element": e, "bonus": bonus, "defense": cand_defense, "matchup": match_rate, "resistance": resistance, "tianqiKind": tq_kind,
 				"incoming": incoming, "terminal": final_mult, "normal": normal_mult, "race": race.multiplier, "growth": 1.0 if absorb else growth,
-				"critical": crit, "independent": independent, "guard": guard, "fixedMitigation": flat, "beforeFixed": gross, "value": value}
+				"critical": crit, "independent": independent, "suit": suit_mult, "guard": guard, "fixedMitigation": flat, "beforeFixed": gross, "value": value}
 			if XTianqiLedger.detail_on():  # 伤害加成总账：五池明细（只加明细，天启篇档才有）
 				var em := float(frame.elementMultiplier.get(str(oe), 1.0))
-				row.merge(XTianqiLedger.pools(frame, oe, bonus / em if em != 0.0 else 0.0, normal_mult, crit, tianqi, race.multiplier, independent))
+				row.merge(XTianqiLedger.pools(frame, oe, bonus / em if em != 0.0 else 0.0, normal_mult, crit, tianqi, race.multiplier, independent, suit_mult))
+				if bool(def_info.get("active", false)):
+					row["defIgnore"] = def_info
 				if XTianqiBase.on():  # 期四「天启注视」单列一行：只记 K 本身（已含在 tier 那一格的 damage_mult 里，不再乘）
 					row["gaze"] = {"name": XTianqiBase.GAZE_NAME, "k": XTianqiBase.k_base(), "desc": XTianqiBase.GAZE_DESC}
 			if best.is_empty() or value > best.value:
 				best = row
 	if XTianqiLedger.auditing(a):  # 伤害加成总账守卫：单独相乘的口子都要能认出来源（只记、不改数）
 		var self_rates := _self_rates(a)
-		XTianqiLedger.audit(item, a, report.trace, facts, {"skill_pass": maxf(0.0, 1.0 + pass_rate), "race": race.multiplier, "independent": float(self_rates[0]) * float(self_rates[1])})
+		XTianqiLedger.audit(item, a, report.trace, facts, {"skill_pass": maxf(0.0, 1.0 + pass_rate), "race": race.multiplier, "independent": float(self_rates[0]) * float(self_rates[1]), "suit": float(best.get("suit", 1.0))})
 	var settled: float = best.value
 	if options.get("variance", true) and not options.get("preview", false):
 		settled = apply_variance(settled, int(item.damage.variance), options.get("random"))
@@ -602,6 +623,9 @@ static func apply_resistance_pierce(resistance: float, frame: Dictionary, e: int
 
 
 static func _flat_mitigation(a: XBattler, b: XBattler, e: int, frame: Dictionary) -> float:
+	if b is XEnemy and XTianqiLedger.no_enemy_flat_mit_on():
+		# T530（v0.16 九.9 甲 / 附表二）：天启篇清敌人固定减伤（读时跳过不删数据），首领机制免伤（flatMitigationAdd＋名单内机制状态）不吃穿透
+		return maxf(0.0, float(frame.flatMitigationAdd.get(str(e), 0.0)) + XTianqiLedger.boss_mech_state_flat(b, e))
 	var target: Dictionary = b.passive_cache()
 	var source: Dictionary = a.passive_cache()
 	var value: float = float(target.get("harmRe", {}).get(e, 0.0)) + float(frame.flatMitigationAdd.get(str(e), 0.0))
