@@ -1,7 +1,7 @@
 extends Node
 ## T544 量数探针（只量不改；不是回归测试，没有 .tscn，不进检查.sh）：
 ## 主菜单技能页按「被动」技能数量分档，量打开、首帧、光标移动一格（含下一帧绘制）的耗时，并拆分各环节。
-## 跑法（工程目录下临时建一个挂这个脚本的 .tscn）：godot --headless --audio-driver Dummy --path . res://tests/<临时>.tscn [-- --skin=1]
+## 跑法：本文件和 t544_skill_lag_micro.gd 复制进 01_Godot工程/tests/，临时建一个挂它的 .tscn，godot --headless --audio-driver Dummy --path . res://tests/<临时>.tscn [-- --skin=1 --tiers=20,120]；量完删掉复制件
 var TIERS := [20, 60, 120, 240, 400]
 const MOVES := 12
 var skin_force := false
