@@ -621,6 +621,18 @@ static func swap_stats(stats: Dictionary, swap: Dictionary) -> Dictionary:
 	return out
 
 
+## 技能表跨调用缓存（XActor.SKILLS_XCALL，T546）的键：skill_view 对这个人可能用到的全部投影规格（proj_of 的输入）。proj_of 改读别的东西时这里一起改
+static func view_sig(a) -> Array:
+	if not (a is XActor) or not ENABLED or not on() or not XTianqiSkills.cards_on():
+		return []
+	var out := []
+	for k in keys_of(a):
+		var e := entry(k)
+		if enabled(k) and int(e.get("actor", 0)) == int(a.actor_id):
+			out.append([k, (e.get("proj", {}) as Dictionary).duplicate(true) if e.get("proj", {}) is Dictionary else e.get("proj")])
+	return out
+
+
 ## 本人看到的技能记录（XActor._skill_records、XTianqiSkills._follow_of、XBattleLogic.act 都过这里）：没有投影原样返回；已经投影过的不再投影
 static func skill_view(sk: Dictionary, a) -> Dictionary:
 	if sk.is_empty() or sk.has(VIEW_MARK):

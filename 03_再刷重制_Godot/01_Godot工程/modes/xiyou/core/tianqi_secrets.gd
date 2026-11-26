@@ -519,6 +519,14 @@ static func sealed_ids(a, s: XState = null) -> Array[int]:
 	return out
 
 
+## 技能表跨调用缓存（XActor.SKILLS_XCALL，T546）的键：is_sealed 读的那份原始封印表（没开＝[]）。is_sealed 改读别的东西时这里一起改
+static func sealed_raw(a, s: XState = null) -> Array:
+	if not on(s) or not (a is XActor):
+		return []
+	var raw = _peek_actor(s if s != null else XState.current, a.actor_id).get("sealed", [])
+	return (raw as Array).duplicate() if raw is Array else []
+
+
 static func is_sealed(a, skill_id: int, s: XState = null) -> bool:
 	if not on(s) or not (a is XActor) or skill_id <= 0:
 		return false
