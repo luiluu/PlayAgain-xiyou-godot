@@ -122,6 +122,16 @@ static func create_prestige_drop(kind: String, id: int, owner: XState) -> Dictio
 	return roll_item(item, owner)
 
 
+## 刚合完一条词条后的 item：品质比 top 高就换成它的 quality／ici（只比较，不改 item）
+static func _higher_quality(top: Dictionary, item: Dictionary) -> Dictionary:
+	var meta: Dictionary = item.get("meta", {})
+	if not meta.has("quality"):
+		return top
+	if top.is_empty() or quality(item) > int(top.quality):
+		return {"quality": meta.quality, "ici": meta.get("ici")}
+	return top
+
+
 static func _affix_table(item: Dictionary) -> String:
 	var meta: Dictionary = item.get("meta", {})
 	if meta.has("prefixSuffixUseWeaponDatabase"):
@@ -131,10 +141,18 @@ static func _affix_table(item: Dictionary) -> String:
 	return "Weapons" if str(item.kind) == "weapon" else "Armors"
 
 ## 对一份已备好的模板掷词缀、属性浮动与插槽（DreamX.RandomPrefixSuffix.makeItem 那段）；云裳天衣铺开工时用改过的模板调它
-static func roll_item(item: Dictionary, owner: XState = null, replacement_rows := []) -> Dictionary:
+## forced_affixes：[{table, id, kind}]，掷随机行之前先合进去、不耗随机数（深渊商人保留随机行时买的那条特效，XAbyssMerchant.KEEP_BASE_AFFIXES）
+static func roll_item(item: Dictionary, owner: XState = null, replacement_rows := [], forced_affixes := []) -> Dictionary:
 	if item.is_empty(): return {}
 	var definition: Dictionary = item.get("equipment", {})
 	var table := _affix_table(item)
+	var top := {}  # forced_affixes 非空时记合入词条里品质最高那条的 quality／ici，合并完不许被低品质随机行降档（T547 P1-1）
+	for forced in forced_affixes:
+		var rec := XDB.rec(str(forced.table), int(forced.id))
+		if not rec.is_empty():
+			combine(item, rec, str(forced.kind))
+			item.affixIds.append({"table": str(forced.table), "id": int(forced.id), "kind": str(forced.kind)})
+			top = _higher_quality(top, item)
 	var rows: Array = definition.get("affixes", []) if replacement_rows.is_empty() else replacement_rows
 	for row in ([] if XTestMode.boost_depth > 0 else rows):
 		if XTianqiAffixRoll.skips_row(row, owner if owner != null else XState.current, table):
@@ -143,6 +161,14 @@ static func roll_item(item: Dictionary, owner: XState = null, replacement_rows :
 		if affix_id > 0:
 			combine(item, XDB.rec(table, affix_id), str(row.kind))
 			item.affixIds.append({"table": table, "id": affix_id, "kind": row.kind})
+			if not forced_affixes.is_empty():
+				top = _higher_quality(top, item)
+	if not top.is_empty() and quality(item) < int(top.quality):
+		item.meta["quality"] = top.quality
+		if top.ici == null:
+			item.meta.erase("ici")
+		else:
+			item.meta["ici"] = top.ici
 	if XTestMode.boost_depth > 0:
 		XTestMode.roll_affixes(item, rows, table)  # 测试模式：掉落装备词缀加速
 	# YEP_CoreEngine 备注参数覆盖合并值；原版处理完这些标签才掷属性浮动。
