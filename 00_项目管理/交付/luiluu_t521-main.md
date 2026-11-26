@@ -1,4 +1,4 @@
-# 交付：luiluu/t521
+# 交付：luiluu/t521-main（原 luiluu/t521，切自旧本地 main，总装摘到 main 上）
 
 - 车道／工作者：T521 启封数值对账·外部来源倒查（cc 车道，Opus＋medium）
 - 状态：可合并
