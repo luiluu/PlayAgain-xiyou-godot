@@ -1,0 +1,22 @@
+{
+ "sha": "0c8ef9d92873bd4d48cf7dad0a44deacd6c0380c",
+ "branch": "ci/luiluu/t542-shell-limit",
+ "mode": "affected",
+ "base": "c55af7bdd32af490d0670a0812440cdaccea93d0",
+ "passed": true,
+ "scenes": 1,
+ "failed": [],
+ "flaky": [],
+ "lostShards": [],
+ "jobStatus": "success",
+ "shards": 1,
+ "longestShardSeconds": 13.3,
+ "testSeconds": 11,
+ "generatedRef": "refs/ci/generated/luiluu/t542-shell-limit",
+ "generatedCommit": "f6000b8d03d3c30d44213d1fdb2ef6711931c8b5",
+ "runUrl": "https://github.com/luiluu/PlayAgain-xiyou-godot/actions/runs/45828028054",
+ "sceneNames": [
+  "xiyou_tianqi_shell_hide.tscn"
+ ],
+ "time": "2026-11-26T13:25:52+00:00"
+}
