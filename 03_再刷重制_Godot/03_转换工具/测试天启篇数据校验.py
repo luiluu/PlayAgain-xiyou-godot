@@ -1141,6 +1141,16 @@ class SixDim(unittest.TestCase):
         self.assertTrue(any('不在 base_line.json' in x for x in b))
         self.assertTrue(any('同 horsemen.json' in x for x in b))
 
+    def test_budgets_t531(self):
+        # T531（预算稿 v0.16 九.15／D290／D238）：超强者 24～30、弱者 11～20（下移 2 分）
+        self.assertEqual(self.t['budgets']['super'], [24, 30])
+        self.assertEqual(self.t['budgets']['weak'], [11, 20])
+        self.t['budgets']['super'] = [20, 26]
+        self.assertTrue(any('budgets' in x for x in self.bad()))
+        self.t['budgets']['super'] = [24, 30]
+        self.t['budgets']['weak'] = [13, 22]
+        self.assertTrue(any('budgets' in x for x in self.bad()))
+
 
 class K5SixTables(unittest.TestCase):
     """T391（K5）：drop_table／gojo_trials／money_table／ring_styles／trumpet／weak_affix_table 六份表的规则；每份先正例再多条反例（形状、范围、引用）。"""

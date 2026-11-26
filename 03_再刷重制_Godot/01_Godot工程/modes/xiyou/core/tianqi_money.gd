@@ -10,7 +10,7 @@ extends RefCounted
 ## - SELL：装备卖价按品质（0.1～2 场钱），不看原价；物品照旧（XItemMarks.selling_price 调 sell_price）。
 ## - REFORGE：重铸价（XTianqiReforge 读 reforge_price／lock_price）：3 场钱 × 阶系数，同一件每次 ×1.3、封顶 10 倍，锁一条洗其余总价 ×3。
 ## - ADVANCE：进阶四阶 10 万／30 万／60 万／100 万（XAdvance.row 读 advance_gold），一次性的，不乘价格倍数。
-## - TRAINING：修炼重做，八项各 10 级、全队共享、每 3 层开 1 级，每级加本体基础值 1%（占位）；原表 65 项不用（XTraining 读这里）。
+## - TRAINING：修炼重做，八项各 10 级、全队共享、每 3 层开 1 级，每级加白板合计（本体＋装备／加值白板）1%（T531，TRAINING_WHITEBOARD=false 退回只乘本体基础值）；原表 65 项不用（XTraining 读这里）。
 ## - SCALE：天平，大厅原「动保协会成员」（Map004 EV043，宠物商店，天启篇宠物全隐藏）换成天平：麦（每场开战全队回满）、
 ##   油（承伤 −10%）、酒（出伤 ＋10%），只管买时那一层（只在那一层的地图里生效，进了别的层就清掉）；一层最多买 3 次、第 n 次价格 ×2^(n−1)；饥荒线贵五成。
 ## 存档：flags.tianqi.money {"training": {"能力编号": 等级}, "scale": {"floor": 层, "goods": [..], "buys": 次数}}；装备上记重铸次数 tq_reforges。
@@ -28,6 +28,8 @@ static var SCALE := true
 static var SELL_BOUGHT_CAP := true
 ## 返修（O-429，同上）：天平只在买时那一层的地图里生效，进了别的层就清掉（设计稿「只管当前这一层」）；关掉回到绑定最高到达层
 static var SCALE_FLOOR_ONLY := true
+## T531（预算稿 v0.16 九.4／D290）：天启篇修炼改成乘白板合计（本体基础＋装备／加值白板），每级 1%（满 10 级白板 +10%、伤害约 +13%）；关掉回到只乘本体基础值
+static var TRAINING_WHITEBOARD := true
 
 const PATH := "res://modes/xiyou/tianqi_data/money_table.json"
 const SCALE_MAP := 4
@@ -246,6 +248,10 @@ static func training_on(s: XState = null) -> bool:
 	return TRAINING and s != null and on(s)
 
 
+static func training_whiteboard_on(s: XState = null) -> bool:
+	return TRAINING_WHITEBOARD and training_on(s)
+
+
 static func training_levels() -> int:
 	return int(_sec("training").get("levels", 10))
 
@@ -284,7 +290,7 @@ static func train(s: XState, param: int) -> String:
 	return "强化成功"
 
 
-## 修炼给这名角色第 i 项能力加的值：基础值 × 每级比例 × 等级（全队共享）
+## 修炼给这名角色第 i 项能力加的值：白板合计（TRAINING_WHITEBOARD=false 时为本体基础值）× 每级比例 × 等级（全队共享）
 static func training_bonus(a: XActor, i: int) -> float:
 	var s := XState.current
 	if i < 0 or i >= 8 or not training_on(s):
@@ -292,7 +298,8 @@ static func training_bonus(a: XActor, i: int) -> float:
 	var lv := training_level(s, i)
 	if lv <= 0:
 		return 0.0
-	return floorf(a.param_base_direct(i) * float(_sec("training").get("pct_per_level", 0.01)) * lv)
+	var base := maxf(0.0, a.param_whiteboard(i)) if TRAINING_WHITEBOARD else a.param_base_direct(i)
+	return floorf(base * float(_sec("training").get("pct_per_level", 0.01)) * lv)
 
 
 # ---- 天平 ----
