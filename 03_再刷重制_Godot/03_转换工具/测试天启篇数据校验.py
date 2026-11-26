@@ -567,6 +567,28 @@ class SkillReworkGrowth(unittest.TestCase):
         t['skills']['6862']['damage']['conds'][0]['to'] = 3.5
         self.assertTrue(any('stat_floor' in b for b in chk.skill_rework_rules(t)))
 
+    def test_state_effects_remove_phases(self):
+        t = self._table()
+        self.assertFalse([b for b in chk.skill_rework_rules(t) if 'effects_remove（状态脚本' in b])
+        t['states']['2774']['effects_remove'] = ['confirm', 'confirm']
+        self.assertTrue(any('effects_remove（状态脚本' in b for b in chk.skill_rework_rules(t)))
+        t['states']['2774']['effects_remove'] = ['bogus']
+        self.assertTrue(any('effects_remove（状态脚本' in b for b in chk.skill_rework_rules(t)))
+        t['states']['2774']['effects_remove'] = True
+        self.assertFalse([b for b in chk.skill_rework_rules(t) if 'effects_remove（状态脚本' in b])
+
+    def test_actor_innate_cap_rules(self):
+        t = self._table()
+        self.assertEqual(chk.actor_innate_cap_rules(t), [])
+        t['skills']['41']['note_add'] = '<passiveELUP01:35%>'
+        self.assertTrue(any('角色自带入池上限' in b for b in chk.actor_innate_cap_rules(t)))
+        t = self._table()
+        t['states']['2774']['note_add'] = '<passiveHarmRi:35>'
+        self.assertTrue(any('角色自带入池上限' in b for b in chk.actor_innate_cap_rules(t)))
+        t = self._table()
+        t['states']['850']['note_add'] = '<passiveCrHarmRi:60>'
+        self.assertTrue(any('角色自带入池上限' in b for b in chk.actor_innate_cap_rules(t)))
+
     def test_battle_end_bool(self):
         t = self._table()
         self.assertFalse([b for b in chk.skill_rework_rules(t) if 'battle_end' in b])

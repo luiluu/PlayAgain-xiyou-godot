@@ -182,7 +182,7 @@ func _table() -> void:
 
 
 func _fresh(a: XActor, ids: Array) -> void:
-	for sid in [838, 2441, 2300, 2302, 2771, 38, 1421, 1422, 2583, 2731, 1834, 1666, 1522, 2556]:
+	for sid in [838, 2441, 2300, 2302, 34, 38, 1421, 1422, 2583, 2731, 1834, 1666, 1522, 2556]:
 		a.remove_state(sid)
 	for sid in ids:
 		a.add_state(int(sid))
@@ -241,10 +241,10 @@ func _runtime() -> void:
 		_check("secret_merged_cap", sec.books.has("#7135") and is_equal_approx(float(frame.finalAdd), per) and is_equal_approx(float(by.globalHarmRi.secret), 0.05) and is_equal_approx(float(books.globalHarmRi["#7135"]), 0.05), [frame, sec])
 	else:
 		_check("secret_merged_cap", false, "secret_slots 0")
-	# value_steps：2771 超赛1 ＋150%（角色桶不封），确认阶段那一步不加
-	_fresh(a, [2771])
+	# value_steps：34 越战越勇 ＋10%（角色桶不封；T528 起 2771 超赛1 已改写去 confirm，换用未改写 value_steps 状态 34），确认阶段那一步不加
+	_fresh(a, [34])
 	var vs: Dictionary = XTianqiLedger.live_confirm_add(a, e, 1)
-	_check("value_steps_pooled", is_equal_approx(float(vs.add), 1.5) and absf(_confirm(a, e) - 100.0) <= 0.01 and _confirm(a, mate) >= 249.0, [vs, _confirm(a, e)])
+	_check("value_steps_pooled", is_equal_approx(float(vs.add), 0.1) and absf(_confirm(a, e) - 100.0) <= 0.01 and _confirm(a, mate) >= 109.0, [vs, _confirm(a, e)])
 	# 停用：不乘、不进池
 	_fresh(a, [2300])
 	var stop: Dictionary = XTianqiLedger.live_confirm_add(a, e, 1)
