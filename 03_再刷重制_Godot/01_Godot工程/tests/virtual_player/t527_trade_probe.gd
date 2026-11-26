@@ -20,6 +20,12 @@ func _ready() -> void:
 func _run() -> void:
 	super._run()
 	report["trade_all"] = trade_all
+	if out_path != "":  # k_calibrate._run 已经写过盘；补上 trade_all 再写一遍（核查 P3-1：原先只改了内存里的 report）
+		var f := FileAccess.open(out_path, FileAccess.WRITE)
+		if f == null:
+			push_error("T527 探针写不出 %s（%s）" % [out_path, FileAccess.get_open_error()])
+		else:
+			f.store_string(JSON.stringify(report, " "))
 
 
 func _pick_trades(a: XActor) -> void:
