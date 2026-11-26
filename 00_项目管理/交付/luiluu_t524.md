@@ -40,6 +40,7 @@
 ## 动了的共用函数和开关
 
 - `XPowerBooks.param_rate_bonus`（`modes/xiyou/core/power_books.gd:89`）：多跳过 `XTianqiSecrets.is_sealed` 的书。西游档是 false，发行空壳 check 通过。没加开关：这是修 bug，回到改写稿口径。
+  - 调用方 1 处逐处结论：`modes/xiyou/core/actor.gd:1039`（`param()` 的属性倍率）——封印的书返回 0 加成，正是要的效果；`_rates` 缓存按技能号存，封印判断在读缓存之前，不会串。自检粗数的另外几处是 `tianqi_general_books.gd:99`、`tianqi_trumpet.gd:222` 的注释和 tests 里的调用，不是调用方。
 
 ## 小A 做的／cc 续的
 
