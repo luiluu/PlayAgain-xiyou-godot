@@ -15,14 +15,17 @@ extends RefCounted
 ## 只对天启篇存档生效（XTianqi.active）；西游档、开关关时原样。
 ##
 ## 【cc·T515·未经审查】原版套装模板引擎（养成线二期 2B；同稿同节「模板套」）：表 tianqi_data/suit_template.json。
-## - 归了类的套装（表 suits）多件档不再读原效果，按「类型 × 件数档 × 阶」从表里取一条：攻（伤害、本系伤害）、守（减承伤、生命）、
-##   功能（技能消耗、生命回复、异常抵抗）、掉率。名字、部件、存档都不动，算效果时读表（老存档也一样）。
+## 【小A·T529·未经审查】2B 续（预算稿 v0.16 六.3／九.6 甲／附表一 2B＋D290；收 T515 P2）：
+## - 攻类（攻·伤害、攻·本系）改为单独乘、同一乘区相加、混穿逐招（XDamage._calculate 按攻击方系 oe 调 attack_mult），不进词条池；
+##   攻·伤害沿用默认排（单套 5 件 ×1.15、两套 5+2 ×1.20），攻·本系用独立排 values_by_kind.atk_element（2/3/5 件 1/2/4/6、6/7/10/12、11/13/16/20，单套 5 件 ×1.20、两套 5+2 ×1.26）。
+## - 守类、功能类照旧走词条池（XTianqiAffixBattle.personal），掉率类照旧走掉落池（XTianqiDrop.sources_of）。
+## - 开关解耦（T515 P2）：template_on 不再依赖 2A 开关 ENABLED；走词条通道的类别在 XTianqiAffixBattle.on() 关着时不替换原效果，避免白板。
+## - 回退开关 ATTACK_STANDALONE＝false 回到 T515 做法（攻类回词条池并共用默认 values 排）。
+## - 归了类的套装（表 suits）多件档不再读原效果，按「类型 × 件数档 × 阶」从表里取一条；名字、部件、存档都不动，算效果时读表（老存档也一样）。
 ## - 件数档只取够到的最高一档、不累加，且不超过原套最高件数；原套最低多件档没穿够不算成套（和名额判定同一口径）。1 件档照原样。
 ## - 阶＝这套身上部件里最低的那一阶（部件 req_level 按词条四阶分界，同宝珠共鸣「按最低阶算」；协调 11-25）。
-## - 效果不新开伤害钩子：除掉率外记成词条（XTianqiAffixBattle.personal 并进去，数值直接用表的），走词条现成的池子；
-##   掉率记在套装档的 bResultPlus[2]，XTianqiDrop.sources_of 按表值进掉落线加成池（不再落档），单件封顶见表 cap。
 ## - 没归类的套装照旧（表没填完不会全灭套装）。
-## 入口：XEquipSuits._active_now（bonuses_of）、XTianqiAffixBattle.personal（affix_entries）、XTianqiDrop.sources_of（tqTemplate 标记）。
+## 入口：XEquipSuits._active_now（bonuses_of）、XDamage._calculate（attack_mult）、XTianqiAffixBattle.personal（affix_entries）、XTianqiDrop.sources_of（tqTemplate 标记）。
 
 ## 回退开关（O-669）：false＝天启篇也不限套数（回到 T513 之前：原版套装与七印各自全部生效）
 static var ENABLED := true
@@ -30,6 +33,8 @@ static var ENABLED := true
 static var NEWER_FIRST := true
 ## 回退开关（O-672）：false＝原版套装照原效果（回到 T515 之前），模板表不读
 static var TEMPLATE := true
+## 回退开关（O-待定，T529）：false＝攻类模板套退回 T515 做法（进终伤／元素词条池，共用默认 values 排，attack_mult 恒 1）
+static var ATTACK_STANDALONE := true
 ## 一人最多生效几套（养成线 v0.3 第三节第 3 条：一人最多两套）
 const CAP := 2
 const QIYIN_MIN := 2
@@ -205,8 +210,23 @@ static func reload_template(d := {}) -> void:
 	_tpl_bonus.clear()
 
 
+## 模板开关与 2A 名额开关 ENABLED 解耦（T515 P2，T529 收）：只看 TEMPLATE、是角色且在天启篇存档
 static func template_on(a) -> bool:
-	return TEMPLATE and on(a)
+	return TEMPLATE and a is XActor and XTianqi.active(XState.current)
+
+
+static func _kind_standalone(kind: String) -> bool:
+	if not ATTACK_STANDALONE:
+		return false
+	var k: Dictionary = template_table().get("kinds", {}).get(kind, {})
+	return bool(k.get("standalone", false))
+
+
+static func _kind_uses_affix(kind: String) -> bool:
+	var k: Dictionary = template_table().get("kinds", {}).get(kind, {})
+	if bool(k.get("drop", false)) or _kind_standalone(kind):
+		return false
+	return str(k.get("affix", "")) != ""
 
 
 ## 这套归了哪一类：{kind, element?…}；没归类返回空
@@ -244,35 +264,49 @@ static func suit_tier(a, suit_id: int) -> int:
 	return out
 
 
-## 表里的数：件数档 step、阶 tier（1～4，越界夹住），再按这一类的 cap 封顶
+## 表里的数：件数档 step、阶 tier（1～4，越界夹住），再按这一类的 cap 封顶。
+## 独立乘攻类有专属排（values_by_kind[kind]，如 atk_element）时优先读专属排；ATTACK_STANDALONE 关掉时一律读默认 values 排。
 static func template_value(kind: String, step: int, tier: int) -> float:
-	var row = template_table().get("values", {}).get(str(step), null)
+	var tbl := template_table()
+	var vals = tbl.get("values_by_kind", {}).get(kind, null) if _kind_standalone(kind) else null
+	if not vals is Dictionary:
+		vals = tbl.get("values", {})
+	var row = vals.get(str(step), null)
 	if not row is Array or (row as Array).is_empty():
 		return 0.0
 	var v := float(row[clampi(tier, 1, row.size()) - 1])
-	var k: Dictionary = template_table().get("kinds", {}).get(kind, {})
+	var k: Dictionary = tbl.get("kinds", {}).get(kind, {})
 	if k.has("cap"):
 		v = minf(v, float(k.cap))
 	return v
 
 
-## 合成一档套装效果（字段和原版套装档一样，数都是空的）：掉率类填 bResultPlus[2]，其余带 tqAffix（词条汇总用）
+## 合成一档套装效果（字段和原版套装档一样，数都是空的）：掉率类填 bResultPlus[2]，独立乘攻类带 tqAttack，其余带 tqAffix（词条汇总用）
 static func _template_bonus(suit_id: int, step: int, tier: int) -> Dictionary:
-	var key := "%d|%d|%d" % [suit_id, step, tier]
-	if _tpl_bonus.has(key):
-		return _tpl_bonus[key]
 	var t := template_of(suit_id)
 	var kind := str(t.get("kind", ""))
+	var standalone := _kind_standalone(kind)
+	var key := "%d|%d|%d|%d" % [suit_id, step, tier, 1 if standalone else 0]
+	if _tpl_bonus.has(key):
+		return _tpl_bonus[key]
 	var k: Dictionary = template_table().get("kinds", {}).get(kind, {})
 	var v := template_value(kind, step, tier)
+	var meta := {"suit": suit_id, "kind": kind, "step": step, "tier": tier, "value": v}
+	if bool(k.get("needs_element", false)):
+		meta["element"] = str(t.get("element", ""))
 	var b := {"requirePieces": step, "states": [], "statesResist": [], "skills": [],
 		"paramPlus": [0, 0, 0, 0, 0, 0, 0, 0], "paramRate": [1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0],
 		"xparamPlus": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0], "xparamRate": [1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0],
 		"sparamPlus": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0], "sparamRate": [1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0],
 		"bResultPlus": [0, 0, 0], "bResultRate": [1.0, 1.0, 1.0],
-		"tqTemplate": {"suit": suit_id, "kind": kind, "step": step, "tier": tier, "value": v}}
+		"tqTemplate": meta}
 	if bool(k.get("drop", false)):
 		b.bResultPlus[2] = v
+	elif standalone:
+		var sa := {"kind": kind, "value": v, "suit": suit_id}
+		if bool(k.get("needs_element", false)):
+			sa["element"] = str(t.get("element", ""))
+		b["tqAttack"] = sa
 	elif str(k.get("affix", "")) != "":
 		var x := {"key": str(k.affix), "value": v, "suit": suit_id}
 		if bool(k.get("needs_element", false)):
@@ -283,9 +317,11 @@ static func _template_bonus(suit_id: int, step: int, tier: int) -> Dictionary:
 
 
 ## XEquipSuits._active_now 用：这套（穿 n 件，已过名额筛）该读的档。归了类的：1 件档照原样＋够到的那一个模板档；
-## 没归类、不在天启篇、开关关：原样返回 bonuses
+## 没归类、不在天启篇、开关关、或走词条通道的类在词条战斗层关闭时（T515 P2 防白板）：原样返回 bonuses
 static func bonuses_of(a, suit_id: int, n: int, bonuses: Array) -> Array:
 	if not template_on(a) or template_of(suit_id).is_empty():
+		return bonuses
+	if _kind_uses_affix(str(template_of(suit_id).get("kind", ""))) and not XTianqiAffixBattle.on():
 		return bonuses
 	var out := []
 	for b in bonuses:
@@ -295,6 +331,24 @@ static func bonuses_of(a, suit_id: int, n: int, bonuses: Array) -> Array:
 	if step > 0:
 		out.append(_template_bonus(suit_id, step, maxi(1, suit_tier(a, suit_id))))
 	return out
+
+
+## XDamage._calculate 候选循环用（T529）：攻类模板套独立乘区（攻·伤害与对口攻·本系在同一个乘区里相加，混穿按本候选攻击方系 oe 逐招算）。
+## 只对天启篇我方打敌人且 ATTACK_STANDALONE 与 TEMPLATE 开着时生效；西游档、开关关恒返回 1.0（发行空壳照首句生成 return 1.0）。
+static func attack_mult(a, b, element_id: int) -> float:
+	if not ATTACK_STANDALONE or not template_on(a) or b is XActor:
+		return 1.0
+	var add := 0.0
+	for bonus in XEquipSuits.active(a):
+		if not bonus.has("tqAttack"):
+			continue
+		var sa: Dictionary = bonus.tqAttack
+		if sa.has("element"):
+			var eid := XTianqiAffixBattle.element_id(str(sa.element))
+			if eid <= 0 or eid != element_id:
+				continue
+		add += float(sa.get("value", 0.0))
+	return maxf(0.0, 1.0 + add / 100.0)
 
 
 ## XTianqiAffixBattle.personal 用：生效的模板档记成的词条 [{key, value, extra?}]
