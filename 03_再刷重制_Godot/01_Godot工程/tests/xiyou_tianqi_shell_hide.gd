@@ -62,7 +62,8 @@ func _run() -> void:
 	for k in XTianqiSkills.data().get("skills", {}):
 		if XTianqiSkills.is_shell(int(k)):
 			n += 1
-	_check("shell_count", n >= 240 and n <= 260, n)
+	# 上限＝实际数 271：T524（dev.934）前 247，T524 有意新增 24 个——裴钱武夫十境 4415～4424、练气十境 4426～4435（并入天赋无敌）、三笠 8143～8146（并入锻炼）
+	_check("shell_count", n >= 240 and n <= 271, n)
 	var a: XActor = s.actor(25)
 	a.learn_skill(SHELL)
 	_check("learned", a.skill_ids.has(SHELL))
