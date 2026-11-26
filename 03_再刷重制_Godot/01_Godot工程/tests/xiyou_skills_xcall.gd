@@ -196,6 +196,12 @@ func _run() -> void:
 	a.forget_skill(9942)
 	cached(a)
 	entry("table.erase_plain", a, func(): XDB._tables.erase("Skills"), false)
+	# 17b（R1 云端第 8 片撑爆内存）底表换过后旧项全丢：缓存里只剩按新表建的，不攥旧表
+	for k in [2, 3, 4]:
+		cached(s.actor(k))
+	XDB._tables.erase("Skills")
+	cached(a)
+	check("table.old_entries_dropped", XActor._skc_store.size() == 1 and is_same(XActor._skc_tbl, XDB._tables.get("Skills")), XActor._skc_store.size())
 
 	# 影子克隆（装备预览）：各算各的，本体的缓存不受影响
 	var item := XActor.make_equip("weapon", 464)

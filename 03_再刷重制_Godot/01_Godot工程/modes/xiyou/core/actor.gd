@@ -674,6 +674,9 @@ static var SKILLS_XCALL := true
 static var _skills_epoch := 0
 ## 角色实例号 → 缓存项（不挂在角色身上：公式预览的影子克隆照抄全部字段，见 _memo_store）
 static var _skc_store := {}
+## _skc_store 里各项建时用的底表 Skills（XDB._tables 的那一份）。底表整张换过（erase 重载：苍龙、贝吉特、文字修正切开关）就整个 _skc_store 作废。
+## 只记一份、不挂在各项上：各项各攥一份旧表的话，频繁重载时最多 64 份整张技能表留在内存里（T546 R1 云端第 8 片 team_builder 撑到 8.6 GB）
+static var _skc_tbl = null
 static var skills_xcall_hits := 0
 static var skills_xcall_builds := 0
 
@@ -702,16 +705,23 @@ func _skills_entry() -> Dictionary:
 	var ids := _skill_ids_now()
 	var key := _skills_key()
 	var me := get_instance_id()
+	if not is_same(_skc_tbl, XDB._tables.get("Skills")):  # 底表整张换过：全部作废（is_same 只比引用）
+		_skc_store = {}
+		_skc_tbl = null
 	var c = _skc_store.get(me)
-	if c != null and c.ids == ids and c.key == key and is_same(c.tbl, XDB._tables.get("Skills")):  # 底表整张换过（erase 重载：苍龙、贝吉特、文字修正切开关）也作废；is_same 只比引用
+	if c != null and c.ids == ids and c.key == key:
 		skills_xcall_hits += 1
 		if READ_VERIFY:
 			_read_verify("skills_xcall", c.recs, _skill_records(ids))
 		return c
 	var epoch := _skills_epoch
 	var recs := _skill_records(ids)
-	c = {"ids": ids, "key": key, "recs": recs, "pv": {}, "tbl": XDB._tables.get("Skills")}  # 底表引用在建完后取（建的过程里会载入）
+	c = {"ids": ids, "key": key, "recs": recs, "pv": {}}
 	skills_xcall_builds += 1
+	var tbl = XDB._tables.get("Skills")  # 建完后取（建的过程里会载入）
+	if not is_same(_skc_tbl, tbl):
+		_skc_store = {}
+		_skc_tbl = tbl
 	if epoch == _skills_epoch:  # 建的过程里换了代就不留
 		if _skc_store.size() >= 64:
 			_skc_store = {}  # 旧存档、影子克隆留下的项：攒多了整表丢
