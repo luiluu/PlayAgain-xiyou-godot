@@ -123,7 +123,10 @@ func _run() -> void:
 	check("config", norm({"costs": c.costs, "reward": c.reward, "encounterRate": c.encounterRate, "pity": c.pity, "visitLimit": c.visitLimit}) == norm(o.config), o.config)
 	XAbyssMerchant.LAYER_LEDGER = false  # 原版对照段：每图／来源／不朽分账（T224 按层合账的回退支）
 	await complete_cases()
+	XAbyssMerchant.KEEP_BASE_AFFIXES = false  # 原版对照段：商人装备只留买的那条（T547 保留底装备随机词条的回退支）
 	await draw_cases()
+	XAbyssMerchant.KEEP_BASE_AFFIXES = true
+	keep_base_cases()
 	pool_cases()
 	await fix_switch()
 	await ui_layout()
@@ -272,6 +275,80 @@ func fix_switch() -> void:
 	check("fix.off.raw", str(last.parameters[0]) == "i" and str(last.get("mvStringParameters", "")).ends_with("complete(this);"), last)
 	MVEvent.MERCHANT29_FIX = true
 	check("fix.on.has", XAbyssMerchant.has_merchant(s))
+
+
+## T547（XAbyssMerchant.KEEP_BASE_AFFIXES）：西游档商人买的装备保留底装备自带的随机词条行、照普通掉落掷，买的那条必出且排第一。
+## 同一份随机数下，商人装备除买的那条以外的词条＝同底装备普通生成（XGear.create）掷出的词条，即条数与词条池同普通装备。
+func _merchant_item(s: XState, d: Dictionary, affix: Dictionary, seed: int) -> Dictionary:
+	var made := XAbyssMerchant.generate(s, d, affix, XAbyssMerchant.seed_random(seed))
+	s.gear.erase(made)
+	return made
+
+
+func _plain_item(s: XState, d: Dictionary, seed: int) -> Dictionary:
+	var saved := {}
+	for k in ["x", "xn", "xs", "xsn"]:
+		saved[k] = s.rom.get(k)
+	s.rom.x = []
+	s.rom.xn = 0
+	s.rom.xs = []
+	s.rom.xsn = 0
+	XGear.roll_fn = XAbyssMerchant.seed_random(seed)
+	var made := XGear.create("weapon" if str(d.db) == "Weapons" else "armor", int(d.id), s)
+	XGear.roll_fn = Callable()
+	for k in saved:
+		if saved[k] == null:
+			s.rom.erase(k)
+		else:
+			s.rom[k] = saved[k]
+	return made
+
+
+func keep_base_cases() -> void:
+	const N := 400
+	var s := fresh()
+	var pool: Array = XAbyssMerchant.route(37).pool
+	var bases := {"Armors": pool.filter(func(d): return str(d.db) == "Armors" and not (XDB.rec("Armors", int(d.id)).get("equipment", {}).get("affixes", []) as Array).is_empty()),
+		"Weapons": pool.filter(func(d): return str(d.db) == "Weapons" and not (XDB.rec("Weapons", int(d.id)).get("equipment", {}).get("affixes", []) as Array).is_empty())}
+	check("keep.bases", not bases.Armors.is_empty() and not bases.Weapons.is_empty(), [bases.Armors.size(), bases.Weapons.size()])
+	for db in ["Armors", "Weapons"]:
+		var d: Dictionary = bases[db][0]
+		var bought: Dictionary = XAbyssMerchant.candidates("mod", db)[0]
+		var first_ok := true
+		var same_ok := true
+		var extra := 0
+		var plain_extra := 0
+		var old_extra := 0
+		for seed in range(1, N + 1):
+			var m := _merchant_item(s, d, bought, seed * 7919)
+			var p := _plain_item(s, d, seed * 7919)
+			var ids: Array = m.affixIds
+			var ok1: bool = not ids.is_empty() and int(ids[0].id) == int(bought.id) and str(ids[0].table) == str(bought.db) \
+				and norm(m._codexExtraAffix29) == norm({"db": str(bought.db), "id": int(bought.id)})
+			if first_ok and not ok1:
+				print("T547 bought_first 不符：", JSON.stringify([ids, m._codexExtraAffix29, bought]))
+			first_ok = first_ok and ok1
+			same_ok = same_ok and norm(ids.slice(1)) == norm(p.affixIds)
+			extra += ids.size() - 1
+			plain_extra += (p.affixIds as Array).size()
+			XAbyssMerchant.KEEP_BASE_AFFIXES = false
+			var o_item := _merchant_item(s, d, bought, seed * 7919)
+			XAbyssMerchant.KEEP_BASE_AFFIXES = true
+			old_extra += (o_item.affixIds as Array).size() - 1
+		print("T547 %s 底装备 %d：%d 次商人抽取，买的以外共 %d 条随机词条（同底普通生成 %d 条；回退支 %d 条）" % [db, int(d.id), N, extra, plain_extra, old_extra])
+		check("keep.%s.bought_first" % db, first_ok)
+		check("keep.%s.same_as_plain" % db, same_ok)
+		check("keep.%s.rolls_some" % db, extra > 0 if db == "Armors" else extra >= 0, extra)
+		check("keep.%s.rollback_none" % db, old_extra == 0, old_extra)
+	# 天启篇档不走保留：跟回退支一样只留买的那条
+	var d0: Dictionary = bases.Armors[0]
+	var b0: Dictionary = XAbyssMerchant.candidates("mod", "Armors")[0]
+	s.flags["tianqi"] = {"rules": 1}
+	var tq_extra := 0
+	for seed in range(1, 51):
+		tq_extra += (_merchant_item(s, d0, b0, seed * 7919).affixIds as Array).size() - 1
+	s.flags.erase("tianqi")
+	check("keep.tianqi_unchanged", tq_extra == 0, tq_extra)
 
 
 ## 商人界面三页的行与标题（照 Scene_Merchant29 home29／preview29／tiers29）

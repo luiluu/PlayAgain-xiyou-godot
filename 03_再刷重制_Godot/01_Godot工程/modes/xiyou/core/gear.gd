@@ -131,10 +131,16 @@ static func _affix_table(item: Dictionary) -> String:
 	return "Weapons" if str(item.kind) == "weapon" else "Armors"
 
 ## 对一份已备好的模板掷词缀、属性浮动与插槽（DreamX.RandomPrefixSuffix.makeItem 那段）；云裳天衣铺开工时用改过的模板调它
-static func roll_item(item: Dictionary, owner: XState = null, replacement_rows := []) -> Dictionary:
+## forced_affixes：[{table, id, kind}]，掷随机行之前先合进去、不耗随机数（深渊商人保留随机行时买的那条特效，XAbyssMerchant.KEEP_BASE_AFFIXES）
+static func roll_item(item: Dictionary, owner: XState = null, replacement_rows := [], forced_affixes := []) -> Dictionary:
 	if item.is_empty(): return {}
 	var definition: Dictionary = item.get("equipment", {})
 	var table := _affix_table(item)
+	for forced in forced_affixes:
+		var rec := XDB.rec(str(forced.table), int(forced.id))
+		if not rec.is_empty():
+			combine(item, rec, str(forced.kind))
+			item.affixIds.append({"table": str(forced.table), "id": int(forced.id), "kind": forced.kind})
 	var rows: Array = definition.get("affixes", []) if replacement_rows.is_empty() else replacement_rows
 	for row in ([] if XTestMode.boost_depth > 0 else rows):
 		if XTianqiAffixRoll.skips_row(row, owner if owner != null else XState.current, table):
