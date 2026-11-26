@@ -46,7 +46,7 @@
 ## 验证
 
 - 返修后本机专项（无头、`--audio-driver Dummy`）：`xiyou_demon_crown_floor` 116/116、`xiyou_demon_crown` 106/106、`xiyou_tianqi_growth` 58/58、`xiyou_three_growth` 110/110、`xiyou_tianqi_horsemen_battle` 142/142；`语法检查.py` 1244 个 .gd 0 问题；`天启篇数据校验.py` 退出码 0；`发行空壳.py check` 退出码 0（849 个函数）。
-- 返修后云端选测：（见下一行，跑完回填）
+- 返修后云端选测：通过，370 个场景 16 片（改了 battle_logic.gd 所以选得多），基准 d37a159150，提交 f39224bc8f（之后只回填这一行交付单），https://github.com/luiluu/PlayAgain-xiyou-godot/actions/runs/45874140217（`gh run watch` 前台等完，conclusion success）
 - 返修前本机专项（`并行测试.py --full`，无头）：`xiyou_demon_crown_floor` 43/43（新）、`xiyou_demon_crown` 106/106、`xiyou_demon_crown_compact` 48/48、`xiyou_tianqi_growth` 58/58、`xiyou_tianqi_growth_count` 66/66、`xiyou_three_growth` 110/110、`xiyou_tianqi_gear2` 51/51、`xiyou_tianqi_save` 82/82、`xiyou_tianqi_seed_fix` 77/77、`xiyou_save_seal` 127/127、`xiyou_skill_mastery` 306/306、`xiyou_elemental_king` 1107/1107。
 - `语法检查.py` 1244 个 .gd 0 问题；`天启篇数据校验.py` 全部通过；`发行空壳.py check` 退出码 0。
 - 云端选测：通过，40 个场景 7 片，提交 d37a159150（之后只加了交付单和 `发行空壳特例.json` 一行，没动 .gd），https://github.com/luiluu/PlayAgain-xiyou-godot/actions/runs/45846342451
