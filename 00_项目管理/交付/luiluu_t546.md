@@ -24,7 +24,7 @@
 1. 把工程里每个带 `class_name` 的 `.gd`（不含 `tests/`）拆成「静态函数 → 函数体」和「静态变量名」两张表。
 2. 从 `XActor._skill_records` 出发沿调用走（`类名.函数` 跨类、同类裸函数名，深 4 层；这样覆盖 `XDB.rec`、`XDB.table` 首次载入时的各 `patch_skills`、`XTextFix.load_table`、三层视图、`is_sealed`）。
 3. 列出走到的函数里读到的全部**静态变量**（大写开关和小写状态都列，如 `ReleaseEntry.simulate_release`）。
-4. 逐项归类：①已在缓存键／开关位图；②只在载入 Skills 表时用（苍龙、五条悟、五条悟试炼、贝吉特、文字修正、真气突破奖励）→ 切了要 erase 底表才生效，由 P1-4 的表引用比对兜住；③天启篇模块自己的数据缓存（`TUNE_D189～D287`、`GUARD` 只在 `XTianqiSkills.data` 里读）→ 要 `reload_table` 才生效，由 P3-1 兜住；④只影响别的表（Enemies／Troops／States／Items／CommonEvents／Armors：`STRIP`、`XINMO`、`CROW_BLUEPRINT_NAMES`、`FIX_HALFSTEP_1666`、`SukunaFx.FX`、`TURN_CD_V035`、`ELEMENT_FABAOS`、`YEP_RECOMPUTE`……）→ 与技能记录无关；⑤纯性能缓存开关（`XZhenqi.DAOFA_TAG_CACHE`）与按输入键好的记忆表（`_views`、`_recs` 等，键里带了基底记录引用或开关）→ 结果不变；⑥测试注入 `XTianqiWeakAffix.test_entries` → 已在 `view_sig` 里。
+4. 逐项归类：①已在缓存键／开关位图；②只在载入 Skills 表时用（苍龙、五条悟、五条悟试炼、贝吉特、文字修正、真气突破奖励）→ 切了要 erase 底表才生效，由 P1-4 的表引用比对兜住；③天启篇模块自己的数据缓存（`TUNE_D189～D287` 在 `XTianqiSkills.data` 里读；`GUARD` 在 `XTianqiSkills.build` 改写技能记录时读（删 `guard_note_remove`），另在护短结算处读）→ 要 `reload_table` 才生效，由 P3-1 兜住；④只影响别的表（Enemies／Troops／States／Items／CommonEvents／Armors：`STRIP`、`XINMO`、`CROW_BLUEPRINT_NAMES`、`FIX_HALFSTEP_1666`、`SukunaFx.FX`、`TURN_CD_V035`、`ELEMENT_FABAOS`、`YEP_RECOMPUTE`……）→ 与技能记录无关；⑤纯性能缓存开关（`XZhenqi.DAOFA_TAG_CACHE`）与按输入键好的记忆表（`_views`、`_recs` 等，键里带了基底记录引用或开关）→ 结果不变；⑥测试注入 `XTianqiWeakAffix.test_entries` → 已在 `view_sig` 里。
 5. 扫出来落在 ①～⑥ 之外的只有核查报告那 4 个开关（P1-1～P1-3 三个＋P1-4 底表），没有第五个。补丁线（接 306d3ad5a）同样扫过一遍，结果是主线的子集（少通用书、秘籍两模块），同样只有这 4 个。
 
 说实话：脚本只走静态调用，`self.xxx()` 实例方法链和动态 `call()` 走不到；`_skill_records` 这一段本身都是静态调用（`XDB.rec`、各模块 `skill_view`、`is_sealed`），所以这一段是全的，但以后新加一层用实例方法读开关的视图会漏，兜底照旧是 `XIYOU_READ_VERIFY=1` 跑专项。
@@ -110,7 +110,7 @@
 
 **R1（ff2b0450e＋bd5a8df08，补丁线见下）**
 
-- 本机主线：`xiyou_skills_xcall` 109/109（bd5a8df08；ff2b0450e 时 108/108）；`xiyou_tianqi_team_builder` 118/118、最大内存 2.24 GB；`XIYOU_READ_VERIFY=1` 下 `xiyou_skills_xcall` 108/108、`xiyou_battle_speed` 34/34、`xiyou_xufeng_rework` 96/96；`语法检查.py` 1244 个 0 问题；`发行空壳.py check` 86 脚本 848 函数，退出 0。
+- 本机主线：`xiyou_skills_xcall` 109/109（bd5a8df08；ff2b0450e 时 108/108）；`xiyou_tianqi_team_builder` 118/118、最大内存 2.24 GB；`XIYOU_READ_VERIFY=1` 下 `xiyou_skills_xcall` 108/108、`xiyou_battle_speed` 34/34、`xiyou_xufeng_rework` 71/71（勘误：原写 96/96）；`语法检查.py` 1244 个 0 问题；`发行空壳.py check` 86 脚本 848 函数，退出 0。
 - 云端选测第一次（ff2b0450e）：16 片里 14 片过；第 5 片机器断了（重跑后过）；第 8 片两次都被机器关掉（exit 143），原因是上面说的内存，已修。https://github.com/luiluu/PlayAgain-xiyou-godot/actions/runs/45877636506
 - 云端选测第二次（bd5a8df08，基准 47a3572c2）：487 个场景、16 片全部通过；`xiyou_fabao_rework` 并行时失败、单跑通过，按偶发算（跟本单无关的法宝场景，我没深查）。https://github.com/luiluu/PlayAgain-xiyou-godot/actions/runs/45889314645
 
