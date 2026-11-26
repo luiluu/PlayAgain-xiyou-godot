@@ -13,6 +13,8 @@
     "XTianqiQiyinRule.can_use": "七印战斗规则：天启篇未开时返回 true，否则西游全员无法放技能",
     "XTianqiSkills.meets": "天启篇技能重构条件：未开时返回 true，否则西游全员无法放技能",
     "XTianqiLedger.take_extra": "回合预算：天启篇未开时恒放行（返回 true），否则西游档的击倒再动、再释放、九九六、技能卡 free_action 全被拦",
+    "XTianqiGrowth.crown_floor_ok": "T548：天启篇头顶层数判定（现由 crown_floor_ok_snap 取代在 demon_crown.gd 的调用，留给测试与外部现取），空壳 true＝照原版涨",
+    "XTianqiGrowth.crown_floor_ok_snap": "T548 返修：demon_crown.gd finish 里一处调用（按开战快照判），空壳 true＝头顶胜利照原版涨（发行里天启篇关着，就是西游档的行为）",
     "XTianqiGrowth.floor_ok": "T257：raven.gd／nanoha.gd／liuying.gd 只在 XTianqiGrowth.on() 为真时调；空壳 on() 恒 false（发行里天启篇关着），走不到",
     "XTianqiQiyinEffects.skill_usable": "T360：XSkinBattle.qiyin_reason 只在技能已判不能用、要写原因时调；空壳 true＝不是万籁俱寂挡的，往下判，西游档本来就没有七印"
   },
