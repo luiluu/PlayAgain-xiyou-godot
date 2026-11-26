@@ -7,9 +7,17 @@ extends Node
 ## 5. 扫描同类修复：Boss 血脉（SkillPass）、7499/7516 横霸千峰、armor:4514/4517/4519、state 2590/2733/2735/2737、
 ##    CE 衍生被动（维利 3780～3788、三笠 8123～8146、裴钱 4415～4435）。
 ## 6. 西游档零改动：上述技能、状态、装备与权能书属性倍率在西游档保持原貌。
+## 7. 陈（74）两对姿态真切换（核查 P2-1／P2-2 返修）：走原版公共事件 383／384（猛虎↔玄牛）、386／387（醉酒狂暴↔金钟罩），
+##    断言切进去旧姿态退出、切回来新姿态退出；金钟罩 物理／魔法承伤 ×0.9、必中不减（协调 11-26 定：天启篇「承伤」按物理／魔法口径）；
+##    玄牛 HP 再生率 +5%（回合末 _regenerate 读的 hrg）。三选一不做（协调 11-26：保持原版两对开关，列进要 Kyo 定）。
 
 const Kit := preload("res://tests/lib/tq_save_kit.gd")
 var results: Array = []
+
+
+class FakeHost extends Node:
+	func refresh_events() -> void:
+		pass
 
 
 func _ready() -> void:
@@ -69,6 +77,7 @@ func _run() -> void:
 	_test_4_sealed_book_param_rate()
 	_test_5_scan_fixes()
 	_test_6_xiyou_untouched()
+	await _test_7_chen_stances_battle()
 
 	kit.teardown()
 	var passed := results.filter(func(r): return r.passed).size()
@@ -195,14 +204,7 @@ func _test_5_scan_fixes() -> void:
 	var peiqian_ok := not n4424.contains("passiveHarmRe") and not n4424.contains("passivePBST") and not n4435.contains("passiveELUP") and not n4435.contains("passivePBST")
 	_check("t5_ce_derived_vili_mikasa_peiqian", vili_ok and mikasa_ok and peiqian_ok, [vili_ok, mikasa_ok, peiqian_ok])
 
-	# cc 续：陈（74）经公共事件切换到的两个姿态照稿 74 节改写（玄牛 每回合回 5% 生命；金钟罩 承伤 −10%，原版受伤 −2000）
-	var m2616: Dictionary = XDB.rec("Skills", 2616).get("meta", {})
-	var m2623: Dictionary = XDB.rec("Skills", 2623).get("meta", {})
-	var chen_ok := not m2616.keys().any(func(k): return str(k).begins_with("SkillPass") or str(k).begins_with("passiveELUP")) \
-		and m2616.has("passiveXPBST7") \
-		and not m2623.keys().any(func(k): return str(k).begins_with("passiveHarmRe")) \
-		and m2623.has("passiveSPBST6") and m2623.has("passiveSPBST7")
-	_check("t5_chen_2616_2623_stances", chen_ok and XTianqiSkills.has(2616) and XTianqiSkills.has(2623), [m2616.keys(), m2623.keys()])
+	# 陈（74）2616／2623 改到第 7 节真切换＋战斗断言
 
 
 ## 6. 西游档零改动
@@ -230,3 +232,68 @@ func _test_6_xiyou_untouched() -> void:
 	_touch(a)
 	var detail := [n5459.contains("SkillPass538"), atk_mult, _has_phase(st2774.get("effects", []), "confirm"), tp10566, str(v7911.get("note", "")).contains("passiveHarmRi"), XPowerBooks.param_rate_bonus(a, 0)]
 	_check("t6_xiyou_zero_change", detail[0] and absf(atk_mult - 6.0) < 0.01 and detail[2] and tp10566 and detail[4], detail)
+
+
+func _run_ce(host: Node, ce: int) -> void:
+	await MVInterpreter.new(host, 4, 0, XDB.rec("CommonEvents", ce).list.duplicate(true)).run()
+
+
+## 受到伤害（预览，不浮动）：敌人用原版三招打陈，3 连续攻击（物理）、149 禁言术（魔法）、305 屠灭（必中）
+func _taken(e: XEnemy, a: XActor) -> Array:
+	_touch(a)
+	return [3, 149, 305].map(func(id): return XDamage.preview_hit(XDB.rec("Skills", id), e, a))
+
+
+func _has_all(a: XActor, on: Array, off: Array) -> bool:
+	return on.all(func(id): return a.skill_ids.has(id)) and not off.any(func(id): return a.skill_ids.has(id))
+
+
+func _stance_ids(a: XActor) -> Array:
+	return a.skill_ids.filter(func(id): return id in [2615, 2616, 2622, 2623])
+
+
+## 7. 陈两对姿态：真走公共事件切换，切换后旧姿态退出；金钟罩 物理／魔法 −10%、必中不减；玄牛 再生 +5%
+func _test_7_chen_stances_battle() -> void:
+	var s := _new_tianqi_state([74, 1, 2, 3, 4])
+	var chen: XActor = s.actor(74)
+	chen.change_level(50)  # 40 级学猛虎连击 2615、45 级学醉酒狂暴 2622
+	_touch(chen)
+	var host := FakeHost.new()
+	add_child(host)
+	var e := _enemy(12)
+	_check("t7_chen_lv50_starts_tiger_and_drunk", _has_all(chen, [2615, 2622], [2616, 2623]), _stance_ids(chen))
+
+	# 醉酒狂暴 → 金钟罩（CE386）：醉酒退出；物理／魔法承伤 ×0.9，必中不变
+	var base := _taken(e, chen)
+	await _run_ce(host, 386)
+	var bell := _taken(e, chen)
+	var r_phys := float(bell[0]) / maxf(1.0, float(base[0]))
+	var r_mag := float(bell[1]) / maxf(1.0, float(base[1]))
+	var r_true := float(bell[2]) / maxf(1.0, float(base[2]))
+	_check("t7_ce386_bell_on_drunk_off", _has_all(chen, [2623], [2622]), _stance_ids(chen))
+	_check("t7_bell_phys_mag_minus10_true_unchanged",
+		float(base[0]) > 0.0 and float(base[1]) > 0.0 and float(base[2]) > 0.0
+		and absf(r_phys - 0.9) < 0.01 and absf(r_mag - 0.9) < 0.01 and absf(r_true - 1.0) < 0.001,
+		{"base": base, "bell": bell, "ratio": [r_phys, r_mag, r_true]})
+
+	# 金钟罩 → 醉酒狂暴（CE387）：金钟罩退出，承伤回到原样
+	await _run_ce(host, 387)
+	var back := _taken(e, chen)
+	_check("t7_ce387_bell_off_taken_restored", _has_all(chen, [2622], [2623]) and back == base, {"back": back, "base": base})
+
+	# 猛虎 → 玄牛（CE383）：猛虎退出，HP 再生率 +5%；玄牛 → 猛虎（CE384）：玄牛退出，再生率回原样
+	_touch(chen)
+	var hrg0 := chen.hrg
+	await _run_ce(host, 383)
+	_touch(chen)
+	var hrg1 := chen.hrg
+	_check("t7_ce383_ox_on_tiger_off_regen_plus5", _has_all(chen, [2616], [2615]) and absf(hrg1 - hrg0 - 0.05) < 0.001, [hrg0, hrg1, _stance_ids(chen)])
+	await _run_ce(host, 384)
+	_touch(chen)
+	_check("t7_ce384_ox_off_regen_restored", _has_all(chen, [2615], [2616]) and absf(chen.hrg - hrg0) < 0.001, [hrg0, chen.hrg, _stance_ids(chen)])
+
+	# 原版两对开关各自互斥，跨对可以同时开（玄牛＋金钟罩）：稿 74 节写三选一，协调 11-26 列进要 Kyo 定，这里钉住现状
+	await _run_ce(host, 383)
+	await _run_ce(host, 386)
+	_check("t7_pairs_independent_pending_kyo", _has_all(chen, [2616, 2623], [2615, 2622]), _stance_ids(chen))
+	host.queue_free()
