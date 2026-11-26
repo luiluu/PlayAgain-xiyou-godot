@@ -332,7 +332,7 @@ static func floor_ok(s: XState, logic = null) -> bool:
 # ---- 魔冠头顶（T548，Kyo 11-26 事项 79「最高层往下 3 层内。改到启封档」）----
 ## 天启篇里头顶（XDemonCrown 7940）胜利成长只算 地图层 ≥ 已通主塔层 − crown_window（默认 3）的战斗；
 ## 深渊、王者副本、七印里副本、34～36 终局战的口径与 floor_ok_facts 完全相同，只是窗口换成头顶自己的（不动三人的 5）。
-## 不受 ENABLED（三人无限成长总开关）管，自有回退开关 CROWN_FLOOR（O-待定）：false＝天启篇头顶照旧场场涨（回到 T548 之前）。
+## 不受 ENABLED（三人无限成长总开关）管，自有回退开关 CROWN_FLOOR（O-676）：false＝天启篇头顶照旧场场涨（回到 T548 之前）。
 ## 西游档（XTianqi.active 为假）、表缺失恒 true。
 static var CROWN_FLOOR := true
 
