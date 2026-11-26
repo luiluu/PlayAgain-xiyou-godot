@@ -11,13 +11,15 @@
      CodexParamRate、ConsumeReduce、AgainUseAll、passiveAPLUS 等）；
    - 同时检查 note_add 与原版残留同名标签冲突（如 7516 ConsumeReduceZj 双标签）。
 2. 经公共事件（CommonEvents）学到未改写技能：
-   - 学习来源：CommonEvents 里的 318「学会」（固定角色／全队／变量指定角色）与脚本 learnSkill(N)；
+   - 学习来源：CommonEvents 里的 318「学会」（固定角色／全队／变量指定角色）与脚本 learnSkill(…)；
+     脚本参数是变量／表达式的尽量还原（常量、$dataSkills[N]、按备注标签 filter），还原不了也列人工核对；
    - 过滤不开放角色（tiers.不开放）及已在 skill_rework / general_books /
      secret_books.skills（功法）/ trumpet.scrolls[].skill（号卷）中改写的技能；
    - 可达性：未删技能与物品的 code 44、公共事件 117 与脚本 reserveCommonEvent、地图与敌群事件、
-     自动／并行触发作根，沿公共事件调用传递；只有已知调用方全在不可达一侧（天启篇 effects_remove
-     删掉的技能、或本身不可达的公共事件）才略过，略过的列在 dropped 里；
-   - 目标角色追不到的（318 全队／变量、脚本没写死单个角色号）进 manual 人工核对清单；
+     自动／并行触发作根，沿公共事件调用传递（技能效果与运行时同序：先 effects_remove 再 effects_add）；
+     只有能证实「调用方全是天启篇删掉的技能、或已判删掉的公共事件」才略过，略过的列在 dropped 里；
+     父事件找不到调用、调用成环的标「入口未证实」（parent_unconfirmed）人工核对，绝不静默判 dropped；
+   - 目标角色追不到的（318 全队／变量、脚本没写死单个角色号、写死号旁边还有别的取角色方式）进 manual；
    - 标出每个未改写技能携带的危险旧标签、原版伤害公式及未改写强力状态；
      已由别的天启篇模块接管的技能（KNOWN_HANDLED_SKILLS）只标注、不算高危。
 
@@ -277,7 +279,12 @@ KNOWN_HANDLED_SKILLS: dict[int, str] = {
 }
 
 SCRIPT_ACTOR_RE = re.compile(r"\$gameActors\.actor\(\s*(\d+)\s*\)")
-SCRIPT_LEARN_RE = re.compile(r"\blearnSkill\(\s*(\d+)\s*\)")
+SCRIPT_LEARN_ANY_RE = re.compile(r"\blearnSkill\(\s*([^()]*?(?:\([^()]*\)[^()]*?)*)\s*\)")
+# 脚本里「目标角色不止一个写死号」的迹象：非字面 actor()、队伍／战斗对象、循环。出现任何一个都不归给块内唯一字面角色号
+SCRIPT_DYNAMIC_ACTOR_RE = re.compile(
+    r"\$gameActors\.actor\(\s*(?!\d+\s*\))|\$gameParty\b|\$gameTroop\b|BattleManager\b|\$gameActors\._data|"
+    r"\.forEach\b|\bfor\s*\(|\bwhile\s*\("
+)
 RESERVE_CE_RE = re.compile(r"reserveCommonEvent\(\s*(\d+)\s*\)")
 
 
@@ -295,6 +302,41 @@ def _script_blocks(cmds: list) -> list[str]:
         else:
             cur = None
     return ["\n".join(b) for b in blocks]
+
+
+def _resolve_script_skill(expr: str, script: str, skills: dict[int, dict]) -> int | None:
+    """learnSkill 参数不是字面号时尽量还原：常量变量、$dataSkills[N]、按备注标签 filter 出来的技能。还原不了返回 None。"""
+    expr = expr.strip()
+    if expr.isdecimal():
+        return int(expr)
+    m = re.fullmatch(r"\$dataSkills\[\s*(\d+)\s*\](?:\.id)?", expr)
+    if m:
+        return int(m.group(1))
+    m = re.fullmatch(r"([A-Za-z_$][\w$]*)(\.id)?", expr)
+    if not m:
+        return None
+    name, dot_id = m.group(1), bool(m.group(2))
+    if dot_id:
+        # var hh = $dataSkills.filter(function(s){return s&&/<Tag>/.test(s.note);})[0]; … learnSkill(hh.id)
+        mf = re.findall(
+            r"\b%s\s*=(?!=)\s*\$dataSkills\.filter\(.*?/(<[^/]+>)/\.test\(\s*\w+\.note\s*\).*?\)\s*\[\s*0\s*\]" % re.escape(name),
+            script,
+            re.S,
+        )
+        if len(mf) == 1:
+            hits = sorted(sid for sid, sk in skills.items() if mf[0] in str(sk.get("note", "")))
+            return hits[0] if hits else None
+    assigns = re.findall(r"(?:\bvar|\blet|\bconst)?\s*\b%s\s*=(?!=)\s*([^;\n]+)" % re.escape(name), script)
+    if len(assigns) != 1:
+        return None  # 没赋值或多次赋值：追不到
+    rhs = assigns[0].strip()
+    if not dot_id and rhs.isdecimal():
+        return int(rhs)
+    if dot_id:
+        m2 = re.fullmatch(r"\$dataSkills\[\s*(\d+)\s*\]", rhs)
+        if m2:
+            return int(m2.group(1))
+    return None
 
 
 def _ce_refs_in_cmds(cmds: list) -> set[int]:
@@ -397,16 +439,16 @@ def scan_class_b(
     for sid, sk in skills.items():
         sp = eff_sr.get("skills", {}).get(str(sid)) or gb.get("skills", {}).get(str(sid))
         rem = {(int(e[0]), int(e[1])) for e in sp.get("effects_remove", [])} if isinstance(sp, dict) else set()
-        effs = list(sk.get("effects", []))
+        # 与 XTianqiSkills 同序：先按 effects_remove 删原版效果，再追加 effects_add（先删后加同一公共事件＝仍可达）
+        active_effs = [e for e in sk.get("effects", []) if (int(e.get("code", -1)), int(e.get("dataId", -1))) not in rem]
         if isinstance(sp, dict):
-            effs += list(sp.get("effects_add", []))
-        for e in effs:
-            if e.get("code") == 44:
-                cid = int(e["dataId"])
-                if (44, cid) in rem:
-                    skill_removed_callers[cid].append(sid)
-                else:
-                    skill_active_callers[cid].append(sid)
+            active_effs += list(sp.get("effects_add", []))
+        active_ids = {int(e["dataId"]) for e in active_effs if e.get("code") == 44}
+        for cid in sorted(active_ids):
+            skill_active_callers[cid].append(sid)
+        for e in sk.get("effects", []):
+            if e.get("code") == 44 and int(e["dataId"]) not in active_ids and (44, int(e["dataId"])) in rem:
+                skill_removed_callers[int(e["dataId"])].append(sid)
         for cid in RESERVE_CE_RE.findall(str(sk.get("note", ""))):
             skill_active_callers[int(cid)].append(sid)
     item_callers: dict[int, list[int]] = defaultdict(list)
@@ -440,12 +482,29 @@ def scan_class_b(
         reachable.add(c)
         stack.extend(children.get(c, ()))
 
+    # 判「删掉」只认能证实的：调用方要么是天启篇删掉的技能，要么是本身已判删掉的公共事件（不动点）。
+    # 父事件找不到调用、调用成环没有外部入口的，都不算证实，进「入口未证实」人工核对，不判 dropped。
+    dropped_ces: set[int] = set()
+    changed = True
+    while changed:
+        changed = False
+        for cid in ces:
+            if cid in reachable or cid in dropped_ces:
+                continue
+            ce_cs = ce_callers.get(cid, set())
+            if not (skill_removed_callers.get(cid) or ce_cs):
+                continue
+            if all(c in dropped_ces for c in ce_cs):
+                dropped_ces.add(cid)
+                changed = True
+
     def reach_kind(cid: int) -> str:
         if cid in reachable:
             return "reachable"
-        if skill_removed_callers.get(cid) or ce_callers.get(cid):
-            # 已知调用方全在不可达一侧（天启篇删掉的技能，或本身不可达的公共事件）
+        if cid in dropped_ces:
             return "dropped"
+        if skill_removed_callers.get(cid) or ce_callers.get(cid):
+            return "parent_unconfirmed"  # 有调用方，但上游追到「没找到调用」或成环：入口未证实，人工核对
         return "no_caller_found"  # 一处调用都没找到：可能是插件／脚本里拼出来的调用，进人工核对
 
     def trigger_info(cid: int, base_sk: set[int] | None) -> dict:
@@ -463,6 +522,8 @@ def scan_class_b(
             kind = "via_common_event"
         elif int(ces.get(cid, {}).get("trigger", 0) or 0) != 0:
             kind = "auto_or_parallel"
+        elif skill_removed_callers.get(cid):
+            kind = "removed_skill_only"
         else:
             kind = "no_caller_found"
         return {
@@ -476,7 +537,20 @@ def scan_class_b(
             "removed_callers": skill_removed_callers.get(cid, [])[:8],
         }
 
-    def summarize_skill(sid: int) -> dict:
+    def summarize_skill(sid: int | None, expr: str = "") -> dict:
+        if sid is None:
+            # 动态技能号追不到：按高危列人工核对，不静默丢
+            return {
+                "id": None,
+                "handled_by": "",
+                "name": f"动态技能号 learnSkill({expr})，追不到",
+                "dynamic_expr": expr,
+                "stype": 0,
+                "damage_formula": "",
+                "combat_tags": [],
+                "states": [],
+                "high_risk": True,
+            }
         sk = skills.get(sid, {})
         note = str(sk.get("note", ""))
         tags = [m.group(0) for m in COMBAT_TAG_RE.finditer(note)]
@@ -519,6 +593,7 @@ def scan_class_b(
             high_risk = False
         return {
             "id": sid,
+            "dynamic_expr": expr,
             "handled_by": handled_by,
             "name": sk.get("name", ""),
             "stype": sk.get("stypeId", 0),
@@ -531,7 +606,7 @@ def scan_class_b(
     # ---- 每个公共事件里学到的技能，按目标分：固定角色／追不到 ----
     # taught_fixed[cid][aid] = {sid}；taught_unresolved[cid] = [(how, sid)]
     taught_fixed: dict[int, dict[int, set[int]]] = defaultdict(lambda: defaultdict(set))
-    taught_unresolved: dict[int, list[tuple[str, int]]] = defaultdict(list)
+    taught_unresolved: dict[int, list[tuple[str, int | None, str]]] = defaultdict(list)
     for cid, ce in ces.items():
         cmds = ce.get("list", []) or []
         for cmd in cmds:
@@ -546,21 +621,29 @@ def scan_class_b(
             if int(p[0]) == 0 and int(p[1]) > 0:
                 taught_fixed[cid][int(p[1])].add(sid)
             elif int(p[0]) == 0:
-                taught_unresolved[cid].append(("318 全队", sid))
+                taught_unresolved[cid].append(("318 全队", sid, ""))
             else:
-                taught_unresolved[cid].append((f"318 变量{p[1]} 指定角色", sid))
+                taught_unresolved[cid].append((f"318 变量{p[1]} 指定角色", sid, ""))
         for s in _script_blocks(cmds):
-            learns = [int(x) for x in SCRIPT_LEARN_RE.findall(s)]
-            if not learns:
+            exprs = [x.strip() for x in SCRIPT_LEARN_ANY_RE.findall(s)]
+            if not exprs:
                 continue
             fixed = sorted({int(x) for x in SCRIPT_ACTOR_RE.findall(s)})
-            for sid in learns:
-                if sid in reworked_skills:
+            # 只有「块内唯一一个写死角色号、且没有任何别的取角色方式」才归给该角色；混合目标一律人工核对
+            single_actor = fixed[0] if len(fixed) == 1 and not SCRIPT_DYNAMIC_ACTOR_RE.search(s) else None
+            for expr in exprs:
+                sid = _resolve_script_skill(expr, s, skills)
+                if sid is not None and sid in reworked_skills:
                     continue
-                if len(fixed) == 1:
-                    taught_fixed[cid][fixed[0]].add(sid)
+                if sid is None:
+                    taught_unresolved[cid].append(("脚本 learnSkill（技能号是变量／表达式，追不到）", None, expr))
+                elif not expr.isdecimal():
+                    how = "脚本 learnSkill（技能号由变量还原）" + ("" if single_actor is None else f"｜角色 {single_actor}")
+                    taught_unresolved[cid].append((how, sid, expr))
+                elif single_actor is not None:
+                    taught_fixed[cid][single_actor].add(sid)
                 else:
-                    taught_unresolved[cid].append(("脚本 learnSkill（目标角色不是写死的单个号）", sid))
+                    taught_unresolved[cid].append(("脚本 learnSkill（目标角色不是写死的单个号）", sid, ""))
 
     groups = []
     dropped = []
@@ -588,11 +671,11 @@ def scan_class_b(
     manual = []
     for cid in sorted(taught_unresolved):
         info = trigger_info(cid, None)
-        by_how: dict[str, set[int]] = defaultdict(set)
-        for how, sid in taught_unresolved[cid]:
-            by_how[how].add(sid)
-        for how, sids in sorted(by_how.items()):
-            sk_rows = [summarize_skill(s) for s in sorted(sids)]
+        by_how: dict[str, set[tuple[int, str]]] = defaultdict(set)
+        for how, sid, expr in taught_unresolved[cid]:
+            by_how[how].add((-1 if sid is None else sid, expr))
+        for how, pairs in sorted(by_how.items()):
+            sk_rows = [summarize_skill(None if s < 0 else s, e) for s, e in sorted(pairs)]
             manual.append({
                 "ce_id": cid,
                 "ce_name": ces[cid].get("name", ""),
@@ -602,8 +685,8 @@ def scan_class_b(
                 "taught_count": len(sk_rows),
                 "taught": sk_rows,
             })
-    # 一处调用都没找到的固定角色组也进人工核对（可能由插件／拼接脚本调用）
-    no_caller = [g for g in groups if g["reach"] == "no_caller_found"]
+    # 一处调用都没找到、或上游入口未证实的固定角色组也进人工核对（可能由插件／拼接脚本调用）
+    no_caller = [g for g in groups if g["reach"] in ("no_caller_found", "parent_unconfirmed")]
 
     return {
         "group_count": len(groups),
@@ -613,6 +696,7 @@ def scan_class_b(
         "manual_high_risk": sum(1 for m in manual if m["high_risk"]),
         "manual": manual,
         "no_caller_groups": len(no_caller),
+        "no_caller": [(g["actor_id"], g["ce_id"], g["reach"]) for g in no_caller],
         "dropped_count": len(dropped),
         "dropped": dropped,
         "maps_scanned": maps_scanned,
@@ -649,6 +733,9 @@ def print_text_report(res_a: dict, res_b: dict) -> None:
     if not res_b.get("maps_scanned", True):
         print("  ！地图事件没读到：只靠技能／物品／公共事件／敌群判可达，地图调用的公共事件会落进「没找到调用」")
 
+    if res_b.get("no_caller"):
+        print(f"  ！其中入口没证实（没找到调用／父事件没找到调用）{res_b['no_caller_groups']} 组，要人工核对：" + "、".join(f"角色{a} CE{c}({r})" for a, c, r in res_b["no_caller"]))
+
     def _print_group(g: dict, head: str) -> None:
         flag = "高危" if g["high_risk"] else "低危"
         who = g["actor_callers"] or g["active_callers"][:4] or g["item_callers"][:4] or g["event_callers"][:3] or g["ce_callers"][:4]
@@ -663,13 +750,15 @@ def print_text_report(res_a: dict, res_b: dict) -> None:
                 parts.append("状态=" + ",".join(f"{s['id']}({s['name']},sr={s['reworked']})" for s in sk["states"][:3]))
             if sk.get("handled_by"):
                 parts.insert(0, "已接管=" + sk["handled_by"])
-            print(f"      · {sk['id']} {sk['name']}" + (f" | {'; '.join(parts)}" if parts else ""))
+            if sk.get("dynamic_expr") and sk["id"] is not None:
+                parts.insert(0, f"由 learnSkill({sk['dynamic_expr']}) 还原")
+            print(f"      · {'?' if sk['id'] is None else sk['id']} {sk['name']}" + (f" | {'; '.join(parts)}" if parts else ""))
         if len(g["taught"]) > 6:
             print(f"      · ... 其余 {len(g['taught']) - 6} 招")
 
     for g in res_b["groups"]:
         _print_group(g, f"角色 {g['actor_id']}({g['actor_name']})")
-    print(f"\n=== B 类人工核对：目标角色追不到（全队／变量／脚本）{res_b['manual_count']} 组，其中高危 {res_b['manual_high_risk']} 组 ===")
+    print(f"\n=== B 类人工核对：目标角色或技能号追不到（全队／变量／脚本）{res_b['manual_count']} 组，其中高危 {res_b['manual_high_risk']} 组 ===")
     for m in res_b["manual"]:
         _print_group(m, f"[{m['target']}]")
     print(f"\n=== B 类判不可达而略过：{res_b['dropped_count']} 组（已知调用方全是天启篇删掉的技能或不可达的公共事件）===")

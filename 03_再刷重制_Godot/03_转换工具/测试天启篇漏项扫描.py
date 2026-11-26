@@ -147,6 +147,115 @@ class TestLeakScanner(unittest.TestCase):
         st = {r["id"]: r["status"] for r in res["residuals"]}
         self.assertEqual(st, {"1": "benign", "2": "unexempted"})
 
+    def _ext_fixture(self):
+        """小o R2 复核的 8 条扩展夹具（原样移植）。"""
+        skills = {k: {"id": k, "note": "<SkillPass5:300%>", "effects": []} for k in range(100, 107)}
+        skills[100]["effects"] = [{"code": 44, "dataId": k} for k in (1, 5, 9)]
+        setup = {
+            "tiers": {"强者": [10], "不开放": [11]},
+            "skills": {"100": {"actor": 10, "effects_remove": [[44, 5], [44, 9]], "effects_add": [{"code": 44, "dataId": 9}]}},
+        }
+        actors = {k: {"id": k, "classId": 1} for k in (10, 11)}
+        classes = {1: {"learnings": [{"level": 1, "skillId": 100}]}}
+
+        def cmd(c, *p):
+            return {"code": c, "indent": 0, "parameters": list(p)}
+
+        ces = {
+            1: [cmd(117, 5), cmd(117, 2), cmd(117, 6), cmd(117, 7), cmd(117, 8)],
+            2: [cmd(318, 0, 10, 0, 101)],
+            3: [cmd(318, 0, 0, 0, 101)],
+            4: [cmd(318, 1, 9, 0, 101)],
+            5: [cmd(318, 0, 10, 0, 101)],
+            6: [cmd(355, "var a = $gameActors.actor(10);"), cmd(655, "a.learnSkill(101); a.learnSkill(103); a.learnSkill(104);")],
+            7: [cmd(355, "var actor = $gameActors.actor(11); var actor = $gameActors.actor($gameParty._targetActorId);"), cmd(655, "actor.learnSkill(101);")],
+            8: [cmd(355, "var actor = $gameActors.actor($gameParty._targetActorId); var k = 101;"), cmd(655, "actor.learnSkill(k);")],
+            9: [cmd(318, 0, 10, 0, 101)],
+            10: [cmd(117, 11)],
+            11: [cmd(318, 0, 10, 0, 101)],
+            12: [cmd(318, 0, 10, 0, 101)],
+            13: [cmd(318, 0, 10, 0, 101)],
+        }
+        ces = {k: {"id": k, "list": v} for k, v in ces.items()}
+        items = {19: {"effects": [{"code": 44, "dataId": 12}]}}
+        troops = {1: {"pages": [{"list": [cmd(355, "$gameTemp.reserveCommonEvent(13);")]}]}}
+        return SCAN.scan_class_b(
+            setup, {}, {"skills": {"103": {"skill": 103}}}, {"scrolls": [{"skill": 104}]},
+            skills, {}, actors, classes, ces, items, troops, {},
+        )
+
+    def test_class_b_extended_fixtures_xiaoo_r2(self) -> None:
+        actual = self._ext_fixture()
+        groups = {g["ce_id"]: g for g in actual["groups"]}
+        manual_ces = {g["ce_id"] for g in actual["manual"]}
+        with self.subTest("117 普通及被删直接入口且另有活父事件"):
+            self.assertTrue({2, 5} <= set(groups))
+        with self.subTest("318 全队、变量目标"):
+            self.assertTrue({3, 4} <= manual_ces)
+        with self.subTest("脚本固定、功法与号卷过滤"):
+            self.assertEqual([t["id"] for t in groups[6]["taught"]], [101])
+        with self.subTest("物品根、敌群脚本调用根"):
+            self.assertTrue({12, 13} <= set(groups))
+        with self.subTest("混合目标至少列人工核对"):
+            self.assertIn(7, manual_ces)
+            self.assertNotIn(7, groups)
+        with self.subTest("技能号变量至少列人工核对"):
+            self.assertIn(8, manual_ces)
+        with self.subTest("先删后加同一效果仍然可达"):
+            self.assertEqual(groups[9]["reach"], "reachable")
+        with self.subTest("没有查到入口的父事件只标未证实"):
+            self.assertEqual(groups[11]["reach"], "parent_unconfirmed")
+            self.assertIn((10, 11, "parent_unconfirmed"), actual["no_caller"])
+        with self.subTest("什么都不静默丢"):
+            self.assertEqual(actual["dropped"], [])
+
+    def test_class_b_cycle_and_unresolvable_expr_go_manual(self) -> None:
+        skills = {
+            100: {"id": 100, "note": "", "effects": [{"code": 44, "dataId": 3}]},
+            101: {"id": 101, "note": "<SkillPass5:300%>", "effects": []},
+            102: {"id": 102, "note": "<CodexTestTag>", "effects": []},
+        }
+        actors = {10: {"id": 10, "classId": 1}}
+        classes = {1: {"learnings": [{"level": 1, "skillId": 100}]}}
+
+        def cmd(c, *p):
+            return {"code": c, "indent": 0, "parameters": list(p)}
+
+        ces = {
+            # 1、2 互调成环、外面没人调：不能判 dropped
+            1: [cmd(117, 2), cmd(318, 0, 10, 0, 101)],
+            2: [cmd(117, 1)],
+            # 3：起始技能调；脚本里技能号是函数返回值 → 追不到；按备注标签 filter 出来的 → 还原成 102
+            3: [
+                cmd(355, "var a = $gameActors.actor(10); a.learnSkill(pick());"),
+                cmd(355, "var hh=$dataSkills.filter(function(s){return s&&/<CodexTestTag>/.test(s.note);})[0];"),
+                cmd(655, "for(var j=1;j<$dataActors.length;j++){$gameActors.actor(j).learnSkill(hh.id);}"),
+            ],
+        }
+        ces = {k: {"id": k, "list": v} for k, v in ces.items()}
+        eff_sr = {"tiers": {"强者": [10], "不开放": []}, "skills": {"100": {"actor": 10}}}
+        res = SCAN.scan_class_b(eff_sr, {}, {}, {}, skills, {}, actors, classes, ces, {}, {}, {})
+        groups = {g["ce_id"]: g for g in res["groups"]}
+        self.assertEqual(groups[1]["reach"], "parent_unconfirmed")
+        self.assertEqual(res["dropped"], [])
+        m3 = [m for m in res["manual"] if m["ce_id"] == 3]
+        taught = {(t["id"], t["dynamic_expr"]) for m in m3 for t in m["taught"]}
+        self.assertIn((None, "pick()"), taught)  # 追不到也列出来
+        self.assertIn((102, "hh.id"), taught)  # 洪荒补强同款写法能还原
+        self.assertTrue(all(m["reach"] == "reachable" for m in m3))
+
+    def test_real_repo_ce1445_honghuang_listed(self) -> None:
+        import contextlib
+        import io
+        import json
+
+        buf = io.StringIO()
+        with contextlib.redirect_stdout(buf):
+            SCAN.main(["--json"])
+        res = json.loads(buf.getvalue())
+        ids = {t["id"] for m in res["class_b"]["manual"] if m["ce_id"] == 1445 for t in m["taught"]}
+        self.assertIn(10300, ids)  # learnSkill(hh.id)＝洪荒压制，不能漏
+
     def test_real_repo_strict_passes(self) -> None:
         rc = SCAN.main(["--strict", "--json"])
         self.assertEqual(rc, 0)
