@@ -123,7 +123,10 @@ func _run() -> void:
 	check("config", norm({"costs": c.costs, "reward": c.reward, "encounterRate": c.encounterRate, "pity": c.pity, "visitLimit": c.visitLimit}) == norm(o.config), o.config)
 	XAbyssMerchant.LAYER_LEDGER = false  # 原版对照段：每图／来源／不朽分账（T224 按层合账的回退支）
 	await complete_cases()
+	XAbyssMerchant.KEEP_BASE_AFFIXES = false  # 原版对照段：商人装备只留买的那条（T547 保留底装备随机词条的回退支）
 	await draw_cases()
+	XAbyssMerchant.KEEP_BASE_AFFIXES = true
+	keep_base_cases()
 	pool_cases()
 	await fix_switch()
 	await ui_layout()
@@ -272,6 +275,128 @@ func fix_switch() -> void:
 	check("fix.off.raw", str(last.parameters[0]) == "i" and str(last.get("mvStringParameters", "")).ends_with("complete(this);"), last)
 	MVEvent.MERCHANT29_FIX = true
 	check("fix.on.has", XAbyssMerchant.has_merchant(s))
+
+
+## T547（XAbyssMerchant.KEEP_BASE_AFFIXES）：西游档商人买的装备保留底装备自带的随机词条行、照普通掉落掷，买的那条必出且排第一。
+## 同一份随机数下，商人装备除买的那条以外的词条＝同底装备普通生成（XGear.create）掷出的词条，即条数与词条池同普通装备。
+func _merchant_item(s: XState, d: Dictionary, affix: Dictionary, seed: int) -> Dictionary:
+	var made := XAbyssMerchant.generate(s, d, affix, XAbyssMerchant.seed_random(seed))
+	s.gear.erase(made)
+	return made
+
+
+func _plain_item(s: XState, d: Dictionary, seed: int) -> Dictionary:
+	var saved := {}
+	for k in ["x", "xn", "xs", "xsn"]:
+		saved[k] = s.rom.get(k)
+	s.rom.x = []
+	s.rom.xn = 0
+	s.rom.xs = []
+	s.rom.xsn = 0
+	XGear.roll_fn = XAbyssMerchant.seed_random(seed)
+	var made := XGear.create("weapon" if str(d.db) == "Weapons" else "armor", int(d.id), s)
+	XGear.roll_fn = Callable()
+	for k in saved:
+		if saved[k] == null:
+			s.rom.erase(k)
+		else:
+			s.rom[k] = saved[k]
+	return made
+
+
+func keep_base_cases() -> void:
+	const N := 400
+	var s := fresh()
+	var pool: Array = XAbyssMerchant.route(37).pool
+	var bases := {"Armors": pool.filter(func(d): return str(d.db) == "Armors" and not (XDB.rec("Armors", int(d.id)).get("equipment", {}).get("affixes", []) as Array).is_empty()),
+		"Weapons": pool.filter(func(d): return str(d.db) == "Weapons" and not (XDB.rec("Weapons", int(d.id)).get("equipment", {}).get("affixes", []) as Array).is_empty())}
+	check("keep.bases", not bases.Armors.is_empty() and not bases.Weapons.is_empty(), [bases.Armors.size(), bases.Weapons.size()])
+	for db in ["Armors", "Weapons"]:
+		var d: Dictionary = bases[db][0]
+		for cat in XAbyssMerchant.CATEGORIES:
+			var bought: Dictionary = XAbyssMerchant.candidates(cat, db)[0]
+			var bought_q := XGear.quality(XDB.rec(str(bought.db), int(bought.id)))
+			var first_ok := true
+			var same_ok := true
+			var grade_ok := true
+			var extra := 0
+			var plain_extra := 0
+			var old_extra := 0
+			var lower_rolls := 0  # 随机行掷出比买的档位低的品质（就是 P1-1 会被降档的情形）
+			var higher_kept := 0  # 随机行掷出比买的档位高的品质，且成品保住了那个高品质
+			for seed in range(1, N + 1):
+				var m := _merchant_item(s, d, bought, seed * 7919)
+				var p := _plain_item(s, d, seed * 7919)
+				var ids: Array = m.affixIds
+				var ok1: bool = not ids.is_empty() and int(ids[0].id) == int(bought.id) and str(ids[0].table) == str(bought.db) \
+					and norm(m._codexExtraAffix29) == norm({"db": str(bought.db), "id": int(bought.id)})
+				if first_ok and not ok1:
+					print("T547 bought_first 不符：", JSON.stringify([ids, m._codexExtraAffix29, bought]))
+				first_ok = first_ok and ok1
+				same_ok = same_ok and norm(ids.slice(1)) == norm(p.affixIds)
+				extra += ids.size() - 1
+				plain_extra += (p.affixIds as Array).size()
+				XAbyssMerchant.KEEP_BASE_AFFIXES = false
+				var o_item := _merchant_item(s, d, bought, seed * 7919)
+				XAbyssMerchant.KEEP_BASE_AFFIXES = true
+				old_extra += (o_item.affixIds as Array).size() - 1
+				var top_q := bought_q
+				for r in ids.slice(1):
+					var rq_meta: Dictionary = XDB.rec(str(r.table), int(r.id)).get("meta", {})
+					if not rq_meta.has("quality"):
+						continue
+					var rq := clampi(int(rq_meta.quality), 0, 15)
+					if rq < bought_q:
+						lower_rolls += 1
+					top_q = maxi(top_q, rq)
+				if top_q > bought_q and XGear.quality(m) == top_q:
+					higher_kept += 1
+				# 品质与星级：不低于只带买的那条（回退支），也不低于掷出的最高品质
+				var ok2: bool = XGear.quality(m) >= XGear.quality(o_item) and XGear.quality(m) == top_q \
+					and XQuality.stars(m).length() >= XQuality.stars(o_item).length()
+				if grade_ok and not ok2:
+					print("T547 降档：", JSON.stringify([cat, db, XGear.quality(m), XGear.quality(o_item), top_q, XQuality.stars(m), XQuality.stars(o_item), ids]))
+				grade_ok = grade_ok and ok2
+			print("T547 %s/%s 底装备 %d：%d 次商人抽取，买的以外共 %d 条随机词条（同底普通生成 %d 条；回退支 %d 条）；低于买的品质的随机行 %d 条，高于且保住 %d 次" % [db, cat, int(d.id), N, extra, plain_extra, old_extra, lower_rolls, higher_kept])
+			check("keep.%s.%s.bought_first" % [db, cat], first_ok)
+			check("keep.%s.%s.same_as_plain" % [db, cat], same_ok)
+			check("keep.%s.%s.rolls_some" % [db, cat], extra > 0, extra)
+			check("keep.%s.%s.rollback_none" % [db, cat], old_extra == 0, old_extra)
+			check("keep.%s.%s.grade_kept" % [db, cat], grade_ok)
+			if cat != "mod":
+				check("keep.%s.%s.lower_exercised" % [db, cat], lower_rolls > 0, lower_rolls)
+	# 买 Mod 档、随机行掷出更高品质（神话）再掷出低品质：成品保住最高的神话，不被买的 Mod 或后面的低品质行拉低
+	var dA: Dictionary = bases.Armors[0]
+	var low_id := 0
+	for row in XDB.rec("Armors", int(dA.id)).get("equipment", {}).get("affixes", []):
+		for choice in row.choices:
+			for n in choice.ids:
+				var mq: Dictionary = XDB.rec("Armors", int(n)).get("meta", {})
+				if low_id == 0 and mq.has("quality") and clampi(int(mq.quality), 0, 15) < 13:
+					low_id = int(n)
+	var mod_b: Dictionary = XAbyssMerchant.candidates("mod", "Armors")[0]
+	var myth_b: Dictionary = XAbyssMerchant.candidates("mythic", "Armors")[0]
+	var myth_rec := XDB.rec(str(myth_b.db), int(myth_b.id))
+	var blue := XGear.template("armor", int(dA.id))
+	var up := XGear.roll_item(blue, s, [{"kind": "suffix", "choices": [{"chance": 100, "ids": [int(myth_b.id)]}]},
+		{"kind": "suffix", "choices": [{"chance": 100, "ids": [low_id]}]}], [{"table": str(mod_b.db), "id": int(mod_b.id), "kind": "prefix"}])
+	var up_ids: Array = up.get("affixIds", []).map(func(r): return int(r.id))
+	check("keep.mod_rolls_higher_kept", low_id > 0 and up_ids == [int(mod_b.id), int(myth_b.id), low_id]
+		and XGear.quality(up) == XGear.quality(myth_rec) and str(up.meta.get("ici")) == str(myth_rec.get("meta", {}).get("ici")),
+		[low_id, up_ids, XGear.quality(up), up.meta.get("ici")])
+	# 普通掉落（不传 forced_affixes）照原版：后合的低品质行照旧覆写，不套保护
+	var plain := XGear.roll_item(XGear.template("armor", int(dA.id)), s, [{"kind": "suffix", "choices": [{"chance": 100, "ids": [int(myth_b.id)]}]},
+		{"kind": "suffix", "choices": [{"chance": 100, "ids": [low_id]}]}])
+	check("keep.plain_unprotected", XGear.quality(plain) == XGear.quality(XDB.rec("Armors", low_id)), [XGear.quality(plain)])
+	# 天启篇档不走保留：跟回退支一样只留买的那条
+	var d0: Dictionary = bases.Armors[0]
+	var b0: Dictionary = XAbyssMerchant.candidates("mod", "Armors")[0]
+	s.flags["tianqi"] = {"rules": 1}
+	var tq_extra := 0
+	for seed in range(1, 51):
+		tq_extra += (_merchant_item(s, d0, b0, seed * 7919).affixIds as Array).size() - 1
+	s.flags.erase("tianqi")
+	check("keep.tianqi_unchanged", tq_extra == 0, tq_extra)
 
 
 ## 商人界面三页的行与标题（照 Scene_Merchant29 home29／preview29／tiers29）
