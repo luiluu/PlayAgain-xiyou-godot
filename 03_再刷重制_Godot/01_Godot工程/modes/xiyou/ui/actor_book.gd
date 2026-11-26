@@ -427,17 +427,25 @@ static func status_ops(id: int, measure: Callable) -> Array:
 				if names[i] != "":
 					ops.append(_t(names[i], gap * i, y, BOX_W, XUI.TEXT))
 		y += LH
-	# <ActorNote>…</ActorNote>：每 32 字一行，0..ceil(长/32) 共多画一行
-	var showing := false
-	for line in RegEx.create_from_string("[\\r\\n]+").sub(str(d.get("note", "")), "\n", true).split("\n"):
-		if line == "<ActorNote>" or showing:
-			showing = true
-			if line == "</ActorNote>":
-				showing = false
-			elif line != "<ActorNote>":
-				for a in range(int(ceilf(line.length() / 32.0)) + 1):
-					ops.append(_t(line.substr(a * 32, 32), 0, y, BOX_W, XUI.TEXT))
-					y += LH
+	# <ActorNote>…</ActorNote>：每 32 字一行，0..ceil(长/32) 共多画一行；T556 天启篇优先读统一备注（西游档返回空，零改动）
+	var tq_note := XTianqiActorNotes.lines_of(id)
+	if not tq_note.is_empty():
+		for line in tq_note:
+			var sline := str(line)
+			for a in range(int(ceilf(sline.length() / 32.0)) + 1):
+				ops.append(_t(sline.substr(a * 32, 32), 0, y, BOX_W, XUI.TEXT))
+				y += LH
+	else:
+		var showing := false
+		for line in RegEx.create_from_string("[\\r\\n]+").sub(str(d.get("note", "")), "\n", true).split("\n"):
+			if line == "<ActorNote>" or showing:
+				showing = true
+				if line == "</ActorNote>":
+					showing = false
+				elif line != "<ActorNote>":
+					for a in range(int(ceilf(line.length() / 32.0)) + 1):
+						ops.append(_t(line.substr(a * 32, 32), 0, y, BOX_W, XUI.TEXT))
+						y += LH
 	return ops
 
 
