@@ -19,7 +19,8 @@
   - 本机回归（`--headless --audio-driver Dummy`）：`xiyou_caocao_tianhu_states.tscn` 36/36、`xiyou_magic_weapon_level.tscn` 63/63、`xiyou_magic_weapon.tscn` 43/43、`xiyou_fabao_99_scale.tscn` 113/113、`xiyou_tianqi_skills.tscn` 248/248 全部通过。
   - 返修本机回归：`xiyou_battle_common_events.tscn` 95/95、`xiyou_battle_common_event_child.tscn` 13/13；语法检查 0 问题。
   - 工具检查：`python3 03_再刷重制_Godot/07_开发环境/发行空壳.py check` 退出码 0（86 个脚本，845 个函数都有）；`python3 03_再刷重制_Godot/03_转换工具/天启篇数据校验.py` 退出码 0（全部通过）。
-  - 云端选测（提交 `68be85aeb`，基准 `c6c4303175`，53 个场景、2 片，最长一片 10.1 分钟，零偶发）：通过，运行页 https://github.com/luiluu/PlayAgain-xiyou-godot/actions/runs/45721925823 ；合入 `main` 前首轮提交 `9644a68fc`（96 场景、2 片）亦已通过，运行页 https://github.com/luiluu/PlayAgain-xiyou-godot/actions/runs/45718322805 。
+  - 返修后云端选测（提交 `54b927024`，已并入 `main` 的 `2059e79b2`；基准 `2059e79b24`，65 个场景、2 片，最长一片 17.4 分钟）：通过，运行页 https://github.com/luiluu/PlayAgain-xiyou-godot/actions/runs/45725913088 。工具回归全部通过。
+  - 返修前云端选测（提交 `68be85aeb`，基准 `c6c4303175`，53 个场景、2 片，最长一片 10.1 分钟，零偶发）：通过，运行页 https://github.com/luiluu/PlayAgain-xiyou-godot/actions/runs/45721925823 ；合入 `main` 前首轮提交 `9644a68fc`（96 场景、2 片）亦已通过，运行页 https://github.com/luiluu/PlayAgain-xiyou-godot/actions/runs/45718322805 。
 - 提交：9644a68fc、68be85aeb、返修提交（见下「本分支提交」）
 - 未完成／已知问题：天启篇量级的天虎令「天熄乱舞／气伤」重做（2B）按协调决议留待 T522 全局数值预算定稿后单开卡设计，不在本单。
 
@@ -49,3 +50,6 @@
 - 9644a68fc T523：天启篇修凛冬刺击附加冰冷II（1A）并收口未实装天虎令天熄乱舞／气伤链（2A）
 - d006e5f23 T523：提交交付单 luiluu_t523.md（含本机与云端选测 45718322805 全绿结果）
 - 68be85aeb Merge main (dfe1291cc) into luiluu/t523：解 skill_rework.json 冲突、为修复后的 169 补回「减益」标并钉死专项随机种子
+- 9bec94761 T523：更新交付单（首轮交付）
+- f256dd2cf T523 返修：天启篇 CE1406／1408 不再领悟空壳 7492 气傲天苍；交付单冰冷II 招数改 16
+- 54b927024 合并 main（2059e79b2）进本分支
