@@ -134,6 +134,26 @@ func _run() -> void:
 	entry("switch_toggle", a, func(): XTianqiSkills.ENABLED = false)
 	XTianqiSkills.ENABLED = true
 	cached(a)
+	# 12b（T546 R1 P1-2）自然物攻技能单／双属性开关（XTianqiElements.PHYSICAL_DUAL_KEEP_NEUTRAL，天启篇档；86 的 elementId 14 → 0）
+	a.learn_skill(86)
+	cached(a)
+	entry("switch.physical_dual_keep_neutral", a, func(): XTianqiElements.PHYSICAL_DUAL_KEEP_NEUTRAL = true)
+	XTianqiElements.PHYSICAL_DUAL_KEEP_NEUTRAL = false
+	a.forget_skill(86)
+	cached(a)
+	# 12c（P1-3）发行（ReleaseEntry.is_release：天启篇各层 on() 认 RELEASE_OPEN or not is_release；7238 号卷改写 → 原版）
+	XTianqi.RELEASE_OPEN = false
+	a.learn_skill(7238)
+	cached(a)
+	entry("switch.release", a, func(): ReleaseEntry.simulate_release = true)
+	ReleaseEntry.simulate_release = false
+	a.forget_skill(7238)
+	cached(a)
+	# 12d（P3-1）天启篇各模块数据表重载（reload_table 里调 skills_touch；测试切 TUNE_D* 后重载用）
+	for pair in [["tianqi_skills", func(): XTianqiSkills.reload_table()], ["tianqi_elements", func(): XTianqiElements.reload_table()],
+			["tianqi_general_books", func(): XTianqiGeneralBooks.reload_table()], ["tianqi_secrets", func(): XTianqiSecrets.reload_table()],
+			["tianqi_weak_affix", func(): XTianqiWeakAffix.reload_table()]]:
+		entry("reload." + str(pair[0]), a, pair[1], false)
 	# 13 秘籍封印（天启篇档；直接写原始封印表，不经 seal）
 	var secret := 0
 	for id in range(1, XDB.table("Skills").size()):
@@ -165,6 +185,29 @@ func _run() -> void:
 			["passive_touch", func(): XActor.passive_touch()], ["read_reset", func(): XActor.read_reset()],
 			["batch_begin", func(): XActor.batch_begin(); XActor.batch_end()], ["skills_touch", func(): XActor.skills_touch()]]:
 		entry("epoch." + str(pair[0]), a, pair[1], false)
+	# 16（P1-1）徐凤年 9998 系数（XMagicWeapon.SCALE_99_TO_888，西游档：130000 ↔ 209000）
+	var xf := s.actor(152)
+	xf.learn_skill(9998)
+	cached(xf)
+	entry("switch.scale_99_to_888", xf, func(): XMagicWeapon.SCALE_99_TO_888 = false)
+	XMagicWeapon.SCALE_99_TO_888 = true
+	cached(xf)
+	# 17（P1-4）底表 Skills 整张换过（XDB._tables.erase 重载，不调任何作废）：苍龙重做开关、贝吉特按原版
+	a.learn_skill(10093)
+	cached(a)
+	entry("table.canglong", a, func(): XCanglong.REWORK = false; XCanglong.clear_cache())
+	XCanglong.REWORK = true
+	XCanglong.clear_cache()
+	a.forget_skill(10093)
+	a.learn_skill(9942)
+	cached(a)
+	entry("table.vegeta", a, func(): XVegetaTune.original_data())
+	XVegetaTune.ENABLED = true
+	for n in ["Skills", "States", "CommonEvents"]:
+		XDB._tables.erase(n)
+	a.forget_skill(9942)
+	cached(a)
+	entry("table.erase_plain", a, func(): XDB._tables.erase("Skills"), false)
 
 	# 影子克隆（装备预览）：各算各的，本体的缓存不受影响
 	var item := XActor.make_equip("weapon", 464)

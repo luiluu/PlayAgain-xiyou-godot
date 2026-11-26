@@ -667,7 +667,8 @@ func _skill_ids_now() -> Array[int]:
 ## 这里按角色记住上一次建好的记录：id 表每次现算、跟上次逐项相同，且「记录这一步的全部输入」(_skills_key) 也相同，就直接用上次的。
 ## 记录这一步的输入（逐个对过 XDB.rec 的各层改写和三层视图，T546 交付单有清单）：
 ##   当前存档（对象）、天启篇档（rules）、_cat_bare、真气道法缩放（XZhenqi.daofa_scale）、秘籍原始封印表（XTianqiSecrets.sealed_raw）、
-##   弱者词条投影规格（XTianqiWeakAffix.view_sig）、各层改写的回退开关（_skills_switches）；其余只跟载入的数据表走——这些靠 _skills_epoch：
+##   弱者词条投影规格（XTianqiWeakAffix.view_sig）、各层改写的回退开关（_skills_switches）、底表 Skills 的引用（XDB._tables 整张换过就作废）；
+##   天启篇各模块的数据表（tianqi_data/*.json）重载走各自 reload_table，里面调 skills_touch；其余靠 _skills_epoch：
 ##   read_touch／state_touch／passive_touch／read_reset／batch_begin（已有的全部写入点）和 skills_touch()（测试切开关、重载数据后调）都换代。
 ## 按标签取的被动值（passive_values 去掉 passiveELUP 的天启篇补充那段）跟着同一份记录记住。
 ## 返回的是浅复制（记录对象本来就是共享的，同原来每次现算拿到的是同一批对象）。
@@ -695,7 +696,8 @@ static func _skills_switches() -> int:
 	for v in [XTianqi.RELEASE_OPEN, XTianqiSkills.ENABLED, XTianqiSkills.CARDS, XTianqiBase.PHASE4, XTianqiBase.REALM_OFF,
 			XTianqiSect.YI, XTianqiTrumpet.ENABLED, XTianqiGeneralBooks.ENABLED, XGuardianRework.GROWTH_NERF, XXufeng.REWORK,
 			XXiyouNerf.ENABLED, XTianqiElements.ENABLED, XTianqiElements.SKILL_SHIFTS, XTianqiSecrets.ENABLED,
-			XTianqiSecrets.GONGFA_REWORK, XFestRoad.ENABLED, XFest.ENABLED, XTianqiGear.ENABLED, XTianqiWeakAffix.ENABLED]:
+			XTianqiSecrets.GONGFA_REWORK, XFestRoad.ENABLED, XFest.ENABLED, XTianqiGear.ENABLED, XTianqiWeakAffix.ENABLED,
+			XMagicWeapon.SCALE_99_TO_888, XTianqiElements.PHYSICAL_DUAL_KEEP_NEUTRAL, ReleaseEntry.is_release()]:  # 后三个 T546 R1：徐凤年 9998 系数、自然物攻单／双属性、发行（天启篇各层 on() 认 RELEASE_OPEN or not is_release）
 		bits = bits * 2 + (1 if v else 0)
 	return bits
 
@@ -704,13 +706,14 @@ func _skills_entry() -> Dictionary:
 	var key := _skills_key()
 	var me := get_instance_id()
 	var c = _skc_store.get(me)
-	if c != null and c.ids == ids and c.key == key:
+	if c != null and c.ids == ids and c.key == key and is_same(c.tbl, XDB._tables.get("Skills")):  # 底表整张换过（erase 重载：苍龙、贝吉特、文字修正切开关）也作废；is_same 只比引用
 		skills_xcall_hits += 1
 		if READ_VERIFY:
 			_read_verify("skills_xcall", c.recs, _skill_records(ids))
 		return c
 	var epoch := _skills_epoch
-	c = {"ids": ids, "key": key, "recs": _skill_records(ids), "pv": {}}
+	var recs := _skill_records(ids)
+	c = {"ids": ids, "key": key, "recs": recs, "pv": {}, "tbl": XDB._tables.get("Skills")}  # 底表引用在建完后取（建的过程里会载入）
 	skills_xcall_builds += 1
 	if epoch == _skills_epoch:  # 建的过程里换了代就不留
 		if _skc_store.size() >= 64:
