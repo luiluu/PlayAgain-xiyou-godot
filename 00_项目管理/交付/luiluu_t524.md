@@ -71,6 +71,8 @@
 
 ## 云端选测
 
+- 二次返修（只改扫描脚本、单测、交付单）：通过。提交 818fe2168a（ci/luiluu/t524），基准 a0426bacd6，选到 0 个场景（Python 工具改动不牵 Godot 场景；扫描单测与 strict 本机跑过，见「验证」）。`gh run watch` 前台等到结束，退出码 0；`云端选测.py wait` 汇总通过。
+  - 运行页：https://github.com/luiluu/PlayAgain-xiyou-godot/actions/runs/45732523982
 - 返修后：通过。提交 614237e5f8（ci/luiluu/t524），选测基准 653e0ae1a6（上一轮已验），8 个场景、1 片，最长一片 3.2 分钟。`gh run watch` 前台等到结束，退出码 0；`云端选测.py wait` 汇总通过。
   - 运行页：https://github.com/luiluu/PlayAgain-xiyou-godot/actions/runs/45730479867
 - 返修前：通过。提交 cd6d3df58a，基准 c6c4303175，21 个场景、4 片，最长一片 2.6 分钟。
