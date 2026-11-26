@@ -1,0 +1,25 @@
+{
+ "sha": "48d76eb062a6578deebd5753d585e78c5adf0d5a",
+ "branch": "ci/luiluu/t526-growth-artifact-tier",
+ "mode": "affected",
+ "base": "0826cb6fe01595734257eaea7ef755aad76ee35d",
+ "passed": true,
+ "scenes": 4,
+ "failed": [],
+ "flaky": [],
+ "lostShards": [],
+ "jobStatus": "success",
+ "shards": 1,
+ "longestShardSeconds": 40.8,
+ "testSeconds": 62,
+ "generatedRef": "refs/ci/generated/luiluu/t526-growth-artifact-tier",
+ "generatedCommit": "a2c4e2936b79c45c11565d2f10e3d96d41bcc0aa",
+ "runUrl": "https://github.com/luiluu/PlayAgain-xiyou-godot/actions/runs/45796311011",
+ "sceneNames": [
+  "xiyou_json_cache.tscn",
+  "xiyou_text_batch23.tscn",
+  "xiyou_tianqi_balance.tscn",
+  "xiyou_tianqi_gear2.tscn"
+ ],
+ "time": "2026-11-26T09:59:39+00:00"
+}
