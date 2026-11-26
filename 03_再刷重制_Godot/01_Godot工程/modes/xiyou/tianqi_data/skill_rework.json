@@ -1332,6 +1332,8 @@
   "2613": {"actor": 74, "name": "升龙霸", "kind": "常规", "damage": {"stats": {"atk": 1}, "coef": 3.0, "conds": [{"if": "self_state_any", "states": [266], "mult": 0.5556}]}, "tp": 30, "effects_remove": [[44, 385]], "desc": ["效果：有凝神时三段共5.0并消耗凝神", "伤害：物理攻击×3.0（凝神时每段×1.67）"]},
   "2622": {"actor": 74, "name": "醉酒狂暴", "kind": "被动", "desc": ["效果：你的普通攻击变为五段醉拳", "使用：切换为金钟罩"], "note_remove": ["passiveCrHarmRi"], "note_sub": [["<Replace Attack:\\s*2612>", "<Replace Attack: 10719>"]]},
   "2615": {"actor": 74, "name": "猛虎连击", "kind": "被动", "desc": ["使用：切换为玄牛气劲", "效果：战斗开始时获得「猛虎连击」：伤害 +10%，持续2回合"]},
+  "2616": {"actor": 74, "name": "玄牛气劲", "kind": "被动", "note_remove": ["SkillPass\\d+", "passiveELUP\\d+"], "note_add": "<passiveXPBST7:5%>", "desc": ["使用：切换为猛虎连击", "效果：每回合恢复5%的生命"], "_note": "T524：经公共事件 383 学到、原版没改写；照稿 74 节姿态「玄牛（生命回复每回合 5%）」"},
+  "2623": {"actor": 74, "name": "金钟罩", "kind": "被动", "note_remove": ["passiveHarmRe\\d+"], "note_add": "<passiveSPBST6:-10%><passiveSPBST7:-10%>", "desc": ["使用：切换为醉酒狂暴", "效果：承受伤害 −10%"], "_note": "T524：经公共事件 386 学到、原版没改写（受伤 −2000）；照稿 74 节姿态「金钟罩（承伤再 −10%）」"},
   "2606": {"actor": 74, "name": "叫嚣", "kind": "被动", "desc": ["效果：受到攻击概率×250%"], "note_remove": ["passiveCrHarmRi"]},
   "2607": {"actor": 74, "name": "躯不坏", "kind": "被动", "desc": ["效果：受到的伤害降低"]},
   "5470": {"actor": 74, "name": "琉璃金身", "kind": "被动", "desc": ["效果：身与意合，陈开局时获得「凝神」状态", "效果：双防 +10%"], "note_remove": ["passiveELUP\\d+", "passiveCrHarmRi", "passivePBST\\d", "passiveHarmRe\\d+"], "note_add": "<passivePBST3:10%><passivePBST5:10%>"},

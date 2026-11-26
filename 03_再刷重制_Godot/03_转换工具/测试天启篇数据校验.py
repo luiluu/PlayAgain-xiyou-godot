@@ -567,6 +567,16 @@ class SkillReworkGrowth(unittest.TestCase):
         t['skills']['6862']['damage']['conds'][0]['to'] = 3.5
         self.assertTrue(any('stat_floor' in b for b in chk.skill_rework_rules(t)))
 
+    def test_state_effects_remove_phases(self):
+        t = self._table()
+        self.assertFalse([b for b in chk.skill_rework_rules(t) if 'effects_remove（状态脚本' in b])
+        t['states']['2774']['effects_remove'] = ['confirm', 'confirm']
+        self.assertTrue(any('effects_remove（状态脚本' in b for b in chk.skill_rework_rules(t)))
+        t['states']['2774']['effects_remove'] = ['bogus']
+        self.assertTrue(any('effects_remove（状态脚本' in b for b in chk.skill_rework_rules(t)))
+        t['states']['2774']['effects_remove'] = True
+        self.assertFalse([b for b in chk.skill_rework_rules(t) if 'effects_remove（状态脚本' in b])
+
     def test_battle_end_bool(self):
         t = self._table()
         self.assertFalse([b for b in chk.skill_rework_rules(t) if 'battle_end' in b])

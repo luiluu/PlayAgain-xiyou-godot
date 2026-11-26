@@ -229,6 +229,15 @@ func _test_5_scan_fixes() -> void:
 	var peiqian_ok := not n4424.contains("passiveHarmRe") and not n4424.contains("passivePBST") and not n4435.contains("passiveELUP") and not n4435.contains("passivePBST")
 	_check("t5_ce_derived_vili_mikasa_peiqian", vili_ok and mikasa_ok and peiqian_ok, [vili_ok, mikasa_ok, peiqian_ok])
 
+	# cc 续：陈（74）经公共事件切换到的两个姿态照稿 74 节改写（玄牛 每回合回 5% 生命；金钟罩 承伤 −10%，原版受伤 −2000）
+	var m2616: Dictionary = XDB.rec("Skills", 2616).get("meta", {})
+	var m2623: Dictionary = XDB.rec("Skills", 2623).get("meta", {})
+	var chen_ok := not m2616.keys().any(func(k): return str(k).begins_with("SkillPass") or str(k).begins_with("passiveELUP")) \
+		and m2616.has("passiveXPBST7") \
+		and not m2623.keys().any(func(k): return str(k).begins_with("passiveHarmRe")) \
+		and m2623.has("passiveSPBST6") and m2623.has("passiveSPBST7")
+	_check("t5_chen_2616_2623_stances", chen_ok and XTianqiSkills.has(2616) and XTianqiSkills.has(2623), [m2616.keys(), m2623.keys()])
+
 
 ## 6. 西游档零改动
 func _test_6_xiyou_untouched() -> void:
