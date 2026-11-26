@@ -4283,8 +4283,12 @@ def check_suit_template(_args) -> bool:
 
 
 ACTOR_NOTES_FORBIDDEN = re.compile(
-    r'[0-9%×*]|测试角色|定制角色|特殊角色|图像已接入|繁星版|纳西妲版本|高爆版|隐藏加成|(?<![A-Za-z])(?:TP|MP|HP)(?![A-Za-z])'
+    r'[0-9%×*]|测试角色|定制角色|特殊角色|图像已接入|繁星版|纳西妲版本|高爆版|隐藏加成'
+    r'|候选池|暂未|编入|图鉴|收藏|模板|玩法'
+    r'|(?<![A-Za-z])(?:TP|MP|HP)(?![A-Za-z])'
 )
+# 特点行额外禁「倍」（防倍伤／倍增／双倍等倍率说法）；故事行保留 Kyo 审定样稿 127 小铃兰「九倍的温柔与坚强」
+ACTOR_NOTES_TRAIT_FORBIDDEN = re.compile(r'倍')
 ACTOR_NOTES_HIDDEN = {141, 157, 160, 161, 166}  # 同 core/imported_balance.gd（146 苍龙、152 徐凤年已解放）
 
 
@@ -4320,6 +4324,9 @@ def actor_notes_rules(table: dict, actors_db=None) -> list:
             check('actors.%s.%s 以中文句号结尾' % (k, fld), txt.endswith('。'), txt[-4:])
             m = ACTOR_NOTES_FORBIDDEN.search(txt)
             check('actors.%s.%s 不含内部数值编号与禁用词' % (k, fld), m is None, m.group(0) if m else None)
+            if fld == 'trait':
+                m2 = ACTOR_NOTES_TRAIT_FORBIDDEN.search(txt)
+                check('actors.%s.trait 不含倍率词「倍」' % k, m2 is None, m2.group(0) if m2 else None)
     if isinstance(actors_db, list):
         want = {}
         for rec in actors_db:

@@ -43,7 +43,7 @@ func _run() -> void:
 	var ids := XActorBook.index_ids().filter(func(i): return int(i) > 0)
 	_check("visible_actor_count_163", ids.size() == 163, ids.size())
 
-	var forbidden := RegEx.create_from_string("[0-9%×*]|测试角色|定制角色|特殊角色|图像已接入|繁星版|高爆版")
+	var forbidden := RegEx.create_from_string("[0-9%×*]|测试角色|定制角色|特殊角色|图像已接入|繁星版|高爆版|候选池|暂未|编入|图鉴|收藏|模板|玩法")
 	var missing := []
 	var bad_fmt := []
 	var skin_miss := []
@@ -53,9 +53,9 @@ func _run() -> void:
 		if lines.size() != 2:
 			missing.append(id)
 			continue
-		for l in lines:
-			var t := str(l)
-			if t.strip_edges() == "" or not t.ends_with("。") or forbidden.search(t) != null:
+		for idx in lines.size():
+			var t := str(lines[idx])
+			if t.strip_edges() == "" or not t.ends_with("。") or forbidden.search(t) != null or (idx == 1 and t.contains("倍")):
 				bad_fmt.append([id, t])
 		var info := XSkinBookPage.actor_info(id)
 		if info.get("note", []) != lines:
