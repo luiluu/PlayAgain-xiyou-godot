@@ -19,11 +19,11 @@ static var TABLE := true
 
 const ELEM := [3, 5, 6, 8, 10]   # 元素族本系伤害（养成线稿 第三节第 1 条「数值」）
 const ATTR := [1, 2, 3, 5, 6]    # 属性族每颗每行；元素族附带的攻防也按这排（稿：宝珠的副属性「很小」）
-## 特性 22 的行（每回合回复 HRG/MRG、闪避 EVA/MEV、暴击 CRI、命中 HIT）另排小表：五阶每颗 3%（预算稿 v0.16 九.6、D290）；
-## 一～四阶稿没给，协调 11-26 默认 C＝属性排减半进位 1/1/2/3/3（待 Kyo 确认）。长生三颗五阶 9%＝九.7甲 回复额度里长生那份
-const SMALL := [1, 1, 2, 3, 3]
+## 特性 22 的行（每回合回复 HRG/MRG、闪避 EVA/MEV、暴击 CRI、命中 HIT）另排小表 1/3/6/10/15%（Kyo 11-26 事项81，
+## 预算稿 v0.16 第 83、169 行已回写；原九.6 五阶 3% 已被改）。同属性 3 颗封顶 45%；长生三颗五阶 45% 入九.7甲 回复额度
+const SMALL := [1, 3, 6, 10, 15]
 ## 回退开关（专项设过回退值）：SMALL_ON false＝特性 22 行回到属性排；ATTR_CAP false＝不限同属性跨族 3 颗（只限同族）；
-## CAT_SWORD_X2 false＝小猫持剑不翻宝珠（协调 11-26 默认 A 照原版翻倍、翻倍后封顶照算，待 Kyo 确认）
+## CAT_SWORD_X2 false＝小猫持剑不翻宝珠（Kyo 11-26 事项81：照原版翻倍、翻倍后封顶照算）
 static var SMALL_ON := true
 static var ATTR_CAP := true
 static var CAT_SWORD_X2 := true
@@ -180,7 +180,7 @@ static func trait_key(t: Dictionary) -> String:
 ## 算数的那几颗、每行给多少 {装备下标: {族: {行键: 百分数}}}：
 ## ① 同族全身只留阶最高的 familyCap 颗（阶同装备靠前优先，同 XOrbs.cap_drops）；
 ## ② 同一项属性（行键）跨族全身只算阶最高的 familyCap 颗（预算稿 v0.16 九.6，D290；ATTR_CAP 开关）；
-## ③ 小猫持剑翻倍之后，一项属性的宝珠合计不超过 familyCap × 五阶值（本系 30%、属性 18%、小表 9%），超的从翻倍那份扣（协调 11-26：翻倍不能绕封顶）。
+## ③ 小猫持剑翻倍之后，一项属性的宝珠合计不超过 familyCap × 五阶值（本系 30%、属性 18%、小表 45%），超的从翻倍那份扣（Kyo 11-26 事项81：翻倍不能绕封顶）。
 ## 超上限的在视图里直接不给（不再靠下游 filter_traits 按身份剔，视图深拷贝过就认不出——核查 P1-2）。
 static func _alloc(found: Array, mults: Array, cap: int, cfg: Dictionary) -> Dictionary:
 	var by_fam := {}

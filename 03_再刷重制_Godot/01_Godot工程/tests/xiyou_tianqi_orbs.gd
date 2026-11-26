@@ -169,9 +169,9 @@ func _run() -> void:
 	_check("tq_attr_cap_off", XTianqiOrbs.views(cross).map(func(e): return _mat_orb_trait(e.traits)) == [[1.06], [1.06], [1.06], [1.06]])
 	XTianqiOrbs.ATTR_CAP = true
 
-	# 特性 22 小表（九.6，协调默认 C）：长生归真 最大生命 +6%、每回合回复 +3%；三颗 9%
-	_check("tq_small_table", [1, 2, 3, 4, 5].map(func(r): return XTianqiOrbs.line_value("HRG", r)) == [1, 1, 2, 3, 3]
-		and XTianqiOrbs.line_value("CRI", 5) == 3 and XTianqiOrbs.line_value("MRG", 5) == 3 and XTianqiOrbs.line_value("MHP", 5) == 6)
+	# 特性 22 小表（Kyo 11-26 事项81）：长生归真 最大生命 +6%、每回合回复 +15%；三颗 45%
+	_check("tq_small_table", [1, 2, 3, 4, 5].map(func(r): return XTianqiOrbs.line_value("HRG", r)) == [1, 3, 6, 10, 15]
+		and XTianqiOrbs.line_value("CRI", 5) == 15 and XTianqiOrbs.line_value("MRG", 5) == 15 and XTianqiOrbs.line_value("MHP", 5) == 6)
 	var lifes := []
 	for i in 4:
 		var ga := _blade(s, "l%d" % i)
@@ -184,13 +184,13 @@ func _run() -> void:
 		for t in e.traits:
 			if t.has("_codexOrb") and int(t.code) == 22 and int(t.dataId) == 7:
 				hrg += float(t.value)
-	_check("tq_small_hrg_9", absf(hrg - 0.09) < 1e-6, hrg)
-	_check("tq_small_item_text", cfg.items[str(int(cfg.families[11].ids[4]))].effects == ["最大生命+6%", "每回合生命回复（最大生命）+3%"], cfg.items[str(int(cfg.families[11].ids[4]))].effects)
+	_check("tq_small_hrg_45", absf(hrg - 0.45) < 1e-6, hrg)
+	_check("tq_small_item_text", cfg.items[str(int(cfg.families[11].ids[4]))].effects == ["最大生命+6%", "每回合生命回复（最大生命）+15%"], cfg.items[str(int(cfg.families[11].ids[4]))].effects)
 	XTianqiOrbs.SMALL_ON = false
 	_check("tq_small_off", XTianqiOrbs.line_value("HRG", 5) == 6)
 	XTianqiOrbs.SMALL_ON = true
 
-	# 小猫持剑翻倍（协调默认 A：新表值也 ×2，翻倍后封顶照算，超的从翻倍那份扣）
+	# 小猫持剑翻倍（Kyo 11-26 事项81：新表值也 ×2，翻倍后封顶照算，超的从翻倍那份扣）
 	var base_d := _amp(XGear.create("weapon", DAGGER, s), "2")
 	var sv := XCat.sword_view(four[0])
 	_check("tq_cat_mark", XTianqiOrbs.sword_mult(sv) == 2 and XTianqiOrbs.sword_mult(four[0]) == 1)
