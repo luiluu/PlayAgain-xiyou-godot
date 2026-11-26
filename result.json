@@ -1,0 +1,30 @@
+{
+ "sha": "c05dfc98ea495f4e2322a53a16e62530cfdc6e51",
+ "branch": "ci/luiluu/fix-t541-equip-skills",
+ "mode": "affected",
+ "base": "c55af7bdd32af490d0670a0812440cdaccea93d0",
+ "passed": true,
+ "scenes": 9,
+ "failed": [],
+ "flaky": [],
+ "lostShards": [],
+ "jobStatus": "success",
+ "shards": 1,
+ "longestShardSeconds": 355.4,
+ "testSeconds": 610,
+ "generatedRef": "refs/ci/generated/luiluu/fix-t541-equip-skills",
+ "generatedCommit": "b3b326783cfd24817fa9aeab46afc33a70ad98db",
+ "runUrl": "https://github.com/luiluu/PlayAgain-xiyou-godot/actions/runs/45871337107",
+ "sceneNames": [
+  "xiyou_json_cache.tscn",
+  "xiyou_t523_lindong_qishang.tscn",
+  "xiyou_t541_equip_skills.tscn",
+  "xiyou_text_batch23.tscn",
+  "xiyou_tianqi_balance.tscn",
+  "xiyou_tianqi_ledger.tscn",
+  "xiyou_tianqi_phase4.tscn",
+  "xiyou_tianqi_phase4_modules.tscn",
+  "xiyou_tianqi_qishi_states.tscn"
+ ],
+ "time": "2026-11-26T18:03:46+00:00"
+}
