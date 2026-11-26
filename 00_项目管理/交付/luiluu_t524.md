@@ -57,11 +57,12 @@
 - 专项 `xiyou_tianqi_t524_leaks` 本机单跑（临时 HOME，`--audio-driver Dummy`）：14/14 通过。
 - 反证：撤掉 5459 的 `note_remove` 后，`t1_5459_note_stripped`、`t1_arita_5459_no_skillpass_in_battle` 两项失败（skillPass 2058、538 各 +2.0；同一击 4267 对 953），还原后恢复通过。
 - `天启篇数据校验.py`：全部通过；`测试天启篇漏项扫描.py`：OK；`发行空壳.py check`：退出码 0（86 个脚本，845 个函数都有）；`语法检查.py`：1241 个 .gd、0 个问题。
-- 云端选测：见下节。
+- 云端选测：通过，见下节。
 
 ## 云端选测
 
-（待填）
+- 通过：提交 cd6d3df58a（ci/luiluu/t524），基准 c6c4303175，21 个场景、4 片，最长一片 2.6 分钟。`gh run watch` 前台等到结束，退出码 0。
+- 运行页：https://github.com/luiluu/PlayAgain-xiyou-godot/actions/runs/45727152231
 
 ## 扫描结果逐条过
 
