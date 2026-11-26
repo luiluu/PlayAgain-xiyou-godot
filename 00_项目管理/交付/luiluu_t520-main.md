@@ -1,4 +1,4 @@
-# 交付：luiluu/t520
+# 交付：luiluu/t520-main（原 luiluu/t520，切自旧本地 main，总装摘到 main 上）
 
 - 车道／工作者：T520 启封数值总对账（cc 车道，Opus＋medium）
 - 状态：可合并
