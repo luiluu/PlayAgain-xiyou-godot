@@ -135,7 +135,27 @@ func _list_rows() -> int:
 	return floori((LIST_RECT.size.y - XMVWindow.PADDING * 2) / LH)
 
 
+## 只读窗口（O-348 的机制，O-待定，T545 安卓技能页卡顿）：列表每行算消耗要读 4 次左右能力值，每读一次都把角色整张技能表重建一遍
+## （param_base → passive_values → skills()），学的被动越多越卡。刷新、画列表／状态／类型／选人、新皮肤 sync 都只读不写，
+## 整段包一个窗口，技能表、能力值只算一次；窗口里一有写入照旧当场作废。回退：PAGE_READ_MEMO = false（每次现算，同原来）。
+## 包法是「外壳开窗 → 调 *_now → 关窗」：里面中途出错返回，窗口照样关上。用技能、封印等写操作都在窗口外。
+static var PAGE_READ_MEMO := true
+
+
+static func read_only(f: Callable) -> void:
+	if not PAGE_READ_MEMO:
+		f.call()
+		return
+	XActor.read_begin()
+	f.call()
+	XActor.read_end()
+
+
 func _refresh() -> void:
+	read_only(_refresh_now)
+
+
+func _refresh_now() -> void:
 	var n_types := types().size()
 	type_win.up_arrow = type_top > 0
 	type_win.down_arrow = type_top < n_types - TYPE_ROWS
@@ -189,6 +209,10 @@ func _paint_text(lines: Array) -> void:
 
 # ---- 绘制 ----
 func _paint_types(c: XMVCanvas) -> void:
+	read_only(_paint_types_now.bind(c))
+
+
+func _paint_types_now(c: XMVCanvas) -> void:
 	var list := types()
 	for i in range(type_top, mini(type_top + TYPE_ROWS, list.size())):
 		var y := (i - type_top) * LH
@@ -198,6 +222,10 @@ func _paint_types(c: XMVCanvas) -> void:
 
 
 func _paint_status(c: XMVCanvas) -> void:
+	read_only(_paint_status_now.bind(c))
+
+
+func _paint_status_now(c: XMVCanvas) -> void:
 	var a := actor()
 	c.face(str(a.data().get("faceName", "")), int(a.data().get("faceIndex", 0)), 0, 0, 144, c.size.y)
 	XMenu.paint_actor_status(c, a, 158, 0, c.size.x - 158 - 6, LH, XPower.status_text(a))
@@ -207,6 +235,10 @@ func _paint_status(c: XMVCanvas) -> void:
 
 
 func _paint_list(c: XMVCanvas) -> void:
+	read_only(_paint_list_now.bind(c))
+
+
+func _paint_list_now(c: XMVCanvas) -> void:
 	var list := entries()
 	var a := actor()
 	for i in range(top * 2, mini((top + _list_rows()) * 2, list.size())):
@@ -342,6 +374,10 @@ static func custom_cost_row(s: Dictionary, size: int) -> Dictionary:
 
 
 func _paint_actors(c: XMVCanvas) -> void:
+	read_only(_paint_actors_now.bind(c))
+
+
+func _paint_actors_now(c: XMVCanvas) -> void:
 	var members := XState.current.members()
 	var all := int(current().get("scope", 0)) in [8, 10]
 	for i in range(actor_top, mini(actor_top + ACTOR_ROWS, members.size())):
