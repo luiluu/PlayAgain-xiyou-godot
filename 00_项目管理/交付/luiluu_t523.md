@@ -23,6 +23,7 @@
   - 返修后云端选测（提交 `54b927024`，已并入 `main` 的 `2059e79b2`；基准 `2059e79b24`，65 个场景、2 片，最长一片 17.4 分钟）：通过，运行页 https://github.com/luiluu/PlayAgain-xiyou-godot/actions/runs/45725913088 。工具回归全部通过。
   - 返修前云端选测（提交 `68be85aeb`，基准 `c6c4303175`，53 个场景、2 片，最长一片 10.1 分钟，零偶发）：通过，运行页 https://github.com/luiluu/PlayAgain-xiyou-godot/actions/runs/45721925823 ；合入 `main` 前首轮提交 `9644a68fc`（96 场景、2 片）亦已通过，运行页 https://github.com/luiluu/PlayAgain-xiyou-godot/actions/runs/45718322805 。
   - 返修 R2 本机（`--headless --audio-driver Dummy`）：专项 `xiyou_t523_lindong_qishang` 54/54（本轮新增 24 条：CE9022 天启篇固定种子 3000 次抽到过第 3 号分支但不学 7492／不弹提示／不记开关，其余照常；西游档 9022 照学 7492 并弹提示、指令表与原表相同；CE1627 真跑选项——首次火遁 12 个种子、7517 与 7518 两支都掷到、不学 7492、次数＋1、提示正确；已会 7517／7518／7492 三种再选火遁都回「已经学过了」且次数不变；关开关恢复；西游档照学 7492；天启篇取指令不改原表）、`xiyou_battle_common_events` 95/95、`xiyou_battle_common_event_child` 13/13；语法检查 0 问题。
+  - 返修 R2 云端选测（提交 `511f51f2b`；基准是上轮已验的 `e43823c3d`，20 个场景、3 片，最长一片 7.7 分钟）：通过，运行页 https://github.com/luiluu/PlayAgain-xiyou-godot/actions/runs/45732191719 。本机另跑工具回归（全部通过）、`发行空壳.py check`（退出码 0，86 个脚本、845 个函数都有）、天启篇数据校验（退出码 0）。
 - 提交：9644a68fc、68be85aeb、返修提交（见下「本分支提交」）
 - 未完成／已知问题：天启篇量级的天虎令「天熄乱舞／气伤」重做（2B）按协调决议留待 T522 全局数值预算定稿后单开卡设计，不在本单。
 
@@ -73,6 +74,8 @@
 | `XMagicWeapon.item_skills` / 新增开关 `XMagicWeapon.TIANQI_SKIP_LEARN_SKILL` | 10 处（`git grep -nE '[^[:alnum:]_]item_skills[[:space:]]*\(' -- '*.gd'`，含定义行 1 处；加 1 处外部转发 `XMagicWeapon.skills` → `modes/xiyou/core/actor.gd:610`） | 调用方 9 处逐处结论（不含自身定义行）：① `modes/xiyou/core/magic_weapon.gd:444`（`XMagicWeapon.skills` 唯一生产转发点，经 `actor.gd:610` 进入 `XActor.native_skill_ids()`）：仅在天启篇存档且开关为真时返回 `[]`，全库仅 3550 烽舞带 `<Magic Weapon Learn Skill>`，西游档恒走原逻辑不受影响；② `tests/virtual_player/fabao_survey.gd:63`：调查脚本读 `note_skills`，天启篇如实反映不再领悟旧技能，西游档不变；③ `tests/xiyou_fabao_99_scale.gd:95, 102, 104, 454, 457`（5 处）：均为西游档测试上下文，实跑 113/113 全过；④ `tests/xiyou_t523_lindong_qishang.gd:200, 298, 326`（3 处）：本单专项，分别验证天启篇停用、回退开关关闭恢复与西游档原样领悟。 |
 
 ## 本分支提交
+
+- 511f51f2b T523 返修 R2：天启篇收口 CE9022、CE1627；全库路径清单与星级仓库查证（之后一个提交只补本交付单的云端结果）
 
 - 9644a68fc T523：天启篇修凛冬刺击附加冰冷II（1A）并收口未实装天虎令天熄乱舞／气伤链（2A）
 - d006e5f23 T523：提交交付单 luiluu_t523.md（含本机与云端选测 45718322805 全绿结果）
