@@ -1,0 +1,12 @@
+## XIYOU_READ_VERIFY=1 skin=0 tiers=20,120
+exit=0
+ROW={"all_skills":28,"enter_list_frame_ms":145.387,"enter_list_refresh_ms":24.017,"move_frame_ms":145.537166666667,"move_refresh_ms":5.61741666666667,"n_entries":24,"n_passive":20,"open_first_frame_ms":42.52,"open_ready_ms":19.07,"page_read_memo":true,"read_mismatches":0,"skin":false,"switch_type_frame_ms":153.724,"switch_type_refresh_ms":0.776,"types":["战技","魔法","被动","其他","功法"]}
+ROW={"all_skills":126,"enter_list_frame_ms":418.048,"enter_list_refresh_ms":15.5,"move_frame_ms":423.90875,"move_refresh_ms":15.4276666666667,"n_entries":122,"n_passive":120,"open_first_frame_ms":95.111,"open_ready_ms":20.842,"page_read_memo":true,"read_mismatches":0,"skin":false,"switch_type_frame_ms":424.131,"switch_type_refresh_ms":2.813,"types":["战技","魔法","被动","其他","功法"]}
+DONE
+不一致行数=0
+## XIYOU_READ_VERIFY=1 skin=1 tiers=20,120
+exit=0
+ROW={"all_skills":28,"enter_list_frame_ms":4.583,"enter_list_refresh_ms":129.293,"move_frame_ms":3.423,"move_refresh_ms":110.370166666667,"n_entries":24,"n_passive":20,"open_first_frame_ms":67.645,"open_ready_ms":52.704,"page_read_memo":true,"read_mismatches":0,"skin":true,"switch_type_frame_ms":35.046,"switch_type_refresh_ms":104.201,"types":["战技","魔法","被动","其他","功法"]}
+ROW={"all_skills":126,"enter_list_frame_ms":2.981,"enter_list_refresh_ms":1750.68,"move_frame_ms":3.12841666666667,"move_refresh_ms":1747.24016666667,"n_entries":122,"n_passive":120,"open_first_frame_ms":2.794,"open_ready_ms":90.08,"page_read_memo":true,"read_mismatches":0,"skin":true,"switch_type_frame_ms":4.062,"switch_type_refresh_ms":1736.312,"types":["战技","魔法","被动","其他","功法"]}
+DONE
+不一致行数=0
