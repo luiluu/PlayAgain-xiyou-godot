@@ -1,6 +1,6 @@
 class_name XXiyouNerf
 extends RefCounted
-## 【小A·未经审查】T465 西游档离群角色数值削弱：五河琴里（159）、天剑·非天（147）（Kyo 11-24 D283，事项 52）。
+## 西游档角色平衡：五河琴里、天剑·非天削弱（T465，D283／D286），马宝国「混元大成」加强（T563，D293）。
 ## 仅在已载入西游档（XState.current != null 且非天启篇）时经 XDB.rec 返回副本，
 ## 不修改 XDB.table 共享原表，天启篇（XTianqi.active）与无存档静态表校验零改动。
 ## 读档（XState.from_dict → after_load）与跨档星级仓库存取（sync_gear_for_state）按当前开关双向同步
@@ -36,6 +36,16 @@ const FEITIAN_CRI_CAP := 5             # 暴击率进公式封顶 500%
 const FEITIAN_ST_2739 := 2739          # 极光剑一*破：原代码 *2.5 → 按卡面修回 *1.5
 const FEITIAN_ST_2739_PCT := 150
 
+# ---- 马宝国「混元大成」（60，技能 5115／状态 908）D293 加强（全部整数）----
+# 西游档反伤 = 10 ×(受到伤害 + 物攻 + 最大生命)× min(1 + 积分/100, 300)；原版 90 ×(…)×(1 + 积分/100) 无上限。
+# 触发规则（每段、伤害值≥0 即反）与最大生命 +10000 不变。
+const HUNYUAN_SKILL := 5115
+const HUNYUAN_STATE := 908
+const HUNYUAN_COEF := 10               # 原 90
+const HUNYUAN_POINTS_CAP := 300        # 积分倍率 (1 + 积分/100) 封顶 ×300
+const HUNYUAN_OLD_TEXT := "马老师受到任何伤害，反弹(受到伤害*90+物攻*90+自身最大生命*90)*(1+肝帝积分/100)的伤害"
+const HUNYUAN_NEW_TEXT := "马老师每段受到伤害都会反弹，反伤随受到的伤害、物攻、最大生命和肝帝积分提高（积分加成有上限）"
+
 static var _rec_cache := {}            # "Table:id" -> [base_ref, copy_dict]
 static var _gear_tpl_cache := {}       # "weapon:87" -> [orig_ref, nerfed_copy]
 
@@ -62,11 +72,11 @@ static func clear_cache() -> void:
 static func touches(table_name: String, id: int) -> bool:
 	match table_name:
 		"Skills":
-			return KOTORI_SKILLS.has(id) or FEITIAN_SKILL_COEF.has(id)
+			return KOTORI_SKILLS.has(id) or FEITIAN_SKILL_COEF.has(id) or id == HUNYUAN_SKILL
 		"Weapons":
 			return id == KOTORI_WPN
 		"States":
-			return id == FEITIAN_ST_2739
+			return id == FEITIAN_ST_2739 or id == HUNYUAN_STATE
 	return false
 
 
@@ -85,12 +95,16 @@ static func rec(table_name: String, id: int, base: Dictionary) -> Dictionary:
 			elif FEITIAN_SKILL_COEF.has(id):
 				var pair: Array = FEITIAN_SKILL_COEF[id]
 				_patch_feitian_skill(r, int(pair[0]), int(pair[1]))
+			elif id == HUNYUAN_SKILL:
+				_patch_hunyuan_skill(r)
 		"Weapons":
 			if id == KOTORI_WPN:
 				_patch_kotori_wpn87(r)
 		"States":
 			if id == FEITIAN_ST_2739:
 				_patch_feitian_st2739(r)
+			elif id == HUNYUAN_STATE:
+				_patch_hunyuan_state(r)
 	_rec_cache[key] = [base, r]
 	return r
 
@@ -203,6 +217,39 @@ static func _patch_feitian_st2739(st: Dictionary) -> void:
 		if e is Dictionary and str(e.get("op", "")) == "mul" and is_equal_approx(float(e.get("k", 0.0)), 2.5):
 			e.k = k
 	st.note = str(st.get("note", "")).replace("value * 2.5", "value * %.1f" % k)
+
+
+static func _patch_hunyuan_skill(sk: Dictionary) -> void:
+	# 只换卡面效果行（玩家说法，不写内部系数）；描述「我再让你500招」与最大生命 +10000 行不动。
+	_replace_note_meta(sk, HUNYUAN_OLD_TEXT, HUNYUAN_NEW_TEXT)
+
+
+static func _patch_hunyuan_state(st: Dictionary) -> void:
+	# 只换 gainHp 的数值表达式：((-D-H-A) * 90) * (1 + v[206]*0.01) → ((-D-H-A) * 10) * min(1 + v[206]/100, 300)。
+	# 「value >= 0」门槛、React 顺序与扣血结算仍走原状态脚本。
+	for effect in st.get("effects", []):
+		if not effect is Dictionary or effect.get("phase") != "react" or effect.get("op") != "effect_program":
+			continue
+		for branch in effect.program.get("steps", []):
+			if branch.get("op") != "if":
+				continue
+			for step in branch.yes.get("steps", []):
+				var v: Dictionary = step.get("value", {}) if step.get("op") == "expr" else {}
+				if v.get("op") != "gain" or v.get("resource") != "hp":
+					continue
+				var amount: Dictionary = v.amount
+				var coef: Dictionary = amount.left.right
+				var points: Dictionary = amount.right.right
+				if not (is_equal_approx(float(coef.get("value", 0.0)), 90.0) and points.get("operator") == "*"
+						and is_equal_approx(float(points.right.get("value", 0.0)), 0.01)):
+					push_error("T563 混元状态 908 的反伤表达式与预期不符，未改动")
+					continue
+				coef.value = float(HUNYUAN_COEF)
+				points.operator = "/"
+				points.right.value = 100.0
+				amount.right = {"op": "math", "pos": int(amount.right.get("pos", 0)), "name": "min",
+					"args": [amount.right, {"op": "literal", "pos": 0, "value": float(HUNYUAN_POINTS_CAP)}]}
+	st.note = str(st.get("note", "")).replace(" * 90) * (1 + v[206]*0.01)", " * %d) * Math.min(1 + v[206] / 100, %d)" % [HUNYUAN_COEF, HUNYUAN_POINTS_CAP])
 
 
 # ---- 既有 Weapon 87 实例双向同步（读档／星级仓库存取）----
