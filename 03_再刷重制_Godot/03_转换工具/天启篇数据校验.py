@@ -1728,7 +1728,7 @@ def check_skill_rework(_args) -> bool:
         print('跳过：没有 skill_rework.json')
         return True
     try:
-        table = json.loads(path.read_text(encoding='utf-8'))
+        table = _read_table('skill_rework.json')
         bad = _with_tune(skill_rework_rules)(table) + coef_integer_rules(table) + forced_copy_rules(table) + actor_innate_cap_rules(table)
     except Exception as e:
         bad = ['能读表并跑完全部检查：%s: %s' % (type(e).__name__, e)]
@@ -1997,7 +1997,7 @@ def check_actor_nature(_args) -> bool:
         return True
     try:
         elements = json.loads((DATA_DIR / 'elements_table.json').read_text(encoding='utf-8'))
-        rework = json.loads((DATA_DIR / 'skill_rework.json').read_text(encoding='utf-8'))
+        rework = _read_table('skill_rework.json')
         usable = None
         db = PROJECT / 'modes' / 'xiyou' / 'generated' / 'db' / 'Actors.json'
         gd = PROJECT / 'modes' / 'xiyou' / 'core' / 'imported_balance.gd'
@@ -2031,9 +2031,80 @@ def quality_keys(path: Path = None) -> list:
     return re.findall(r'"([^"]*)"', m.group(1))
 
 
+# T568：这两张表里的角色名写成「{角色号}」，游戏读表时按 actor_names.json 展开；校验规则查的是展开后的文字。
+ACTOR_REF_TABLES = ('skill_rework.json', 'actor_notes.json')
+ACTOR_REF = re.compile(r'(?<!\$)\{(\d+)\}')  # 前面带 $ 的是 note_sub 正则回填
+# 和某个新名同字、但不是在指这个角色的原字（T562 改名前就这么写：原版技能／状态／装备名、故事里的普通词）：改名时不跟着变
+ACTOR_REF_LITERALS = {
+    'skill_rework.json': {
+        'skills/7095/name': '头柱',
+        **{'%sskills/%d/desc/1' % (pre, sid): '椰羊' for pre in ('', 'tune/D200/') for sid in range(7222, 7227)},
+        'skills/7235/name': '椰羊', 'gear/armor:4554/name': '椰羊', 'gear/armor:4554/desc/0': '椰羊',
+        'skills/9967/name': '钢琴卡', 'states/1539/name': '不摇碧莲',
+    },
+    'actor_notes.json': {
+        'actors/96/story': '人鱼歌姬', 'actors/120/story': '护士长', 'actors/142/story': '半边天', 'actors/154/story': '菠萝包',
+    },
+}
+
+
+def expand_actor_refs(value, names: dict):
+    if isinstance(value, dict):
+        return {k: expand_actor_refs(v, names) for k, v in value.items()}
+    if isinstance(value, list):
+        return [expand_actor_refs(v, names) for v in value]
+    if isinstance(value, str):
+        return ACTOR_REF.sub(lambda m: names.get(m.group(1), m.group(0)), value)
+    return value
+
+
+def _read_table(fname: str):
+    table = json.loads((DATA_DIR / fname).read_text(encoding='utf-8'))
+    if fname in ACTOR_REF_TABLES:
+        table = expand_actor_refs(table, (_load_opt('actor_names.json') or {}).get('names', {}))
+    return table
+
+
 def _load_opt(fname: str):
-    path = DATA_DIR / fname
-    return json.loads(path.read_text(encoding='utf-8')) if path.is_file() else None
+    return _read_table(fname) if (DATA_DIR / fname).is_file() else None
+
+
+def actor_ref_rules(names: dict, fname: str, raw) -> list:
+    """T568：对没展开的原表查——角色名一律写 {角色号}（写死新名的话 Kyo 改名时它不跟着变），引用的号要在命名表里。
+    _ 开头的注释键不查；ACTOR_REF_LITERALS 登记的同字原文除外。返回 (说明, 违例值)。"""
+    bad = []
+    literals = ACTOR_REF_LITERALS.get(fname, {})
+    order = sorted(names.items(), key=lambda kv: -len(kv[1]))
+
+    def walk(x, path):
+        if isinstance(x, dict):
+            for k, v in x.items():
+                if not str(k).startswith('_'):
+                    walk(v, '%s/%s' % (path, k) if path else str(k))
+        elif isinstance(x, list):
+            for i, v in enumerate(x):
+                walk(v, '%s/%d' % (path, i))
+        elif isinstance(x, str):
+            for ref in ACTOR_REF.findall(x):
+                if ref not in names:
+                    bad.append(('%s %s 引用了命名表里没有的角色号 {%s}' % (fname, path, ref), x[:60]))
+            rest = x.replace(literals[path], '') if path in literals else x
+            for aid, name in order:
+                if name in rest:
+                    bad.append(('%s %s 写死了角色名「%s」，改成 {%s}' % (fname, path, name, aid), x[:60]))
+                    rest = rest.replace(name, '')
+
+    walk(raw, '')
+    return bad
+
+
+def check_actor_refs(_args) -> bool:
+    names = (_load_opt('actor_names.json') or {}).get('names', {})
+    ok = True
+    for fname in ACTOR_REF_TABLES:
+        ok = _run_table(fname, lambda _t, f=fname: actor_ref_rules(
+            names, f, json.loads((DATA_DIR / f).read_text(encoding='utf-8')))) and ok
+    return ok
 
 
 def _is_int(v) -> bool:
@@ -2055,7 +2126,7 @@ def _run_table(fname: str, rules) -> bool:
         print('跳过：没有 %s' % fname)
         return True
     try:
-        bad = rules(json.loads((DATA_DIR / fname).read_text(encoding='utf-8')))
+        bad = rules(_read_table(fname))
     except Exception as e:
         bad = ['能读表并跑完全部检查：%s: %s' % (type(e).__name__, e)]
     return _report(fname, '规则自检', bad)
@@ -4307,7 +4378,7 @@ def general_books_rules(t: dict, db_dir: Path = None) -> list:
     # 与 skill_rework.json 零技能号重叠
     sr_path = DATA_DIR / 'skill_rework.json'
     if sr_path.exists():
-        sr = json.loads(sr_path.read_text(encoding='utf-8'))
+        sr = _read_table('skill_rework.json')
         sr_sk = {k for k in sr.get('skills', {}) if str(k).isdigit()}
         ov = sorted(sr_sk & set(skills), key=int)
         check('与 skill_rework.json 零重叠', not ov, ov[:8])
@@ -4822,6 +4893,7 @@ CHECKS = [
     ('gear_elem_amp', check_gear_elem_amp),
     ('suit_template', check_suit_template),
     ('actor_notes', check_actor_notes),
+    ('actor_refs', check_actor_refs),
     ('actor_names', lambda _args: _run_table('actor_names.json', lambda t: actor_names_rules(t)
                                              + actor_names_leftover_rules(t, _load_opt('skill_rework.json')))),
 ]

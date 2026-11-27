@@ -76,6 +76,7 @@ static func data() -> Dictionary:
 			_load_failed = true
 			push_error("XTianqiSkills: JSON 解析失败 " + PATH)
 			return {}
+		XTextFix.expand_actor_refs(parsed)  # T568：{角色号} → actor_names.json 的名字；只在首次读表时做一次
 		_data = parsed
 		for key in ["D189", "D200", "D198", "D208", "D209", "D287"]:  # T191：D200（小数系数全表取整）叠在 D189 之后；T192：D198（偏弱超强者调高）再叠在后面；T204：D208（宿傩终式按段）、D209（超强者按名次重排）；T496：D287（三档收拢）最后，各自开关
 			if not {"D189": XTianqiBase.TUNE_D189, "D200": XTianqiBase.TUNE_D200, "D198": XTianqiBase.TUNE_D198, "D208": XTianqiBase.TUNE_D208, "D209": XTianqiBase.TUNE_D209, "D287": XTianqiBase.TUNE_D287}[key]:

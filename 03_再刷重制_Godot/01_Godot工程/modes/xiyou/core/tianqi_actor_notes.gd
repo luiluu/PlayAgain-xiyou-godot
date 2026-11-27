@@ -21,6 +21,7 @@ static func table() -> Dictionary:
 		var f := FileAccess.open(PATH, FileAccess.READ)
 		var parsed = JSON.parse_string(f.get_as_text()) if f != null else null
 		if parsed is Dictionary:
+			XTextFix.expand_actor_refs(parsed)  # T568：{角色号} → actor_names.json 的名字
 			_data = parsed
 		else:
 			push_error("XTianqiActorNotes: 读不到或解析失败 " + PATH)

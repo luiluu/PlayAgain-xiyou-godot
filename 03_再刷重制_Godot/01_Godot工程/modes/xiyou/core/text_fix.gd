@@ -200,6 +200,19 @@ static func tianqi_actor_text(text: String) -> String:
 	return text.format(actor_names().get("names", {})) if text.contains("{") else text
 
 
+## T568：skill_rework.json、actor_notes.json 里的角色名写成「{角色号}」，读表时整张就地展开一次（结果跟着各自的表缓存），
+## 改名只改 actor_names.json 的 names。不认识的号原样留下（note_sub 里的正则回填 ${1} 也不受影响：names 里没有 1 号）。
+static func expand_actor_refs(value) -> void:
+	var keys: Array = value.keys() if value is Dictionary else range(value.size())
+	for k in keys:
+		var v = value[k]
+		if v is String:
+			if v.contains("{"):
+				value[k] = tianqi_actor_text(v)
+		elif v is Dictionary or v is Array:
+			expand_actor_refs(v)
+
+
 ## 旧天启档可能用事件 320 存过原名。只在显示时处理已登记的原文，保留自定义名字与原存档值。
 static func saved_actor_name(id: int, text: String) -> String:
 	if tq_on() and actor_names().get("saved_names", {}).get(str(id), []).has(text):

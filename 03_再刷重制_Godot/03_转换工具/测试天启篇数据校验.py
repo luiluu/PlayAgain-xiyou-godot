@@ -112,7 +112,7 @@ class RealTables(unittest.TestCase):
         rm = importlib.util.module_from_spec(rs)
         rs.loader.exec_module(rm)
         self.assertEqual(set(rm.KEEP_DECIMAL), chk.COEF_DECIMAL_EXEMPT)
-        table = json.loads((REAL_DIR / 'skill_rework.json').read_text(encoding='utf-8'))
+        table = chk._load_opt('skill_rework.json')
         self.assertNotIn('10718', table['tune']['D200']['skills'])
         self.assertEqual(chk.apply_skill_tune(table)['skills']['10718']['damage']['coef'], 1.2)
         self.assertEqual(chk.coef_integer_rules(table), [])
@@ -545,7 +545,7 @@ class SkillReworkGrowth(unittest.TestCase):
     """tiers.growth 成长型名单非空（XTianqiWeakClear 失败即关闭靠它，gpt 复核 P2）。"""
 
     def _table(self):
-        return json.loads((REAL_DIR / 'skill_rework.json').read_text(encoding='utf-8'))
+        return chk._load_opt('skill_rework.json')
 
     def test_real_ok(self):
         self.assertFalse([b for b in chk.skill_rework_rules(self._table()) if 'growth' in b])
@@ -809,7 +809,7 @@ class CoefInteger(unittest.TestCase):
         self.assertEqual(chk.apply_skill_tune(self._t({'coef': 1.8, 'stats': {'atk': 1}}, tune=tune))['skills']['1']['damage']['coef'], 3)
 
     def test_real_table(self):
-        t = json.loads((REAL_DIR / 'skill_rework.json').read_text(encoding='utf-8'))
+        t = chk._load_opt('skill_rework.json')
         self.assertEqual(chk.coef_integer_rules(t), [])
         merged = chk.apply_skill_tune(t)
         self.assertEqual(merged['skills']['10727']['damage']['coef'], 5)  # D199
@@ -1085,7 +1085,7 @@ class Growth(unittest.TestCase):
 class ForcedCopyT255(unittest.TestCase):
     """T255：卡里技能效果 44→公共事件→强制放副本，副本没进卡：要 effects_remove、副本进卡或登记 forced_copy_pending。"""
     def setUp(self):
-        self.t = json.loads((REAL_DIR / 'skill_rework.json').read_text(encoding='utf-8'))
+        self.t = chk._load_opt('skill_rework.json')
 
     def test_real_passes(self):
         self.assertEqual(chk.forced_copy_rules(self.t), [])
@@ -1154,7 +1154,7 @@ class ForcedCopyT255(unittest.TestCase):
 class FateCopyT263(unittest.TestCase):
     """T263：命运编织者 6861→公共事件 1213 的七种命运副本（6862～6867、6875）都在卡里，6861 不再登记待定。"""
     def setUp(self):
-        self.t = json.loads((REAL_DIR / 'skill_rework.json').read_text(encoding='utf-8'))
+        self.t = chk._load_opt('skill_rework.json')
 
     def test_not_pending(self):
         self.assertNotIn('6861', self.t['forced_copy_pending'])
@@ -1553,7 +1553,7 @@ class SuitTemplateT515(unittest.TestCase):
 class ActorNotesT556(unittest.TestCase):
     """人物图鉴全员备注表（T556）：现表通过；缺人、夹数字或禁词要报。"""
     def setUp(self):
-        self.t = json.loads((chk.DATA_DIR / 'actor_notes.json').read_text(encoding='utf-8'))
+        self.t = chk._load_opt('actor_notes.json')
         actors_path = chk.PROJECT / 'modes' / 'xiyou' / 'generated' / 'db' / 'Actors.json'
         self.actors_db = json.loads(actors_path.read_text(encoding='utf-8')) if actors_path.is_file() else None
         self.names = chk._load_opt('actor_names.json')['names']
@@ -1644,6 +1644,50 @@ class ActorNotesT556(unittest.TestCase):
         self.assertFalse(ok)
         self.assertEqual(out.splitlines(), ['actor_names.json 规则自检 4 项不过：']
                          + ['  %s：%r' % b for b in bad] + ['  只有说明', '  纯文字违例'])
+
+
+class ActorRefsT568(unittest.TestCase):
+    """T568：skill_rework.json、actor_notes.json 里的角色名写成 {角色号}，改名只改 actor_names.json。"""
+
+    def setUp(self):
+        self.names = chk._load_opt('actor_names.json')['names']
+
+    def _raw(self, fname):
+        return json.loads((chk.DATA_DIR / fname).read_text(encoding='utf-8'))
+
+    def test_current_tables_pass(self):
+        for fname in chk.ACTOR_REF_TABLES:
+            self.assertEqual(chk.actor_ref_rules(self.names, fname, self._raw(fname)), [], fname)
+
+    def test_literal_new_name_is_reported(self):
+        raw = self._raw('skill_rework.json')
+        raw['actors']['25']['name'] = self.names['25']
+        raw['skills']['1202']['_note'] = '注释里写%s不算' % self.names['47']
+        self.assertEqual([b[0] for b in chk.actor_ref_rules(self.names, 'skill_rework.json', raw)],
+                         ['skill_rework.json actors/25/name 写死了角色名「%s」，改成 {25}' % self.names['25']])
+
+    def test_literal_exemption_is_per_path_and_name(self):
+        raw = self._raw('actor_notes.json')
+        raw['actors']['154']['story'] += self.names['172']  # 登记过「菠萝包」的这一条，写别人的名字照报
+        raw['actors']['25']['story'] += self.names['154']  # 别的位置写登记过的字照报
+        self.assertEqual(sorted(b[0] for b in chk.actor_ref_rules(self.names, 'actor_notes.json', raw)), sorted([
+            'actor_notes.json actors/154/story 写死了角色名「%s」，改成 {172}' % self.names['172'],
+            'actor_notes.json actors/25/story 写死了角色名「%s」，改成 {154}' % self.names['154']]))
+
+    def test_unknown_ref_is_reported_and_regex_backref_is_not(self):
+        raw = {'a': ['{99999}登场'], 'note_sub': [['(x)', '${1}30%']]}
+        self.assertEqual([b[0] for b in chk.actor_ref_rules(self.names, 'skill_rework.json', raw)],
+                         ['skill_rework.json a/0 引用了命名表里没有的角色号 {99999}'])
+
+    def test_rename_follows_one_line(self):
+        names = dict(self.names, **{'25': '改名样例', '154': '另一个样例'})
+        rework = chk.expand_actor_refs(self._raw('skill_rework.json'), names)
+        notes = chk.expand_actor_refs(self._raw('actor_notes.json'), names)
+        self.assertEqual(rework['actors']['25']['name'], '改名样例')
+        self.assertEqual(rework['skills']['1770']['name'], '觉醒:改名样例')
+        self.assertEqual(notes['actors']['25']['name'], '改名样例')
+        self.assertEqual(notes['actors']['154']['name'], '另一个样例')
+        self.assertIn('香甜的菠萝包', notes['actors']['154']['story'])  # 指食物，不跟着改
 
 
 if __name__ == '__main__':
