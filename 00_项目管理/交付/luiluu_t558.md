@@ -141,6 +141,7 @@ R1（已合在本分支）：
 - `语法检查.py`：1256 个 .gd 0 问题。`天启篇数据校验.py`：退出码 0。
 - 本机（`--audio-driver Dummy`）：xiyou_tianqi_six_dim 69/69、xiyou_tianqi_six_dim_book_boss 66/66、xiyou_tianqi_six_dim_radar 33/33、xiyou_tianqi_six_dim_resist 69/69、xiyou_tianqi_enemy_ai 103/103。
 - 云端选测：https://github.com/luiluu/PlayAgain-xiyou-godot/actions/runs/46028921311 （a37baa2a4，整轮 834 个场景、16 片，`gh run watch` 等完）：833 过，1 个失败 `xiyou_tianqi_t566`（`xiyou_untouched_272 [908]`），和 R3 同一条断言，R3 已在本树换回 main 3c8389600 版本复现过，是 main 上 T566 自己的问题，本单没修。
+- 热修后云端选测：https://github.com/luiluu/PlayAgain-xiyou-godot/actions/runs/46037205252 （1bf529767，整轮 834 个场景、16 片，`gh run watch` 等完）：833 过，唯一失败照旧 `xiyou_tianqi_t566`（`xiyou_untouched_272 [908]`，main 原有）。本机六维专项 5 个全过、语法检查 0 问题。
 - 西游档零改动：R4 只动 `tests/virtual_player/` 两个探针、`xiyou_tianqi_six_dim.gd`、`tianqi_data/six_dim.json`、`07_开发环境/六维*` 三份；`six_dim.json` 只在天启篇读，专项第三节西游档中性通过。
 
 **以下 R3 各节的数字已被 R4 取代，留作对照。**
