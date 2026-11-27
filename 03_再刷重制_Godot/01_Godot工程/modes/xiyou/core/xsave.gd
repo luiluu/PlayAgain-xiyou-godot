@@ -299,7 +299,7 @@ static func summary(slot: int) -> String:
 	var d = _parse(r.text)
 	if not valid_data(d):
 		return "存档 %d：无法读取" % slot
-	var leader := str(XDB.rec("Actors", int(d.party[0])).get("name", "")) if not d.party.is_empty() else ""
+	var leader := XTextFix.actor_rec_name(int(d.party[0]), _is_tianqi_data(d)) if not d.party.is_empty() else ""  # 按存档自己的档位取名（T562 P2-1）
 	var lv := int(d.actors.get(str(int(d.party[0])), {}).get("level", 1)) if not d.party.is_empty() else 1
 	var map_name := str(XDB.map(int(d.mapId)).get("displayName", ""))
 	return "存档 %d：%s Lv%d  %s  %s" % [slot, leader, lv, map_name, str(d.get("savedAt", "")).replace("T", " ")]
@@ -326,7 +326,7 @@ static func summary_dict(slot: int) -> Dictionary:
 	out.state = "ok"
 	if not d.party.is_empty():
 		out.leader_id = int(d.party[0])
-		out.leader_name = str(XDB.rec("Actors", out.leader_id).get("name", ""))
+		out.leader_name = XTextFix.actor_rec_name(out.leader_id, _is_tianqi_data(d))  # 按存档自己的档位取名（T562 P2-1）
 		out.level = int(d.actors.get(str(out.leader_id), {}).get("level", 1))
 	out.map_name = str(XDB.map(int(d.mapId)).get("displayName", ""))
 	out.saved_at = str(d.get("savedAt", "")).replace("T", " ")
@@ -337,6 +337,11 @@ static func summary_dict(slot: int) -> Dictionary:
 		out.difficulty = str(tq.get("difficulty", ""))
 		out.party_ids = Array(d.party).map(func(id): return int(id)).filter(func(id): return not XDB.rec("Actors", id).is_empty())
 	return out
+
+
+static func _is_tianqi_data(d: Dictionary) -> bool:
+	var tq = d.get("flags", {}).get("tianqi") if d.get("flags") is Dictionary else null
+	return tq is Dictionary and int(tq.get("rules", 0)) >= 1
 
 
 static func load_slot(slot: int) -> bool:

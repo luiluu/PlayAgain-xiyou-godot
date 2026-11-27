@@ -70,7 +70,35 @@ static func set_all(on: bool) -> void:
 
 ## 现在是不是天启篇存档（D126 去西游化词典 tianqi_dict 只在天启篇套用；西游档 1:1 原貌）
 static func tq_on() -> bool:
+	if _loading_tq != null:
+		return bool(_loading_tq)
 	return XState.current != null and XTianqi.active(XState.current)
+
+
+## 读档期间（XState.from_dict 到 _become_current）按目标存档的档位取表：角色 setup 的默认称号等要取目标档的文字，
+## 不能沿用上一档（T562 P1-1：天启档里读西游档会把天启称号带进西游档并在存档时写成显式称号）。
+static var _loading_tq = null
+
+static func begin_load(tq: bool) -> void:
+	_loading_tq = tq
+	sync_mode()
+
+
+static func end_load() -> void:
+	_loading_tq = null
+
+
+## 读档时修正存档里的显式称号：等于「另一档位」的默认称号时，视为没自订（被跨档写坏的旧档），换回目标档位的默认称号。
+## 只认 actor_names.json 登记过的称号改名；自订称号照旧保留。调用时表已按目标档位读（begin_load）。
+static func repair_saved_nickname(id: int, saved: String, default_now: String) -> String:
+	var pairs: Array = actor_names().get("tables", {}).get("Actors", {}).get("%d/nickname" % id, [])
+	if pairs.is_empty() or saved == default_now:
+		return saved
+	if tq_on():
+		# 天启档：显式写的是西游原称号（改名映射后正好是现在的默认）→ 用天启默认
+		return default_now if rename_actor_reference(saved, pairs) == default_now else saved
+	# 西游档：显式写的是天启新称号 → 用西游原文
+	return default_now if rename_actor_reference(default_now, pairs) == saved else saved
 
 
 ## 存档模式（西游档／天启篇）变了就清缓存让表与地图按新口径重读。
@@ -102,6 +130,82 @@ static func actor_names() -> Dictionary:
 ## 共用文案按当前存档取名。调用方提供西游档原文，发行空壳也可直接走原文。
 static func actor_name(id: int, original: String) -> String:
 	return str(actor_names().get("names", {}).get(str(id), original)) if tq_on() else original
+
+
+## 按指定档位取角色名（T562 P2-1）：标题态的天启篇阵容、存档格预览等不在目标档里时用。
+## current_text 是现在 Actors 表里的名字（按当前档位口径）。
+static func actor_name_in(id: int, tq: bool, current_text: String) -> String:
+	if tq == tq_on():
+		return current_text
+	if tq:
+		return str(actor_names().get("names", {}).get(str(id), current_text))
+	var orig: Array = actor_names().get("saved_names", {}).get(str(id), [])
+	return str(orig[0]) if not orig.is_empty() and current_text == str(actor_names().get("names", {}).get(str(id), "")) else current_text
+
+
+## 按指定档位取默认称号（同 actor_name_in）
+static func actor_nickname_in(id: int, tq: bool, current_text: String) -> String:
+	if tq == tq_on():
+		return current_text
+	var pairs: Array = actor_names().get("tables", {}).get("Actors", {}).get("%d/nickname" % id, [])
+	if tq:
+		return rename_actor_reference(current_text, pairs)
+	for pair in pairs:
+		var to := tianqi_actor_text(pair[1])
+		if current_text.contains(to):
+			current_text = current_text.replace(to, pair[0])
+	return current_text
+
+
+## 角色记录按指定档位取名字（读 Actors 表后换口径）
+static func actor_rec_name(id: int, tq: bool) -> String:
+	return actor_name_in(id, tq, str(XDB.rec("Actors", id).get("name", "")))
+
+
+## 天启篇旧装备实例的显示视图（T562 P2-3）：实例自带名字、说明、备注，登记时照抄的是原文模板。
+## 按底号取 actor_names.json 的 Weapons／Armors 定向条目，实例里「改名后正好等于现在的模板行」的行才换（保留词缀、强化等实例自有字段）；
+## 西游档或没有对应条目时原样返回 obj。
+static func gear_actor_view(obj: Dictionary) -> Dictionary:
+	var base_id := int(obj.get("base", 0))
+	if base_id <= 0 or not tq_on():
+		return obj
+	var table := "Weapons" if str(obj.get("kind", "")) == "weapon" else "Armors" if str(obj.get("kind", "")) == "armor" else ""
+	if table == "":
+		return obj
+	var entries: Dictionary = actor_names().get("tables", {}).get(table, {})
+	var prefix := "%d/" % base_id
+	var base := XDB.rec(table, base_id)
+	if base.is_empty():
+		return obj
+	var out := obj
+	for path in entries:
+		if not str(path).begins_with(prefix):
+			continue
+		var parts: PackedStringArray = str(path).split("/")
+		var field := parts[1]
+		if not (obj.get(field) is String) or not (base.get(field) is String):
+			continue
+		var cur: String = out[field]
+		var fixed := cur
+		if parts.size() == 2:
+			var renamed := rename_actor_reference(cur, entries[path])
+			if renamed == str(base[field]):
+				fixed = renamed
+		elif parts.size() == 3 and parts[2].is_valid_int():
+			var want: PackedStringArray = str(base[field]).split("\n")
+			var line := int(parts[2])
+			if line >= want.size():
+				continue
+			var lines: PackedStringArray = cur.split("\n")
+			for i in lines.size():
+				if lines[i] != want[line] and rename_actor_reference(lines[i], entries[path]) == want[line]:
+					lines[i] = want[line]
+			fixed = "\n".join(lines)
+		if fixed != cur:
+			if out == obj:
+				out = obj.duplicate()
+			out[field] = fixed
+	return out
 
 
 ## 仅用于明确写入「{角色号}」的天启篇文案。

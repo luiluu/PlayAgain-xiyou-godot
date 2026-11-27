@@ -108,6 +108,7 @@ func _run() -> void:
 	_check("boss_name_rule", _rec("Enemies", 850).name == "【超级Boss】瑞丁" and XZhenqi.is_boss_enemy(XEnemy.new().setup(850, 1, 100.0)))
 	_d126()
 	_d294()
+	_t562_r2()
 
 	# 六、逐个开关单独关掉，只回退那一类（其余照旧修）
 	XTextFix.set_all(true)
@@ -276,6 +277,102 @@ func _d294() -> void:
 	XState._become_current(tq)
 	_check("d294_switch_back", XActorBook.actor_name(169) == "路痴刀客" and XDB.system().skillTypes[10] == "银发小魔导被动")
 	XState._become_current(legacy)
+
+
+## T562 R2：跨档读档的称号、存档预览按自己的档位取名、唯一标签缓存换档失效、旧天启档原文装备实例
+func _t562_r2() -> void:
+	var legacy := XState.current
+	var kit := Kit.new("xiyou_text_fix_t562")
+	var raw_actors: Array = XDB.load_json("db/Actors.json")
+	var orig_nick := str(raw_actors[79].nickname)
+	var names: Dictionary = XTextFix.actor_names().get("names", {})
+	var tq_nick := str(names["79"])
+	var plain := XState.new_game_blank()
+	plain.add_actor(85)
+	plain.add_actor(79)
+	_check("t562_plain_default_nick", plain.actor(79).nickname == orig_nick, plain.actor(79).nickname)
+	kit.save(1)
+	var tq := Kit.new_game("jiusi")
+	XTianqi._joining = true  # 同 Kit.new_game：天启篇入队走正式入队口
+	tq.add_actor(79)
+	tq.add_actor(85)
+	XTianqi._joining = false
+	_check("t562_tq_default_nick", tq.actor(79).nickname == tq_nick and tq_nick != orig_nick, [tq.actor(79).nickname, tq_nick])
+	# P2-1：在天启档里看西游档预览、在西游档里看天启档预览，各按存档自己的档位取名
+	var tq_party := tq.party.duplicate()
+	tq.party.assign([85] + Array(tq_party).filter(func(i): return i != 85))
+	kit.save(2)
+	tq.party.assign(tq_party)
+	var sum_plain := XSave.summary_dict(1)
+	_check("t562_preview_plain_in_tq", XTextFix.tq_on() and sum_plain.leader_name == str(raw_actors[85].name) and XSave.summary(1).contains(str(raw_actors[85].name)), [sum_plain.leader_name, XSave.summary(1)])
+	_check("t562_title_lineup_in_tq", XTextFix.actor_rec_name(85, true) == "粉红妖精" and XTextFix.actor_rec_name(85, false) == "爱莉"
+		and XTextFix.actor_nickname_in(85, false, str(XDB.rec("Actors", 85).nickname)) == str(raw_actors[85].nickname))
+	# P1-1：天启档里读西游档 → 称号是西游原文；再存不写显式称号；冷读仍是原文
+	var back := kit.reload(1)
+	_check("t562_load_plain_from_tq", back != null and not XTextFix.tq_on() and back.actor(79).nickname == orig_nick, back.actor(79).nickname if back else null)
+	kit.save(1)
+	_check("t562_save_no_explicit_nick", not kit.raw(1).actors["79"].has("nickname"), kit.raw(1).actors["79"].get("nickname"))
+	XState._become_current(tq)
+	back = kit.reload(1)
+	_check("t562_cold_reload", back.actor(79).nickname == orig_nick and back.actor(85).nickname == str(raw_actors[85].nickname))
+	var sum_tq := XSave.summary_dict(2)
+	_check("t562_preview_tq_in_plain", not XTextFix.tq_on() and sum_tq.leader_name == "粉红妖精" and XSave.summary(2).contains("粉红妖精")
+		and XTextFix.actor_rec_name(85, true) == "粉红妖精" and XTextFix.actor_nickname_in(85, true, str(raw_actors[85].nickname)) == "粉红妖精", [sum_tq.leader_name, XSave.summary(2)])
+	# 已被写坏的西游档（显式称号＝天启新称号）读回还原；自订称号照旧
+	kit.edit_raw(func(d): d.actors["79"]["nickname"] = tq_nick, 1)
+	XState._become_current(tq)
+	back = kit.reload(1)
+	_check("t562_repair_written_nick", back.actor(79).nickname == orig_nick, back.actor(79).nickname)
+	kit.save(1)
+	_check("t562_repair_saved_clean", not kit.raw(1).actors["79"].has("nickname"))
+	kit.edit_raw(func(d): d.actors["79"]["nickname"] = "自订称号", 1)
+	back = kit.reload(1)
+	_check("t562_custom_nick_kept", back.actor(79).nickname == "自订称号")
+	# 反向：西游档里读天启档 → 天启默认称号
+	back = kit.reload(2)
+	_check("t562_load_tq_from_plain", XTextFix.tq_on() and back.actor(79).nickname == tq_nick, back.actor(79).nickname)
+	# P2-2：先西游后天启、先天启后西游，2003 的唯一标签都跟着当前档
+	var ryoma_tq := XTextFix.actor_name(57, "龙马") + "复活术"
+	XState._become_current(plain)
+	var p1 := _unique_line(XDB.rec("Weapons", 2003))
+	XState._become_current(back)
+	var t1 := _unique_line(XDB.rec("Weapons", 2003))
+	XState._become_current(plain)
+	var p2 := _unique_line(XDB.rec("Weapons", 2003))
+	_check("t562_unique_cache_switch", p1.contains("龙马复活术") and t1.contains(ryoma_tq) and p2.contains("龙马复活术"), [p1, t1, p2])
+	# P2-3：旧天启档带原文模板的 2003 实例，读回后卡面写新名、唯一标签在；词缀等实例字段不动
+	XState._become_current(back)
+	var inst: Dictionary = XDB.load_json("db/Weapons.json")[2003].duplicate(true)
+	inst.erase("id")
+	inst["kind"] = "weapon"
+	inst["base"] = 2003
+	inst["note"] = str(inst.note) + "\n<pos=APs text=测试词缀 size=18 color=normalcolor line=false align=0>"
+	back.gear.append(inst)
+	back.register_gear(inst)
+	var back2 := kit.roundtrip(3)
+	var found := {}
+	for e in back2.gear:
+		if int(e.get("base", 0)) == 2003 and str(e.get("note", "")).contains("测试词缀"):
+			found = e
+	var line := _unique_line(found)
+	var all := _card_text(found)
+	_check("t562_old_tq_gear_card", not found.is_empty() and line.contains(ryoma_tq) and not all.contains("龙马复活术") and all.contains("测试词缀")
+		and str(found.note).contains("龙马复活术"), [line, all.right(120)])
+	XState._become_current(plain)
+	_check("t562_plain_gear_card_original", _card_text(found).contains("龙马复活术"))
+	kit.teardown()
+	XState._become_current(legacy)
+
+
+func _card_text(obj: Dictionary) -> String:
+	return "\n".join(XHelpCard.content(obj).map(func(r): return str(r[0])))
+
+
+func _unique_line(obj: Dictionary) -> String:
+	for r in XHelpCard.content(obj):
+		if str(r[0]).contains(XHelpCard.UNIQUE_MARK):
+			return str(r[0])
+	return ""
 
 
 func _d294_clothes(id: int) -> String:

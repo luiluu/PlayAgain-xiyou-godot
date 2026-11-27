@@ -119,6 +119,7 @@ static func content(obj: Dictionary, kind := "", skill_copy := false, width := -
 ## 详情不经 Sprite_ItemHelp.setItem，所以没有那一层加的行：「装备战力：」（installCombatPowerRuntime）、攻击属性／元素增伤
 ## （installDamageElementRuntime 包的也是 setItem；云端专项 rows_* 对原版读数核过）。特效排序、◆唯一 包在 getDescParams 上，照样有。
 static func detail_rows(obj: Dictionary, width: float) -> Array:
+	obj = XTextFix.gear_actor_view(obj)  # T562 P2-3：旧天启档装备实例的原文模板行按新名显示
 	obj = XTianqiGear.element_fabao_view(obj)  # 天启篇系别法宝（T442）：老档实例名字与说明按新视图显示
 	obj = XTianqiGear.elem_amp_view(obj)  # T451：通用武器与普通防具元素/物理增幅分档重调视图
 	obj = XTianqiOrbs.card_view(obj)  # T518：宝珠新表（元素增伤行、战力按新表读）
@@ -137,6 +138,7 @@ static func detail_rows(obj: Dictionary, width: float) -> Array:
 static func _content(obj: Dictionary, kind := "", skill_copy := false, power := true, elements := true) -> Array:
 	if obj.is_empty():
 		return []
+	obj = XTextFix.gear_actor_view(obj)  # T562 P2-3：旧天启档装备实例的原文模板行按新名显示
 	obj = XTianqiSkills.gear_view(obj)  # 天启篇技能重构：专属法宝、武器的说明按改写后的备注
 	obj = XTianqiGear.element_fabao_view(obj)  # 天启篇系别法宝（T442）：老档实例说明卡按改写视图显示
 	obj = XTianqiGear.elem_amp_view(obj)  # T451：通用武器与普通防具元素/物理增幅分档重调视图
@@ -483,6 +485,8 @@ static func panel_view(obj: Dictionary, rows: Array, width: float) -> Array:
 # ---- installUniqueEffectMarkRuntime（v0.56，CodexUnique）：备注 <KyoUnique: 特效名> 的特效行前加「◆唯一 」 ----
 const UNIQUE_MARK := "◆唯一 "
 static var _unique_global = null
+## 算 _unique_global 时的武器、防具表；换档（西游档／天启篇）重读表后对象变了就重算（T562 P2-2：天启篇的标签取新名）
+static var _unique_src := []
 
 
 static func _unique_tags(note: String) -> Array:
@@ -496,7 +500,9 @@ static func _unique_tags(note: String) -> Array:
 
 ## U.globalKeys：只取数据库原型（武器、防具）的标签，长的在前
 static func unique_global_keys() -> Array:
-	if _unique_global == null:
+	var src := [XDB.table("Weapons"), XDB.table("Armors")]
+	if _unique_global == null or _unique_src.size() != 2 or not is_same(_unique_src[0], src[0]) or not is_same(_unique_src[1], src[1]):
+		_unique_src = src
 		var keys := []
 		for t in ["Weapons", "Armors"]:
 			for d in XDB.table(t):

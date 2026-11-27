@@ -4658,33 +4658,56 @@ ACTOR_NAMES_REWORK_HOMOGRAPHS = ('黄泉路见',)  # 81 申公豹「道友请上
 
 
 def actor_names_leftover_rules(table: dict, rework) -> list:
-    """skill_rework.json 里玩家可见的字段（跳过 _ 开头的注释键与 note_* 正则）不应再出现已改名角色的原名。"""
+    """skill_rework.json 里玩家可见的字段（跳过 _ 开头的注释键与 note_* 正则）不应再出现已改名角色的原名。
+    单字原名（74 陈）太容易误伤，只在两种结构里查：本角色的技能（skills.*.actor 是它）里任何可见文字，和「觉醒／进阶／羁绊:名」这类标签。
+    note_add 是要加进备注的字面文字，只查其中 <pos … text=… size=…> 的展示文字，内部标签照旧跳过（T562 P3-1）。"""
     if not isinstance(rework, dict):
         return []
-    olds = sorted({o for row in (table.get('saved_names') or {}).values() if isinstance(row, list)
+    saved = table.get('saved_names') or {}
+    olds = sorted({o for row in saved.values() if isinstance(row, list)
                    for o in row if isinstance(o, str) and len(o) >= 2}, key=len, reverse=True)
-    if not olds:
+    singles = {str(aid): o for aid, row in saved.items() if isinstance(row, list)
+               for o in row if isinstance(o, str) and len(o) == 1}
+    if not olds and not singles:
         return []
-    pat = re.compile('|'.join(map(re.escape, olds)))
+    pat = re.compile('|'.join(map(re.escape, olds))) if olds else None
+    tag_pat = re.compile('(?:觉醒|进阶|羁绊)\\s*[:：·]\\s*(%s)' % '|'.join(map(re.escape, singles.values()))) if singles else None
+    pos_pat = re.compile(r'<pos=\S+\s+text=([\s\S]*?)\s+size=')
     bad = []
 
-    def walk(x, path):
-        if isinstance(x, str):
-            text = x
-            for h in ACTOR_NAMES_REWORK_HOMOGRAPHS:
-                text = text.replace(h, '')
-            m = pat.search(text)
+    def check(text, raw, path, owner):
+        for h in ACTOR_NAMES_REWORK_HOMOGRAPHS:
+            text = text.replace(h, '')
+        m = pat.search(text) if pat else None
+        if m is None and tag_pat:
+            m = tag_pat.search(text)
             if m:
-                bad.append(('skill_rework%s 仍写原名「%s」（天启篇改名 D294，改成 actor_names.json 的新名）' % (path, m.group(0)), x[:60]))
+                bad.append(('skill_rework%s 仍写原名「%s」（天启篇改名 D294，改成 actor_names.json 的新名）' % (path, m.group(1)), raw[:60]))
+                return
+        if m is None and owner in singles and singles[owner] in text:
+            bad.append(('skill_rework%s 仍写原名「%s」（天启篇改名 D294，改成 actor_names.json 的新名）' % (path, singles[owner]), raw[:60]))
+            return
+        if m:
+            bad.append(('skill_rework%s 仍写原名「%s」（天启篇改名 D294，改成 actor_names.json 的新名）' % (path, m.group(0)), raw[:60]))
+
+    def walk(x, path, owner):
+        if isinstance(x, str):
+            check(x, x, path, owner)
         elif isinstance(x, list):
             for i, v in enumerate(x):
-                walk(v, '%s/%d' % (path, i))
+                walk(v, '%s/%d' % (path, i), owner)
         elif isinstance(x, dict):
+            if 'actor' in x and not isinstance(x.get('actor'), (dict, list)):
+                owner = str(x.get('actor'))
             for k, v in x.items():
-                if not str(k).startswith('_') and not str(k).startswith('note_'):
-                    walk(v, '%s/%s' % (path, k))
+                k = str(k)
+                if k == 'note_add' and isinstance(v, str):
+                    for pm in pos_pat.finditer(v):
+                        check(pm.group(1), v, '%s/%s' % (path, k), owner)
+                elif not k.startswith('_') and not k.startswith('note_'):
+                    walk(v, '%s/%s' % (path, k), owner)
 
-    walk(rework, '')
+    walk(rework, '', '')
     return bad
 
 

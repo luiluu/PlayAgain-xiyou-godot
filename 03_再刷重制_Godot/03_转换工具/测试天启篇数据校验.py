@@ -1561,5 +1561,26 @@ class ActorNotesT556(unittest.TestCase):
         bad = chk.actor_names_leftover_rules(catalog, rework)
         self.assertEqual([b[0] for b in bad], ['skill_rework/skills/10563/name 仍写原名「贝吉特」（天启篇改名 D294，改成 actor_names.json 的新名）'])
 
+    def test_skill_rework_leftover_single_char_and_note_add(self):
+        # T562 P3-1：单字原名按结构查（觉醒:陈、本角色技能），note_add 只查 <pos> 的展示文字；各反例独立
+        catalog = chk._load_opt('actor_names.json')
+        base = chk._load_opt('skill_rework.json')
+        msg = 'skill_rework/skills/%s 仍写原名「%s」（天启篇改名 D294，改成 actor_names.json 的新名）'
+        rework = copy.deepcopy(base)
+        rework['skills']['10563']['desc'] = ['觉醒:陈']
+        self.assertEqual([b[0] for b in chk.actor_names_leftover_rules(catalog, rework)], [msg % ('10563/desc/0', '陈')])
+        rework = copy.deepcopy(base)
+        rework['skills']['5470']['desc'][0] = '效果：身与意合，陈开局时获得「凝神」状态'
+        self.assertEqual([b[0] for b in chk.actor_names_leftover_rules(catalog, rework)], [msg % ('5470/desc/0', '陈')])
+        rework = copy.deepcopy(base)
+        rework['skills']['10563']['desc'] = ['橙色光环，陈列在旁']  # 别的角色技能里的「陈」不算
+        self.assertEqual(chk.actor_names_leftover_rules(catalog, rework), [])
+        rework = copy.deepcopy(base)
+        rework['skills']['10563']['note_add'] = '<pos=APs text=\\c[1]特效:召唤伏黑甚尔 size=18 color=rgba(255,255,255,1) line=false align=0>'
+        self.assertEqual([b[0] for b in chk.actor_names_leftover_rules(catalog, rework)], [msg % ('10563/note_add', '伏黑甚尔')])
+        rework = copy.deepcopy(base)
+        rework['skills']['10563']['note_add'] = '<KyoUnique: 伏黑甚尔>'  # 内部标签不算
+        self.assertEqual(chk.actor_names_leftover_rules(catalog, rework), [])
+
 if __name__ == '__main__':
     unittest.main()
