@@ -1050,8 +1050,9 @@ static var ATTACK1 := true
 const ATTACK1_SPEC := {"kind": "普攻", "damage": {"coef": 1.0, "stats": {"atk": 1}}}
 
 
+## T565（T553 核查 P2-2）：只认技能记录（带 stypeId）；同号 1 的道具（小治疗药水）照原版公式。
 static func attack1_applies(item: Dictionary, a) -> bool:
-	return ATTACK1 and int(item.get("id", 0)) == 1 and a is XActor and cards_on() and not has(1)
+	return ATTACK1 and int(item.get("id", 0)) == 1 and item.has("stypeId") and a is XActor and cards_on() and not has(1)
 
 
 static func attack1_formula(a, b, item: Dictionary) -> float:

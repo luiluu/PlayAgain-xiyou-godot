@@ -106,6 +106,20 @@ class RealTables(unittest.TestCase):
         for f in BATCH3:
             self.assertIn('%s 规则自检：通过' % f, buf.getvalue())
 
+    def test_coef_decimal_exempt_matches_round_script(self):
+        # T565（D295）：取整破例名单两边一致；10718 怒战留 1.2、不在 tune.D200 里；别的小数系数照旧报
+        rs = importlib.util.spec_from_file_location('tq_round', HERE / '天启篇系数取整.py')
+        rm = importlib.util.module_from_spec(rs)
+        rs.loader.exec_module(rm)
+        self.assertEqual(set(rm.KEEP_DECIMAL), chk.COEF_DECIMAL_EXEMPT)
+        table = json.loads((REAL_DIR / 'skill_rework.json').read_text(encoding='utf-8'))
+        self.assertNotIn('10718', table['tune']['D200']['skills'])
+        self.assertEqual(chk.apply_skill_tune(table)['skills']['10718']['damage']['coef'], 1.2)
+        self.assertEqual(chk.coef_integer_rules(table), [])
+        bad = copy.deepcopy(table)
+        bad['skills']['99919'] = {'name': '夹具', 'damage': {'stats': {'atk': 1}, 'coef': 1.2}, 'desc': []}
+        self.assertTrue(any('skills/99919/damage/coef' in b for b in chk.coef_integer_rules(bad)))
+
     def test_quality_keys_parsed_from_gd(self):
         q = chk.quality_keys()
         self.assertEqual(len(q), 7)

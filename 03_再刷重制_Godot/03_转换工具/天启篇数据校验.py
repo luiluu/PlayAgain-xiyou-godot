@@ -1360,6 +1360,8 @@ def _plain_always(c: dict) -> bool:
 
 # 卡面伤害行允许留小数的技能：数不是我们定的系数（剑心多一段 +0.5 是 cat.gd 里的代码常数；棱光星影加段 +1.2 是 xuan_battle.gd 的「每个星影 20%×系数」，T175 已列）
 DESC_DECIMAL_EXEMPT = {'10437', '10438', '10439', '10337'}
+# 系数允许留小数的技能（Kyo 拍板破例；天启篇系数取整.py 的 KEEP_DECIMAL 同名单，测试天启篇数据校验.py 核两边一致）
+COEF_DECIMAL_EXEMPT = {'10718'}  # T565（D295）：怒战八方替换普攻 物攻×1.2
 
 
 def coef_integer_rules(table: dict) -> list:
@@ -1374,7 +1376,9 @@ def coef_integer_rules(table: dict) -> list:
         d = row.get('damage')
         if isinstance(d, dict):
             coef = float(d.get('coef', 0))
-            if 'coef' in d and not _int_or_pct(coef):
+            if sid in COEF_DECIMAL_EXEMPT:
+                pass
+            elif 'coef' in d and not _int_or_pct(coef):
                 bad.append('系数不得有小数：skills/%s/damage/coef=%s' % (sid, num_text(d['coef'])))
             for st, w in d.get('stats', {}).items():
                 if not _int_or_pct(float(w)):
