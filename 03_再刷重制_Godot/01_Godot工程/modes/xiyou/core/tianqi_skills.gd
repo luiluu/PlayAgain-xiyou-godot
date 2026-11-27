@@ -726,10 +726,17 @@ static func rec_state(id: int, base: Dictionary) -> Dictionary:
 				steps.push_front({"do": "remove_self"})
 			e.steps = steps
 			if rv.has("chance"):
-				if str(e.cond.get("kind", "")) == "down_each":
+				if str(e.cond.get("kind", "")) == "down_each" and REVIVE_SINGLE_ROLL:  # T570：原版倒下时 hp≤0、isDead 各掷一次，30% 实为约 51%；天启篇改成每次倒下掷一次
+					e.cond = {"kind": "down", "below": float(rv.chance), "once_per_fall": true, "state": id}
+				elif str(e.cond.get("kind", "")) == "down_each":
 					e.cond.above = 1.0 - float(rv.chance)
 				elif str(e.cond.get("kind", "")) == "down":
 					e.cond.below = float(rv.chance)
+	if sp.has("effect_nums") and r.get("effects") is Array and EFFECT_NUMS:  # T570：预编译效果里的数改成设计值（note_sub 只改备注，不进结算）
+		for pair in sp.effect_nums:
+			_effect_num(r.effects, float(pair[0]), float(pair[1]))
+	if sp.get("effect_floor_hp_gain", false) and r.get("effects") is Array and EFFECT_NUMS:  # T570：按比例回血向下取整（2554 mhp×0.3）
+		_floor_hp_gain(r.effects)
 	if sp.has("dot"):  # 层数持续伤害：XExtDot 遇到 kind＝tianqi 时读 dot_value
 		var d: Dictionary = (sp.dot as Dictionary).duplicate(true)
 		d.kind = "tianqi"
@@ -741,6 +748,56 @@ static func rec_state(id: int, base: Dictionary) -> Dictionary:
 		r.effects = effs
 	_state_recs[id] = [base, YEP_RECOMPUTE, r]
 	return r
+
+
+## T570 回退开关：false 回到 T570 之前（down_each 两次掷骰约 51%；effect_nums／effect_floor_hp_gain 不改预编译效果）
+static var REVIVE_SINGLE_ROLL := true
+static var EFFECT_NUMS := true
+## T570 R1 回退开关：false＝绯红之夜只在开战（Battle 阶段）发次数，施法挂上／续上不补发
+static var CAST_GRANT := true
+
+
+## T570 R1：状态表 cast_grant＝true——这条状态在行动里被挂上（含已有时续上）就把它 Battle 阶段 set_variable 的那个变量至少置成该值。
+## 2560 绯红之夜：次数存在变量里（新源 1597），原版只在 Battle 阶段（开战）初始化，普通闪躲当场施放给不了保护、用完同场续施也补不回。
+static func state_cast(id: int, source) -> void:
+	if source == null or not CAST_GRANT or XState.current == null or not has_state(id) or not cards_on():
+		return
+	if not (_states[id] is Dictionary and bool((_states[id] as Dictionary).get("cast_grant", false))):
+		return
+	var effs = XDB.rec("States", id).get("effects")
+	if not effs is Array:
+		return
+	for e in effs:
+		if e is Dictionary and str(e.get("phase", "")) == "battle" and str(e.get("op", "")) == "set_variable" and XStateEffects._variable_writable(int(e.id)):
+			XState.current.set_variable(int(e.id), maxf(XState.current.variable(int(e.id)), float(e.value)))
+
+
+## effects 里（含 fixed／fixed2 各份程序）值等于 old 的数字字面量换成 new；顶层 op（set_variable 之类）的 value 同理
+static func _effect_num(node, old: float, new: float) -> void:
+	if node is Dictionary:
+		if node.has("value") and (node.value is float or node.value is int) and is_equal_approx(float(node.value), old) \
+				and (str(node.get("op", "")) == "literal" or node.has("phase")):
+			node.value = new
+		for k in node:
+			if node[k] is Dictionary or node[k] is Array:
+				_effect_num(node[k], old, new)
+	elif node is Array:
+		for x in node:
+			_effect_num(x, old, new)
+
+
+## 效果程序里 gain hp 的数额包一层 Math.floor（已包的不重复包）
+static func _floor_hp_gain(node) -> void:
+	if node is Dictionary:
+		if str(node.get("op", "")) == "gain" and str(node.get("resource", "")) == "hp" and node.get("amount") is Dictionary \
+				and not (str(node.amount.get("op", "")) == "math" and str(node.amount.get("name", "")) == "floor"):
+			node.amount = {"op": "math", "pos": int(node.amount.get("pos", 0)), "name": "floor", "args": [node.amount]}
+		for k in node:
+			if node[k] is Dictionary or node[k] is Array:
+				_floor_hp_gain(node[k])
+	elif node is Array:
+		for x in node:
+			_floor_hp_gain(x)
 
 
 ## T411：角色本体（Actors.json）特性清理——actors.<id>.traits_remove [[code, dataId]…] 只在天启篇卡开着时生效，西游档原样返回 base（首句 return base 供发行空壳规则 2 照搬）
