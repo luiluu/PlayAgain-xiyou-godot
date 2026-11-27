@@ -254,6 +254,9 @@ func _d294() -> void:
 	var w2003 := str(_rec("Weapons", 2003).note)
 	_check("d294_unique_tag_follows_effect_line", w2003.contains("“%s”" % ryoma) and w2003.contains("<KyoUnique: %s>" % ryoma)
 		and _rec("Skills", 6240).name == ryoma, w2003.right(80))
+	var vegeta := XTextFix.actor_name(164, "贝吉特")
+	_check("d294_vegeta_forms_no_double_prefix", [10563, 10564, 10565, 10566].map(func(i): return str(XDB.rec("Skills", i).name))
+		== [vegeta, vegeta + "2", vegeta + "3", vegeta + "蓝"], [10563, 10564, 10565, 10566].map(func(i): return str(XDB.rec("Skills", i).name)))
 	_check("d294_kotori_form_toasts", str(_rec("CommonEvents", 1710).list[0].parameters[0]).contains(XTextFix.actor_name(159, "") + "切换炮形态")
 		and str(_rec("CommonEvents", 1711).list[0].parameters[0]).contains(XTextFix.actor_name(159, "") + "切换斧形态"))
 	_check("d294_event_exact_positions", str(_cmd(4, 71, 0, 109)[2]) == "路痴刀客"
