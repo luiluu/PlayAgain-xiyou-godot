@@ -131,7 +131,7 @@
 
 **R3 P2-7（cc）**
 - 专项 `xiyou_t530_ledger_core`：59/59 过（第 13 组新增 1 条）。本机单跑（并行测试.py，headless，不出声）。
-- 云端选测：待补
+- 云端选测：选测 223 个场景、12 片全过（提交 7dc7a5da93）：https://github.com/luiluu/PlayAgain-xiyou-godot/actions/runs/45981444041
 
 **R2 P2-6（cc）**
 - 专项 `xiyou_t530_ledger_core`：58/58 过（新增第 13 组 4 条）；`xiyou_tianqi_ledger` 83/83、`xiyou_tianqi_ledger_p3` 44/44。本机单跑，`--audio-driver Dummy`。
