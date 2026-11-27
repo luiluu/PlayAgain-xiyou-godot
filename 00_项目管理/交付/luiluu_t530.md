@@ -126,7 +126,7 @@
 
 **R2 P2-6（cc）**
 - 专项 `xiyou_t530_ledger_core`：58/58 过（新增第 13 组 4 条）；`xiyou_tianqi_ledger` 83/83、`xiyou_tianqi_ledger_p3` 44/44。本机单跑，`--audio-driver Dummy`。
-- 云端选测：见下（提交 c39e997d4）。
+- 云端选测：选测 478 个场景、16 片全过（提交 c39e997d49；偶发 1 个 xiyou_floor_reach080，并行失败、单跑通过，算通过）：https://github.com/luiluu/PlayAgain-xiyou-godot/actions/runs/45954107728
 
 **R2（cc）**
 - 专项 `xiyou_t530_ledger_core`：54/54 过（新增第 9～12 组：自带硬顶、追加吸血、全关法宝、持剑记账；第 4 组文案、第 7 组西游无 suit 改了断言）。本机单跑，临时 HOME，`--audio-driver Dummy`。
