@@ -28,6 +28,11 @@ static var LAZY_ATTACK := true
 ## end_action（序列已收尾、该倒的已倒）再按 is_dead() 认、回血回魔；false＝回退：只认 after_apply 当场 is_dead() 的（序列招上认不到）。
 ## 和七印的 XTianqiQiyinEffects.SEQ_KILLS 同一办法，分开关
 static var SEQ_KILLS := true
+## T530（v0.16 六.4 / 九.7甲·8）：随机词条减伤 −25%、单系抗 −40%、回复 15%、再释 20% 先封再并套，
+## 回复套只算一套（5%），守套减伤（单 −15%、两 −19%）不折，吸血单次施放 20%，随机词条进攻面例外不封。false＝回退旧行为
+static var CAPS_V16 := true
+## T530（v0.16 九.19 甲）：随机词条元素抗性退出 incomingMultiplier，改由 damage.gd 并入各自属性候选（双系取伤害大的）。false＝回退旧行为
+static var RESIST_PER_ELEMENT := true
 
 const PARAM_KEYS := ["mhp", "mmp", "atk", "def", "mat", "mdf", "agi", "luk"]
 const XPARAM_INDEX := {"hit": 0, "eva": 1, "cri": 2, "hrg": 7, "mrg": 8}
@@ -112,15 +117,79 @@ static func fold(entries: Array) -> Dictionary:
 	return p
 
 
-## 一人身上的词条（不含光环）
-static func personal(a) -> Dictionary:
-	var list := []
+## 合并单条已折算词条进汇总字典 p
+static func _merge_entry(p: Dictionary, key: String, k: String, v: float) -> void:
+	var a := XTianqiAffixTable.affix(key)
+	match str(a.get("stack", "sum")):
+		"multiply":
+			p[k] = float(p.get(k, 1.0)) * maxf(0.0, 1.0 - v / 100.0)
+		"max_per_actor", "max_party":
+			p[k] = maxf(float(p.get(k, 0.0)), v)
+		_:
+			p[k] = float(p.get(k, 0.0)) + v
+
+
+## 一人身上的词条拆分汇总（不含光环）：{p, affix_hrg, suit_hrg}
+## T530（CAPS_V16）：先对随机词条本身封顶（减伤 −25%、单系抗 −40%、回复 15%、再释 20%；进攻面例外不封），
+## 再并入模板套（回复套只算一套 5%，守套 −15%／两套 −19% 完整乘在后面、不折）。
+static func personal_parts(a) -> Dictionary:
+	var affix_list := []
 	for e in _equips(a):
 		for x in item_affixes(e):
 			if str(XTianqiAffixTable.affix(str(x.get("key", ""))).get("layer", "")) != "aura":
-				list.append(x)
-	list.append_array(XTianqiSuits.affix_entries(a))  # 天启篇原版套装模板的效果（T515）
-	return fold(list)
+				affix_list.append(x)
+	var suit_list := XTianqiSuits.affix_entries(a)  # 天启篇原版套装模板的效果（T515）
+	if not CAPS_V16 or not XTianqi.active(XState.current):
+		var all := affix_list.duplicate()
+		all.append_array(suit_list)
+		var p_old := fold(all)
+		return {"p": p_old, "affix_hrg": float(fold(affix_list).get("hrg", 0.0)), "suit_hrg": float(fold(suit_list).get("hrg", 0.0))}
+	var p := fold(affix_list)
+	var dr_cap := XTianqiLedger.split_cap_affix("damage_reduction_pct", 25.0)
+	var er_cap := XTianqiLedger.split_cap_affix("element_resist_pct", 40.0)
+	var hrg_cap := XTianqiLedger.split_cap_affix("hrg_pct", 15.0)
+	var rc_cap := XTianqiLedger.split_cap_affix("recast_pct", 20.0)
+	if p.has("damage_reduction"):
+		p["damage_reduction"] = maxf(1.0 - dr_cap / 100.0, float(p["damage_reduction"]))
+	for k in p.keys():
+		if str(k).begins_with("element_resist:"):
+			p[k] = maxf(1.0 - er_cap / 100.0, float(p[k]))
+	if p.has("hrg"):
+		p["hrg"] = minf(hrg_cap, float(p["hrg"]))
+	if p.has("recast"):
+		p["recast"] = minf(rc_cap, float(p["recast"]))
+	var affix_hrg := float(p.get("hrg", 0.0))
+	# 并入模板套：回复套全身只算一套（取高、上限 5%）；守套减伤单独累乘封两套 −19% 后再乘到词条减伤上（单套 −15% 不折）
+	var suit_hrg := 0.0
+	var suit_dr := 1.0
+	var suit_hrg_cap := XTianqiLedger.split_cap_line("suit", "hrg_pct", 0.05) * 100.0
+	var suit_dr_two_cap := XTianqiLedger.split_cap_line("suit", "def_reduce_two_pct", 0.19) * 100.0
+	for x in suit_list:
+		var key := str(x.get("key", ""))
+		var adef := XTianqiAffixTable.affix(key)
+		if adef.is_empty():
+			continue
+		var v = x.value if x.has("value") else XTianqiAffixTable.value(key, int(x.get("tier", DEFAULT_TIER)), str(x.get("grade", "normal")))
+		if v == null:
+			continue
+		var fv := float(v)
+		if key == "hrg":
+			suit_hrg = minf(suit_hrg_cap, maxf(suit_hrg, fv))
+		elif key == "damage_reduction":
+			suit_dr *= maxf(0.0, 1.0 - fv / 100.0)
+		else:
+			_merge_entry(p, key, _key_of(x), fv)
+	if suit_hrg > 0.0:
+		p["hrg"] = float(p.get("hrg", 0.0)) + suit_hrg
+	if suit_dr < 1.0:
+		suit_dr = maxf(1.0 - suit_dr_two_cap / 100.0, suit_dr)
+		p["damage_reduction"] = float(p.get("damage_reduction", 1.0)) * suit_dr
+	return {"p": p, "affix_hrg": affix_hrg, "suit_hrg": suit_hrg}
+
+
+## 一人身上的词条（不含光环）
+static func personal(a) -> Dictionary:
+	return personal_parts(a).p
 
 
 ## 一人身上的光环
@@ -212,7 +281,7 @@ static func _logic():
 	return XAlienBattle.active_logic()
 
 
-## 一人的词条视图 {p, aura, d, member}：战斗中按开战时缓存，战斗外现算
+## 一人的词条视图 {p, aura, d, member, affix_hrg, suit_hrg}：战斗中按开战时缓存，战斗外现算
 static func view(a) -> Dictionary:
 	if not (a is XActor):
 		return {}
@@ -220,17 +289,22 @@ static func view(a) -> Dictionary:
 	if not st.is_empty():
 		if not st.views.has(a) or not _same_equips(st.views[a].eq, (a as XActor).equips):
 			var member: bool = st.members.has(a)
-			var p := personal(a)
+			var parts := personal_parts(a)
+			var p: Dictionary = parts.p
 			var aura: Dictionary = st.aura if member else {}
-			st.views[a] = {"p": p, "aura": aura, "d": derive(p, aura), "member": member, "eq": (a as XActor).equips.duplicate()}
+			st.views[a] = {"p": p, "aura": aura, "d": derive(p, aura), "member": member,
+				"affix_hrg": float(parts.affix_hrg), "suit_hrg": float(parts.suit_hrg),
+				"eq": (a as XActor).equips.duplicate()}
 		return st.views[a]
 	if not on():
 		return {}
 	var ms := members()
 	var member := ms.has(a)
-	var p := personal(a)
+	var parts := personal_parts(a)
+	var p: Dictionary = parts.p
 	var aura: Dictionary = party_aura(ms) if member else {}
-	return {"p": p, "aura": aura, "d": derive(p, aura), "member": member}
+	return {"p": p, "aura": aura, "d": derive(p, aura), "member": member,
+		"affix_hrg": float(parts.affix_hrg), "suit_hrg": float(parts.suit_hrg)}
 
 
 ## 战斗中换了装备（同一格换了实例）就重算这个人的视图（光环按开战时的全队算）
@@ -300,7 +374,20 @@ static func _param_rate(a, i: int) -> float:
 
 
 static func xparam(a, i: int, value: float) -> float:
-	if not ENABLED or not (a is XActor):
+	if not (a is XActor):
+		return value
+	if i == 7 and XTianqiLedger.split_caps_on():
+		var affix_hrg := 0.0
+		var suit_hrg := 0.0
+		var aura_hrg := 0.0
+		if ENABLED:
+			var v := view(a)
+			if not v.is_empty():
+				affix_hrg = float(v.get("affix_hrg", 0.0))
+				suit_hrg = float(v.get("suit_hrg", 0.0))
+				aura_hrg = float(v.get("aura", {}).get("aura_recovery", 0.0))
+		return XTianqiLedger.cap_actor_hrg(a as XActor, value, affix_hrg, suit_hrg, aura_hrg)
+	if not ENABLED:
 		return value
 	var v := view(a)
 	if v.is_empty():
@@ -411,17 +498,19 @@ static func _damage_ops(item: Dictionary, a, b) -> Array:
 	return ops
 
 
-## 打到角色身上的承伤乘数：减伤、元素抗性（打来的系对得上）、磐石、不屈、坚韧（这一击暴击）、庇护光环，每条相乘
+## 打到角色身上的承伤乘数：减伤、磐石、不屈、坚韧（这一击暴击）、庇护光环，每条相乘。
+## T530（RESIST_PER_ELEMENT）：随机词条元素抗性退出这里，改由 damage.gd 调 element_resist_mult 并入各自一系候选（双系取伤害大的）。
 static func _taken_mult(_logic_ref, item: Dictionary, a, b) -> float:
 	var v := view(b)
 	if v.is_empty():
 		return 1.0
 	var p: Dictionary = v.p
 	var m := float(p.get("damage_reduction", 1.0))
-	var es: Array = XDamage.action_elements(item, a) if a != null else []
-	for k in p:
-		if str(k).begins_with("element_resist:") and es.has(element_id(str(k).get_slice(":", 1))):
-			m *= float(p[k])
+	if not RESIST_PER_ELEMENT:
+		var es: Array = XDamage.action_elements(item, a) if a != null else []
+		for k in p:
+			if str(k).begins_with("element_resist:") and es.has(element_id(str(k).get_slice(":", 1))):
+				m *= float(p[k])
 	if p.has("bulwark") and b.mhp > 0.0 and b.hp > b.mhp * float(XTianqiAffixTable.affix("bulwark").get("condition", {}).get("rate", 70)) / 100.0:
 		m *= 1.0 - float(p.bulwark) / 100.0
 	if p.has("unyielding") and b.mhp > 0.0 and b.hp < b.mhp * float(XTianqiAffixTable.affix("unyielding").get("condition", {}).get("rate", 30)) / 100.0:
@@ -431,6 +520,27 @@ static func _taken_mult(_logic_ref, item: Dictionary, a, b) -> float:
 	if v.aura.has("aura_shelter"):
 		m *= 1.0 - float(v.aura.aura_shelter) / 100.0
 	return maxf(0.0, m)
+
+
+## T530（v0.16 九.19 甲）：单系随机词条元素抗性乘数（已在 personal_parts 封顶至最低 0.60＝−40%），由 damage.gd 按候选元素并入
+static func element_resist_mult(b, e: int) -> float:
+	if not ENABLED or not RESIST_PER_ELEMENT or not (b is XActor) or e <= 0:
+		return 1.0
+	var v := view(b)
+	if v.is_empty():
+		return 1.0
+	var key := element_key(e)
+	if key == "":
+		return 1.0
+	return maxf(0.0, float(v.p.get("element_resist:" + key, 1.0)))
+
+
+## 属性号 → 系键（element_id 的反查）
+static func element_key(id: int) -> String:
+	var els: Array = XTianqiAffixTable.data().get("elements", [])
+	if id >= 1 and id <= els.size():
+		return str(els[id - 1].get("key", ""))
+	return ""
 
 
 ## 猎首的目标：神话（精英）敌人、首领
@@ -460,7 +570,7 @@ static func begin_action(logic, u, skill: Dictionary) -> void:
 	var st := _store(logic)
 	if int(st.depth) > 0:
 		return
-	var f := {"u": u, "skill": skill, "first": false, "harvested": false, "targets": [], "before": {}}
+	var f := {"u": u, "skill": skill, "first": false, "harvested": false, "targets": [], "before": {}, "lifesteal_used": 0.0}
 	st.act = f
 	st.last = {}  # T240 R1：上一动的斩获记录不带进来
 	if not XTianqiQiyinEffects._active(logic):
@@ -500,7 +610,28 @@ static func after_apply(logic, u, skill: Dictionary, t, r: Dictionary) -> void:
 		if ls > 0.0 and u.is_alive():
 			var cap := float(XTianqiAffixTable.affix("lifesteal").get("cap_per_hit_mhp", 10))
 			var heal := floorf(minf(dmg * XTianqiNoX6.steal_mult(u) * ls / 100.0, u.mhp * cap / 100.0))  # 去全队 ×6：按 ×6 前的伤害算（O-470）
-			u.hp = minf(u.mhp, u.hp + heal)
+			if CAPS_V16:
+				var cast_cap := floorf(u.mhp * XTianqiLedger.split_cap_affix("lifesteal_per_cast_pct", 20.0) / 100.0)
+				if mine:
+					var used := float(f.get("lifesteal_used", 0.0))
+					heal = minf(heal, maxf(0.0, cast_cap - used))
+					f["lifesteal_used"] = used + heal
+				elif int(st.depth) > 0:
+					var rused := float(st.get("recast_ls", 0.0))
+					heal = minf(heal, maxf(0.0, cast_cap - rused))
+					st["recast_ls"] = rused + heal
+				else:
+					# T530 R2（核查 P1-2）：主行动、词条再释放以外的施放（技能追加释放 XTianqiSkills._cast_run、七印再放等直接走 logic.apply 的）
+					# 按施放实例另记一份：同一人、同一回合、同一行动序号、同一招、同一层追加窗口算一次施放
+					var key := _extra_cast_key(logic, u, skill)
+					var ex: Dictionary = st.get("extra_ls", {})
+					if str(ex.get("key", "")) != key:
+						ex = {"key": key, "used": 0.0}
+					heal = minf(heal, maxf(0.0, cast_cap - float(ex.used)))
+					ex.used = float(ex.used) + heal
+					st["extra_ls"] = ex
+			if heal > 0.0:
+				u.hp = minf(u.mhp, u.hp + heal)
 		if p.has("expose"):
 			var tu := _unit(logic, t)
 			tu.expose = maxf(float(tu.expose) if int(tu.expose_turns) > 0 else 0.0, float(p.expose))
@@ -527,6 +658,14 @@ static func after_apply(logic, u, skill: Dictionary, t, r: Dictionary) -> void:
 			t.add_shield(floorf(add))
 
 
+## T530 R2（P1-2）：主行动／词条再释放之外那次施放的吸血计额键（技能追加用 XTianqiSkills 的追加窗口层数区分）
+static func _extra_cast_key(logic, u, skill: Dictionary) -> String:
+	var acted = logic.get("_acted")
+	var n := int(acted.get(u, 0)) if acted is Dictionary else 0
+	var fdepth := int(logic.get_meta("xtqs").get("depth", 0)) if logic.has_meta("xtqs") else 0
+	return "%d|%d|%d|%d|%d" % [u.get_instance_id(), int(logic.turn), n, int(skill.get("id", 0)), fdepth]
+
+
 ## 行动结束：再释放（技能放完有几率对还活着的目标再放一次，不付费；再放出来的那次不会再触发）
 static func end_action(logic, u, skill) -> Array:
 	var logs := []
@@ -551,6 +690,7 @@ static func end_action(logic, u, skill) -> Array:
 	if not XTianqiLedger.take_extra(logic, u, "affix.recast", true):
 		return logs  # 回合预算（期三）：再释放和追加行动共用每回合多 1 次；先掷几率再问预算，随机数次序不变
 	st.depth = int(st.depth) + 1
+	st["recast_ls"] = 0.0
 	for t in f.targets:
 		if t.is_alive():
 			logs.append({"type": "action", "user": u, "skill": skill, "views": logic.views()})
@@ -558,6 +698,7 @@ static func end_action(logic, u, skill) -> Array:
 			logs.append_array(logic.mark_views([logic.apply(u, skill, t)]))  # 打完当场取画面快照（评审 v0.1 第 8 条）
 			XTianqiQiyinEffects.fu_note(logic, u, before)
 	st.depth = int(st.depth) - 1
+	st.erase("recast_ls")
 	return logs
 
 

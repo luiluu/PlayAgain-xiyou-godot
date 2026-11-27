@@ -162,6 +162,8 @@ func _row(lg, u, tag: String) -> Dictionary:
 
 ## 一、词条再释放打倒：主招不倒，收尾前把目标压到 1 血，再释放（17 条完美再释放＝102% 必中）打倒
 func _recast(on: bool) -> Dictionary:
+	var prev_caps := XTianqiAffixBattle.CAPS_V16
+	XTianqiAffixBattle.CAPS_V16 = false
 	XTianqiQiyinEffects.FOLLOW_KILLS = on
 	var rc := []
 	for i in 17:
@@ -186,6 +188,7 @@ func _recast(on: bool) -> Dictionary:
 	row.recast_logs = logs.size()
 	lg.end_battle(0)
 	XTianqiQiyinEffects.FOLLOW_KILLS = true
+	XTianqiAffixBattle.CAPS_V16 = prev_caps
 	return row
 
 
@@ -355,6 +358,8 @@ func _not_mine() -> Dictionary:
 
 ## 九、七印 ENABLED 关着：再释放打倒照样回词条斩获（窗口由词条 end_action 开）；词条 begin_action 清上一动的 last
 func _qiyin_off_harvest() -> void:
+	var prev_caps := XTianqiAffixBattle.CAPS_V16
+	XTianqiAffixBattle.CAPS_V16 = false
 	XTianqiQiyinEffects.ENABLED = false
 	var rc := []
 	for i in 17:
@@ -380,6 +385,7 @@ func _qiyin_off_harvest() -> void:
 	_check("affix_begin_clears_last", (XTianqiAffixBattle._store(lg).get("last", {}) as Dictionary).is_empty())
 	lg.end_battle(0)
 	XTianqiQiyinEffects.ENABLED = true
+	XTianqiAffixBattle.CAPS_V16 = prev_caps
 
 
 func _run() -> void:

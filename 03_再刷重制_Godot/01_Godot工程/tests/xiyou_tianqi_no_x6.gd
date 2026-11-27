@@ -137,9 +137,13 @@ func _flat() -> void:
 	var hr := {}
 	for el in range(0, 16):
 		hr[el] = float(raw[1]) * 0.5  # 关：×6 后的一半
+	# T530 默认 NO_ENEMY_FLAT_MIT=true 清普通固定减伤；测 NoX6 缩减旧口径时临时关该开关
+	var prev_no_flat := XTianqiLedger.NO_ENEMY_FLAT_MIT
+	XTianqiLedger.NO_ENEMY_FLAT_MIT = false
 	var v := _both(func():
 		g.passive_cache()["harmRe"] = hr
 		return _hit(XDB.rec("Skills", 1), a, g))
+	XTianqiLedger.NO_ENEMY_FLAT_MIT = prev_no_flat
 	XGuardianRework.measure_neutral = false
 	g.refresh_passive()
 	_check("flat_scaled", float(v[0]) > 0.0 and absf(float(v[0]) * 6.0 - float(v[1])) <= 12.0 and float(v[1]) < float(raw[1]) * 0.6, [raw, v])
@@ -258,9 +262,12 @@ func _mp_flat_absorb() -> void:
 	var hr := {}
 	for el in range(0, 16):
 		hr[el] = float(raw[1]) * 0.5
+	var prev_no_flat := XTianqiLedger.NO_ENEMY_FLAT_MIT
+	XTianqiLedger.NO_ENEMY_FLAT_MIT = false
 	var v := _both(func():
 		g.passive_cache()["harmRe"] = hr
 		return _hit(mp, a, g))
+	XTianqiLedger.NO_ENEMY_FLAT_MIT = prev_no_flat
 	g.refresh_passive()
 	_check("mp_flat_kept", float(v[1]) > 0.0 and float(v[1]) < float(raw[1]) * 0.6 and v[0] == v[1], [raw, v])
 	# 元素吸收（元素牌组关着时才走得到；天启篇默认牌组开、敌人不吸收）：HP 吸收回血 ÷6，MP 吸收不缩

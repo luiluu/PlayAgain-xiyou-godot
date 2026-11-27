@@ -141,6 +141,7 @@ func _run() -> void:
 	_test_caocao_106_battle_turn_end()
 	_test_tianhu_1341_apply_and_react_oracle()
 	_test_tianhu_1341_battle_apply()
+	_test_tianhu_1341_hot_cache_after_recover_all()
 	_test_isolation_and_rollback()
 
 	XStateEffects.PORT_CAOCAO_TIANHU = was_port
@@ -443,6 +444,65 @@ func _test_tianhu_1341_battle_apply() -> void:
 	var qishang_pop := started.any(func(row): return bool(row.get("hpAffected", false)) and is_equal_approx(float(row.get("hpDamage", 0.0)), want_qishang))
 	check("s1341.battle_apply_popup_and_kill", not r.missed and not r.evaded and qishang_pop and foe.is_dead() and bool(r.died),
 		{"want": want_qishang, "started": started, "hp": foe.hp, "died": r.died})
+
+
+# T530 R4（小o P2-8）回归：西游档敌人挂天虎令气伤 → 普攻一下让 React 缓存变热 → 战斗事件 334 enemy_recover_all 清状态 → 再普攻。
+# 场景：_make_xiyou(30)、Troops 2 首敌（elite_roll 100）、战斗随机种子 0、天虎 s.actor(104) 不带法宝、熟练度 7485＝0、Skills 1 普攻。
+# 热缓存仍跑 1341 React，施加者必须还在（西游档 clear_states 不清 state_origins）；
+# 期望值取 T530 改动前（分叉点 main）同场景实跑：第二击气伤 PRE_QISHANG、总扣血 PRE_TOTAL；
+# 同场景强制抹掉施加者（回退持有者）数值必须不同，证明本断言抓得到 P2-8 这类回归。
+const P2_8_PRE_QISHANG := 275.0
+const P2_8_PRE_TOTAL := 354.0
+
+
+func _p2_8_run(drop_origin: bool) -> Dictionary:
+	var s := _make_xiyou(30)
+	var tianhu: XActor = s.actor(104)
+	s.party = [104]
+	s.battle_slots = [104, 0, 0, 0]
+	tianhu.equips = []
+	tianhu.mastery_levels[7485] = 0
+	tianhu.refresh_passive()
+	tianhu.recover_all()
+	var logic := XBattleLogic.new()
+	logic.elite_roll = 100.0
+	logic.setup(2, s, XBattleRandom.create(XRandomStream.hex64(0)))  # 固定战斗种子：沿用随机种子时第二击暴击会让总扣血假红
+	var foe: XEnemy = logic.enemies[0]
+	foe.hp = foe.mhp
+	XImportedBalance.set_acting(tianhu)
+	foe.add_state(1341)
+	XImportedBalance.set_acting(null)
+	var sk := XDB.rec("Skills", 1)
+	var r1 := logic.apply(tianhu, sk, foe)  # 第一击：刚挂上、缓存还冷（krz dirty 未消费），React 不出气伤
+	var hit1_qishang := (r1.get("started_popups", []) as Array).any(func(row): return bool(row.get("hpAffected", false)))
+	foe.param_refresh()  # 行动结束 refresh 消费 dirty：React 缓存（effect_snapshot）变热且含 1341
+	var hot_before: bool = not foe.effect_dirty and foe.effect_snapshot_valid and foe.effect_snapshot.any(func(st): return int(st.id) == 1341)
+	logic.enemy_recover_all(0)  # 战斗事件 334
+	var cleared: bool = not foe.state_ids.has(1341)
+	var hot_after: bool = foe.effect_snapshot_valid and foe.effect_snapshot.any(func(st): return int(st.id) == 1341)  # 清状态不标 dirty，热缓存仍留着 1341
+	if drop_origin:
+		foe.state_origins.erase(1341)
+	var origin_kept: bool = foe.state_origins.has(1341) and (foe.state_origins[1341] as WeakRef).get_ref() == tianhu
+	foe.hp = foe.mhp
+	var hp0 := foe.hp
+	var r := logic.apply(tianhu, sk, foe)
+	var started: Array = r.get("started_popups", [])
+	var qishang := started.filter(func(row): return bool(row.get("hpAffected", false))).map(func(row): return float(row.get("hpDamage", 0.0)))
+	return {"hit1_qishang": hit1_qishang, "hot_before": hot_before, "cleared": cleared, "hot_after": hot_after, "origin_kept": origin_kept,
+		"qishang": qishang, "total": hp0 - foe.hp, "missed": r.get("missed"), "mhp": foe.mhp}
+
+
+func _test_tianhu_1341_hot_cache_after_recover_all() -> void:
+	var real := _p2_8_run(false)
+	var fake := _p2_8_run(true)
+	print("P2-8 hot cache: real=", JSON.stringify(real), " drop_origin=", JSON.stringify(fake))
+	check("s1341.p2_8_cache_hot_and_kept_after_334", not real.hit1_qishang and real.hot_before and real.cleared and real.hot_after, real)
+	check("s1341.p2_8_xiyou_origin_kept_matches_pre_t530",
+		real.origin_kept and (real.qishang as Array).size() == 1 and is_equal_approx(float(real.qishang[0]), P2_8_PRE_QISHANG)
+			and is_equal_approx(float(real.total), P2_8_PRE_TOTAL), real)
+	check("s1341.p2_8_drop_origin_would_differ",
+		not fake.origin_kept and (fake.qishang as Array).size() == 1 and not is_equal_approx(float(fake.qishang[0]), P2_8_PRE_QISHANG)
+			and not is_equal_approx(float(fake.total), P2_8_PRE_TOTAL), fake)
 
 
 func _test_isolation_and_rollback() -> void:

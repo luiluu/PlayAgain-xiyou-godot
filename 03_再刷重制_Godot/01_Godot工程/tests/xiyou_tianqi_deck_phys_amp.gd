@@ -102,6 +102,7 @@ func _ratios(a: XActor, b: XEnemy, amp: float) -> Array:
 
 func _run() -> void:
 	seed(20261124)
+	XTianqiLedger.SELF_CAP = false  # T530 R2：本专项往角色本体挂 +50% 物理增幅量路由，超过角色自带元素 +30% 硬顶；硬顶另由 xiyou_t530_ledger_core 第 9 组测
 	var s := _tq_state()
 	var a: XActor = s.battle_members()[0]
 	var b := _enemy()

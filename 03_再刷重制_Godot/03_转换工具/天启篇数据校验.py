@@ -2638,6 +2638,41 @@ def ledger_phase4_rules(table: dict, balance: dict = None) -> list:
         bad.append('phase4.secret_slot 要是 0.15（D274① 秘籍每格上限 +15%，原 D203 +8% 已改）')
     if p4.get('brand', {}).get('id') != 'brand':
         bad.append('phase4.brand 要登记烙印一行')
+    sc = table.get('split_caps')
+    if not isinstance(sc, dict):
+        bad.append('damage_ledger.json 要有 split_caps 小节（T530 九线分池）')
+    else:
+        for sec in ('lines', 'affix_def', 'regen', 'def_ignore', 'immunity_fold'):
+            if not isinstance(sc.get(sec), dict):
+                bad.append('split_caps.%s 要是对象' % sec)
+        reg = sc.get('regen', {})
+        if isinstance(reg, dict):
+            parts = [reg.get(k) for k in ('affix_pct', 'orb_pct', 'suit_pct', 'aura_pct', 'actor_pct')]
+            tot = reg.get('total_pct')
+            if not all(isinstance(v, int) and not isinstance(v, bool) and v >= 0 for v in parts + [tot]):
+                bad.append('split_caps.regen 各项和 total_pct 要是非负整数')
+            elif sum(parts) != tot or tot != 81:
+                bad.append('split_caps.regen 各线之和要等于 total_pct=81（九.7甲＋Kyo 11-26 事项81 长生宝珠 45）：%s' % reg)
+        di = sc.get('def_ignore', {})
+        if isinstance(di, dict):
+            if di.get('percent_pen_ratio') != 4 or di.get('percent_pen_cap_pct') != 15:
+                bad.append('split_caps.def_ignore 旧百分比穿透须为 4:1、上限 15%%（九.9甲）：%s' % di)
+            if di.get('total_cap_pct') != 40 or di.get('ataraxia_cap_pct') != 45:
+                bad.append('split_caps.def_ignore 无视防御合计上限须为 40%%/杰作 45%%（21②）：%s' % di)
+        ad = sc.get('affix_def', {})
+        if isinstance(ad, dict):
+            if ad.get('damage_reduction_pct') != 25 or ad.get('element_resist_pct') != 40 or ad.get('hrg_pct') != 15 or ad.get('lifesteal_per_cast_pct') != 20 or ad.get('offense_uncapped') is not True:
+                bad.append('split_caps.affix_def 数值须对齐 v0.16 六.4／九.8：%s' % ad)
+        imm = sc.get('immunity_fold', {})
+        if isinstance(imm, dict):
+            if imm.get('weapon_ids') != [94, 2021, 2022, 2023] or imm.get('resist_pct') != 30:
+                bad.append('split_caps.immunity_fold 须为 4 件免疫武器 [94,2021,2022,2023] 折 30%%：%s' % imm)
+        selfl = sc.get('lines', {}).get('self') if isinstance(sc.get('lines'), dict) else None
+        if not isinstance(selfl, dict) or [selfl.get(k) for k in ('skill_pct', 'element_pct', 'bonus_pct', 'crit_pct')] != [30, 30, 30, 50]:
+            bad.append('split_caps.lines.self 角色自带硬顶须为技能／元素／终伤 30、爆伤 50（v0.16 第三节，T530 R2）：%s' % selfl)
+        bms = sc.get('boss_mech_flat_states')
+        if not isinstance(bms, list) or not all(isinstance(x, int) and not isinstance(x, bool) for x in bms):
+            bad.append('split_caps.boss_mech_flat_states 要是整数数组')
     return bad
 
 

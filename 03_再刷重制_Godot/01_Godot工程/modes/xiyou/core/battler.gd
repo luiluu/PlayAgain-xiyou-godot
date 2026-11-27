@@ -587,6 +587,8 @@ func _add_state(id: int, random: XRandomStream = null) -> void:
 	var source := XImportedBalance.acting_battler()
 	if source != null:
 		state_origins[id] = weakref(source)
+	elif fresh and XTianqi.active(XState.current):
+		state_origins.erase(id)  # T530 R3（小o P2-7）：天启篇无施加者新挂上的状态不沿用清除前的旧来源；R4（P2-8）西游档不动
 	XTianqiTrumpet.state_added(self, id, source)  # 天启篇号卷三号：自己上的减益回合数 ×1.33
 	XTianqiSkills.state_cast(id, source)  # T570 R1：普通闪躲每次成功施放给绯红之夜一次保护
 	# Game_Battler.addState：新附加的状态 refresh 后由 krz 标 dirty；已有状态（_Fix_StackOverflow 分支）只续回合
@@ -890,6 +892,8 @@ func passive_element_values(_e: int) -> Array:
 func element_rate(e: int) -> float:
 	if self is XEnemy and XTianqiElements.deck_on():
 		return XTianqiElements.static_enemy_rate(self as XEnemy, e)
+	if self is XActor and XTianqiLedger.elem_resist_cap_on():
+		return XTianqiLedger.actor_element_rate(self as XActor, e)
 	# 原生链（MV 连乘＋dsPassiveSkill 再乘被动）得到 current，再交给加算池
 	var passive := passive_element_values(e)
 	var current := traits_pi(TRAIT_ELEMENT_RATE, e)
@@ -1189,6 +1193,8 @@ func clear_states() -> void:
 		if not XResourceContext.permanent(sid) and not XAlienBattle.keeps_state(self, sid):
 			state_ids.erase(sid)
 			state_turns.erase(sid)
+			if XTianqi.active(XState.current):
+				state_origins.erase(sid)  # T530 R3（小o P2-7）：天启篇清状态时来源一并清；R4（P2-8）西游档保留，React 热缓存要读施加者
 			XRaceBattle.on_state_removed(self, sid)
 
 

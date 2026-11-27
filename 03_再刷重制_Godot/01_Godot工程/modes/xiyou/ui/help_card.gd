@@ -986,7 +986,8 @@ static func _pierce_lines(lines: Array, note: String) -> void:
 	var fmt := func(v: float) -> String:  # JS Math.round(v*100)/100 转字符串（整数不带 .0）
 		var r := floorf(v * 100.0 + 0.5) / 100.0
 		return str(int(r)) if r == floorf(r) else String.num(r)
-	for pair in [[pct, "穿透", "%"], [fixed, "固定减伤穿透", ""]]:
+	var tq_pen := XTianqiLedger.no_enemy_flat_mit_on()
+	for pair in [[pct, "穿透", "%"], [fixed, "固定减伤穿透（天启篇对敌无效）" if tq_pen else "固定减伤穿透", ""]]:
 		var map: Dictionary = pair[0]
 		var ids := all.filter(func(e): return map.has(e))
 		if ids.is_empty():
@@ -999,7 +1000,7 @@ static func _pierce_lines(lines: Array, note: String) -> void:
 			lines.append(" · ".join(ids.slice(i, i + 3).map(func(e): return rich([e]) + pair[1] + " " + fmt.call(map[e]) + pair[2])))
 			i += 3
 	if not pct.is_empty():
-		lines.append("穿透合计≥100%才能击破完全免疫")
+		lines.append("牌局开启时，对敌人的旧百分比穿透每 4% 折为 1% 无视防御，换算部分最多 15%。" if tq_pen and XTianqiElements.deck_on() else "穿透合计≥100%才能击破完全免疫")
 
 
 static func _migrated_element(skill: Dictionary) -> int:
