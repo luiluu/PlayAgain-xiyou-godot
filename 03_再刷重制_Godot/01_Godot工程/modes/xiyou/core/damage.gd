@@ -436,7 +436,9 @@ static func _calculate(item: Dictionary, a: XBattler, b: XBattler, options := {}
 			cands.append({"gross": value, "flat": flat, "resistance": resistance})
 			var row := {"element": e, "bonus": bonus, "defense": cand_defense, "matchup": match_rate, "resistance": resistance, "tianqiKind": tq_kind,
 				"incoming": incoming, "terminal": final_mult, "normal": normal_mult, "race": race.multiplier, "growth": 1.0 if absorb else growth,
-				"critical": crit, "independent": independent, "suit": suit_mult, "guard": guard, "fixedMitigation": flat, "beforeFixed": gross, "value": value}
+				"critical": crit, "independent": independent, "guard": guard, "fixedMitigation": flat, "beforeFixed": gross, "value": value}
+			if XTianqi.active(XState.current):
+				row["suit"] = suit_mult  # T530 R2（核查 P2-4）：套装模板乘区只在天启篇明细里出（西游档明细键不变）
 			if XTianqiLedger.detail_on():  # 伤害加成总账：五池明细（只加明细，天启篇档才有）
 				var em := float(frame.elementMultiplier.get(str(oe), 1.0))
 				row.merge(XTianqiLedger.pools(frame, oe, bonus / em if em != 0.0 else 0.0, normal_mult, crit, tianqi, race.multiplier, independent, suit_mult))

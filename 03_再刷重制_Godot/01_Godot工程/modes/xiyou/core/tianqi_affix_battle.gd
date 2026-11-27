@@ -620,6 +620,16 @@ static func after_apply(logic, u, skill: Dictionary, t, r: Dictionary) -> void:
 					var rused := float(st.get("recast_ls", 0.0))
 					heal = minf(heal, maxf(0.0, cast_cap - rused))
 					st["recast_ls"] = rused + heal
+				else:
+					# T530 R2（核查 P1-2）：主行动、词条再释放以外的施放（技能追加释放 XTianqiSkills._cast_run、七印再放等直接走 logic.apply 的）
+					# 按施放实例另记一份：同一人、同一回合、同一行动序号、同一招、同一层追加窗口算一次施放
+					var key := _extra_cast_key(logic, u, skill)
+					var ex: Dictionary = st.get("extra_ls", {})
+					if str(ex.get("key", "")) != key:
+						ex = {"key": key, "used": 0.0}
+					heal = minf(heal, maxf(0.0, cast_cap - float(ex.used)))
+					ex.used = float(ex.used) + heal
+					st["extra_ls"] = ex
 			if heal > 0.0:
 				u.hp = minf(u.mhp, u.hp + heal)
 		if p.has("expose"):
@@ -646,6 +656,14 @@ static func after_apply(logic, u, skill: Dictionary, t, r: Dictionary) -> void:
 		var add := minf(overflow, maxf(0.0, cap - t.shield))
 		if add > 0.0:
 			t.add_shield(floorf(add))
+
+
+## T530 R2（P1-2）：主行动／词条再释放之外那次施放的吸血计额键（技能追加用 XTianqiSkills 的追加窗口层数区分）
+static func _extra_cast_key(logic, u, skill: Dictionary) -> String:
+	var acted = logic.get("_acted")
+	var n := int(acted.get(u, 0)) if acted is Dictionary else 0
+	var fdepth := int(logic.get_meta("xtqs").get("depth", 0)) if logic.has_meta("xtqs") else 0
+	return "%d|%d|%d|%d|%d" % [u.get_instance_id(), int(logic.turn), n, int(skill.get("id", 0)), fdepth]
 
 
 ## 行动结束：再释放（技能放完有几率对还活着的目标再放一次，不付费；再放出来的那次不会再触发）

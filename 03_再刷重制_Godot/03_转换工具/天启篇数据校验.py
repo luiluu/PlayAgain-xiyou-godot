@@ -2654,6 +2654,9 @@ def ledger_phase4_rules(table: dict, balance: dict = None) -> list:
         if isinstance(imm, dict):
             if imm.get('weapon_ids') != [94, 2021, 2022, 2023] or imm.get('resist_pct') != 30:
                 bad.append('split_caps.immunity_fold 须为 4 件免疫武器 [94,2021,2022,2023] 折 30%%：%s' % imm)
+        selfl = sc.get('lines', {}).get('self') if isinstance(sc.get('lines'), dict) else None
+        if not isinstance(selfl, dict) or [selfl.get(k) for k in ('skill_pct', 'element_pct', 'bonus_pct', 'crit_pct')] != [30, 30, 30, 50]:
+            bad.append('split_caps.lines.self 角色自带硬顶须为技能／元素／终伤 30、爆伤 50（v0.16 第三节，T530 R2）：%s' % selfl)
         bms = sc.get('boss_mech_flat_states')
         if not isinstance(bms, list) or not all(isinstance(x, int) and not isinstance(x, bool) for x in bms):
             bad.append('split_caps.boss_mech_flat_states 要是整数数组')

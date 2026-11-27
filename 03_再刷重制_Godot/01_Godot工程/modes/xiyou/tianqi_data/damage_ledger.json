@@ -64,6 +64,13 @@
    "zhenqi": {
     "name": "真气七境",
     "bonus_pct": 12
+   },
+   "self": {
+    "name": "角色自带（本体、职业、非秘籍格技能＋身上状态；超越极限 I～IV 不算）",
+    "skill_pct": 30,
+    "element_pct": 30,
+    "bonus_pct": 30,
+    "crit_pct": 50
    }
   },
   "affix_def": {

@@ -643,7 +643,7 @@ static func whitelisted(module: String, skill: int, field: String) -> bool:
 # ---- 来源分桶（第五节第 4 条（3）；T530 补系别法宝 fabao、强化 enhance 拆出单记）----
 const BUCKET_NAMES := {"secret": "秘籍格（功法、通用被动书）", "runeword": "符文之语", "orb": "宝珠", "equip": "原版装备", "race": "种族",
 	"hubris": "成长装备", "tianqi": "天启篇自己的", "actor": "角色自带、技能", "state": "状态", "suit": "原版套装", "zhenqi": "真气",
-	"fabao": "系别法宝", "enhance": "强化（符石／晶石／神文）"}
+	"fabao": "系别法宝", "enhance": "强化（符石／晶石／神文）", "advance": "超越极限（共用进阶）"}
 
 
 ## T530（v0.16 六.3）：这件装备是不是系别法宝（4543～4552＋8101／8102），从 equip 桶拆出单记
@@ -857,11 +857,13 @@ static func passive_buckets(a, objs: Array) -> Dictionary:
 			continue
 		var is_gear: bool = o is Dictionary and o.has("kind") and str(o.kind) in ["weapon", "armor"]
 		var bucket := bucket_of(o, a)
+		if SELF_CAP and bucket == "actor" and o.has("stypeId") and SHARED_ADVANCE.has(int(o.get("id", 0))):
+			bucket = "advance"  # T530 R2：共用进阶不进角色自带上限（事项 81）
 		var book := "#%d" % int(o.get("id", 0)) if bucket == "secret" else ""
 		if REBUILD_SOURCES and is_gear and bucket == "runeword":
 			var rw_tpl := _runeword_template(o)
 			var tot := _scan_passive_obj(o)
-			var rwp := _scan_passive_obj(rw_tpl)
+			var rwp := _scale_scan(_scan_passive_obj(rw_tpl), XTianqiOrbs.sword_mult(o))  # T530 R2（核查 P2-2）：小猫持剑视图备注已翻倍，模板份额同倍扣
 			var base_b := _base_gear_bucket(o)
 			var g_rw := float(rwp.globalHarmRi)
 			var g_rem := float(tot.globalHarmRi) - g_rw
@@ -931,6 +933,14 @@ static func passive_buckets(a, objs: Array) -> Dictionary:
 		var is_gear: bool = o is Dictionary and o.has("kind") and str(o.kind) in ["weapon", "armor"]
 		var bucket := bucket_of(o, a) if not (o is Dictionary and (is_same(o, a.data()) or is_same(o, a.class_data()))) else "actor"
 		var orb := orb_amplify(o)
+		# T530 R2（核查 P2-2）：小猫持剑视图（XCat.sword_view）把元素增幅整体翻倍；按视图倍数折算各来源，
+		# 旧宝珠解析、强化、符文之语模板都乘倍数（T518 新表 _tq_orb_amp 已按视图算过，不再乘）
+		var sm := XTianqiOrbs.sword_mult(o) if is_gear else 1
+		if sm != 1 and not o.get("_tq_orb_amp") is Dictionary:
+			var orb2 := {}
+			for k in orb:
+				orb2[k] = float(orb[k]) * sm
+			orb = orb2
 		if REBUILD_SOURCES and is_gear:
 			var enh := upgrade_amplify(o)
 			var rw_tpl := _runeword_template(o)
@@ -939,8 +949,8 @@ static func passive_buckets(a, objs: Array) -> Dictionary:
 			for e in amp:
 				var ek := str(e)
 				var v_orb := float(orb.get(ek, 0.0))
-				var v_enh := float(enh.get(ek, 0.0))
-				var v_rw := float(rw_amp.get(ek, 0.0))
+				var v_enh := float(enh.get(ek, 0.0)) * sm
+				var v_rw := float(rw_amp.get(ek, 0.0)) * sm
 				var rem := float(amp[e]) - v_orb - v_enh - v_rw
 				if absf(rem) > 1e-9:
 					_add(out.elementAmplify, int(e), base_b, rem)
@@ -1238,6 +1248,14 @@ static var ELEM_RESIST_CAP := true
 ## T530（v0.16 九.9 甲 / 附表二 / 21②）：清敌人固定减伤（读时跳过不删数据）、首领机制免伤不吃穿透、牌局开打敌旧百分比穿透 4:1 转无视防御（≤15%，合计上限 40%／无我 45% 含狂妄）
 static var NO_ENEMY_FLAT_MIT := true
 
+## T530 R2（核查 P1-1 / v0.16 第 163 行、第三节「角色自带加成设入池上限」、T528 追加）：角色自带（actor 本体、职业、非秘籍格技能＋身上状态）
+## 进各池合计硬顶：技能伤、元素伤（每系）、终伤各 +30%，爆伤 +50%（damage_ledger.json split_caps.lines.self）；超越极限 I～IV 共用进阶单记 advance 桶不算（事项 81）。
+## 随机进攻词条走 XTianqiAffixBattle 独立通道，不在这两个桶里。关＝回到只靠 T528 数据重标、不兜底
+static var SELF_CAP := true
+const SELF_BUCKETS := ["actor", "state"]
+## 超越极限 I～IV（所有角色共用的进阶被动，见 skill_rework.json shared）
+const SHARED_ADVANCE := [1240, 1241, 1242, 1244]
+
 const NINE_BUCKETS := ["runeword", "orb", "equip", "suit", "race", "hubris", "zhenqi"]
 const SPLIT_BUCKETS := ["equip", "fabao", "orb", "runeword", "suit", "race", "hubris", "zhenqi", "enhance"]
 const NINE_DEFAULTS := {"skill": 0.15, "element": 0.30, "bonus": 0.35, "param": 0.30, "secret_slot": 0.08}
@@ -1489,10 +1507,16 @@ static func apply_nine_cap(item: Dictionary, a, frame: Dictionary, cache: Dictio
 			if not bc.is_empty():
 				split_cut[b] = bc
 		kept_lines[b] = sh
+	# （2b）T530 R2：角色自带（actor＋state 合计）硬顶，技能／元素每系／终伤 +30%、爆伤 +50%
+	if use_split and SELF_CAP:
+		var sc := _self_cap(by, hit, cut)
+		if not sc.is_empty():
+			split_cut["self"] = sc
 	# （3）旧九线合用封顶（留给 T536/N13 拆；汇总各线分池后的余量，避免重复扣减）
 	if use_nine:
 		var nine := {"skill": 0.0, "bonus": 0.0, "crit": 0.0, "element": {}}
-		for b in NINE_BUCKETS:
+		# T530 R2（核查 P2-1）：分池关着时 fabao／enhance 没有自己的额度，照合并前同记在装备里、吃旧合用顶
+		for b in (NINE_BUCKETS if use_split else NINE_BUCKETS + ["fabao", "enhance"]):
 			var sh: Dictionary = kept_lines.get(b, _hit_share(by, b, hit))
 			nine.skill += float(sh.skill)
 			nine.bonus += float(sh.bonus)
@@ -1520,6 +1544,52 @@ static func apply_nine_cap(item: Dictionary, a, frame: Dictionary, cache: Dictio
 		frame.elementAdd[str(e)] = float(frame.elementAdd.get(str(e), 0.0)) - float(cut.element[e])
 	frame.nineCap = cut
 	return cut
+
+
+## T530 R2（核查 P1-1）：角色自带 actor＋state 两桶合计按 split_caps.lines.self 封顶，超出加进 cut（就地改），返回各项扣了多少
+static func _self_cap(by: Dictionary, hit: Dictionary, cut: Dictionary) -> Dictionary:
+	var tot := {"skill": 0.0, "bonus": 0.0, "crit": 0.0, "element": {}}
+	for b in SELF_BUCKETS:
+		var sh := _hit_share(by, b, hit)
+		for k in ["skill", "bonus", "crit"]:
+			tot[k] += float(sh[k])
+		for e in sh.element:
+			tot.element[e] = float(tot.element.get(e, 0.0)) + float(sh.element[e])
+	var out := {}
+	for pair in [["skill", "skill_pct", 0.30], ["bonus", "bonus_pct", 0.30], ["crit", "crit_pct", 0.50]]:
+		var cap := split_cap_line("self", pair[1], pair[2])
+		if cap >= 0.0 and float(tot[pair[0]]) > cap + 1e-9:
+			var ex := float(tot[pair[0]]) - cap
+			cut[pair[0]] = float(cut[pair[0]]) + ex
+			out[pair[0]] = ex
+	var ce := split_cap_line("self", "element_pct", 0.30)
+	if ce >= 0.0:
+		var ecut := {}
+		for e in tot.element:
+			var ev := float(tot.element[e])
+			if ev > ce + 1e-9:
+				ecut[e] = ev - ce
+				cut.element[e] = float(cut.element.get(e, 0.0)) + ev - ce
+		if not ecut.is_empty():
+			out["element"] = ecut
+	return out
+
+
+## T530 R2（核查 P2-2）：_scan_passive_obj 的结果整体乘 m（小猫持剑视图倍数；m＝1 原样返回）
+static func _scale_scan(d: Dictionary, m: int) -> Dictionary:
+	if m == 1:
+		return d
+	var out := {}
+	for k in d:
+		var v = d[k]
+		if v is Dictionary:
+			var sub := {}
+			for kk in v:
+				sub[kk] = float(v[kk]) * m
+			out[k] = sub
+		else:
+			out[k] = float(v) * m
+	return out
 
 
 ## T187（T185 核查 P3-1）：确认阶段归池的秘籍格那份（live_confirm_add 的 books）并进这本书的 ③，和书上别的增伤合并封顶、一起排秘籍格。
@@ -1599,7 +1669,7 @@ static func param_cap(a, i: int, base: float, suit_rate: float) -> float:
 		if REBUILD_SOURCES and bkt == "runeword":
 			for rt in _runeword_template(eq).get("traits", []):
 				if rt is Dictionary and int(rt.get("code", 0)) == 21 and int(rt.get("dataId", -1)) == i:
-					rw_param += float(rt.get("value", 1.0)) - 1.0
+					rw_param += (float(rt.get("value", 1.0)) - 1.0) * XTianqiOrbs.sword_mult(eq)  # T530 R2（P2-2）：持剑视图 21 号特性按倍数翻
 		var non_orb := 0.0
 		for t in eq.get("traits", []):
 			if t.has("_codexOrb"):

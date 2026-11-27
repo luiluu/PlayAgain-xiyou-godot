@@ -104,6 +104,10 @@ func _run() -> void:
 	_test_6_combos_1_3_4_5()
 	_test_7_xiyou_untouched()
 	_test_8_t529_suit_mult_ledger()
+	_test_9_self_cap_t528()
+	_test_10_follow_cast_lifesteal()
+	_test_11_all_off_fabao_old_cap()
+	_test_12_cat_sword_rebuild()
 	var passed := 0
 	for r in results:
 		if r.passed:
@@ -513,10 +517,10 @@ func _test_4_penetration_def_ignore_and_text() -> void:
 	var txt_card := "\n".join(lines)
 	var intro_f := XGuide.milestone_intro({"key": "f", "intro": "旧文案"}, XState.current)
 	_check("t4_fixed_pen_text_tianqi",
-		txt_card.contains("固定减伤穿透（天启篇已停用）")
-		and txt_card.contains("4:1 转为无视防御")
-		and intro_f.contains("4:1 转为无视防御")
-		and intro_f.contains("首领机制免伤不吃穿透"),
+		txt_card.contains("固定减伤穿透（天启篇对敌无效）")
+		and txt_card.contains("牌局开启时，对敌人的旧百分比穿透每 4% 折为 1% 无视防御，换算部分最多 15%。")
+		and intro_f.contains("牌局开启时，对敌人的旧百分比穿透每 4% 折为 1% 无视防御，换算部分最多 15%。")
+		and intro_f.contains("首领机制免伤不受穿透影响。"),
 		{"card": txt_card, "guide": intro_f})
 	lg.end_battle(0)
 
@@ -787,10 +791,11 @@ func _test_7_xiyou_untouched() -> void:
 	_check("t7_xiyou_flat_mit_and_text_untouched",
 		not a.passive_cache().has("bySource")
 		and not rx.breakdown.row.has("defIgnore")
+		and not rx.breakdown.row.has("suit")
 		and (harm_st == 0 or float(rx.breakdown.row.fixedMitigation) > 0.0)
 		and not txt_x.contains("天启篇")
 		and txt_x.contains("穿透合计≥100%才能击破完全免疫"),
-		{"flat": rx.breakdown.row.fixedMitigation, "txt": txt_x})
+		{"flat": rx.breakdown.row.fixedMitigation, "txt": txt_x, "row_keys": rx.breakdown.row.keys()})
 
 
 # ---- 8. T529 核 P2-1：suit_mult 记入 breakdown.row.suit、pools residual.suitMultiplier 与 audit ----
@@ -815,3 +820,171 @@ func _test_8_t529_suit_mult_ledger() -> void:
 		and XTianqiLedger.violations.is_empty(),
 		{"suit": row.get("suit"), "res": row.get("residual"), "viol": XTianqiLedger.violations})
 	lg.end_battle(0)
+
+
+# ---- 9. T530 R2（核查 P1-1／验收 9）：角色自带终伤硬顶 +30%，T528 贝吉特三态同挂兜底；超越极限 I～IV 不算 ----
+func _test_9_self_cap_t528() -> void:
+	var s := _state(true)
+	s.add_actor(164)
+	var v := s.actor(164)
+	v.change_level(80)
+	_clear_equips(v)
+	v.clear_states()
+	for id in [2770, 2771, 2776]:  # 五十倍界王拳 +15、超赛 1 +10、自我极意功 +10（T528 重标）：正常切形态互斥，这里强挂三态
+		v.add_state(id)
+	v.refresh_passive()
+	var forms := [2770, 2771, 2776].filter(func(id): return v.is_state_affected(id))
+	var raw := float(v.passive_cache().get("globalHarmRi", 0.0))
+	var e := XEnemy.new().setup(1, 3, 100.0)
+	var sk := _skill(99901, 2, 2, "10000")
+	var r := XDamage.calculate(sk, v, e, {"critical": false, "variance": false, "rawValue": 10000.0})
+	var row: Dictionary = r.breakdown.row
+	var sc: Dictionary = row.get("splitCap", {}).get("self", {})
+	_check("t9_three_forms_cohang_bonus_capped_30",
+		forms.size() == 3 and _near(raw, 0.35) and _near(float(row.pools.bonus), 1.30) and _near(float(sc.get("bonus", 0.0)), 0.05),
+		{"forms": forms, "raw": raw, "pools": row.pools, "splitCap": row.get("splitCap")})
+	# 超越极限 I（1240，+5% 终伤）单记 advance 桶，不吃自带上限：1.30＋0.05
+	v.learn_skill(1240)
+	v.refresh_passive()
+	var by_g: Dictionary = v.passive_cache().get("bySource", {}).get("globalHarmRi", {})
+	var r2 := XDamage.calculate(sk, v, e, {"critical": false, "variance": false, "rawValue": 10000.0})
+	_check("t9_shared_advance_outside_self_cap",
+		_near(float(by_g.get("advance", 0.0)), 0.05) and _near(float(r2.breakdown.row.pools.bonus), 1.35),
+		{"by": by_g, "pools": r2.breakdown.row.pools})
+	v.forget_skill(1240)
+	# 正常互斥后（超蓝 2774 +20、自我极意功 +10）恰好 30%：不扣
+	v.clear_states()
+	v.add_state(2776)
+	v.add_state(2774)
+	v.refresh_passive()
+	var r3 := XDamage.calculate(sk, v, e, {"critical": false, "variance": false, "rawValue": 10000.0})
+	_check("t9_at_cap_not_cut", _near(float(r3.breakdown.row.pools.bonus), 1.30) and not r3.breakdown.row.get("splitCap", {}).has("self"),
+		{"pools": r3.breakdown.row.pools, "splitCap": r3.breakdown.row.get("splitCap")})
+	# 开关关＝回到只靠数据重标、不兜底
+	v.clear_states()
+	for id in [2770, 2771, 2776]:
+		v.add_state(id)
+	v.refresh_passive()
+	XTianqiLedger.SELF_CAP = false
+	var r4 := XDamage.calculate(sk, v, e, {"critical": false, "variance": false, "rawValue": 10000.0})
+	XTianqiLedger.SELF_CAP = true
+	_check("t9_switch_off_rollback", _near(float(r4.breakdown.row.pools.bonus), 1.35), r4.breakdown.row.pools)
+	# 爆伤自带 +50%、技能自带 +30%：本体状态备注塞超额时同样兜底
+	v.clear_states()
+	var fake := {"id": 99902, "name": "t530 自带超额", "note": "<passiveCrHarmRi:70%><SkillTypesDvupA:45%>", "meta": {}, "traits": []}
+	var cut := {"skill": 0.0, "bonus": 0.0, "crit": 0.0, "element": {}}
+	var by_fake := XTianqiLedger.passive_buckets(v, [fake])
+	var hit := {"types": ["A"], "wtypes": [], "skill": 99901, "pass_pooled": false}
+	var out := XTianqiLedger._self_cap(by_fake, hit, cut)
+	_check("t9_self_cap_crit_50_skill_30", _near(float(out.get("crit", 0.0)), 0.20) and _near(float(out.get("skill", 0.0)), 0.15), out)
+
+
+# ---- 10. T530 R2（核查 P1-2）：技能追加施放也走吸血单次 20% 预算（跨段、跨目标），新的一次施放另起 ----
+func _test_10_follow_cast_lifesteal() -> void:
+	var lg := _logic(true)
+	var a: XActor = lg.actors[0]
+	a.change_level(80)
+	var ls_eq := {"kind": "weapon", "id": 99121, "wtypeId": 1, "etypeId": 1, "params": [0, 0, 100, 0, 0, 0, 0, 0],
+		"traits": [], "note": "", "meta": {}, "tianqi_affixes": [_x("lifesteal", 4, "perfect")]}
+	_put_equips(a, [ls_eq])
+	XTianqiAffixBattle.start(lg)
+	var foes := []
+	for i in 5:
+		foes.append(XEnemy.new().setup(1, 3, 100.0))
+	var sk := _skill(99903, 2, 2, "10000")
+	var cast_cap := floorf(a.mhp * 0.20)
+	# 主施放：打 1 段吸到 10%
+	a.hp = 1.0
+	XTianqiAffixBattle.begin_action(lg, a, sk)
+	XTianqiAffixBattle.after_apply(lg, a, sk, foes[0], {"hp": 1.0e9})
+	XTianqiAffixBattle.end_action(lg, a, sk)
+	var hp_main := a.hp
+	# 技能追加窗口（XTianqiSkills.end_action 里 depth+1 → _cast_run → logic.apply）：五个目标各两段
+	var fs := XTianqiSkills._fstore(lg)
+	fs.depth = int(fs.depth) + 1
+	var follow := _skill(99904, 2, 2, "10000")
+	a.hp = 1.0
+	for t in foes:
+		for seg in 2:
+			XTianqiAffixBattle.after_apply(lg, a, follow, t, {"hp": 1.0e9})
+	var hp_follow := a.hp
+	fs.depth = int(fs.depth) - 1
+	# 下一次行动的追加另起一份
+	lg._acted[a] = int(lg._acted.get(a, 0)) + 1
+	fs.depth = int(fs.depth) + 1
+	a.hp = 1.0
+	XTianqiAffixBattle.after_apply(lg, a, follow, foes[0], {"hp": 1.0e9})
+	var hp_next := a.hp
+	fs.depth = int(fs.depth) - 1
+	var hit_cap := floorf(a.mhp * 0.10)
+	_check("t10_follow_cast_lifesteal_capped_20",
+		_near(hp_main - 1.0, hit_cap) and _near(hp_follow - 1.0, cast_cap) and _near(hp_next - 1.0, hit_cap),
+		{"mhp": a.mhp, "main": hp_main, "follow": hp_follow, "next": hp_next, "cast_cap": cast_cap})
+	lg.end_battle(0)
+
+
+# ---- 11. T530 R2（核查 P2-1）：开关全关时系别法宝回到旧合用顶（＋10% 法宝＋30% 武器封到 30%） ----
+func _test_11_all_off_fabao_old_cap() -> void:
+	var s := _state(true)
+	var a := s.actor(int(s.battle_slots[0]))
+	a.change_level(80)
+	var e := XEnemy.new().setup(1, 3, 100.0)
+	var sk := _skill(99905, 2, 2, "10000")
+	var fabao := XActor.make_equip("armor", 4544)
+	var w_fire := {"kind": "weapon", "id": 1, "base": 1, "wtypeId": 1, "etypeId": 1,
+		"params": [0, 0, 100, 0, 100, 0, 0, 0], "traits": [], "note": "", "meta": {},
+		"yep": {"elementAmplify": {"2": 0.30}}}
+	XTianqiLedger.SPLIT_CAPS = false
+	XTianqiLedger.REBUILD_SOURCES = false
+	XTianqiLedger.ELEM_RESIST_CAP = false
+	XTianqiLedger.NO_ENEMY_FLAT_MIT = false
+	XTianqiLedger.SELF_CAP = false
+	XTianqiAffixBattle.CAPS_V16 = false
+	XTianqiAffixBattle.RESIST_PER_ELEMENT = false
+	_put_equips(a, [w_fire, fabao])
+	var r := XDamage.calculate(sk, a, e, {"critical": false, "variance": false, "rawValue": 10000.0})
+	XTianqiLedger.SPLIT_CAPS = true
+	XTianqiLedger.REBUILD_SOURCES = true
+	XTianqiLedger.ELEM_RESIST_CAP = true
+	XTianqiLedger.NO_ENEMY_FLAT_MIT = true
+	XTianqiLedger.SELF_CAP = true
+	XTianqiAffixBattle.CAPS_V16 = true
+	XTianqiAffixBattle.RESIST_PER_ELEMENT = true
+	_put_equips(a, [w_fire, fabao])
+	var r_on := XDamage.calculate(sk, a, e, {"critical": false, "variance": false, "rawValue": 10000.0})
+	_check("t11_all_off_fabao_back_to_old_cap",
+		_near(float(r.breakdown.row.pools.element), 1.30) and _near(float(r_on.breakdown.row.pools.element), 1.40),
+		{"off": r.breakdown.row.pools, "on": r_on.breakdown.row.pools})
+
+
+# ---- 12. T530 R2（核查 P2-2）：小猫持剑翻倍视图里符文之语模板份额按倍数扣，不把翻倍的那份算给装备本体 ----
+func _test_12_cat_sword_rebuild() -> void:
+	var s := _state(true)
+	s.add_actor(XCat.ACTOR)
+	var c := s.actor(XCat.ACTOR)
+	c.change_level(80)
+	if not c.skill_ids.has(XCat.SKILL_SWORD):
+		c.learn_skill(XCat.SKILL_SWORD)
+	var pick := {}
+	var tpl_amp := 0.0
+	for r in XDB.table("Runewords"):
+		if not r is Dictionary or int(r.get("weapon", 0)) <= 0:
+			continue
+		var probe := {"kind": "weapon", "id": 99906, "base": 1, "wtypeId": XCat.SWORD_WTYPE, "etypeId": 1, "runewords": [int(r.id)]}
+		var tpl := XTianqiLedger._runeword_template(probe)
+		var v := float(tpl.get("yep", {}).get("elementAmplify", {}).get("2", 0.0))
+		if v > 0.0:
+			pick = r
+			tpl_amp = v
+			break
+	if pick.is_empty():
+		_check("t12_cat_sword_runeword_doubled", false, "没找到带火系元素增幅模板的符文之语")
+		return
+	var sword := {"kind": "weapon", "id": 99906, "base": 1, "wtypeId": XCat.SWORD_WTYPE, "etypeId": 1,
+		"params": [0, 0, 100, 0, 0, 0, 0, 0], "traits": [], "note": "", "meta": {},
+		"yep": {"elementAmplify": {"2": tpl_amp}}, "runewords": [int(pick.id)]}
+	_put_equips(c, [sword])
+	var by: Dictionary = c.passive_cache().get("bySource", {}).get("elementAmplify", {}).get(2, {})
+	_check("t12_cat_sword_runeword_doubled",
+		XCat.enabled_sword(c) and _near(float(by.get("runeword", 0.0)), tpl_amp * 2.0) and absf(float(by.get("equip", 0.0))) < 1e-6,
+		{"by": by, "tpl": tpl_amp, "sword": XCat.enabled_sword(c)})
