@@ -1,0 +1,22 @@
+{
+ "sha": "bf0940d484b390f61e011a98a2e09bb3a4707cb4",
+ "branch": "ci/luiluu/t530",
+ "mode": "affected",
+ "base": "d93aaffeca1e262166950ff4e77969fe3df638d5",
+ "passed": true,
+ "scenes": 1,
+ "failed": [],
+ "flaky": [],
+ "lostShards": [],
+ "jobStatus": "success",
+ "shards": 1,
+ "longestShardSeconds": 11.7,
+ "testSeconds": 9,
+ "generatedRef": "refs/ci/generated/luiluu/t530",
+ "generatedCommit": "9fab39814c564e9468fef814404159cef5133750",
+ "runUrl": "https://github.com/luiluu/PlayAgain-xiyou-godot/actions/runs/46005829242",
+ "sceneNames": [
+  "xiyou_caocao_tianhu_states.tscn"
+ ],
+ "time": "2026-11-27T13:21:16+00:00"
+}
