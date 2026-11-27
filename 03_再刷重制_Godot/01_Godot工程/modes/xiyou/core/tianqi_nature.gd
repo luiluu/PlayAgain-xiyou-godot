@@ -102,7 +102,12 @@ static func line_of(b) -> String:
 static func line_of_actor_id(id: int) -> String:
 	if not ui_on():
 		return ""
-	return format_line(_ints(actor_table().get("actors", {}).get(str(id), {}).get("natures", [])))
+	return format_line(natures_of_actor_id(id))
+
+
+## 按角色号取体质元素号（T554 图鉴按元素上色用；不看开关，调用方自己判）
+static func natures_of_actor_id(id: int) -> Array:
+	return _ints(actor_table().get("actors", {}).get(str(id), {}).get("natures", []))
 
 
 ## 种族号：敌人读 <EnemyRace>，我方不读种族（4.4）

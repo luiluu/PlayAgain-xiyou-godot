@@ -222,7 +222,8 @@
     "XTianqiBrandRealm.branches": "T514：闭关菜单的「branch／branch_pick／branch_set」三页只从天启篇人物页（XZhenqi._brand_page，XTianqiBrand.on 为真）的「加深分支」进；branches 只在 XTianqiBrandRealm.on(s) 为真之后调（and 短路）。发行里天启篇关着，走不到",
     "XTianqiBrandRealm.page": "T514：闭关菜单的「branch／branch_pick／branch_set」三页只从天启篇人物页（XZhenqi._brand_page，XTianqiBrand.on 为真）的「加深分支」进；branches 只在 XTianqiBrandRealm.on(s) 为真之后调（and 短路）。发行里天启篇关着，走不到",
     "XTianqiBrandRealm.pick_page": "T514：闭关菜单的「branch／branch_pick／branch_set」三页只从天启篇人物页（XZhenqi._brand_page，XTianqiBrand.on 为真）的「加深分支」进；branches 只在 XTianqiBrandRealm.on(s) 为真之后调（and 短路）。发行里天启篇关着，走不到",
-    "XTianqiBrandRealm.set_page": "T514：闭关菜单的「branch／branch_pick／branch_set」三页只从天启篇人物页（XZhenqi._brand_page，XTianqiBrand.on 为真）的「加深分支」进；branches 只在 XTianqiBrandRealm.on(s) 为真之后调（and 短路）。发行里天启篇关着，走不到"
+    "XTianqiBrandRealm.set_page": "T514：闭关菜单的「branch／branch_pick／branch_set」三页只从天启篇人物页（XZhenqi._brand_page，XTianqiBrand.on 为真）的「加深分支」进；branches 只在 XTianqiBrandRealm.on(s) 为真之后调（and 短路）。发行里天启篇关着，走不到",
+    "XTianqiNature.natures_of_actor_id": "T554：只在 XSkinBookPage.head_rows_on() 为真（天启篇存档且元素效果开着）时调，给人物图鉴「角色属性」上色；发行里天启篇关着走不到；即便走到，空数组只显示「无」"
   },
   "_已确认空值安全说明": "T149：被西游代码调用、空壳按类型返回 []／{}／\"\"／null 的成员，逐个核对调用处后登记在此（值是理由）。新加的天启篇函数被西游档调用时，check 会要求来这里登记或写特例。",
   "XTianqiBrandRealm.debuff_rate": "1.0",
