@@ -31,6 +31,10 @@ func _run() -> void:
 	var s := XTianqi.start_new_game(3, "jianxian", [1])
 	XTianqi.take_pending()
 	XState.current = s
+	XTianqi._joining = true
+	s.add_actor(1)
+	XTianqi._joining = false
+	s.actor(1).recover_all()
 	var l := XBattleLogic.new()
 	l.elite_roll = 100.0
 	l.setup(2, s)

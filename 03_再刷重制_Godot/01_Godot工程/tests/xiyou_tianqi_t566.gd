@@ -59,6 +59,12 @@ func _run() -> void:
 	_check("party_panel_text_%d" % ids.size(), wrong_panel.is_empty(), [wrong_panel.size(), wrong_panel.slice(0, 5)])
 	_check("boss_panel_block_%d" % ids.size(), wrong_boss.is_empty(), [wrong_boss.size(), wrong_boss.slice(0, 20)])
 
+	# 协调追加（T528 复核遗留）：三招目标栏
+	var targets := {5635: "敌方全体", 5636: "敌方全体", 1181: "随机攻击四次，可重复命中同一敌人"}
+	for sid in targets:
+		var sk_note := str(XDB.rec("Skills", sid).get("note", ""))
+		_check("target_header_%d" % sid, sk_note.contains("对象:%s size=" % targets[sid]), sk_note)
+
 	# 西游档：库内状态逐条是原表那一条（不换视图、不补说明）
 	var xy := XState.new_game(3, 1, [8])
 	XState.current = xy
@@ -73,11 +79,11 @@ func _run() -> void:
 			changed.append(id)
 	_check("xiyou_untouched_%d" % seen, seen > 0 and changed.is_empty(), changed.slice(0, 20))
 
-	# 同一次开游戏里天启篇、西游档来回读：状态格「可见／类别」缓存不能串（848 原版没有任何说明，状态格不显示；天启篇有说明后显示）
+	# 同一次开游戏里天启篇、西游档来回读：状态格「可见／类别」缓存不能串（560 痔群原版没有任何能写出的说明，状态格不显示；天启篇有说明后显示）
 	var seq := []
 	for save in [s, xy, s, xy]:
 		XState.current = save
-		seq.append(XSideStatus._visible_cached(848, XDB.rec("States", 848)))
+		seq.append(XSideStatus._visible_cached(560, XDB.rec("States", 560)))
 	_check("side_cell_cache_per_mode", seq == [true, false, true, false], seq)
 
 	kit.teardown()
