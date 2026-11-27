@@ -59,12 +59,14 @@ BATCH1_MANUAL = {
           'desc': ['效果：复活一名友方并恢复 30% 最大生命', '冷却：10回合'],
           '_note': 'T549 装备招批 1：原复活回固定 2000 生命 → 30%（技能重构 v0.2 §一.3 复活标准），冷却照原 10'},
     861: {'name': '风语者祝福', 'kind': '治疗', 'heal': {'mhp_pct': 0.12}, 'mp_pct': 10,
-          'desc': ['效果：恢复一名友方 12% 最大生命，并施加风之祝福（自然伤害 +20%，3回合）', '消耗：最大魔法10%'],
+          'desc': ['效果：恢复一名友方 12% 最大生命，并附加「自然之风」（自然伤害 +20%，3回合）', '消耗：最大魔法10%'],
           '_note': 'T549 装备招批 1：原 1000＋魔攻×6 → 单体治疗 12%（同 T445 通用书单体治疗），耗蓝 300 → 最大魔法 10%'},
     6240: {'name': '龙马复活术', 'kind': '复活', 'heal': {'mhp_pct': 0.3}, 'mp_pct': 30, 'cooldown': 3,
            'effects_remove': [[11, 0]],  # 生命由伤害段 30% 治疗给，效果 11 去掉防叠成 60%
            'effects': [{'code': 12, 'dataId': 0, 'value1': 0.3, 'value2': 0}],
-           'desc': ['效果：复活一名友方并恢复 30% 最大生命和 30% 最大魔法', '消耗：最大魔法30%', '冷却：3回合'],
+           'desc': ['效果：复活一名队友，恢复其 30% 最大生命和 30% 最大魔法，并补满 TP',
+                    '效果：施放者学会「天道诅咒」时，被复活的队友附加「平静（圣树之风）」（暴击伤害 −100%）',
+                    '消耗：最大魔法30%', '冷却：3回合'],
            '_note': 'T549 装备招批 1：原复活回满生命魔法、无冷却 → 30%＋冷却 3、耗最大魔法 30%（技能重构 v0.2 §一.3、§一.7 复活标准）'},
 }
 # 状态：捆仙绳的破阵（闪避、暴击、暴击闪避、魔法闪避 −30%～−50%）→ 减益标准 10%
@@ -78,10 +80,12 @@ BATCH1_STATES = {
 # 995 汲血斩（Kyo 11-26 事项 80「留：效果恢复，回血按天启篇换成百分比（约 7%）」）：
 # 系数 0.5 不动（协调 11-26：替换普攻口径另卡定，995/1968 先不回改），只改序列与卡面
 SKILL_995_PATCH = {
-    'seq': [{'op': 'replace_cmd', 'match': 'Hp +500', 'to': 'Hp +7%'}],
-    'desc': ['效果：两段物理伤害，每段命中后回复自身 7% 最大生命',
-             '效果：同时装备血月三件套（血月之铠、血月之盔、血月之靴）时额外释放一次（再两段）',
-             '伤害：每段 物理攻击×50%，2 段合计×100%（血月三件套 4 段合计×200%）'],
+    # T549 R1 P2-4：回血只在这一段命中时（原来强制两段未命中也回）；Hp +7% 命令加 hit 参数（XActionSequence：上一段没命中就不执行）
+    'seq': [{'op': 'replace_cmd', 'match': 'Hp +500', 'to': 'Hp +7%'},
+            {'op': 'hit_only', 'match': 'Hp +7%'}],
+    'desc': ['效果：对一名敌人挥砍两次，每段挥击命中后恢复自身 7% 最大生命',
+             '效果：穿齐血月披风、血月护手和血月腰带时，再挥砍两次',
+             '伤害：每段物理攻击×50%，两段合计物理攻击×100%，穿齐时四段合计物理攻击×200%'],
 }
 
 
@@ -146,6 +150,136 @@ def stats_of(sk):
     return ('atk',) if sk['stypeId'] in (0, 1) else ('mat',)
 
 
+# ---- 卡面（T549 R1 P2-3／P2-4：卡面按改写后的目标、段数、属性、附加效果逐招生成，双属性分写，生命写「自身最大生命的 X%」）----
+ITEMS = None
+
+
+def _items():
+    global ITEMS
+    if ITEMS is None:
+        ITEMS = load(DB / 'Items.json')
+    return ITEMS
+
+
+# 武器触发（Weapon Unleash）的招：卡上写「普通攻击时有几率改为施放」，不写成必然替换
+UNLEASH = {127, 258, 259, 294, 295, 296, 309, 495, 496, 497, 638, 2802, 2806}
+# 红牌变牌（3651 的 <ChangeTo[3652]: Math.random() < 0.20>、<ChangeTo[3653]: …0.20>，按序判定）
+CHANGE_TO_SRC = {3651: ['效果：施放时先有 20% 几率改为黄牌，没变成黄牌时另有 20% 几率改为蓝牌']}
+CHANGE_TO_DST = {3652: '红牌变出的黄牌（红牌施放时 20% 几率）：', 3653: '红牌变出的蓝牌（红牌没变成黄牌时 20% 几率）：'}
+# 序列和备注里推不出来的附加说明
+EXTRA = {345: ['每次施放花费 1500 金币；金币不足时改为全队各损失 3000 生命']}
+
+
+def elem_text(elements, eid, physical):
+    """伤害属性：-1 跟普通攻击属性（武器的攻击属性特性），0 无属性，其余按属性表。"""
+    if eid == -1:
+        return '伤害（属性同普通攻击）'
+    if eid == 0:
+        return '无属性伤害'
+    e = elements[eid] if 0 < eid < len(elements) else ''
+    return f'{e}伤害' if e else ('物理伤害' if physical else '魔法伤害')
+
+
+def _target_phrase(sk, per_target, rand, area, elem_txt):
+    scope = sk['scope']
+    ally = scope in (7, 8, 9, 10, 11)
+    if rand > 1:
+        return f'随机攻击敌人 {rand} 次，每次{f" {per_target} 段" if per_target > 1 else "一段"}{elem_txt}'
+    if area:
+        who = '全体友方' if ally else '全体敌人'
+        return f'对{who}各造成 {per_target} 段{elem_txt}' if per_target > 1 else f'对{who}造成{elem_txt}'
+    who = '自身' if scope == 11 else ('一名友方' if ally else '一名敌人')
+    return f'对{who}造成 {per_target} 段{elem_txt}' if per_target > 1 else f'对{who}造成{elem_txt}'
+
+
+def dmg_text(stats, per, n, area):
+    """伤害行：每段系数＋N 段合计；双属性按属性分写相加（白夜叉：每段物理攻击×25%＋敏捷×25%，六段合计物理攻击×150%＋敏捷×150%）。"""
+    each_t = '（每个目标）' if area and n > 1 else ''
+    if stats == ('mhp',):
+        p = per * 4 / 100
+        if n > 1:
+            return f'伤害：每段自身最大生命的 {p:g}%，{n} 段合计{each_t}自身最大生命的 {p * n:g}%'
+        return f'伤害：自身最大生命的 {p:g}%'
+    each = '＋'.join(f'{STAT_NAME[k]}×{per}%' for k in stats)
+    if n > 1:
+        tot = '＋'.join(f'{STAT_NAME[k]}×{per * n}%' for k in stats)
+        return f'伤害：每段{each}，{n} 段合计{each_t}{tot}'
+    return f'伤害：{each}'
+
+
+def extras(sk, row, states):
+    """改写后记录里还留着的附加效果（状态、序列挂状态、必中、TP、吸血、扣血、道具消耗），逐条写进卡面。"""
+    out = []
+    rm = {tuple(e) for e in row.get('effects_remove', [])}
+    caps = {(e['code'], e['dataId']): e['value1'] for e in row.get('effects', [])}
+    for e in sk['effects']:
+        if (e['code'], e['dataId']) in rm:
+            continue
+        if e['code'] == 21 and e['dataId'] > 0:
+            rate = caps.get((21, e['dataId']), e['value1'])
+            out.append(f'命中时附加「{states[e["dataId"]]["name"]}」' + (f'（{rate * 100:g}% 几率）' if rate < 1 else ''))
+    seq = sk.get('yepSeq') or {}
+    for ph in ('target', 'whole'):
+        for c in seq_edit(seq.get(ph, []), row.get('seq', [])):
+            m = re.match(r'(?i)add state (\d+)$', str(c[0]).strip())
+            if m:
+                nm = states[int(m.group(1))]['name']
+                out.append(f'自身获得「{nm}」' if c[1] and str(c[1][0]).lower() == 'user' else f'附加「{nm}」')
+    if sk['hitType'] == 0 and sk['damage']['type'] in (1, 2, 5, 6):
+        out.append('必定命中')
+    tg = int(sk.get('tpGain', 0))
+    if tg > 0 and not (row.get('kind') == '普攻' and tg == 10):
+        out.append(f'每段命中回复 {tg} TP')
+    note = sk['note']
+    for m in re.finditer(r'(?i)<HP Life Steal:\s*(\d+)%>', note):
+        out.append(f'吸取造成伤害 {m.group(1)}% 的生命')
+    for m in re.finditer(r'(?i)<HP Cost:\s*(\d+)(%?)>', note):
+        out.append(f'施放时消耗自身最大生命的 {m.group(1)}%' if m.group(2) else f'施放时消耗 {m.group(1)} 生命')
+    for m in re.finditer(r'(?i)<Item (\d+) Cost:\s*(\d+)>', note):
+        out.append(f'施放时消耗「{_items()[int(m.group(1))]["name"]}」×{m.group(2)}')
+    out += EXTRA.get(sk['id'], [])
+    seen, res = set(), []
+    for x in out:
+        if x not in seen:
+            seen.add(x)
+            res.append(x)
+    return res
+
+
+def describe(sk, row, stats, per, per_target, rand, area, elem_txt, states):
+    head = _target_phrase(sk, per_target, rand, area, elem_txt)
+    ex = extras(sk, row, states)
+    if ex:
+        head += '；' + '，'.join(ex)
+    n = per_target if area else per_target * rand
+    return head, dmg_text(stats, per, n, area)
+
+
+def header_fix(sk, rand, area, tp, hits):
+    """顶栏（<pos=APs text=键:值>）跟改写对齐：对象／攻击对象按改写后的范围，TP 消耗按改写后的值。"""
+    h = {}
+    ally = sk['scope'] in (7, 8, 9, 10, 11)
+    obj = (f'随机敌人{rand}次' if rand > 1 else ('全体友方' if ally else '全体敌人') if area
+           else ('自身' if sk['scope'] == 11 else ('单个友方' if ally else '单个敌人')))
+    for key in ('对象', '攻击对象'):
+        if f'<pos=APs text={key}:' in sk['note']:
+            h[key] = obj
+    if '<pos=APs text=TP消耗:' in sk['note']:
+        h['TP消耗'] = str(tp) if tp else '无'
+    return h
+
+
+def effect_header_subs(sk, hits):
+    """顶栏「效果:N段伤害…」按改写后的段数改（湮灭黑洞末段打全体已去掉）。"""
+    subs = []
+    for m in re.finditer(r'<pos=APs text=效果:([^>]*?段伤害[^>]*?) size=', sk['note']):
+        old = m.group(1)
+        new = f'{hits}段伤害'
+        if old != new:
+            subs.append([re.escape(f'<pos=APs text=效果:{old} size='), f'<pos=APs text=效果:{new} size='])
+    return subs
+
+
 def damage_row(sk, elements, states):
     sid, scope = sk['id'], sk['scope']
     area = scope in (2, 8, 10)
@@ -199,37 +333,19 @@ def damage_row(sk, elements, states):
                 caps.append({'code': 21, 'dataId': e['dataId'], 'value1': 0.25})
     if caps:
         row['effects'] = caps
-    header = {}
+    elem_txt = elem_text(elements, sk['damage']['elementId'], physical)
+    head, dmg_line = describe(sk, row, stats, per_stat_pct, per_target, rand, area, elem_txt, states)
+    row['desc'] = [f'效果：{head}', dmg_line]
+    row['desc'].append('消耗：TP 35' if physical else f'消耗：最大魔法{row["mp_pct"]}%')
+    row['desc'].append(f'冷却：{cd}回合')
+    header = header_fix(sk, rand, area, row.get('tp', 0), per_target * rand)
     if '<pos=APs text=冷却时间:' in sk['note']:
         header['冷却时间'] = f'{cd}回合'
     if header:
         row['header'] = header
-    elem = elements[sk['damage']['elementId']] if 0 < sk['damage']['elementId'] < len(elements) else ''
-    if sk['damage']['elementId'] == -1:
-        elem = ''
-    if rand > 1:
-        target = f'随机攻击敌人 {rand} 次（每次 {per_target} 段），共 '
-    else:
-        target = '对全体敌人造成' if area else '对单个敌人造成'
-    seg = f'{hits} 段' if hits > 1 else '一段'
-    if area and per_target > 1:
-        target, seg = '对全体敌人各造成', f'{per_target} 段'
-    elem_txt = f'{elem}伤害' if elem and elem != '物理' else ('物理伤害' if physical else '魔法伤害')
-    names = '、'.join(STAT_NAME[k] for k in stats)
-    each = f'{names}{"各" if len(stats) > 1 else ""}×{per_stat_pct}%'
-    if stats == ('mhp',):
-        each = f'最大生命×{per_stat_pct * 4 / 100:g}%'
-    if (per_target if area else hits) > 1:
-        n = per_target if area else hits
-        tot = f'{per_stat_pct * n * 4 / 100:g}%' if stats == ('mhp',) else f'{per_stat_pct * n * len(stats)}%'
-        dmg_line = f'伤害：每段 {each}，{n} 段合计×{tot}'
-    else:
-        dmg_line = f'伤害：{each}'
-    if stats == ('mhp',):
-        dmg_line += '（生命按标准线折算，合计相当于物理攻击×%d%%）' % (per_stat_pct * hits)
-    row['desc'] = [f'效果：{target}{seg}{elem_txt}', dmg_line]
-    row['desc'].append('消耗：TP 35' if physical else f'消耗：最大魔法{row["mp_pct"]}%')
-    row['desc'].append(f'冷却：{cd}回合')
+    subs = effect_header_subs(sk, hits)
+    if subs:
+        row['note_sub'] = subs
     row['_note'] = (f'{TAG} 装备招批 1（漏项扫描 C 类）：原 {sk["damage"]["formula"][:60]}'
                     f' → 爆发档合计 {total}（{hits} 段×{per_stat_pct}%×{len(stats)} 属性），去固定底数／熟练度／条件连段')
     return row, hits
@@ -249,7 +365,7 @@ def plan():
     for sid in BATCH2_ATTACK:
         sk = skills[sid]
         assert sk['damage']['type'] in (1, 2, 5, 6), sid
-        rows[str(sid)], hits[sid] = attack_row(sk, elements)
+        rows[str(sid)], hits[sid] = attack_row(sk, elements, states)
     rows['4442'] = dict(BATCH2_HEAL_4442)
     return rows, hits
 
@@ -295,7 +411,7 @@ def attack_stats(sk):
     return tuple(k for k in order if w[k] * 2 >= top)[:2]  # 最多两项（主＋次），多属性平均吃的取系数最高的两项
 
 
-def attack_row(sk, elements):
+def attack_row(sk, elements, states):
     sid, scope = sk['id'], sk['scope']
     area = scope in (2, 8, 10)
     rand = scope - 2 if 3 <= scope <= 6 else 1
@@ -327,31 +443,127 @@ def attack_row(sk, elements):
            'damage': {'stats': w, 'coef': per / 100}, 'seq': ops}
     if re.search(r'(?i)<\s*Cooldown\s*:', sk['note']):
         row['note_remove'] = ['Cooldown']
-    if '<pos=APs text=冷却时间:' in sk['note']:
-        row['header'] = {'冷却时间': '无'}
     eff_rm = [[44, e['dataId']] for e in sk['effects'] if e['code'] == 44]
     if eff_rm:
         row['effects_remove'] = eff_rm
-    eid = sk['damage']['elementId']
-    elem = elements[eid] if 0 < eid < len(elements) else ''
-    elem_txt = f'{elem}伤害' if elem and elem != '物理' else ('物理伤害' if eid in (-1, 0, 1) else '伤害')
-    if stats == ('mhp',):
-        each = f'最大生命×{per * 4 / 100:g}%'
+    elem_txt = elem_text(elements, sk['damage']['elementId'], True)
+    head, dmg = describe(sk, row, stats, per, per_target, rand, area, elem_txt, states)
+    if sid in UNLEASH:
+        row['desc'] = [f'效果：普通攻击时有几率改为施放这一招：{head}', dmg]
+    elif sid in CHANGE_TO_SRC:
+        row['desc'] = [f'效果：普通攻击变为{head}', dmg] + CHANGE_TO_SRC[sid]
+    elif sid in CHANGE_TO_DST:
+        row['desc'] = [f'效果：{CHANGE_TO_DST[sid]}{head}', dmg]
     else:
-        each = f'{"、".join(STAT_NAME[k] for k in stats)}{"各" if len(stats) > 1 else ""}×{per}%'
-    n = per_target if area else hits
-    if rand > 1:
-        head = f'效果：普通攻击变为随机攻击敌人 {rand} 次（每次 {per_target} 段）的{elem_txt}'
-    elif area:
-        head = f'效果：普通攻击变为对全体敌人各 {per_target} 段的{elem_txt}' if per_target > 1 else f'效果：普通攻击变为对全体敌人的{elem_txt}'
-    else:
-        head = f'效果：普通攻击变为 {hits} 段{elem_txt}' if hits > 1 else f'效果：普通攻击变为{elem_txt}'
-    tot = f'{per * n * len(stats) * (4 if stats == ("mhp",) else 1) / (100 if stats == ("mhp",) else 1):g}%'
-    dmg = f'伤害：每段 {each}，{n} 段合计×{tot}' if n > 1 else f'伤害：{each}'
-    row['desc'] = [head, dmg]
+        row['desc'] = [f'效果：普通攻击变为{head}', dmg]
+    header = header_fix(sk, rand, area, 0, per_target * rand)
+    if '<pos=APs text=冷却时间:' in sk['note']:
+        header['冷却时间'] = '无'
+    if header:
+        row['header'] = header
+    subs = effect_header_subs(sk, hits)
+    if subs:
+        row['note_sub'] = subs
     row['_note'] = (f'{TAG} 装备招批 2（替换普攻，Kyo 事项 82 甲）：原 {sk["damage"]["formula"][:60]}'
                     f' → 普攻{"招牌 1.5" if sig else " 1.0"}{"（全体减半）" if area else ""}，{hits} 段×{per}%×{len(stats)} 属性，去固定底数／熟练度／条件连段／耗蓝冷却')
     return row, hits
+
+
+# ---- 装备面板（T549 R1 P2-3）：给替换普攻／武器触发招的装备，卡上描述这招的特效行按改写后的招重写 ----
+# 认「描述这招」的行：提到普通攻击／普攻／攻击变、攻击会、攻击附、几率触发…（不含攻击次数、攻击后挂状态这类装备自身或序列里留着的效果）
+CARD_LINE_RE = re.compile(r'(普通攻击|普攻|攻击(?:会|变|有|附|时|无视|随机)|几率触发|施展魔法剑招)')  # 「攻击属性:X」是武器自带的普攻属性特性，不动
+CARD_LINE_SKIP = re.compile(r'攻击次数')
+APS_RE = re.compile(r'<pos=APs text=((?:\\c\[1\])?)([^>]*?)( size=[^>]*)>')
+UNLEASH_RE = re.compile(r'<Weapon Unleash (\d+)%:\s*(\d+)>')
+REPLACE_RE = re.compile(r'<Replace Attack:\s*(\d+)>')
+
+
+def _summary(row):
+    head = row['desc'][0].removeprefix('效果：')
+    dmg = row['desc'][1].removeprefix('伤害：') if len(row['desc']) > 1 and row['desc'][1].startswith('伤害：') else ''
+    if head.startswith('普通攻击时有几率改为施放这一招：'):
+        head = head.removeprefix('普通攻击时有几率改为施放这一招：')
+    return head + (f'；{dmg}' if dmg else '')
+
+
+def gear_card(gear, rows, skills):
+    """返回 (note_sub 列表, 对照行)。只动描述替换普攻／武器触发的行；第一行换成新说明，其余同类行删掉。"""
+    note = gear['note']
+    parts = []
+    for m in REPLACE_RE.finditer(note):
+        sid = int(m.group(1))
+        if str(sid) in rows:
+            row = rows[str(sid)]
+            t = row['desc'][0].removeprefix('效果：')
+            if len(row['desc']) > 1 and row['desc'][1].startswith('伤害：'):
+                t += '；' + row['desc'][1].removeprefix('伤害：')
+            t += ''.join('；' + x.removeprefix('效果：') for x in row['desc'][2:] if x.startswith('效果：'))
+            parts.append(t)
+    un = [(int(m.group(1)), int(m.group(2))) for m in UNLEASH_RE.finditer(note) if str(int(m.group(2))) in rows]
+    if un:
+        segs = []
+        for i, (rate, sid) in enumerate(un):
+            lead = '普通攻击时' if i == 0 else '没触发时再'
+            segs.append(f'{lead}有 {rate}% 几率改为施放「{rows[str(sid)]["name"]}」（{_summary(rows[str(sid)])}）')
+        parts.append('，'.join(segs))
+    if not parts:
+        return [], []
+    text = '；'.join(parts)
+    hits = [m for m in APS_RE.finditer(note) if CARD_LINE_RE.search(m.group(2)) and not CARD_LINE_SKIP.search(m.group(2))]
+    if not hits:
+        return [], []
+    # 正则对（锚点＝行首括号前的特效名；没有括号的取能在本件里唯一认出这一行的开头几个字）。
+    # 不按整行逐字：XTextFix 读表时会就地修字（枪决→枪诀、终伤→伤害、标点配平），整行字面对不上；锚点后面到 size= 前整段换掉
+    texts = [m.group(1) + m.group(2) for m in APS_RE.finditer(note)]
+    pairs, review = [], []
+    for i, m in enumerate(hits):
+        old = m.group(2)
+        lm = re.match(r'([^(（]+?)\s*[(（]', old)
+        prefix = lm.group(1) if lm and not CARD_LINE_RE.search(lm.group(1)) else ''
+        anchor = m.group(1) + (prefix if prefix else old[:6])
+        if not prefix:
+            k = 6
+            while k < len(old) and sum(1 for t in texts if t.startswith(m.group(1) + old[:k])) > 1:
+                k += 1
+            anchor = m.group(1) + old[:k]
+        assert sum(1 for t in texts if t.startswith(anchor)) == 1, (gear['id'], anchor)
+        body = '(?=[(（])[^>]*?(?= size=)' if prefix else '[^>]*?(?= size=)'
+        if i == 0:
+            new = f'({text})' if prefix else f'特效:{text}'
+            assert '\\' not in new and '$' not in new, new
+            if prefix:
+                pairs.append(['(<pos=APs text=' + re.escape(anchor) + ')' + body, '${1}' + new])
+            else:
+                pairs.append(['(<pos=APs text=' + re.escape(m.group(1)) + ')' + re.escape(anchor[len(m.group(1)):]) + body, '${1}' + new])
+            review.append((old, (prefix + new) if prefix else new))
+        else:
+            pairs.append(['<pos=APs text=' + re.escape(anchor) + '[^>]*>\n?', ''])
+            review.append((old, '（删去，并入上一行）'))
+    return pairs, review
+
+
+def plan_gear_cards(rows):
+    """返回 (skill_rework.gear 新行, gear_elem_amp 追加的逐字替换, 对照)。已在 gear_elem_amp 的装备不能进 skill_rework.gear（两表不重叠）。"""
+    weapons = load(DB / 'Weapons.json')
+    armors = load(DB / 'Armors.json')
+    skills = load(DB / 'Skills.json')
+    ea = load(DATA / 'gear_elem_amp.json')
+    out, ea_subs, review = {}, {}, {}
+    for gtype, sec, tbl in (('weapon', 'weapons', weapons), ('armor', 'armors', armors)):
+        for g in tbl:
+            if not g:
+                continue
+            pairs, rv = gear_card(g, rows, skills)
+            if not pairs:
+                continue
+            key = f'{gtype}:{g["id"]}'
+            review[key] = (g['name'], rv)
+            if str(g['id']) in ea.get(sec, {}):
+                ea_subs[(sec, str(g['id']))] = [p + ['re'] for p in pairs]  # gear_elem_amp.subs 第三项 re：按正则替换（XTianqiGear._rewrite_elem_amp_note）
+                continue
+            out[key] = {'name': g['name'], 'note_sub': pairs,
+                        '_note': f'{TAG} R1 P2-3：卡上描述替换普攻／武器触发的特效行按改写后的招重写（目标、段数、属性、附加效果）'}
+    return out, ea_subs, review
 
 
 def apply(sr, rows):
@@ -359,7 +571,7 @@ def apply(sr, rows):
     for k, v in rows.items():
         if k in out['skills'] and not str(out['skills'][k].get('_note', '')).startswith(TAG):
             raise SystemExit(f'skills/{k} 已在改写表里、不是本单写的，不覆盖')
-        out['skills'][k] = v
+        out['skills'][k] = {**v, 'actor_only': True}  # T549 R1 P1-1：装备招改写只给我方，敌人共用同号技能照原记录（XDB.foe_skill）
     for k, v in BATCH1_STATES.items():
         out['states'][str(k)] = v
     s995 = out['skills']['995']
@@ -367,7 +579,8 @@ def apply(sr, rows):
     s995['desc'] = SKILL_995_PATCH['desc']
     for k, lines in DESC_PATCH.items():
         out['skills'][k]['desc'] = lines
-    for k, v in BATCH1_GEAR.items():
+    cards, _, _ = plan_gear_cards(rows)
+    for k, v in {**BATCH1_GEAR, **cards}.items():
         if k in out['gear'] and not str(out['gear'][k].get('_note', '')).startswith(TAG):
             raise SystemExit(f'gear/{k} 已在改写表里、不是本单写的，不覆盖')
         out['gear'][k] = v
@@ -409,9 +622,10 @@ ELEM_AMP_SUBS = {
 }
 
 
-def apply_elem_amp(ea):
+def apply_elem_amp(ea, rows):
     out = json.loads(json.dumps(ea))
-    for (sec, k), pairs in ELEM_AMP_SUBS.items():
+    _, card_subs, _ = plan_gear_cards(rows)
+    for (sec, k), pairs in {**ELEM_AMP_SUBS, **card_subs}.items():
         row = out[sec][k]
         subs = row.setdefault('subs', [])
         for p in pairs:
@@ -422,8 +636,8 @@ def apply_elem_amp(ea):
 
 # T541 核 P3-4：卡面写「每段×%，N 段合计×%」
 DESC_PATCH = {
-    '3549': ['效果：六段物理伤害', '伤害：每段 物理攻击、敏捷各×25%，6 段合计×300%', '冷却：3回合'],
-    '3624': ['效果：三段神圣伤害', '伤害：每段 魔法攻击×100%，3 段合计×300%', '消耗：最大魔法10%', '冷却：3回合'],
+    '3549': ['效果：六段物理伤害', '伤害：每段物理攻击×25%＋敏捷×25%，6 段合计物理攻击×150%＋敏捷×150%', '冷却：3回合'],
+    '3624': ['效果：三段神圣伤害', '伤害：每段魔法攻击×100%，3 段合计魔法攻击×300%', '消耗：最大魔法10%', '冷却：3回合'],
 }
 
 
@@ -458,7 +672,7 @@ def main():
     if a.list:
         for k, v in rows.items():
             print(k, v['name'], v['kind'], v.get('damage', v.get('heal')), 'cd', v.get('cooldown'), '|', ' / '.join(v['desc']))
-    if new == sr and apply_elem_amp(load(DATA / 'gear_elem_amp.json')) == load(DATA / 'gear_elem_amp.json'):
+    if new == sr and apply_elem_amp(load(DATA / 'gear_elem_amp.json'), rows) == load(DATA / 'gear_elem_amp.json'):
         print(f'{TAG}：改写表已是最新（{len(rows)} 招）')
         return 0
     if not a.write:
@@ -473,7 +687,7 @@ def main():
     path.write_text(text, encoding='utf-8')
     ea_path = DATA / 'gear_elem_amp.json'
     ea = load(ea_path)
-    ea_new = apply_elem_amp(ea)
+    ea_new = apply_elem_amp(ea, rows)
     text = ea_path.read_text(encoding='utf-8')
     for sec in ('weapons', 'armors'):
         for k, v in ea_new[sec].items():

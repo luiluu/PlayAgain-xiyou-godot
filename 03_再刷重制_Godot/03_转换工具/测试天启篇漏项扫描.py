@@ -469,6 +469,42 @@ class TestLeakScanner(unittest.TestCase):
             SCAN.CLASS_C_EXEMPT.clear()
             SCAN.CLASS_C_EXEMPT.update(old)
 
+    def test_class_c_change_to_from_reworked_source(self) -> None:
+        """T549 R1 P2-1：来源招已改写、变招目标没改写，也要列出（原来只从未改写的来源追）。"""
+        skills = {
+            601: {"id": 601, "name": "红牌", "stypeId": 1, "damage": {"type": 1, "formula": "a.atk * 4"}, "effects": [],
+                  "note": "<ChangeTo[602]: Math.random() < 0.2>\n<ChangeTo[603]: Math.random() < 0.2>"},
+            602: {"id": 602, "name": "黄牌", "stypeId": 1, "damage": {"type": 1, "formula": "a.atk * 4"}, "effects": [], "note": ""},
+            603: {"id": 603, "name": "蓝牌", "stypeId": 1, "damage": {"type": 1, "formula": "a.atk * 4"}, "effects": [], "note": ""},
+        }
+        weapons = {1: {"id": 1, "name": "卡牌", "traits": [], "note": "<Replace Attack: 601>"}}
+        eff_sr = {"tiers": {"不开放": []}, "skills": {"601": {"name": "红牌"}, "603": {"name": "蓝牌"}}, "gear": {}, "states": {}}
+        res = SCAN.scan_class_c(eff_sr, {}, {}, {}, skills, {}, weapons, {})
+        by_id = {it["id"]: it for it in res["items"]}
+        self.assertEqual(set(by_id), {602})
+        self.assertEqual(by_id[602]["channels"], ["change_to"])
+        self.assertEqual(res["unexempted_count"], 1)
+
+    def test_real_repo_yellow_card_removed_strict_fails(self) -> None:
+        """T549 R1 P2-1：真库内存里删掉黄牌 3652 的改写，--strict 要拦、要列出 3652。"""
+        orig = SCAN.load_effective_skill_rework
+        def patched():
+            sr = orig()
+            sr["skills"].pop("3652", None)
+            return sr
+        SCAN.load_effective_skill_rework = patched
+        try:
+            import contextlib, io, json as _json
+            buf = io.StringIO()
+            with contextlib.redirect_stdout(buf):
+                rc = SCAN.main(["--strict", "--json"])
+            self.assertEqual(rc, 1)
+            items = {it["id"]: it for it in _json.loads(buf.getvalue())["class_c"]["items"]}
+            self.assertIn(3652, items)
+            self.assertIn("change_to", items[3652]["channels"])
+        finally:
+            SCAN.load_effective_skill_rework = orig
+
     def test_real_repo_strict_passes(self) -> None:
         rc = SCAN.main(["--strict", "--json"])
         self.assertEqual(rc, 0)

@@ -44,6 +44,9 @@ var _break := false
 var _phase := ""
 var _line := -1
 var _group_hit := {}
+## 最近一条 ACTION EFFECT 有没有命中（有一个目标没被闪避、没落空就算）：HP／MP／TP 命令带参数 hit 时只在命中后执行（T549 R1 汲血斩命中回血；
+## 不用 if 块：YEP 条件栈在假分支里会被内层 end 提前出栈，995 原有的血月三件套嵌套条件会乱）
+var _last_hit := false
 ## 当前在跑的那一段指令表（T268：算本条 ACTION EFFECT 是第几段）
 var _list: Array = []
 ## 数值序列持有独立结果槽；嵌套时只共享当前战斗的Boss域。
@@ -219,6 +222,8 @@ func _command(name: String, args: Array) -> void:
 		return
 	m = RegEx.create_from_string("^(HP|MP|TP)[ ](.*)").search(name)
 	if m:
+		if args.any(func(x): return str(x).strip_edges().to_lower() == "hit") and not _last_hit:
+			return  # 天启篇改写加的 hit 参数（原版数据没有）：上一段没命中就不执行
 		_modify(m.get_string(1), name, make_targets(str(args[0]) if not args.is_empty() else ""))
 		return
 	m = RegEx.create_from_string("^(ADD|REMOVE)[ ](.*)[ ](BUFF|DEBUFF)").search(name)
@@ -277,6 +282,7 @@ func _action_effect(args: Array) -> void:
 		list = list.filter(func(x): return _group_once(x))
 	# T268 天启篇命运编织者：终极命运逐段换属性、副属性抬下限收窄浮动（XTianqiSkills.seg_view；别的招 seg_on 为假，原记录照用）
 	var sk := XTianqiSkills.seg_view(user, skill, _seg_index()) if XTianqiSkills.seg_on(user, skill) else skill
+	_last_hit = false
 	for t0 in list:
 		var t = XTianqiWeakAffix.segment_target(logic, user, skill, t0) if t0 != null else null  # 天启篇弱者专属词条：引导者这一段前不合法回原目标、都不合法跳过
 		if t == null:
@@ -287,7 +293,11 @@ func _action_effect(args: Array) -> void:
 				t = rt
 			if t.is_dead():
 				continue
-		logs.append_array(logic.mark_views(logic._invoke(user, sk, t)))
+		var got: Array = logic.mark_views(logic._invoke(user, sk, t))
+		for x in got:
+			if x is Dictionary and x.get("type") == "hit" and is_same(x.get("user"), user) and not bool(x.get("missed", false)) and not bool(x.get("evaded", false)):
+				_last_hit = true
+		logs.append_array(got)
 
 
 ## 本条 ACTION EFFECT 在这一段指令表里是第几条（0 起，条件块里的也算）

@@ -7,9 +7,20 @@ extends Node
 ## 3) 专属增伤封顶：天眼之冠 SkillPass3624、猫爪 SkillPass3647、墨锐四件 SkillPass2639／0939／0971 在天启篇视图里压到 20%（墨锐 5～20%），西游档原值。
 ## 4) 复活／治疗：先祖之魂、龙马复活术复活后 30% 生命；风语者祝福 12%；痛饮回 10% 魔法。
 ## 5) 西游档零改动：关掉改写后每招公式、耗蓝、TP 跟 Skills.json 原记录一致。
+## 6) T549 R1 P1-1 敌方共用招：敌方行动表引用本单技能的 42 个敌人，敌方视角（XDB.foe_skill）拿到的是关掉技能重构时的原记录；
+##    同一天启篇存档里实际敌方选招（XTianqiEnemyAI.enemy_action）拿原记录、出手伤害跟关改写时逐种子相同；
+##    同存档我方装备者的替换普攻（捕猎长枪 179）、武器触发（狼神爪 259）、装备授予主动（徘徊 雷行 3650）照样是改写记录。
+## 7) T549 R1 P2-4 汲血斩只在命中时回血（目标闪避满时 0 回血）；P2-3／P2-4 卡面：技能卡逐行进备注、无开发用语，
+##    装备面板描述替换普攻／武器触发的特效行全部换成改写后的说明（skill_rework.gear 与 gear_elem_amp 两路）。
 
 const T541 = preload("res://tests/xiyou_t541_equip_skills.gd")
 const SEEDS := ["0000000000000001", "0000000000000002", "0000000000000003"]
+
+## 测试用：命中率恒 0（汲血斩落空不回血）
+class MissLogic extends XBattleLogic:
+	func item_hit(_u: XBattler, _skill: Dictionary, _t: XBattler) -> float:
+		return 0.0
+
 
 var passed := 0
 var total := 0
@@ -165,7 +176,27 @@ func _test_995() -> void:
 		# 每段回 7%：总回血在 n×7% 附近（取整误差和吸血之类留 1 点余量）
 		check("t549.995.heal_%s" % ("set" if with_set else "noset"), absf((a.hp - hp0) - per * n) <= float(n) + 1.0, {"heal": a.hp - hp0, "expect": per * n, "mhp": a.mhp})
 	var desc := str(XTianqiSkills.spec(995).get("desc", []))
-	check("t549.995.card", desc.contains("7%") and desc.contains("额外释放一次") and desc.contains("2 段合计×100%"), desc)
+	check("t549.995.card", desc.contains("每段挥击命中后恢复自身 7% 最大生命") and desc.contains("血月披风、血月护手和血月腰带") and desc.contains("两段合计物理攻击×100%"), desc)
+	# 未命中不回血（R1 P2-4）：目标挂银鳞盾（闪避 +1000%），两段都闪掉
+	var s2: XState = h._make_tianqi([3, 1, 2, 4], 25)
+	var a2 := _actor(s2)
+	h._equip_weapon(a2, 1105)
+	a2.refresh_passive()
+	a2.recover_all()
+	a2.hp = floorf(a2.mhp * 0.2)
+	var hp1 := a2.hp
+	var lg2 := MissLogic.new()  # 命中率压成 0：两段都落空
+	lg2.elite_roll = 100.0
+	lg2.setup(2, s2, XBattleRandom.create(SEEDS[0]))
+	for e in lg2.enemies:
+		e.add_param(0, 1e9)
+		e.param_refresh()
+		e.hp = e.mhp
+	lg2.start_turn()
+	var logs2 := lg2.act(a2, XDB.rec("Skills", 995), lg2.enemies[0])
+	var landed := logs2.filter(func(r): return r is Dictionary and r.get("type") == "hit" and is_same(r.get("user"), a2) and not r.missed and not r.evaded).size()
+	check("t549.995.miss_all", landed == 0, landed)
+	check("t549.995.no_heal_on_miss", is_equal_approx(a2.hp, hp1), {"hp": a2.hp, "hp0": hp1})
 
 
 func _skill_pass_of(kind: String, id: int, sid: int) -> String:
@@ -221,6 +252,226 @@ func _test_support() -> void:
 	check("t549.306.mp_10", mg >= 0.09 and mg <= 0.12, mg)
 
 
+## T549 改写行（actor_only）
+func _actor_only_ids() -> Array:
+	var out := []
+	for k in XTianqiSkills.data().get("skills", {}):
+		if XTianqiSkills.actor_only(int(k)):
+			out.append(int(k))
+	return out
+
+
+func _test_foe() -> void:
+	XTianqiSkills.ENABLED = true
+	XTianqiSkills.reload_table()
+	var s: XState = h._make_tianqi([3, 1, 2, 4], 25)
+	XState.current = s
+	var ids := _actor_only_ids()
+	check("t549.foe.actor_only_count", ids.size() == 170, ids.size())
+	var pairs := []  # [敌人号, 技能号]
+	var enemies := {}
+	var et: Array = XDB.table("Enemies")
+	for i in range(1, et.size()):
+		var e = XDB.rec("Enemies", i)
+		if not e is Dictionary or e.is_empty():
+			continue
+		for act in e.get("actions", []):
+			if int(act.skillId) in ids:
+				pairs.append([i, int(act.skillId)])
+				enemies[i] = true
+	check("t549.foe.enemy_refs_42", enemies.size() == 42, enemies.size())
+	var foe := {}
+	var mine := {}
+	for p in pairs:
+		foe[p[1]] = JSON.stringify(XDB.foe_skill(p[1]))
+		mine[p[1]] = XDB.rec("Skills", p[1])
+	XTianqiSkills.ENABLED = false
+	XTianqiSkills.reload_table()
+	var orig := {}
+	for sid in foe:
+		orig[sid] = JSON.stringify(XDB.rec("Skills", sid))
+	XTianqiSkills.ENABLED = true
+	XTianqiSkills.reload_table()
+	for p in pairs:
+		check("t549.foe.e%d.s%d.original" % [p[0], p[1]], foe[p[1]] == orig[p[1]], [p, str(foe[p[1]]).left(200)])
+	for sid in mine:
+		check("t549.foe.s%d.actor_still_rewritten" % sid, str(mine[sid].damage.formula) == "XTianqiSkills.formula(a,b,%d)" % sid, mine[sid].damage.formula)
+	# 实际敌方选招与出手：首领捕猎者（敌群 20／捕猎冲锋 179）、铠甲狼卡诺斯（26／大杀四方 259）、守层者诺萨（109／炎鬼 616）
+	for c in [[20, 19, 179], [26, 26, 259], [109, 112, 616]]:
+		var got := {}
+		for on in [true, false]:
+			# on＝本单（敌方视角）；false＝基线：同样开着技能重构，只把这招的 T549 改写行拿掉（＝T549 之前敌人看到的记录）
+			XTianqiSkills.ENABLED = true
+			XTianqiSkills.reload_table()
+			if not on:
+				XTianqiSkills._skills.erase(c[2])
+				XTianqiSkills._recs.clear()
+			for i in 60:
+				var seed := "%016x" % (5490 + i)
+				for m in s.members():
+					m.recover_all()
+				var lg: XBattleLogic = h._make_dummy_battle(s, c[0], seed)
+				var e: XEnemy = null
+				for x in lg.enemies:
+					if int(x.enemy_id) == c[1]:
+						e = x
+				if e == null:
+					break
+				var rec := XTianqiEnemyAI.enemy_action(lg, e)
+				if int(rec.get("id", 0)) != c[2]:
+					continue
+				var tgt: XActor = lg.alive(lg.actors)[0]
+				var dmg := 0.0
+				for r in lg.act(e, rec, tgt):
+					if r is Dictionary and r.get("type") == "hit" and is_same(r.get("user"), e):
+						dmg += maxf(0.0, float(r.get("hp", 0.0)))
+				if on:
+					check("t549.foe.ai.%d.formula_original" % c[2], not str(rec.damage.formula).begins_with("XTianqiSkills.formula"), rec.damage.formula)
+				got["%s:%s" % [on, seed]] = dmg
+		var same := 0
+		var n := 0
+		for k in got:
+			if str(k).begins_with("true:"):
+				n += 1
+				var k2 := "false:" + str(k).substr(5)
+				if got.has(k2) and is_equal_approx(float(got[k]), float(got[k2])):
+					same += 1
+		check("t549.foe.ai.%d.picked" % c[2], n > 0, got)
+		check("t549.foe.ai.%d.dmg_same_as_original" % c[2], n > 0 and same == n, got)
+		# 修前行为（敌我同读改写记录）对照：伤害确实不一样，证明上面这条断言管得住
+		XTianqiSkills.ENABLED = true
+		XTianqiSkills.reload_table()
+		XTianqiSkills.ACTOR_ONLY = false
+		var diff := false
+		for k in got:
+			if not str(k).begins_with("true:"):
+				continue
+			for m in s.members():
+				m.recover_all()
+			var lg5: XBattleLogic = h._make_dummy_battle(s, c[0], str(k).substr(5))
+			var e5: XEnemy = null
+			for x in lg5.enemies:
+				if int(x.enemy_id) == c[1]:
+					e5 = x
+			var rec5 := XTianqiEnemyAI.enemy_action(lg5, e5)
+			if int(rec5.get("id", 0)) != c[2]:
+				continue
+			var tgt5: XActor = lg5.alive(lg5.actors)[0]
+			var d5 := 0.0
+			for r in lg5.act(e5, rec5, tgt5):
+				if r is Dictionary and r.get("type") == "hit" and is_same(r.get("user"), e5):
+					d5 += maxf(0.0, float(r.get("hp", 0.0)))
+			if not is_equal_approx(d5, float(got[k])):
+				diff = true
+			break
+		XTianqiSkills.ACTOR_ONLY = true
+		check("t549.foe.ai.%d.prefix_differs" % c[2], diff, got)
+	XTianqiSkills.ENABLED = true
+	XTianqiSkills.reload_table()
+	# 同一存档里我方装备者照样走改写：替换普攻、武器触发、装备授予主动
+	# 我方用敌人共用的这些招（替换普攻 179／616／682／308、武器触发 259、装备授予 3650）：同一存档、同一场战斗里实打，走改写公式
+	var mine_hit := []
+	var a0 := _actor(s)
+	for sid in [179, 616, 682, 308, 259, 3650]:
+		a0.recover_all()
+		a0.tp = 100
+		a0.cooldowns.clear()
+		var lg3: XBattleLogic = h._make_dummy_battle(s, 2, SEEDS[0])
+		for r in lg3.act(a0, XDB.skill_for(a0, sid), lg3.enemies[0]):
+			if r is Dictionary and r.get("type") == "hit" and int((r.get("skill", {}) as Dictionary).get("id", 0)) == sid:
+				mine_hit.append([sid, str(r.skill.damage.formula)])
+				break
+	check("t549.mine.shared_ids_module_hit", mine_hit.size() == 6 and mine_hit.all(func(x): return str(x[1]) == "XTianqiSkills.formula(a,b,%d)" % int(x[0])), mine_hit)
+	var a := _actor(s)
+	h._equip_weapon(a, 393)
+	a.refresh_passive()
+	var un: Dictionary = {}
+	for i in 30:
+		var lg4: XBattleLogic = h._make_dummy_battle(s, 2, "%016x" % (7000 + i))
+		var sk := lg4.weapon_unleash(a, XDB.rec("Skills", a.attack_skill_id()))
+		if int(sk.get("id", 0)) == 259:
+			un = sk
+			break
+	check("t549.mine.unleash_259", not un.is_empty() and str(un.damage.formula) == "XTianqiSkills.formula(a,b,259)", un.get("damage", {}).get("formula"))
+	h._equip_weapon(a, 1613)
+	a.refresh_passive()
+	check("t549.mine.trait_3650", a.skills().any(func(x): return int(x.id) == 3650) and str(XDB.skill_for(a, 3650).damage.formula) == "XTianqiSkills.formula(a,b,3650)", XDB.skill_for(a, 3650).damage.formula)
+	# 回退开关：ACTOR_ONLY 关掉时敌方视角也是改写记录（回到 T549 交付时的行为）
+	XTianqiSkills.ACTOR_ONLY = false
+	check("t549.foe.rollback", str(XDB.foe_skill(616).damage.formula) == "XTianqiSkills.formula(a,b,616)", XDB.foe_skill(616).damage.formula)
+	XTianqiSkills.ACTOR_ONLY = true
+
+
+func _test_cards() -> void:
+	XTianqiSkills.ENABLED = true
+	XTianqiSkills.reload_table()
+	XState.current = h._make_tianqi([3, 1, 2, 4], 25)
+	var bad := ["标准线", "折算", "物攻×1", "各×", "命中后，"]
+	for sid in _actor_only_ids() + [995, 3549, 3624]:
+		var sp := XTianqiSkills.spec(sid)
+		var note := str(XDB.rec("Skills", sid).get("note", ""))
+		var ok := true
+		for line in sp.get("desc", []):
+			if not note.contains("\\c[1]" + str(line)):
+				ok = false
+			for w in bad:
+				if str(line).contains(w):
+					ok = false
+		check("t549.card.%d.desc" % sid, ok, sp.get("desc"))
+		for key in sp.get("header", {}):
+			check("t549.card.%d.header.%s" % [sid, key], note.contains("<pos=APs text=%s:%s " % [key, sp.header[key]]), sp.header)
+		if note.contains("<pos=APs text=TP消耗:"):
+			check("t549.card.%d.tp_header" % sid, note.contains("<pos=APs text=TP消耗:%s " % (str(int(sp.get("tp", 0))) if int(sp.get("tp", 0)) > 0 else "无")), sp.get("tp"))
+	# 指名：嘤嘤嘤顶栏随机三次、龙马补满 TP、风语者自然之风、红牌变牌、武器触发写「有几率」、搏命不写折算
+	check("t549.card.2797.target", str(XDB.rec("Skills", 2797).note).contains("<pos=APs text=对象:随机敌人3次 "), str(XDB.rec("Skills", 2797).note).left(400))
+	check("t549.card.6240.tp", str(XTianqiSkills.spec(6240).desc).contains("补满 TP"), XTianqiSkills.spec(6240).desc)
+	check("t549.card.861.state", str(XTianqiSkills.spec(861).desc).contains("「自然之风」"), XTianqiSkills.spec(861).desc)
+	check("t549.card.3651.change", str(XTianqiSkills.spec(3651).desc).contains("20% 几率改为黄牌") and str(XTianqiSkills.spec(3651).desc).contains("另有 20% 几率改为蓝牌"), XTianqiSkills.spec(3651).desc)
+	for sid in [127, 258, 259, 2802, 2806, 638]:
+		check("t549.card.%d.unleash_wording" % sid, str(XTianqiSkills.spec(sid).desc[0]).begins_with("效果：普通攻击时有几率"), XTianqiSkills.spec(sid).desc)
+	check("t549.card.3913.hp", str(XTianqiSkills.spec(3913).desc).contains("自身最大生命的 12%"), XTianqiSkills.spec(3913).desc)
+	check("t549.card.3549.dual", str(XTianqiSkills.spec(3549).desc).contains("每段物理攻击×25%＋敏捷×25%，6 段合计物理攻击×150%＋敏捷×150%"), XTianqiSkills.spec(3549).desc)
+	# 装备面板：skill_rework.gear 里 R1 的行，替换串都进了视图备注
+	var n_gear := 0
+	for key in XTianqiSkills.data().get("gear", {}):
+		var row: Dictionary = XTianqiSkills.data().gear[key]
+		if not str(row.get("_note", "")).begins_with("T549 R1"):
+			continue
+		n_gear += 1
+		var kind := "weapon" if str(key).begins_with("weapon") else "armor"
+		var item := XGear.template(kind, int(str(key).split(":")[1]))
+		var raw := str(item.get("note", ""))
+		var view := str(XTianqiGear.stat_list([item])[0].get("note", ""))
+		var ok := view != raw
+		for pr in row.note_sub:
+			var rep := str(pr[1]).replace("${1}", "")
+			if rep != "" and not view.contains(rep):
+				ok = false
+		check("t549.gearcard.%s" % key, ok, view.left(500))
+	# gear_elem_amp 路：旧整行不在、新整行在
+	var ea = JSON.parse_string(FileAccess.get_file_as_string("res://modes/xiyou/tianqi_data/gear_elem_amp.json"))
+	var n_ea := 0
+	for sec in ["weapons", "armors"]:
+		for gid in ea.get(sec, {}):
+			for pr in ea[sec][gid].get("subs", []):
+				if not (pr.size() >= 3 and str(pr[2]) == "re"):
+					continue
+				n_ea += 1
+				var item2 := XGear.template("weapon" if sec == "weapons" else "armor", int(gid))
+				var view2 := str(XTianqiGear.stat_list([item2])[0].get("note", ""))
+				var rep2 := str(pr[1]).replace("${1}", "")
+				check("t549.gearcard.ea.%s.%s.%d" % [sec, gid, n_ea], RegEx.create_from_string("(?s)" + str(pr[0])).search(str(item2.get("note", ""))) != null and (rep2 == "" or view2.contains(rep2)), view2.left(500))
+	check("t549.gearcard.count", n_gear + n_ea >= 100, [n_gear, n_ea])
+	# 指名：决斗者、灵魂收割者、一粒尘旧说法不在
+	for c in [[675, "敏捷高于对方则攻击3次"], [965, "5倍伤害"], [745, "提高3倍"], [1176, "666666"]]:
+		var v := str(XTianqiGear.stat_list([XGear.template("weapon", c[0])])[0].get("note", ""))
+		check("t549.gearcard.named.%d" % c[0], not v.contains(c[1]), v.left(400))
+	check("t549.gearcard.1176_prefix", str(XTianqiGear.stat_list([XGear.template("weapon", 1176)])[0].note).contains("\\c[13]符石:破晓(普通攻击变为"), "")
+	# 西游档：装备面板原样
+	XState.current = h._make_xiyou([3])
+	check("t549.gearcard.xiyou_raw", str(XTianqiGear.stat_list([XGear.template("weapon", 675)])[0].get("note", "")).contains("敏捷高于对方则攻击3次"), "")
+
+
 func _run() -> void:
 	h = T541.new()
 	var was_en := XTianqiSkills.ENABLED
@@ -228,10 +479,13 @@ func _run() -> void:
 	var was_auto := XMessageBox.auto
 	XEnemy.force_roll = 100.0
 	XMessageBox.auto = true
-	_test_rows()
+	if OS.get_environment("T549_QUICK") != "1":  # 本地调试新断言时跳过逐招三种子对照（约 10 分钟）
+		_test_rows()
 	_test_995()
 	_test_skill_pass()
 	_test_support()
+	_test_foe()
+	_test_cards()
 	XTianqiSkills.ENABLED = was_en
 	XTianqiSkills.reload_table()
 	XEnemy.force_roll = was_force

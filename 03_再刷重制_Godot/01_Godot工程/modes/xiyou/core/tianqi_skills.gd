@@ -206,10 +206,22 @@ static func cards_flag() -> bool:
 	return CARDS or XTianqiBase.PHASE4
 
 
+## T549 R1 P1-1：敌方视角（XDB.foe_skill／skill_for 设）。开着时 actor_only 的改写行（装备招，T549）不套，返回原记录；
+## 敌方选招、可用性、强制行动都走敌方视角。false＝回退到敌我同读改写记录（ACTOR_ONLY 关掉同效）
+static var foe_view := false
+static var ACTOR_ONLY := true
+
+
+static func actor_only(id: int) -> bool:
+	return ACTOR_ONLY and bool(spec(id).get("actor_only", false))
+
+
 ## base._tq_always（五条悟这类天启篇专属、底表只放底子的招）：卡总开关关着也套卡；整条链只在这里 build 一次（T209 R1 P1-1：原来 gojo.gd 底表先 build 一次、这里再 build 一次，split_effects 叠乘）
 static func rec(id: int, base: Dictionary) -> Dictionary:
 	if base.is_empty() or not has(id) or not (cards_on() or bool(base.get("_tq_always", false))):
 		return base
+	if foe_view and actor_only(id):
+		return base  # T549 R1 P1-1：装备招改写只给我方装备来源，敌方共用招（捕猎冲锋、炎鬼等 42 个敌人）照原记录
 	var hit = _recs.get(id)
 	if hit is Array and is_same(hit[0], base):
 		return hit[1]
@@ -351,6 +363,10 @@ static func _seq_edit(cmds: Array, ops: Array) -> Array:
 				for c in out:
 					if str(c[0]) == str(op.get("match", "")):
 						c[0] = str(op.get("to", ""))
+			"hit_only":  # 命令参数末尾加 hit：上一段 ACTION EFFECT 命中了才执行（T549 R1：汲血斩 Hp +7% 只在命中时回，XActionSequence 认）
+				for c in out:
+					if str(c[0]) == str(op.get("match", "")) and c.size() > 1 and c[1] is Array and not (c[1] as Array).has("hit"):
+						(c[1] as Array).append("hit")
 			"drop_area_effects":  # 删掉带参数（action effect: enemies 这类打全体）的段（莉娜炎帝：全体那段改成另放一招）
 				out = out.filter(func(c): return not (str(c[0]) == "action effect" and not (c[1] as Array).is_empty()))
 			"drop_cmd":  # 删掉某条命令（劲夫乱打开头的 Add State 942：印记要先挂上才引爆）

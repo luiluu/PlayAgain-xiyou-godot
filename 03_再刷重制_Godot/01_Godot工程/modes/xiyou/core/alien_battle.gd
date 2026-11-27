@@ -1779,7 +1779,7 @@ static func blocks_borrowed(s: XState, a, skill: Dictionary) -> bool:
 static func observe(logic, root: Dictionary) -> void:
 	var u = root.subject
 	var item: Dictionary = root.item
-	if not u is XEnemy or XBattleLogic.is_item(item) or not XAlienation.borrowable(XDB.rec("Skills", int(item.get("id", 0)))):
+	if not u is XEnemy or XBattleLogic.is_item(item) or not XAlienation.borrowable(XDB.foe_skill(int(item.get("id", 0)))):
 		return
 	var id := int(item.id)
 	for a in logic.actors:

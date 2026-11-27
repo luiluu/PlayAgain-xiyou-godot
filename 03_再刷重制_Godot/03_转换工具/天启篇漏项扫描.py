@@ -83,6 +83,7 @@ PENDING_CLASS_A: list[tuple[str, str, str, str]] = [
     ("skills", "4701", r"^AgainUseAll$", "食人魔·血脉（Boss血脉未停用）：AgainUseAll 已被 tianqi_skills.gd again_sources() 拦截不生效"),
     ("skills", "4706", r"^(?:passivePBST[35]|passiveHarmRe\d+)$", "天尊·血脉（Boss血脉未停用）：无%固定双防+100/减伤+500，待核是否清理"),
     ("skills", "4707", r"^passivePBST[67]$", "圣兽·血脉（Boss血脉未停用）：无%固定敏幸+100，待核是否清理"),
+    ("gear", "weapon:1552", r"^passiveHarmRi$", "烧火棍终伤 +50%：T549 R1 只为改卡面（噬魂）进 gear 表，装备本体数值不在 T549 范围，同其他未改装备待装备数值线"),
 ]
 
 
@@ -997,6 +998,7 @@ def scan_class_c(
     by_skill: dict[int, list[dict]] = defaultdict(list)
     manual: list[dict] = []
     dropped: list[dict] = []
+    granted: set[int] = set()  # 有效装备授予的全部技能（含已改写的）：变招追踪的起点（T549 R1 P2-1）
 
     for gtype, tbl in (("weapon", weapons), ("armor", armors)):
         for gid in sorted(tbl):
@@ -1044,6 +1046,8 @@ def scan_class_c(
                 if (ch, sid) in seen_eff:
                     continue
                 seen_eff.add((ch, sid))
+                if not hidden_only:
+                    granted.add(sid)
                 if sid in reworked_skills:
                     continue
                 has_unreworked_eff = True
@@ -1099,6 +1103,8 @@ def scan_class_c(
                     manual.append({"gear": f"suit:{suit_id}", "gear_name": sname, "channel": "suit_skill",
                                    "raw": repr(sid), "reason": "套装 skills 不是正整数技能号，追不到", "high_risk": True})
                     continue
+                if not (str(suit_id) in tpl_ids and n > 1):
+                    granted.add(sid)
                 if sid in reworked_skills:
                     continue
                 raw = f"套装{suit_id}（{n}件）skills:{sid}"
@@ -1109,17 +1115,18 @@ def scan_class_c(
                     continue
                 by_skill[sid].append({"gear": f"suit:{suit_id}", "gear_name": sname, "channel": "suit_skill", "raw": raw})
 
-    # T549：装备招带 <ChangeTo[号]: 条件> 的（红牌 3651 两成变黄牌 3652／蓝牌 3653），变出来的招同样要改写，沿链追
-    queue = list(by_skill)
+    # T549：装备招带 <ChangeTo[号]: 条件> 的（红牌 3651 两成变黄牌 3652／蓝牌 3653），变出来的招同样要改写，沿链追。
+    # 起点是全部有效授予的技能（含已改写的来源招，T549 R1 P2-1：原来只从未改写的追，红牌已改写时黄牌漏改也扫不出）；
+    # 每个目标是否已改写单独判
+    queue = sorted(granted | set(by_skill))
     seen_ct = set(queue)
     while queue:
         src = queue.pop()
         for m in CHANGE_TO_RE.finditer(str(skills.get(src, {}).get("note", ""))):
             tid = int(m.group(1))
-            if tid in reworked_skills or tid in seen_ct and tid in by_skill:
-                continue
-            by_skill[tid].append({"gear": f"skill:{src}", "gear_name": str(skills.get(src, {}).get("name", "")),
-                                  "channel": "change_to", "raw": m.group(0)})
+            if tid not in reworked_skills and not any(x["channel"] == "change_to" and x["gear"] == f"skill:{src}" for x in by_skill.get(tid, [])):
+                by_skill[tid].append({"gear": f"skill:{src}", "gear_name": str(skills.get(src, {}).get("name", "")),
+                                      "channel": "change_to", "raw": m.group(0)})
             if tid not in seen_ct:
                 seen_ct.add(tid)
                 queue.append(tid)
