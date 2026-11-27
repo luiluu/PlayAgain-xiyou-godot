@@ -293,6 +293,7 @@ func _t562_r2() -> void:
 	_check("t562_plain_default_nick", plain.actor(79).nickname == orig_nick, plain.actor(79).nickname)
 	kit.save(1)
 	var tq := Kit.new_game("jiusi")
+	tq.map_id = 4  # Kit 把图号设 0；存档预览要读地图名，给个真地图（方桌大厅），免得日志出 Map000 读取失败
 	XTianqi._joining = true  # 同 Kit.new_game：天启篇入队走正式入队口
 	tq.add_actor(79)
 	tq.add_actor(85)
