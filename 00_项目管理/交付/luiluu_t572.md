@@ -135,6 +135,7 @@ OFF 档（`--speed=4`）同样：补丁线修前 7.03／544 → 修后 4.95／32
 | --- | --- | --- |
 | `XTianqiWeakAffix.proj_of` | 游戏代码 2 处（`git grep -nE 'proj_of\(' -- '*.gd'`，另有测试） | `tianqi_skills.gd:988` 天启篇公式（s 为空取当前档，西游档原来也在 `on` 判否返回空）、本文件 `skill_view`：西游档原来就返回空，现在提前返回；天启篇档照旧往下走，专项 weak.tianqi_same 两态相同 |
 | `XActor._passive_values_now`（经 `passive_values`） | 游戏代码 25 处（`git grep -nE '[^_[:alnum:]]passive_values\(' -- '*.gd' \| grep -v ^tests`） | 只换了取缓存项的方式：窗口／跨步保留里命中的缓存项与现算的逐项相同（READ_VERIFY 比对零不一致）；窗口外照旧 `_skills_entry()`；改写了 `skills()` 的子类照旧走 `skills()` |
+| `XActor._skill_ids_now`、`XTianqiWeakAffix._proj_ids` | 4 处、1 处（交付自检粗数） | 只在开头加了一行只读计数（`skill_ids_builds`、`proj_ids_builds`，专项用），返回值不变；`_skills_entry` 本身没改（自检按函数名把它算进来） |
 | `XSideStatus._v` | 游戏代码 4 处（`git grep -nE '[^[:alnum:]_]_v\(\)' -- '*.gd'`） | 侧栏两处、新界面 `XSkinSideStatus` 两处：只在没有快照时包只读窗口，值相同（专项 side.same_values）；有快照照旧读快照 |
 
 ## 截图
