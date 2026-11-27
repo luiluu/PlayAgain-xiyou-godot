@@ -1,7 +1,7 @@
 # 交付：luiluu/t530
 
 - 车道／工作者：T530 总账改造核心（v0.16 N07）／小A（Antigravity，前半）→ cc（Opus＋medium，P8，续做收尾）
-- 状态：进行中
+- 状态：可合并
 
 ## 变更记录草稿
 
@@ -74,7 +74,7 @@
 
 - 专项 `xiyou_t530_ledger_core`：46/46 过（cc 合 main 后本机单跑，临时 HOME，`--audio-driver Dummy`）。
 - `天启篇数据校验.py`：退出码 0。
-- 云端选测：待跑
+- 云端选测：整轮 829 个场景、16 片全过（提交 dc41e88597；偶发 1 个 xiyou_floor_reach075，并行失败、单跑通过，算通过）：https://github.com/luiluu/PlayAgain-xiyou-godot/actions/runs/45924383632
 
 ## 没核、没量的（cc）
 
@@ -110,3 +110,5 @@
 - 91b137ea5 T530 总账核心：九线分池、穿透无视防御、抗性折算、回复封顶与 suit 记账（小A）
 - ed502a217 T530 同步 3 份旧专项测试（小A）
 - dc6984c35 T530 回复线按 Kyo 11-26 事项81：长生宝珠 45%、各线合计 81%（cc）
+- 3701ac58f T530 T438 脚手架开关对照量数 36 场＋交付单（cc）
+- dc41e8859 T530 量数包装脚本补 uid（cc）
