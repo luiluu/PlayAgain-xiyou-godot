@@ -356,6 +356,24 @@ func _t562_r2() -> void:
 	kit.save(2)
 	_check("t562r3_tq_long_custom", back.actor(79).nickname == long_nick and back.actor(79).display_nickname() == long_nick
 		and str(kit.raw(2).actors["79"].get("nickname")) == long_nick, [back.actor(79).nickname, back.actor(79).display_nickname()])
+	# R4：天启档存的是完整西游默认称号（改名片段只是称号的一部分）时也显示天启篇默认称号；含原称号的长自订仍原样
+	var full := {115: ["丢你蕾姆", "丢你蓝毛女仆"], 122: ["狂龙刀法·南宫恨", "狂龙刀法·黑白狂人·狂刀"], 123: ["独门武学·南宫恨", "独门武学·黑白狂人·武道"]}
+	for id in full:
+		back.actor(id).nickname = full[id][0]
+	back.actor(79).nickname = "逐风旅人·" + long_nick
+	var hot := []
+	for id in full:
+		hot.append(back.actor(id).display_nickname())
+	_check("t562r4_full_default_hot", hot == [full[115][1], full[122][1], full[123][1]] and back.actor(79).display_nickname() == "逐风旅人·" + long_nick, hot)
+	kit.save(2)
+	_t562_cold()
+	back = kit.reload(2)
+	var cold := []
+	for id in full:
+		cold.append([str(kit.raw(2).actors[str(id)].get("nickname")), back.actor(id).nickname, back.actor(id).display_nickname()])
+	_check("t562r4_full_default_cold", XTextFix.tq_on() and cold == [[full[115][0], full[115][0], full[115][1]], [full[122][0], full[122][0], full[122][1]], [full[123][0], full[123][0], full[123][1]]]
+		and back.actor(79).display_nickname() == "逐风旅人·" + long_nick, cold)
+	_check("t562r4_long_custom_full_default", XTextFix.actor_nickname(122, full[122][0] + "的传人") == full[122][0] + "的传人", XTextFix.actor_nickname(122, full[122][0] + "的传人"))
 	# 存档里显式写了「等于本档默认」的称号：再存照写，不丢键
 	kit.edit_raw(func(d): d.actors["79"]["nickname"] = tq_nick, 2)
 	back = kit.reload(2)

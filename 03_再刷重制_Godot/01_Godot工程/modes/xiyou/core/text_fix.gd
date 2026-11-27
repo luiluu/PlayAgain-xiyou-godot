@@ -213,9 +213,16 @@ static func actor_nickname(id: int, text: String) -> String:
 	if not tq_on():
 		return text
 	var fields: Dictionary = actor_names().get("tables", {}).get("Actors", {})
-	for pair in fields.get("%d/nickname" % id, []):
+	var pairs: Array = fields.get("%d/nickname" % id, [])
+	for pair in pairs:
 		if text == str(pair[0]):
 			return tianqi_actor_text(pair[1])
+	# R4：整串等于完整西游默认称号（如「丢你蕾姆」「狂龙刀法·南宫恨」）时显示天启篇默认称号；
+	# 默认称号按 Actors 表现值两向换算，不论表按哪个档位口径读过。
+	if not pairs.is_empty():
+		var xy_default := actor_nickname_in(id, false, str(XDB.rec("Actors", id).get("nickname", "")))
+		if xy_default != "" and text == xy_default:
+			return actor_nickname_in(id, true, xy_default)
 	return saved_actor_name(id, text)
 
 
