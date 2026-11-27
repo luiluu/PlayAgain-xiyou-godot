@@ -3,6 +3,7 @@ extends Node
 ## - 没有本机解锁文件：入口关闭（设置页两项仍留灰、状态空白）、所有功能返回「关」，哪怕状态文件写着开；
 ## - 有解锁文件（测试里用临时路径）：开关可切并跨重载保留；经验 ×10、使用后技能升满、普通怪掉落装备词缀加速、
 ##   GM 工具各项（加物品／装备／金币／经验、恢复、四种资源）的效果与数值校验；
+## - 图鉴全开（T557）：只在测试模式开着时放行读取，不写存档与全局配置；
 ## - 导出排除规则与 .gitignore 里有这个文件名（user:// 本身在工程之外）。
 var results := []
 const DIR := "user://test_xiyou_test_mode"
@@ -253,6 +254,8 @@ func _run() -> void:
 	check("rewards_tag_non_boss_drops", not any_boss or not lg.enemies.all(func(e): return not XEnemy.boss_id(e.enemy_id)), lg.rewards().drops)
 	XTestMode.set_enabled(false)
 
+	_check_books(s)
+
 	# ---- 导出排除 / gitignore ----
 	var presets := FileAccess.get_file_as_string("res://export_presets.cfg")
 	var n_excl := 0
@@ -270,6 +273,55 @@ func _run() -> void:
 	XTestMode.unlock_override = ""
 	XTestMode.state_override = ""
 	finish()
+
+
+## T557 测试模式图鉴全开：只放行读取；没解锁／关着照旧，开过再关回到原来的登记，存档与全局配置不变
+func _check_books(s: XState) -> void:
+	var eid: int = XEnemyBook.ids()[0]
+	XEnemyBook.remove(s, eid)
+	var actor_id := 0
+	var skill: Dictionary = {}
+	for id in XActorBook.PREVIEW_ACTORS:
+		var known := XActorBook.known_skill_ids(id)
+		for sk in XActorBook.book_skills(id, false):
+			if not known.has(int(sk.id)):
+				actor_id = id
+				skill = sk
+				break
+		if actor_id > 0:
+			break
+	check("book_locked_skill_found", actor_id > 0)
+	var measure := func(text: String, size: int) -> float: return XActorBook.js_width(text, size)
+	var tagged := func() -> bool:
+		return XActorBook.list_row_ops(actor_id, skill, 0.0, measure).any(func(o): return o[0] == "t" and o[1] == "未解锁")
+	var skin_tagged := func() -> bool:
+		return XSkinBookPage.skill_row(actor_id, skill, XActorBook.known_skill_ids(actor_id)).has("right")
+	var snapshot := func() -> String:
+		return JSON.stringify([s.enemy_book, XConfig.tianqi_aliens()])
+
+	_reset_files()
+	_touch("state", "1")
+	check("book_locked_no_file", not XTestMode.book_all() and not XEnemyBook.registered(s, eid))
+	_touch("unlock", "")
+	XTestMode.set_enabled(false)
+	check("book_off", not XEnemyBook.registered(s, eid) and not XTianqiAlienCodex.seen("war", "t557_none", "qinran") and tagged.call() and skin_tagged.call())
+	var before: String = snapshot.call()
+	XTestMode.set_enabled(true)
+	check("book_on_enemy", XEnemyBook.ids().all(func(i): return XEnemyBook.registered(s, i)))
+	check("book_on_alien", XTianqiAlienCodex.seen("war", "t557_none", "qinran"))
+	check("book_on_actor", not tagged.call() and not skin_tagged.call())
+	check("book_no_state_null", not XEnemyBook.registered(null, eid))
+	var page := XEnemyBookPage.new()
+	add_child(page)
+	page.index = 0
+	page._select_enemy()
+	check("book_page_name", page.index_name(0) != XEnemyBookPage.UNKNOWN_ENEMY and not page._status_ops.is_empty())
+	page.ok()
+	check("book_page_drops_open", page.mode == "drops", page.mode)
+	page.queue_free()
+	check("book_no_write", snapshot.call() == before, [before.length(), snapshot.call().length()])
+	XTestMode.set_enabled(false)
+	check("book_off_again", not XEnemyBook.registered(s, eid) and tagged.call() and snapshot.call() == before)
 
 
 func _reward_exp(s: XState, troop: int) -> int:

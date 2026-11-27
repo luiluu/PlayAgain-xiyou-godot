@@ -33,7 +33,7 @@ static func _book(s: XState) -> Dictionary:
 
 
 static func registered(s: XState, id: int) -> bool:
-	return s != null and bool(_book(s).flags.get(str(id), false))
+	return s != null and (bool(_book(s).flags.get(str(id), false)) or XTestMode.book_all())  # 测试模式图鉴全开只放行读取（T557）
 
 
 static func add(s: XState, id: int) -> void:
