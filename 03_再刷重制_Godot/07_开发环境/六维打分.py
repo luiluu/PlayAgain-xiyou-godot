@@ -338,9 +338,16 @@ def assign(ids_all, raw, tier, mode, disabled=frozenset(), role=None):
         return bad
 
     changes = []
+    # Kyo 手改（HAND_OVERRIDE）先落、并锁住不让降档，降档只动别的维（T558：重量后谷雨生存实测第 1＝SS，手改输出 S 之后 R2 要再压一维；原来手改在降档之后，会留下违反 R2 的行）
+    locked = {i: set(ov) for i, ov in HAND_OVERRIDE.items() if i in let}
+    for i, ov in HAND_OVERRIDE.items():
+        for d, L in ov.items():
+            if i in let:
+                let[i][d] = L
 
-    def worst(i, ds):   # D292 Q1 甲：先降手标维（优先级低），同优先级降名次最靠后的
-        return min(ds, key=lambda d: (DEMOTE_PRI[d], -pos[d][i]))
+    def worst(i, ds):   # D292 Q1 甲：先降手标维（优先级低），同优先级降名次最靠后的；手改锁住的维不降
+        free = [d for d in ds if d not in locked.get(i, ())]
+        return min(free or ds, key=lambda d: (DEMOTE_PRI[d], -pos[d][i]))
 
     def demote(i, d):
         old = let[i][d]
@@ -356,7 +363,7 @@ def assign(ids_all, raw, tier, mode, disabled=frozenset(), role=None):
             x = sc(i)
             if 'multi' in v:
                 ds = [d for d in DIMS if x[d] >= 7]
-                keep = max(ds, key=lambda d: (DEMOTE_PRI[d], -pos[d][i]))   # 多 SS 优先留实测维
+                keep = max(ds, key=lambda d: (d in locked.get(i, ()), DEMOTE_PRI[d], -pos[d][i]))   # 多 SS 优先留手改锁住的、再留实测维
                 for d in ds:
                     if d != keep:
                         demote(i, d)
@@ -366,7 +373,7 @@ def assign(ids_all, raw, tier, mode, disabled=frozenset(), role=None):
                 demote(i, worst(i, [d for d in DIMS if x[d] == 6 and d != ssd]))
                 moved = True
             elif 'cost' in v:
-                demote(i, [d for d in DIMS if x[d] == 7][0])
+                demote(i, worst(i, [d for d in DIMS if x[d] == 7]))
                 moved = True
             elif 's_cap' in v:
                 demote(i, worst(i, [d for d in DIMS if x[d] == 6]))
@@ -381,11 +388,8 @@ def assign(ids_all, raw, tier, mode, disabled=frozenset(), role=None):
         rest = [v for k, v in x.items() if k != d]
         ok = all(v < 6 for v in rest) and sum(1 for v in rest if v == 5) <= 1 and sum(1 for v in rest if v <= 3) >= 3 and any(v <= 2 for v in rest) and sum(rest) + 8 <= 22
         sss.append((d, i, ok))
-        if ok and not any(S[let[i][k]] == 8 for k in DIMS):
+        if ok and not any(S[let[i][k]] == 8 for k in DIMS) and d not in locked.get(i, ()):
             let[i][d] = 'SSS'
-    for i, ov in HAND_OVERRIDE.items():
-        for d, L in ov.items():
-            let[i][d] = L
     return let, rank, changes, sss
 
 
