@@ -15,6 +15,16 @@ extends Control
 
 ## 卡 P 开关：false＝三本图鉴都回旧页
 static var ENABLED := true
+## T554 人物图鉴牌头（Kyo 11-27 事项 84：只改天启篇，西游档不动；回退开关）：
+## - FIT_SPRITE：立绘的可见范围超出法阵外接方框时按比例缩小、居中放进圈里（小铃兰帧 256、奈叶 128 原来 1.5 倍画出圈）；false＝照旧 1.5 倍
+## - HEAD_ROWS：天启篇牌头改成「角色属性 / 武器 / 防具」三行，标签同宽对齐，类型名整个换行不拆字、续行对齐到值列，
+##   掌握类型重复的去重（小铃兰两个「法杖」），一类全会的写「全部」；角色属性按元素上色；
+##   原版的「属性」（人物属性，旧克制用）在天启篇不再画：天启篇元素重做 v0.7「旧克制停用，我方挨打也不看克制」，
+##   跟「角色属性」并列只会让人以为是一回事。false＝照旧「属性 … 武器 … 防具 …」一段折行＋「角色属性」白字一行
+static var FIT_SPRITE := true
+static var HEAD_ROWS := true
+## T554：天启篇人物图鉴可装备列表里不列的防具类型号（13「矢」只有一件 4541 花与鸟之矢，见交付单；默认不藏，等协调定）
+static var HIDE_ARMOR_TYPES: Array = []
 
 ## ---- 玩家可见文字（待小A 审）----
 const T_ACTOR := "人物图鉴"
@@ -33,6 +43,8 @@ const T_ADVANCE := "最多进阶 %s 次"
 const T_ATTR := "属性"
 const T_WEAPON := "武器"
 const T_ARMOR := "防具"
+## T554：一类全会时写的字（待小A 审）
+const T_ALL := "全部"
 const T_LOCKED := "未解锁"
 const T_UNKNOWN_ACTOR := "？？？"
 const T_NOT_MET := "还没遇到过"
@@ -571,17 +583,27 @@ static func actor_info(id: int) -> Dictionary:
 	for i in range(1, parts.size()):
 		attrs.append([str(parts[i][0]).replace("／", " · "), XUiSkin.TEXT_3 if str(parts[i][0]) == "／" else parts[i][1]])   # 元素属性色照旧（黑暗、神圣…）
 	var sys: Dictionary = XDB.system()
+	var tq_head := head_rows_on()
 	var masteries := [[], []]
+	var all_types := [false, false]
 	for kk in 2:
 		var ids := []
 		for t in cls.get("traits", []):
-			if int(t.code) == 51 + kk:
+			if int(t.code) == 51 + kk and not (tq_head and ids.has(int(t.dataId))):   # T554：天启篇去重（35 个职业的掌握特性有重复号）
 				ids.append(int(t.dataId))
 		ids.sort()
 		var names: Array = sys.get("weaponTypes" if kk == 0 else "armorTypes", [])
 		for i in ids:
+			if tq_head and kk == 1 and HIDE_ARMOR_TYPES.has(i):
+				continue
 			if i < names.size() and str(names[i]) != "":
 				masteries[kk].append(str(names[i]))
+		if tq_head:   # 类型表里有名字（且没藏）的每一类都会＝「全部」
+			var every := 0
+			for i in names.size():
+				if str(names[i]) != "" and not (kk == 1 and HIDE_ARMOR_TYPES.has(i)):
+					every += 1
+			all_types[kk] = every > 0 and masteries[kk].size() == every
 	var skills := XActorBook.book_skills(id, true)
 	var aura := skills.any(XActorBook.is_aura_note)
 	var groups := [[], [], [], []]   # 主动、被动、光环、其他
@@ -618,7 +640,25 @@ static func actor_info(id: int) -> Dictionary:
 		"quality": qname, "advance": XActorBook.advance_max(id), "line": " · ".join(head), "attrs": attrs,
 		"weapons": masteries[0], "armors": masteries[1], "params": pv, "cols": cols, "note": note,
 		"six": XTianqiSixDim.of_actor(id) if XTianqiSixDim.active() else {},
-		"nature": XTianqiNature.line_of_actor_id(id)}
+		"nature": XTianqiNature.line_of_actor_id(id),
+		"head_rows": tq_head, "weapons_all": all_types[0], "armors_all": all_types[1],
+		"nature_parts": nature_parts(XTianqiNature.natures_of_actor_id(id)) if tq_head else []}
+
+
+## T554：天启篇人物图鉴牌头走新三行（开关开、天启篇存档、元素效果开着才有「角色属性」可列）；西游档恒 false
+static func head_rows_on() -> bool:
+	return HEAD_ROWS and XTianqi.active(XState.current) and XTianqiNature.ui_on()
+
+
+## T554：角色属性各元素的 [字, 元素色]；没有＝[["无", 灰]]
+static func nature_parts(natures: Array) -> Array:
+	if natures.is_empty():
+		return [["无", XUiSkin.TEXT_3]]
+	var out := []
+	for e in natures:
+		var ei := int(e)
+		out.append([XTianqiElements.element_name(ei), Color(XHelpCard.ELEMENT_COLORS[ei]) if ei >= 0 and ei < XHelpCard.ELEMENT_COLORS.size() else XUiSkin.TEXT])
+	return out
 
 
 ## 怪物：{known, hide, name, name_color, race, maps, defeat, params, xparams, weak, resist, moves, note, six}
@@ -1163,13 +1203,9 @@ func _draw_actor(a: Rect2) -> void:
 	if h._sprite_tex != null:
 		var id := h.actor_id()
 		var pattern: int = [0, 1, 2, 1][floori(h._frame / 12.0) % 4]
-		var rr: Array = XActorBook.sprite_rect(id, h._sprite_spec, Vector2(h._sprite_tex.get_size()), pattern)
-		var dst: Rect2 = rr[0]
-		var old_c := XActorBook.SPRITE_CENTER - Vector2(XMVWindow.PADDING, XMVWindow.PADDING)
-		var k := 1.5
-		var pos := cc + (dst.position - old_c) * k + Vector2(0, 6)
+		var pl := sprite_place(id, h._sprite_spec, Vector2(h._sprite_tex.get_size()), pattern, cc, CIRCLE_R, opaque_rect(h._sprite_tex, h._sprite_spec))
 		ci.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
-		ci.draw_texture_rect_region(h._sprite_tex, Rect2(pos, dst.size * k), rr[1])
+		ci.draw_texture_rect_region(h._sprite_tex, pl.draw, pl.src)
 	var tx := x + CIRCLE_R * 2 + 32.0
 	var tw := w - (tx - x)
 	var six: Dictionary = info.get("six", {})
@@ -1186,6 +1222,13 @@ func _draw_actor(a: Rect2) -> void:
 	ny += fsn * 0.5 + 18.0
 	XUiSkin.ds(ci, body, Vector2(tx, ny + fa * 0.36), str(info.line), HORIZONTAL_ALIGNMENT_LEFT, tw, fa, XUiSkin.TEXT_2)
 	ny += 30.0
+	if bool(info.get("head_rows", false)):   # T554：天启篇「角色属性／武器／防具」三行对齐
+		var span_end2 := _draw_head_rows(ci, tx, ny, tw)
+		y = maxf(y + HEAD_H, span_end2 + 8.0)
+		mastery_end = span_end2
+		head_bottom = y
+		_draw_actor_body(ci, a, x, y, w)
+		return
 	# 属性 · 武器 · 防具（放不下自动折到下一行）
 	var spans := [[T_ATTR + "  ", XUiSkin.TEXT_2]]
 	for part in info.attrs:
@@ -1202,6 +1245,11 @@ func _draw_actor(a: Rect2) -> void:
 	y = maxf(y + HEAD_H, span_end + 8.0)
 	mastery_end = span_end
 	head_bottom = y
+	_draw_actor_body(ci, a, x, y, w)
+
+
+## 牌头以下：1 级时的能力、技能、备注（T554 从 _draw_actor 拆出来，两种牌头共用）
+func _draw_actor_body(ci: CanvasItem, a: Rect2, x: float, y: float, w: float) -> void:
 	# 1 级时的能力：四列两行
 	y = _section(ci, x, y, w, T_ABILITY)
 	var colw := (w - 3 * 32.0) / 4.0
@@ -1230,6 +1278,136 @@ func _draw_actor(a: Rect2) -> void:
 		_draw_note(ci, note_spans, x, ny2, w, nfs, nlh, a.end.y)
 	else:
 		_note_max = 0.0
+
+
+## T554：天启篇牌头三行。标签（灰）同宽一列，值从同一条竖线起；值是一串类型名，整个名字放不下才换行（不拆字），续行对齐值列。返回画到的底
+func _draw_head_rows(ci: CanvasItem, tx: float, y: float, tw: float) -> float:
+	var fs := XUiSkin.FS_AUX
+	var lh := fs * 1.55
+	var rows := head_rows(info)
+	var body := XUiSkin.font("body")
+	var lab_w := 0.0
+	for r in rows:
+		lab_w = maxf(lab_w, body.get_string_size(str(r[0]), HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x)
+	lab_w += fs * 0.9
+	for r in rows:
+		XUiSkin.ds(ci, body, Vector2(tx, y + lh / 2.0 + fs * 0.36), str(r[0]), HORIZONTAL_ALIGNMENT_LEFT, -1, fs, XUiSkin.TEXT_2)
+		var lines := token_lines(r[1], body, fs, tw - lab_w)
+		for li in lines.size():
+			var cx := tx + lab_w
+			for tok in lines[li]:
+				XUiSkin.ds(ci, body, Vector2(cx, y + lh / 2.0 + fs * 0.36), str(tok[0]), HORIZONTAL_ALIGNMENT_LEFT, -1, fs, tok[1])
+				cx += body.get_string_size(str(tok[0]), HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x
+			y += lh
+	return y
+
+
+## T554 牌头三行的数据：[[标签, [[字, 色], …]], …]（测试读）。名字之间夹灰「、」，「全部」也是一段
+static func head_rows(inf: Dictionary) -> Array:
+	var rows := [[XTianqiNature.LABEL, _joined(inf.get("nature_parts", []))]]
+	for pair in [[T_WEAPON, "weapons", "weapons_all"], [T_ARMOR, "armors", "armors_all"]]:
+		var names: Array = inf.get(pair[1], [])
+		var toks := []
+		if bool(inf.get(pair[2], false)):
+			toks = [[T_ALL, XUiSkin.TEXT]]
+		elif names.is_empty():
+			toks = [["—", XUiSkin.TEXT_3]]
+		else:
+			toks = _joined(names.map(func(n): return [str(n), XUiSkin.TEXT]))
+		rows.append([pair[0], toks])
+	return rows
+
+
+static func _joined(parts: Array) -> Array:
+	var out := []
+	for i in parts.size():
+		out.append([str(parts[i][0]) + ("、" if i < parts.size() - 1 else ""), parts[i][1]])
+	return out
+
+
+## 一串段落按宽度排行：段不拆，放不下的整段挪到下一行（一段本身比行宽还宽时独占一行）
+static func token_lines(toks: Array, f: Font, fs: int, w: float) -> Array:
+	var lines := [[]]
+	var cur := 0.0
+	for t in toks:
+		var tw2 := f.get_string_size(str(t[0]), HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x
+		if cur > 0.0 and cur + tw2 > w + 0.5:
+			lines.append([])
+			cur = 0.0
+		lines[-1].append(t)
+		cur += tw2
+	return lines
+
+
+## 立绘画在法阵里的位置：{draw: 目标矩形, src: 取图范围, vis: 看得见的部分, fit: 缩过没有}。看得见的部分：有档案的新角色用档案外接框；
+## 原生图用 used（取图范围里不透明像素的外接框，站立三格合起来，见 opaque_rect），读不到图（无头）时用整格。
+## 照旧 1.5 倍、锚在旧状态窗的中心；T554 FIT_SPRITE：看得见的部分超出法阵外接方框就按比例缩到方框 0.86 以内（方框四角在圈外，留点余量）、居中（稍偏下）
+static func sprite_place(id: int, spec: Dictionary, tex_size: Vector2, pattern: int, cc: Vector2, r: float, used := Rect2()) -> Dictionary:
+	var rr: Array = XActorBook.sprite_rect(id, spec, tex_size, pattern)
+	var dst: Rect2 = rr[0]
+	var src: Rect2 = rr[1]
+	var old_c := XActorBook.SPRITE_CENTER - Vector2(XMVWindow.PADDING, XMVWindow.PADDING)
+	var k := 1.5
+	var draw := Rect2(cc + (dst.position - old_c) * k + Vector2(0, 6), dst.size * k)
+	var vis := draw
+	var prof: Array = XAppearance.profile_of(str(spec.get("key", ""))) if id >= 167 and not str(spec.get("key", "")) in ["Yunshang_u2", "Guyu_v2"] else []
+	if prof.size() >= 6 and src.size.x > 0.0:
+		var s2 := draw.size.x / src.size.x
+		vis = Rect2(draw.position + Vector2(float(prof[2]), float(prof[3])) * s2, Vector2(float(prof[4]) - float(prof[2]), float(prof[5]) - float(prof[3])) * s2)
+	elif used.has_area() and src.size.x > 0.0:
+		var s3 := draw.size.x / src.size.x
+		vis = Rect2(draw.position + used.position * s3, used.size * s3)
+	var box := Rect2(cc - Vector2(r, r), Vector2(r, r) * 2.0)
+	if not FIT_SPRITE or not head_rows_tianqi() or box.grow(0.5).encloses(vis) or vis.size.x <= 0.0 or vis.size.y <= 0.0:
+		return {"draw": draw, "src": src, "vis": vis, "fit": false}
+	var f := minf(box.size.x * 0.86 / vis.size.x, box.size.y * 0.86 / vis.size.y)
+	f = minf(f, 1.0)
+	var want_c := cc + Vector2(0, 4)
+	var vc := vis.get_center()
+	# 以看得见部分的中心为原点缩，再挪到法阵中心
+	var nd := Rect2(want_c + (draw.position - vc) * f, draw.size * f)
+	var nv := Rect2(want_c + (vis.position - vc) * f, vis.size * f)
+	return {"draw": nd, "src": src, "vis": nv, "fit": true}
+
+
+## 原生图取图范围里不透明像素的外接框（取图范围内的坐标；侧视图取站立三格的并集，免得走动时忽大忽小）；按图路径记一次。
+## 无头（读不到像素）返回空，sprite_place 退回整格
+static var _opaque_cache := {}
+
+
+static func opaque_rect(tex: Texture2D, spec: Dictionary) -> Rect2:
+	var key := str(spec.get("path", ""))
+	if key != "" and _opaque_cache.has(key):
+		return _opaque_cache[key]
+	var img := tex.get_image() if tex != null else null
+	var out := opaque_rect_of(img, spec)
+	if key != "" and img != null:
+		_opaque_cache[key] = out
+	return out
+
+
+static func opaque_rect_of(img: Image, spec: Dictionary) -> Rect2:
+	if img == null or img.is_empty():
+		return Rect2()
+	if img.is_compressed():
+		img = img.duplicate()
+		if img.decompress() != OK:
+			return Rect2()
+	if bool(spec.get("multi", false)):
+		return Rect2(img.get_used_rect())
+	var fw := img.get_width() / 9
+	var fh := img.get_height() / 6
+	var u := Rect2()
+	for p in 3:
+		var r := Rect2(img.get_region(Rect2i(p * fw, 0, fw, fh)).get_used_rect())
+		if r.has_area():
+			u = r if not u.has_area() else u.merge(r)
+	return u
+
+
+## T554 立绘缩放只在天启篇做（西游档 XUiSkin 强开时照旧）
+static func head_rows_tianqi() -> bool:
+	return XTianqi.active(XState.current)
 
 
 ## 技能三列（或光环四列）：各带小标题；行多了在这一块里滚
