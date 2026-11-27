@@ -1,77 +1,75 @@
-# 天启篇开销占比（发行空壳 cand 树，玩家存档 12；godot -d --profiling，FRAME 采样；桩＝发行空壳换掉的 95 个脚本里的函数，取 self 时间）
-## 技能页（t578_skill_page_probe.gd --reps=3，采样 6 帧）
+# 天启篇开销占比（发行空壳 cand 树，玩家存档 12；godot -d --profiling，FRAME 采样）
+# 桩＝发行空壳换成空壳的 80 个脚本（发行空壳桩脚本80个.txt；另有 15 个西游脚本只抹了天启篇字符串，不算桩）；取桩函数的 self 时间与调用次数
+# 剖析模式会把极小函数的耗时记到调用方，self 占比偏低；估「剥离能省多少」用 调用次数 × 非剖析单次耗时（见文末）
+## 技能页（t578_skill_page_probe.gd --release --reps=3，采样 6 帧）
 frames_used=6 script_total=0.108s sum_self=0.106s
-stub_self=0.001s (1.0% of self) stub_calls=9477
-       0.5ms self       18 calls XPowerBooks.param_rate_bonus
-       0.1ms self      102 calls XUiSkin._ensure_input_tracker
+stub_self=0.000s (0.3% of self) stub_calls=9123
        0.1ms self     3492 calls XTianqiSkills.is_shell
-       0.1ms self      102 calls XUiSkin.on
        0.1ms self     2556 calls XTianqiTrumpet.skips_rate
        0.1ms self      297 calls XTianqiGear.param_of
-       0.0ms self       30 calls XZhenqi.daofa_scale
        0.0ms self      522 calls XTianqi.active
-       0.0ms self      102 calls XUiSkin.cli_mode
        0.0ms self      168 calls XTianqiSkills.mastery_on
        0.0ms self      192 calls XTianqiQiyinArt.is_icon
        0.0ms self       18 calls XTianqiBase.param_base
+       0.0ms self      168 calls XGojo.mp_cost
+       0.0ms self      216 calls XTianqiSkills.state_key
+       0.0ms self      192 calls XGojo.is_icon
+       0.0ms self       42 calls XTianqiSkills.cards_on
+       0.0ms self      168 calls XTianqiTrumpet.cost
   [XDB.rec] self=0.1ms total=0.4ms calls=111
   [XTianqi.active] self=0.0ms total=0.0ms calls=522
 ## 四倍速战斗画面（t574_frame.gd --release --speed=1 --troop=454 --frames=2400，采样 10 帧）
 frames_used=10 script_total=5.248s sum_self=5.216s
-stub_self=0.066s (1.3% of self) stub_calls=522629
-      25.2ms self     1049 calls XPowerBooks.param_rate_bonus
-      14.8ms self    37910 calls XZhenqi.skill_view
-       8.0ms self       12 calls XZhenqi.skill_key
+stub_self=0.014s (0.3% of self) stub_calls=480402
        3.3ms self    17636 calls XTianqiGear.param_of
        2.9ms self   148198 calls XTianqiTrumpet.skips_rate
        2.2ms self   107920 calls XTianqi.active
-       1.4ms self        2 calls XZhenqi.is_boss_enemy
        1.2ms self    56554 calls XTianqiSkills.state_key
        1.0ms self    37912 calls XTianqiWeakAffix.skill_view
        1.0ms self    37910 calls XTianqiGear.skill_view
        0.8ms self    37938 calls XTianqiSkills.has
-       0.6ms self     1034 calls XZhenqi.daofa_scale
+       0.1ms self     2149 calls XTianqiSkills.cards_on
+       0.1ms self      937 calls XTianqiWeakAffix.view_sig
+       0.1ms self     2082 calls XTianqiGear.stat_list
+       0.1ms self     3355 calls XTianqiGear.allows
+       0.1ms self     3155 calls XTianqiQiyinEquip.any_class
   [XDB.rec] self=27.7ms total=143.2ms calls=84453
   [XTianqi.active] self=2.2ms total=2.2ms calls=107920
-## 战斗逻辑基准（t574_bench.gd --troop=454 --acts=40，这份存档 4 次行动就打完；整段一帧）
+## 战斗逻辑基准（t574_bench.gd --troop=454 --acts=40；这份存档 4 次行动就打完，整段一帧；该脚本没有 --release 开关）
 frames_used=1 script_total=5.918s sum_self=5.866s
-stub_self=0.085s (1.4% of self) stub_calls=616624
-      31.3ms self     1083 calls XPowerBooks.param_rate_bonus
-      20.3ms self    48284 calls XZhenqi.skill_view
-      11.5ms self        1 calls XZhenqi.patch_rewards
+stub_self=0.018s (0.3% of self) stub_calls=565247
        3.8ms self    17517 calls XTianqiGear.param_of
        3.2ms self   148916 calls XTianqi.active
        3.1ms self   146738 calls XTianqiTrumpet.skips_rate
-       2.5ms self      139 calls XPowerBooks.skills
        1.5ms self    48284 calls XTianqiGear.skill_view
        1.2ms self    48289 calls XTianqiWeakAffix.skill_view
        1.1ms self    53896 calls XTianqiSkills.state_key
        1.0ms self    48889 calls XTianqiSkills.has
-       1.0ms self     1574 calls XZhenqi.daofa_scale
+       0.2ms self     3871 calls XTianqiSkills.cards_on
+       0.1ms self     1459 calls XTianqiWeakAffix.view_sig
+       0.1ms self     2971 calls XTianqiGear.stat_list
+       0.1ms self     1531 calls XTianqiSkills.actor_trait_obj
+       0.1ms self        3 calls XTianqiCombat.crit_after_cev
   [XDB.rec] self=48.6ms total=683.6ms calls=124237
   [XTianqi.active] self=3.2ms total=3.2ms calls=148916
-## 非剖析单项（发行空壳，--release）
+## 非剖析单次（发行空壳，--release，100 万次取均值，已减空循环）
 TQMICRO empty_us=0.010 active_us=0.081 is_shell_us=0.066
-## 同场景非剖析帧耗（同上 2400 帧）
+## 同场景非剖析帧耗（t574_frame.gd 同上参数）
 RESULT speed=1 seg=true frames=2400 total_ms=6351 mean_ms=2.65 p50=1.04 p95=2.45 max=761.49 over50ms=16 actions=4
-## 超过 50 ms 的帧（非剖析）
-T572 frame 0 6479917 36545 idb=351 stream=false subj=0 turn=0
-T572 frame 1 6499708 19791 idb=356 stream=false subj=0 turn=0
-T572 frame 2 6500824 1116 idb=356 stream=false subj=0 turn=0
-T572 frame 3 6501735 911 idb=356 stream=false subj=0 turn=0
+## 超过 50 ms 的帧（非剖析；第 4 帧开战、之后是第 1 回合挂状态，T574 第 4 条另开卡那一类，本单没查）
 T572 frame 4 7263226 761491 idb=709 stream=false subj=24 turn=1
-T572 frame 5 7267059 3833 idb=714 stream=false subj=24 turn=1
-T572 frame 6 7268189 1130 idb=714 stream=false subj=24 turn=1
-T572 frame 7 7269246 1057 idb=714 stream=false subj=24 turn=1
-T572 frame 8 7271107 1861 idb=714 stream=false subj=24 turn=1
-T572 frame 9 7272109 1002 idb=714 stream=false subj=24 turn=1
-T572 frame 10 7273084 975 idb=714 stream=false subj=24 turn=1
-T572 frame 11 7274065 981 idb=714 stream=false subj=24 turn=1
-T572 frame 12 7275283 1218 idb=714 stream=false subj=24 turn=1
-T572 frame 13 7276287 1004 idb=714 stream=false subj=24 turn=1
-T572 frame 14 7277263 976 idb=714 stream=false subj=24 turn=1
 T572 frame 15 7390438 113175 idb=754 stream=false subj=23 turn=1
-T572 frame 16 7396201 5763 idb=759 stream=false subj=23 turn=1
-T572 frame 17 7397191 990 idb=759 stream=false subj=23 turn=1
-T572 frame 18 7398192 1001 idb=759 stream=false subj=23 turn=1
-T572 frame 19 7399227 1035 idb=759 stream=false subj=23 turn=1
+T572 frame 94 7568757 83802 idb=784 stream=false subj=23 turn=1
+T572 frame 99 7643636 66811 idb=784 stream=false subj=23 turn=1
+T572 frame 110 7721528 56808 idb=835 stream=true subj=23 turn=1
+T572 frame 137 8158153 377350 idb=1061 stream=true subj=23 turn=1
+T572 frame 209 8369479 110852 idb=1128 stream=false subj=22 turn=1
+T572 frame 230 8470560 59235 idb=1180 stream=true subj=22 turn=1
+T572 frame 257 8961388 449000 idb=1566 stream=true subj=22 turn=1
+T572 frame 379 9235453 95448 idb=1628 stream=false subj=21 turn=1
+T572 frame 399 9333853 60603 idb=1680 stream=true subj=21 turn=1
+T572 frame 426 9618308 243524 idb=1881 stream=true subj=21 turn=1
+T572 frame 498 9847321 104191 idb=1943 stream=false subj=20 turn=1
+T572 frame 518 9946490 62850 idb=1995 stream=true subj=20 turn=1
+T572 frame 561 10115965 55591 idb=2047 stream=true subj=18 turn=1
+T572 frame 679 10849177 545440 idb=2277 stream=false subj=18 turn=1
