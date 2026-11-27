@@ -1,0 +1,221 @@
+{
+  "artifact_cap_table": {
+    "crown_bonus_pct": 30.0,
+    "heartsteel_stage": 5.0,
+    "hubris_stage": 1.0
+  },
+  "artifact_mode": "none",
+  "base_seed": 20261123,
+  "basis": "D271",
+  "floors": [
+    32
+  ],
+  "force_diff": "",
+  "lines": [
+    "war",
+    "famine",
+    "death",
+    "plague"
+  ],
+  "max_turns": 25,
+  "seconds": 255.168,
+  "seeds": [
+    1,
+    2,
+    3
+  ],
+  "task": "T438",
+  "teams_per_template": 1,
+  "templates": {
+    "B": {
+      "artifact_mode": "none",
+      "difficulty": "jiusi",
+      "floors": {
+        "32": {
+          "cases": [
+            {
+              "alien": [
+                "536:zhongyan:pyro"
+              ],
+              "artifacts": [],
+              "deaths": 4,
+              "enemy_hp0": 988000,
+              "enemy_hp_left_pct": 1.316,
+              "falls_total": 6,
+              "helper": 162,
+              "instant_loss": false,
+              "line": "war",
+              "lost": true,
+              "party_hp0": 1804457,
+              "revive_casts": 0,
+              "revive_items": 3,
+              "seed": 1,
+              "team": [
+                118,
+                99,
+                102,
+                130
+              ],
+              "team_idx": 0,
+              "timeout": false,
+              "turns": 21,
+              "won": false
+            },
+            {
+              "alien": [
+                "536:zhongyan:plunder"
+              ],
+              "artifacts": [],
+              "deaths": 0,
+              "enemy_hp0": 988000,
+              "enemy_hp_left_pct": 0.695,
+              "falls_total": 0,
+              "helper": 162,
+              "instant_loss": false,
+              "line": "famine",
+              "lost": false,
+              "party_hp0": 1984096,
+              "revive_casts": 0,
+              "revive_items": 0,
+              "seed": 2,
+              "team": [
+                118,
+                99,
+                102,
+                130
+              ],
+              "team_idx": 0,
+              "timeout": true,
+              "turns": 25,
+              "won": false
+            },
+            {
+              "alien": [
+                "929:zhongyan:captain"
+              ],
+              "artifacts": [],
+              "deaths": 0,
+              "enemy_hp0": 988000,
+              "enemy_hp_left_pct": 2.031,
+              "falls_total": 0,
+              "helper": 162,
+              "instant_loss": false,
+              "line": "death",
+              "lost": false,
+              "party_hp0": 1828369,
+              "revive_casts": 0,
+              "revive_items": 0,
+              "seed": 3,
+              "team": [
+                118,
+                99,
+                102,
+                130
+              ],
+              "team_idx": 0,
+              "timeout": true,
+              "turns": 25,
+              "won": false
+            }
+          ],
+          "gear": {
+            "bands": {
+              "60-69": 0,
+              "70-75": 38,
+              "80-81": 0,
+              "<60": 0
+            },
+            "grades": {
+              "不朽": 22,
+              "传说": 0,
+              "史诗及以下": 0,
+              "神话": 16
+            },
+            "myth_ratio": 0.421,
+            "qiyin": 16,
+            "req_max": 75,
+            "req_mean": 73.9,
+            "req_median": 75.0,
+            "req_min": 70,
+            "teams": 1,
+            "total_items": 38,
+            "true_seal": 0
+          },
+          "level": 75,
+          "summary": {
+            "deaths_mean": 1.33,
+            "falls_mean": 2.0,
+            "instant_losses": 0,
+            "loss_enemy_hp_left_pct": 1.347,
+            "n": 3,
+            "timeouts": 2,
+            "turns_mean": 23.7,
+            "turns_won_mean": -1.0,
+            "win_rate": 0.0,
+            "wins": 0
+          }
+        }
+      },
+      "gear_summary": {
+        "32": {
+          "bands": {
+            "60-69": 0,
+            "70-75": 38,
+            "80-81": 0,
+            "<60": 0
+          },
+          "grades": {
+            "不朽": 22,
+            "传说": 0,
+            "史诗及以下": 0,
+            "神话": 16
+          },
+          "myth_ratio": 0.421,
+          "qiyin": 16,
+          "req_max": 75,
+          "req_mean": 73.9,
+          "req_median": 75.0,
+          "req_min": 70,
+          "teams": 1,
+          "total_items": 38,
+          "true_seal": 0
+        }
+      },
+      "label": "B_九死4强同级毕业装(含常规神话)",
+      "teams": [
+        {
+          "field": [
+            118,
+            99,
+            102,
+            130
+          ],
+          "helper": 162,
+          "helper_name": "诛仙",
+          "helper_tier": "强者",
+          "names": [
+            "高松灯",
+            "小明",
+            "碧霄",
+            "长崎爽世"
+          ],
+          "roles": [
+            "输出",
+            "输出",
+            "坦克",
+            "辅助"
+          ],
+          "shape": "A",
+          "tiers": [
+            "强者",
+            "强者",
+            "强者",
+            "强者"
+          ]
+        }
+      ],
+      "template": "B"
+    }
+  },
+  "version": 2
+}
