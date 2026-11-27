@@ -51,5 +51,6 @@
 
 ## 本分支提交
 
+- d12faa4d3 发行空壳特例补 XTianqiSkills.attack1_formula＝0.0（只改 json，不动游戏代码，没重跑云端）
 - 666b66fc6 T553 补：XDamage.eval_formula pure 快路径让天启篇我方 1 号走 run_item；专项 12/12
 - 3c01b0320 T553：天启篇我方 1 号普攻＝物攻×1×等级缩放（XTianqiSkills.ATTACK1），敌人照旧；专项 xiyou_tianqi_attack1 10/10
