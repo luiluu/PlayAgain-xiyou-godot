@@ -154,9 +154,23 @@ func _run() -> void:
 		if id >= table.size():
 			continue
 		seen += 1
-		if str(XDB.rec("States", id).get("note", "")) != str((table[id] as Dictionary).get("note", "")):
+		var want := str((table[id] as Dictionary).get("note", ""))
+		# 唯一放行：马保国「混元大成」状态 908，T563（D293，Kyo 事项 86）经 XXiyouNerf 有意改了西游档反伤式。
+		# 开关开着时只认「原表换掉那一句脚本」的结果，别的改动照样红。
+		if id == XXiyouNerf.HUNYUAN_STATE and XXiyouNerf.ENABLED:
+			want = want.replace(XXiyouNerf.HUNYUAN_OLD_JS, XXiyouNerf.HUNYUAN_NEW_JS)
+		if str(XDB.rec("States", id).get("note", "")) != want:
 			changed.append(id)
 	_check("xiyou_untouched_%d" % seen, seen > 0 and changed.is_empty(), changed.slice(0, 20))
+	# 回退开关关时 908 仍等于原表
+	var was_nerf := XXiyouNerf.ENABLED
+	XXiyouNerf.ENABLED = false
+	XXiyouNerf.clear_cache()
+	var off_note := str(XDB.rec("States", XXiyouNerf.HUNYUAN_STATE).get("note", ""))
+	XXiyouNerf.ENABLED = was_nerf
+	XXiyouNerf.clear_cache()
+	var orig_note := str((table[XXiyouNerf.HUNYUAN_STATE] as Dictionary).get("note", ""))
+	_check("xiyou_908_original_when_nerf_off", ids.has(XXiyouNerf.HUNYUAN_STATE) and orig_note.contains(XXiyouNerf.HUNYUAN_OLD_JS) and off_note == orig_note, off_note)
 	# 西游档名字照原表、不带天启篇页签；分类走原版规则
 	var xy_changed := []
 	for id in states.keys().map(func(k): return int(k)):
