@@ -95,7 +95,7 @@ func _run() -> void:
 	await press("ui_accept")   # 第一下：经验条走完、出「继续」提示
 	await click()               # 第二下（左键）：关结算页
 	await frames(10)
-	check("catalyst.granted", s.item_count(XGarou.CATALYST) == 1 and b.logic.victory_texts == [XGarou.CATALYST_TEXT], [s.item_count(XGarou.CATALYST), b.logic.victory_texts])
+	check("catalyst.granted", s.item_count(XGarou.CATALYST) == 1 and b.logic.victory_texts == [XGarou.CATALYST_TEXT % XTextFix.actor_name(XGarou.ACTOR, "饿狼")], [s.item_count(XGarou.CATALYST), b.logic.victory_texts])
 	await frames(90)
 	check("message.shown_and_waits", b.message.visible and b.message.is_busy() and ended[0] == -1, [b.message.visible, b.message.is_busy(), ended[0]])
 	for i in 20:

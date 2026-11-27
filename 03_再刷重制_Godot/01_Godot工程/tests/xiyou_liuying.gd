@@ -241,7 +241,7 @@ func _recruit(c: Dictionary) -> void:
 		_worn(a, "weapon", XLiuying.WEAPON), _worn(a, "armor", XLiuying.ARMOR), _skills(a)]
 		== [bool(o.first), not bool(o.again), int(o.weaponSlot), int(o.armorSlot), int(o.weapon), int(o.armor), _ints(o.skills)], [first, o])
 	check(c.id + ".party", s.party.has(XLiuying.ACTOR))
-	check(c.id + ".texts", first == XLiuying.RECRUIT_TEXT, first)
+	check(c.id + ".texts", first == ["小伙伴 %s 加入队伍" % XTextFix.actor_name(XLiuying.ACTOR, "流萤")] + XLiuying.RECRUIT_TEXT, first)
 	check(c.id + ".horn", XItemMarks.recruit_actor_id(XDB.rec("Items", XLiuying.HORN)) == XLiuying.ACTOR)
 
 
