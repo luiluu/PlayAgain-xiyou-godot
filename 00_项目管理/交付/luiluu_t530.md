@@ -1,7 +1,7 @@
 # 交付：luiluu/t530
 
 - 车道／工作者：T530 总账改造核心（v0.16 N07）／小A（Antigravity，前半）→ cc（Opus＋medium，P8，续做收尾）
-- 状态：可合并（R4 返修后，云端结果见「测试」）
+- 状态：可合并（R5 测试种子小修后，云端结果见「测试」）
 
 ## R4 局部热修（cc，Opus＋medium，按小o R4 核查报告 P2-8，只修这一处）
 
@@ -138,7 +138,7 @@
 **R5 P2-9 测试种子（cc，claude-sonnet-5-5＋medium，P6）**
 - 只改 `tests/xiyou_caocao_tianhu_states.gd` 一处：`_p2_8_run` 的 `logic.setup` 传 `XBattleRandom.create(XRandomStream.hex64(0))` 固定战斗种子（连带场景注释补一句）。原来沿用随机种子，第二击暴击时主伤 79→119、总扣血 354→394 假红（小o 复现种子 15）。断言数值、游戏代码没动。
 - 本机：同一场景原样重复跑 20 次（`godot --headless --audio-driver Dummy`，占槽、每次独立临时 HOME），20 次全 39/39；每次气伤 275、总扣血 354（抹施加者 3763／3842）。种子 0 下分叉点返修版 39/39、R3 38/39 是小o 的验证，本轮没复跑。
-- 云端选测：结果见下一提交。
+- 云端选测：基准 d93aaffec，选中 1 个场景（`xiyou_caocao_tianhu_states`）、1 片通过（提交 bf0940d484，`gh run watch` 前台等完）：https://github.com/luiluu/PlayAgain-xiyou-godot/actions/runs/46005829242
 
 **R4 P2-8（cc）**
 - 本机（并行测试.py，headless 不出声）：`xiyou_t530_ledger_core` 59/59、`xiyou_caocao_tianhu_states` 39/39（新增 3 条）、`xiyou_state_effects` 32816/32816、`xiyou_dot` 2259/2259、`xiyou_boss_react` 9074/9074。
