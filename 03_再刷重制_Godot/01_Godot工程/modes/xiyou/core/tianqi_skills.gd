@@ -668,10 +668,18 @@ static func rec_state(id: int, base: Dictionary) -> Dictionary:
 		return hit[2]
 	var sp: Dictionary = _states[id]
 	var r: Dictionary = base.duplicate(true)
+	if sp.has("name"):  # T566：改写表的名字进运行时记录（原版名带旧数值、带 BOM 或为空，空名在状态窗整条被滤掉）
+		r.name = str(sp.name)
+	if sp.has("state_kind"):  # T566：状态窗页签按改写表显式指定（持续火伤、承伤上升、输出下降进「异常」），见 XSideStatus.state_kind
+		r.tianqiKind = str(sp.state_kind)
 	var note := _note_edit(str(r.get("note", "")), sp)
 	note += str(sp.get("note_add", ""))
 	if sp.has("state_note"):
-		note = RegEx.create_from_string("(?s)<StateNote>.*?</StateNote>").sub(note, "<StateNote>\n%s\n</StateNote>" % str(sp.state_note))
+		var sn_re := RegEx.create_from_string("(?s)<StateNote>.*?</StateNote>")
+		if sp.get("state_note_append", true) and str(sp.state_note) != "" and sn_re.search(note) == null:  # T566：原记录没有 <StateNote> 的补一段，否则说明进不了运行时记录（默认补；写 state_note_append: false 才不补）
+			note += "\n<StateNote>\n%s\n</StateNote>" % str(sp.state_note)
+		else:
+			note = sn_re.sub(note, "<StateNote>\n%s\n</StateNote>" % str(sp.state_note))
 	r.note = note
 	r.meta = parse_meta(note)
 	if YEP_RECOMPUTE:
@@ -693,7 +701,11 @@ static func rec_state(id: int, base: Dictionary) -> Dictionary:
 		r.removeAtBattleEnd = bool(sp.battle_end)
 	if sp.get("dot_remove", false):  # 固定量的持续伤害／回复改成按比例（traits 里的再生率），原来的公式去掉
 		r.erase("dot")
-	if sp.get("effects_remove", false):  # 状态脚本（Custom Apply／Regenerate…）整段去掉，改用下面的 dot（曹操霸道真气）
+	var er = sp.get("effects_remove", false)
+	if er is Array:  # T528（沿用 T524 方案）：只去掉这些阶段（如 ["confirm"]：贝吉特超赛去掉确认阶段 ×k，换装外观、移除效果照留）
+		if r.get("effects") is Array:
+			r.effects = (r.effects as Array).filter(func(e): return not (e is Dictionary and str(e.get("phase", "")) in er))
+	elif er:  # 状态脚本（Custom Apply／Regenerate…）整段去掉，改用下面的 dot（曹操霸道真气）
 		r.erase("effects")
 	if sp.has("revive") and r.get("effects") is Array:  # 自动复活（rules3 的 revive 块）：rate 回血比例（不再回满魔法、TP）、chance 几率、once 复活后自己去掉（每场一次）
 		var rv: Dictionary = sp.revive
@@ -943,8 +955,27 @@ static func formula(a, b, item: Dictionary) -> float:
 	return v
 
 
-static func _formula(a, b, item: Dictionary) -> float:
-	var sp := spec(int(item.get("id", 0)))
+## T553（事项82 甲，Kyo 11-26）：天启篇我方 1 号普攻＝物攻 ×1 × 等级缩放（同改写表里「普攻 1.0」的口径，稿 v0.2 第 29 行），
+## 走同一条 _formula（角色条件、单段上限、弱者词条一起吃）。敌人、心魔复制（影·原招换了号）、疫囊扩散不是角色或不是 1 号，照原版 a.atk*4。
+## 不写进 skill_rework.json：1 号敌我共用，按号改写记录会连敌人一起改（T552 报告第二节 5）。表里将来有了 "1" 就让表接管。
+## 回退：ATTACK1 = false（我方普攻回原版 a.atk*4）。
+static var ATTACK1 := true
+const ATTACK1_SPEC := {"kind": "普攻", "damage": {"coef": 1.0, "stats": {"atk": 1}}}
+
+
+static func attack1_applies(item: Dictionary, a) -> bool:
+	return ATTACK1 and int(item.get("id", 0)) == 1 and a is XActor and cards_on() and not has(1)
+
+
+static func attack1_formula(a, b, item: Dictionary) -> float:
+	var prev := _cur_skill
+	var v := _formula(a, b, item, ATTACK1_SPEC)
+	_cur_skill = prev
+	return v
+
+
+static func _formula(a, b, item: Dictionary, sp_override: Dictionary = {}) -> float:
+	var sp := sp_override if not sp_override.is_empty() else spec(int(item.get("id", 0)))
 	var kind := int(item.get("damage", {}).get("type", 1))
 	if sp.has("heal"):
 		var h: Dictionary = sp.heal

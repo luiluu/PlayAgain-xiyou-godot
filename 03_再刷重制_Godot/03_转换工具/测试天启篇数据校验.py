@@ -567,6 +567,58 @@ class SkillReworkGrowth(unittest.TestCase):
         t['skills']['6862']['damage']['conds'][0]['to'] = 3.5
         self.assertTrue(any('stat_floor' in b for b in chk.skill_rework_rules(t)))
 
+    def test_state_effects_remove_phases(self):
+        t = self._table()
+        self.assertFalse([b for b in chk.skill_rework_rules(t) if 'effects_remove（状态脚本' in b])
+        t['states']['2774']['effects_remove'] = ['confirm', 'confirm']
+        self.assertTrue(any('effects_remove（状态脚本' in b for b in chk.skill_rework_rules(t)))
+        t['states']['2774']['effects_remove'] = ['bogus']
+        self.assertTrue(any('effects_remove（状态脚本' in b for b in chk.skill_rework_rules(t)))
+        t['states']['2774']['effects_remove'] = True
+        self.assertFalse([b for b in chk.skill_rework_rules(t) if 'effects_remove（状态脚本' in b])
+
+    def test_actor_innate_cap_rules(self):
+        t = self._table()
+        self.assertEqual(chk.actor_innate_cap_rules(t), [])
+        t['skills']['41']['note_add'] = '<passiveELUP01:35%>'
+        self.assertTrue(any('角色自带入池上限' in b for b in chk.actor_innate_cap_rules(t)))
+        t = self._table()
+        t['states']['2774']['note_add'] = '<passiveHarmRi:35>'
+        self.assertTrue(any('角色自带入池上限' in b for b in chk.actor_innate_cap_rules(t)))
+        t = self._table()
+        t['states']['850']['note_add'] = '<passiveCrHarmRi:60>'
+        self.assertTrue(any('角色自带入池上限' in b for b in chk.actor_innate_cap_rules(t)))
+
+    def test_vegeta_form_mutex_enforced(self):
+        # T528 R2（核查 P1-1）：贝吉特形态招少一条「移除旧形态」就不再按互斥算，要报错
+        t = self._table()
+        self.assertFalse([b for b in chk.actor_innate_cap_rules(t) if '形态' in b])
+        t['skills']['10566']['effects_add'] = [e for e in t['skills']['10566']['effects_add'] if e['dataId'] != 2773]
+        self.assertTrue(any('没移除其余形态' in b for b in chk.actor_innate_cap_rules(t)))
+        t = self._table()
+        del t['skills']['10563']['effects_add']
+        self.assertTrue(any('没移除其余形态' in b for b in chk.actor_innate_cap_rules(t)))
+
+    def test_state_note_append_bool(self):
+        t = self._table()
+        self.assertFalse([b for b in chk.skill_rework_rules(t) if 'state_note_append' in b])
+        for ok in (True, False):
+            t['states']['850']['state_note_append'] = ok
+            self.assertFalse([b for b in chk.skill_rework_rules(t) if 'state_note_append' in b])
+        for wrong in ('false', 'true', 0, 1, None):
+            t['states']['850']['state_note_append'] = wrong
+            self.assertTrue(any('states/850 state_note_append' in b for b in chk.skill_rework_rules(t)), repr(wrong))
+
+    def test_state_kind_value(self):
+        t = self._table()
+        self.assertFalse([b for b in chk.skill_rework_rules(t) if 'state_kind' in b])
+        for ok in ('异常', '增益', '常驻'):
+            t['states']['850']['state_kind'] = ok
+            self.assertFalse([b for b in chk.skill_rework_rules(t) if 'state_kind' in b])
+        for wrong in ('减益', '', True, None):
+            t['states']['850']['state_kind'] = wrong
+            self.assertTrue(any('states/850 state_kind' in b for b in chk.skill_rework_rules(t)), repr(wrong))
+
     def test_battle_end_bool(self):
         t = self._table()
         self.assertFalse([b for b in chk.skill_rework_rules(t) if 'battle_end' in b])
@@ -1466,6 +1518,34 @@ class SuitTemplateT515(unittest.TestCase):
             mut(t)
             bad = chk.suit_template_rules(t, self.affix, self.db)
             self.assertTrue(any(word in b for b in bad), (word, bad))
+
+
+class ActorNotesT556(unittest.TestCase):
+    """人物图鉴全员备注表（T556）：现表通过；缺人、夹数字或禁词要报。"""
+    def setUp(self):
+        self.t = json.loads((chk.DATA_DIR / 'actor_notes.json').read_text(encoding='utf-8'))
+        actors_path = chk.PROJECT / 'modes' / 'xiyou' / 'generated' / 'db' / 'Actors.json'
+        self.actors_db = json.loads(actors_path.read_text(encoding='utf-8')) if actors_path.is_file() else None
+
+    def test_current_passes(self):
+        self.assertEqual(chk.actor_notes_rules(self.t, self.actors_db), [])
+
+    def test_broken(self):
+        cases = [
+            (lambda t: t['actors']['127'].__setitem__('trait', '全能辅助，伤害+20%。'), '不含内部数值编号与禁用词'),
+            (lambda t: t['actors']['172'].__setitem__('story', '病友世界来的测试角色，横行千年前的诅咒之王。'), '不含内部数值编号与禁用词'),
+            (lambda t: t['actors']['175'].__setitem__('trait', '自然治疗神明，花期消耗MP追加自然伤害。'), '不含内部数值编号与禁用词'),
+            (lambda t: t['actors']['143'].__setitem__('trait', '传说中的魔法少女，暂未编入天启篇候选池，仍是图鉴收藏模板玩法。'), '不含内部数值编号与禁用词'),
+            (lambda t: t['actors']['72'].__setitem__('trait', '神暗双仪式辅助，交替施展神光与恶魇可触发双倍伤害。'), '不含倍率词「倍」'),
+            (lambda t: t['actors']['107'].__setitem__('trait', '前排护盾坦克，以雄厚生命撑起玉璋护盾'), '中文句号'),
+            (lambda t: t['actors']['167'].__setitem__('story', '太短。'), '长度'),
+            (lambda t: t['actors'].pop('180'), '163 人'),
+        ]
+        for mut, word in cases:
+            t = copy.deepcopy(self.t)
+            mut(t)
+            bad = chk.actor_notes_rules(t, self.actors_db)
+            self.assertTrue(any(word in str(b) for b in bad), (word, bad))
 
 
 if __name__ == '__main__':

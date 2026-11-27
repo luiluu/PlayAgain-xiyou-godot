@@ -180,9 +180,13 @@ static func rec(name: String, id: int) -> Dictionary:
 		return XTianqiSect.enemy_rec(id, t)  # 天启篇教派连带内容（包丙）：老钱／小钱及打手
 	if name == "Armors" and XTianqiGear.touches_element_fabao(id):
 		return XTianqiGear.element_fabao_rec(id, t)  # 天启篇系别法宝（T442）：4543～4552 改写＋表外水/风 8101/8102
+	if id >= t.size() and XTianqiOrbs.has_new(name, id):
+		return XTianqiOrbs.new_rec(id, t)  # 天启篇宝珠水、风两族（T518，表外号段 3301～3310）
 	if id <= 0 or id >= t.size() or t[id] == null:
 		return {}
 	var out: Dictionary = t[id]
+	if name == "Items" and XTianqiOrbs.touches_item(id):
+		out = XTianqiOrbs.item_view(id, out)  # 天启篇宝珠新表：说明文字换新表数（T518）
 	if name == "Items" and XTianqiSect.has_item(XState.current, id):
 		out = XTianqiSect.item_rec(id, out)  # 天启篇教派连带内容（包丙）：老钱／小钱的账本
 	if CROW_BLUEPRINT_NAMES:
@@ -253,6 +257,7 @@ static func map(map_id: int) -> Dictionary:
 		XFestLobby.patch_map(map_id, _tables[key])  # 冠军庆典：大厅使者、报名处、奖杯、BGM（只在活动期间，O-466）
 		XHonghuangMonument.patch_map(map_id, _tables[key])  # T460：西游大厅洪荒碑（EV82，开关 XHonghuangMonument.ENABLED）
 		XTianqiGuardianGift.patch_map(map_id, _tables[key])  # 天启篇守层者去见面礼、首胜必给宝珠必开压箱底店（T236）
+		XTianqiOrbs.patch_map(map_id, _tables[key])  # 天启篇原作旧宝珠不再给：事件里给的换成同值宝珠残片（T518）
 	return _tables[key] if _tables[key] != null else {}
 
 

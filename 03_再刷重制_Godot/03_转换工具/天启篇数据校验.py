@@ -14,7 +14,7 @@
 - summit.json（31～36 层重做）：只有 B 组，34～36 层齐全、台词齐全。
 - seg_alien.json（按段异化，四线共用）：只有 B 组，1～36 层段表连续不重叠、级名和难度键齐全、几率在 0～100。
 - qiyin_gear.json、qiyin_drop.json、qiyin_dragon.json、qiyin_altar.json（七印祭坛）：只有 B 组，印键只有七个、部位键只有六个、几率在 0～1、权重非负且不全为 0；qiyin_gear 另查类型号在 core/tianqi_gear.gd 的 ORDER 里、七套各 6 件、毕业武器 13 把、神器 5 件；跨表查另三张引用的套装、武器、神器、印、部位都在 qiyin_gear 里。只查表里现有的字段，不认识的键不报错。
-- skill_rework.json（全角色技能重构）：forced_copy_pending（T255 登记：技能号→原因）、forced_copy_unreachable（T261：副本分支天启篇走不到，技能号→原因）；卡里技能的效果 44 调公共事件强制放副本、副本没进卡的，要 effects_remove 或副本进卡或登记；只有 B 组，超强者 17（含五条悟）／强者 54 不重叠、技能行系数大于 0、覆盖层全开后系数和属性权重不得有小数（整数或整数百分比，T191）、治疗比例与追加几率在 0～1；技能行 tags（T519）只能填持续伤害／减益、不重复、只给主动招打；状态行 battle_end 是布尔（T263）；技能行 self_states_on_hit 只能是 true 且要带 self_states（T264）；技能行 cast_pick、seg_elements_of、伤害条件 stat_floor 的格式（T268）。
+- skill_rework.json（全角色技能重构）：forced_copy_pending（T255 登记：技能号→原因）、forced_copy_unreachable（T261：副本分支天启篇走不到，技能号→原因）；卡里技能的效果 44 调公共事件强制放副本、副本没进卡的，要 effects_remove 或副本进卡或登记；只有 B 组，超强者 17（含五条悟）／强者 54 不重叠、技能行系数大于 0、覆盖层全开后系数和属性权重不得有小数（整数或整数百分比，T191）、治疗比例与追加几率在 0～1；技能行 tags（T519）只能填持续伤害／减益、不重复、只给主动招打；状态行 battle_end 是布尔（T263）；状态行 effects_remove 是布尔或阶段名列表（T528）；状态行 state_note_append 是布尔（T566）、state_kind 只能是 异常／增益／常驻（T566）；技能行 self_states_on_hit 只能是 true 且要带 self_states（T264）；技能行 cast_pick、seg_elements_of、伤害条件 stat_floor 的格式（T268）；角色自带入池上限（T528）：单条技能／状态与全库角色可同时生效合计的技能伤／元素伤每系／终伤 ≤+30%、爆伤 ≤+50%（共用进阶超越极限 1240/1241/1242/1244 单算）。
 - reforge.json、alien_gear.json、abyss_shelves.json、qiyin_equip.json、qiyin_show.json、qiyin_dragon_run.json（重铸、异化装备、深渊商人货架、七印装备底子、七印演出、七首之龙流程）：只有 B 组，只查代码读的字段，类型和范围（几率 0～1、百分比 0～100、花费非负、随阶／随级不降、颜色 #RRGGBB、能力值 8 项）；跨表查货架的层和阶在 affix_table、品质在 tianqi_affix_roll.gd 的 QUALITY_KEYS、异化词条在 rewards.json 的 finale.lines、七印装备的部位和武器类型与 qiyin_gear 对得上、演出的印齐七个；参照表不在就跳过那一项。
 - brand.json（烙印，T073-a）：只有 B 组，节点递增且末项 100、配满加成不超过 0.5、不刻印封顶是节点之一且正好是 uncarved_max_realm 那境、换伤支四条且伤害＝承伤、常驻六条发作六种齐且 over 照节点、熟的花样名单是六种的子集且不含抽自己／六亲不认／换人、灼痕各级递增、首通加起来不超过 100 且每 5 层末等于节点、折法＝满了才算、带 _range 的数落在范围里。稿定的数带 4。realm 段（T514 境底＋境支）：七行境底、19 支、换伤支对 trade、别的支两项属性不带攻。
 - balance_table.json 的 guardian_phase4（守层者三表，T239）：hp_base／atk_scale／resist 层号 1～34、值为正；focus 层号 5～33、{skill: 正整数, scale: 正数[, single: 1]}（T363）。lifesteal_cap {skills: 正整数列表, pct: {五档难度键齐全: 正整数}}（T392）。dot_pct {层号 1～34: {状态号: 1～100 整数}}（T402）。hp_pct {层号 1～34: 1～100 整数}（T406）。
@@ -1216,6 +1216,11 @@ SKILL_TAGS = ('持续伤害', '减益')
 PASSIVE_KINDS = ('被动', '心法', '领袖', '领袖说明', '血脉', '光环', '进阶', '', None)
 
 
+# T528（沿用 T524 方案）：状态效果的阶段名（generated/db/States.json effects[].phase 全集）
+STATE_EFFECT_PHASES = frozenset(('remove', 'initiate', 'select', 'action_end', 'respond', 'apply', 'battle', 'react', 'turn_start', 'leave',
+                                  'conclude', 'turn_end', 'confirm', 'deselect', 'crit', 'victory', 'action_start', 'regenerate', 'establish'))
+
+
 def skill_rework_rules(table: dict) -> list:
     """档位名单人数和不重叠、技能行的系数／比例／几率范围（D205 起不再查数字避开 4）。"""
     bad = []
@@ -1275,6 +1280,15 @@ def skill_rework_rules(table: dict) -> list:
     for sid, row in table.get('states', {}).items():
         if isinstance(row, dict) and 'battle_end' in row and not isinstance(row['battle_end'], bool):
             bad.append('states/%s battle_end（战斗结束移除，T263）要是 true／false' % sid)
+        if isinstance(row, dict) and 'state_note_append' in row and not isinstance(row['state_note_append'], bool):
+            bad.append('states/%s state_note_append（原记录没有 <StateNote> 时补一段，默认补，T566）要是 true／false' % sid)
+        if isinstance(row, dict) and 'state_kind' in row and row['state_kind'] not in ('异常', '增益', '常驻'):
+            bad.append('states/%s state_kind（状态窗页签显式指定，T566）要是 异常／增益／常驻：%r' % (sid, row['state_kind']))
+        if isinstance(row, dict) and 'effects_remove' in row:
+            er = row['effects_remove']
+            if not (isinstance(er, bool) or (isinstance(er, list) and er and len(set(er)) == len(er)
+                                             and all(x in STATE_EFFECT_PHASES for x in er))):
+                bad.append('states/%s effects_remove（状态脚本整段去掉，T528 起也可只去指定阶段）要是 true／false，或不重复的阶段名列表' % sid)
         if isinstance(row, dict) and 'hit_extra_pct' in row:
             v = row['hit_extra_pct']
             if not (isinstance(v, int) and not isinstance(v, bool) and 1 <= v <= 100):
@@ -1448,6 +1462,247 @@ def forced_copy_rules(table: dict, db_dir: Path = None) -> list:
     return bad
 
 
+# T528（预算稿 v0.16 六.1／九.3＋D290）：角色自带加成入池上限（技能伤／元素伤每系／终伤 ≤+30%，爆伤 ≤+50%）
+INNATE_CAPS = {'skill': 30.0, 'elem': 30.0, 'harm': 30.0, 'crit': 50.0}
+INNATE_SHARED_ADV = frozenset(('1240', '1241', '1242', '1244'))  # 全员共用进阶线「超越极限 I～IV」，不算单角色自带
+INNATE_REALM_IDS = frozenset(('5707', '5714', '5777', '5778', '8083', '9976', '9982', '10018'))  # XTianqiBase.REALM_IDS 已停用
+INNATE_DISABLED_ACTORS = frozenset(('141', '146', '152', '161'))  # CodexDisabledActor 停用角色
+INNATE_MUTEX_GROUPS = (
+    frozenset(('sk:4732', 'sk:4733', 'sk:4734')),
+    frozenset(('sk:2768', 'sk:4772', 'sk:4773')),
+    frozenset(('sk:6910', 'sk:6911')),
+    frozenset(('sk:4944', 'sk:4945', 'sk:4946', 'sk:4947')),
+    frozenset(('sk:5859', 'sk:5861')),
+    frozenset(('sk:7500', 'sk:7517')),
+    frozenset(('sk:10113', 'sk:10579', 'sk:10580', 'sk:10581', 'sk:10582', 'sk:10583',
+               'sk:10585', 'sk:10586', 'sk:10587', 'sk:10588', 'sk:10589', 'sk:10591')),
+)
+# T528 R2（核查 P1-1）：贝吉特界王拳／超赛形态不再静态假定互斥——施放招要真的带「移除其余形态」（效果 22）才按互斥取最大，
+# 否则按叠加求和（会越线报错）。超蓝 2774 是终形：移除会触发倒下，其余招不移除它；低阶招在学超蓝前已被公共事件 1716～1720 遗忘。
+VEGETA_FORM_SKILLS = {'9943': '2567', '10562': '2770', '10563': '2771', '10564': '2772', '10565': '2773', '10566': '2774'}
+VEGETA_TERMINAL_FORM = '2774'
+
+
+def vegeta_mutex_missing(skills_sr: dict, db_skills: dict) -> list:
+    """返回缺的 [技能号, 该移除而没移除的状态号]；空表示形态互斥由数据落实。"""
+    missing = []
+    for sid, own in VEGETA_FORM_SKILLS.items():
+        sp = skills_sr.get(sid) or {}
+        effs = list(db_skills.get(sid, {}).get('effects', []))
+        rem = {(int(x[0]), int(x[1])) for x in sp.get('effects_remove', []) if isinstance(x, list) and len(x) >= 2}
+        effs = [e for e in effs if (int(e.get('code', -1)), int(e.get('dataId', -1))) not in rem] + list(sp.get('effects_add', []))
+        removed = {str(int(e.get('dataId', 0))) for e in effs if int(e.get('code', 0)) == 22 and float(e.get('value1', 0)) >= 1}
+        for other in VEGETA_FORM_SKILLS.values():
+            if other != own and other != VEGETA_TERMINAL_FORM and other not in removed:
+                missing.append([sid, other])
+    return missing
+
+_RE_HARM = re.compile(r'(?i)<passiveHarmRi:([-]?\d+(?:\.\d+)?)(%?)>')
+_RE_CRIT = re.compile(r'(?i)<passiveCrHarmRi:([-]?\d+(?:\.\d+)?)(%?)>')
+_RE_STYPE = re.compile(r'<SkillTypesDvup([A-Za-z]+):\s*([\d.]+%?)>')
+_RE_SKET = re.compile(r'<SkETypeHarmRi(\d+):\s*([\d.]+%?)>')
+_RE_SPASS = re.compile(r'(?i)<SkillPass(\d+):([^>]+)>')
+_RE_ELUP = re.compile(r'(?i)<passiveELUP(\d+):([-]?\d+(?:\.\d+)?)(%?)>')
+_RE_ELAMP = re.compile(r'(?i)<Element Amplify (\d+):\s*([+-]?\d+(?:\.\d+)?)(%?)>')
+_RE_START_ST = re.compile(r'(?i)<Start(?:WT)?PushState(\d+):')
+_RE_PUSH_SELF = re.compile(r'(?i)<(?:PushsubState|RecPushState)(\d+):')
+_RE_FIRST_NUM = re.compile(r'[-]?\d+(?:\.\d+)?')
+
+
+def _apply_note_edit(note: str, sp) -> str:
+    if not isinstance(sp, dict):
+        return note
+    for pat in sp.get('note_remove', []):
+        note = re.sub(r'(?i)<' + pat + r'(?::[^>]*|\s+[^>]*)?>', '', note)
+    for pair in sp.get('note_sub', []):
+        if isinstance(pair, list) and len(pair) == 2:
+            note = re.sub(pair[0], pair[1], note)
+    note += str(sp.get('note_add', ''))
+    return note
+
+
+def _scan_innate_note(note: str) -> dict:
+    def _num(s: str) -> float:
+        m = _RE_FIRST_NUM.search(str(s))
+        return float(m.group(0)) if m else 0.0
+
+    res = {'harm': 0.0, 'crit': 0.0, 'elem': {}, 'skill': {}}
+    res['harm'] = sum(float(m.group(1)) for m in _RE_HARM.finditer(note))
+    res['crit'] = sum(float(m.group(1)) for m in _RE_CRIT.finditer(note))
+    for m in _RE_STYPE.finditer(note):
+        k = 'stype:' + m.group(1)
+        res['skill'][k] = res['skill'].get(k, 0.0) + _num(m.group(2))
+    for m in _RE_SKET.finditer(note):
+        k = 'sket:' + m.group(1)
+        res['skill'][k] = res['skill'].get(k, 0.0) + _num(m.group(2))
+    for m in _RE_SPASS.finditer(note):
+        if '%' in m.group(2):
+            k = 'spass:' + str(int(m.group(1)))
+            res['skill'][k] = res['skill'].get(k, 0.0) + _num(m.group(2))
+    for m in _RE_ELUP.finditer(note):
+        e = str(int(m.group(1)))
+        res['elem'][e] = res['elem'].get(e, 0.0) + float(m.group(2))
+    for m in _RE_ELAMP.finditer(note):
+        e = str(int(m.group(1)))
+        res['elem'][e] = res['elem'].get(e, 0.0) + float(m.group(2))
+    return res
+
+
+def _max_with_mutex(items: list, groups=INNATE_MUTEX_GROUPS) -> float:
+    used = set()
+    total = 0.0
+    for grp in groups:
+        g_vals = [v for tag, v in items if tag in grp]
+        if g_vals:
+            total += max(g_vals)
+            used |= grp
+    total += sum(v for tag, v in items if tag not in used)
+    return total
+
+
+def actor_innate_cap_rules(table: dict, db_dir=None) -> list:
+    """T528（预算稿 v0.16 六.1／九.3）：校验角色自带入池加成（技能／元素每系／终伤 ≤+30%、爆伤 ≤+50%）。"""
+    bad = []
+    merged = apply_skill_tune(table)
+    skills_sr = merged.get('skills', {})
+    states_sr = merged.get('states', {})
+    db_dir = Path(db_dir) if db_dir else DB_DIR
+    has_db = (db_dir / 'Skills.json').is_file() and (db_dir / 'States.json').is_file()
+    db_skills = {str(x['id']): x for x in json.loads((db_dir / 'Skills.json').read_text(encoding='utf-8')) if x} if has_db else {}
+    db_states = {str(x['id']): x for x in json.loads((db_dir / 'States.json').read_text(encoding='utf-8')) if x} if has_db else {}
+
+    for sid, sp in skills_sr.items():
+        if not str(sid).isdigit() or not isinstance(sp, dict) or str(sid) in INNATE_SHARED_ADV:
+            continue
+        r = _scan_innate_note(_apply_note_edit(str(db_skills.get(str(sid), {}).get('note', '')), sp))
+        if r['harm'] > INNATE_CAPS['harm'] + 1e-6:
+            bad.append('角色自带入池上限(T528)：skills/%s 终伤 +%.0f%% 超 +30%%' % (sid, r['harm']))
+        if r['crit'] > INNATE_CAPS['crit'] + 1e-6:
+            bad.append('角色自带入池上限(T528)：skills/%s 爆伤 +%.0f%% 超 +50%%' % (sid, r['crit']))
+        for e, v in r['elem'].items():
+            if v > INNATE_CAPS['elem'] + 1e-6:
+                bad.append('角色自带入池上限(T528)：skills/%s 元素%s +%.0f%% 超 +30%%' % (sid, e, v))
+        for k, v in r['skill'].items():
+            if v > INNATE_CAPS['skill'] + 1e-6:
+                bad.append('角色自带入池上限(T528)：skills/%s 技能伤(%s) +%.0f%% 超 +30%%' % (sid, k, v))
+
+    for stid, sp in states_sr.items():
+        if not str(stid).isdigit() or not isinstance(sp, dict):
+            continue
+        r = _scan_innate_note(_apply_note_edit(str(db_states.get(str(stid), {}).get('note', '')), sp))
+        if r['harm'] > INNATE_CAPS['harm'] + 1e-6:
+            bad.append('角色自带入池上限(T528)：states/%s 终伤 +%.0f%% 超 +30%%' % (stid, r['harm']))
+        if r['crit'] > INNATE_CAPS['crit'] + 1e-6:
+            bad.append('角色自带入池上限(T528)：states/%s 爆伤 +%.0f%% 超 +50%%' % (stid, r['crit']))
+        for e, v in r['elem'].items():
+            if v > INNATE_CAPS['elem'] + 1e-6:
+                bad.append('角色自带入池上限(T528)：states/%s 元素%s +%.0f%% 超 +30%%' % (stid, e, v))
+        for k, v in r['skill'].items():
+            if v > INNATE_CAPS['skill'] + 1e-6:
+                bad.append('角色自带入池上限(T528)：states/%s 技能伤(%s) +%.0f%% 超 +30%%' % (stid, k, v))
+
+    if not (has_db and (db_dir / 'Actors.json').is_file() and (db_dir / 'Classes.json').is_file() and (DATA_DIR / 'base_line.json').is_file()):
+        return bad
+
+    groups = INNATE_MUTEX_GROUPS
+    miss = vegeta_mutex_missing(skills_sr, db_skills)
+    if miss:
+        bad.append('角色自带入池上限(T528)：贝吉特形态招没移除其余形态（效果 22），形态会叠加：%s' % miss)
+    else:
+        groups = groups + (frozenset('st:' + x for x in VEGETA_FORM_SKILLS.values()),)
+    db_actors = {str(x['id']): x for x in json.loads((db_dir / 'Actors.json').read_text(encoding='utf-8')) if x}
+    db_classes = {str(x['id']): x for x in json.loads((db_dir / 'Classes.json').read_text(encoding='utf-8')) if x}
+    base_actors = json.loads((DATA_DIR / 'base_line.json').read_text(encoding='utf-8')).get('actors', {})
+    actor_skills = {aid: set() for aid in base_actors}
+    for aid in base_actors:
+        a = db_actors.get(aid)
+        if not a:
+            continue
+        c = db_classes.get(str(a.get('classId', 0)))
+        if c:
+            for l in c.get('learnings', []):
+                actor_skills[aid].add(str(l['skillId']))
+        for t in a.get('traits', []):
+            if t.get('code') == 43:
+                actor_skills[aid].add(str(t['dataId']))
+    for sid, sp in skills_sr.items():
+        if isinstance(sp, dict) and sp.get('actor') is not None:
+            actor_skills.setdefault(str(sp['actor']), set()).add(str(sid))
+
+    for aid in sorted(base_actors, key=int):
+        if aid in INNATE_DISABLED_ACTORS:
+            continue
+        harm_src, crit_src = [], []
+        elem_src, skill_src = {}, {}
+        states_added = set()
+        for sid in sorted(actor_skills.get(aid, ()), key=lambda x: int(x) if x.isdigit() else 0):
+            if sid in INNATE_REALM_IDS or sid in INNATE_SHARED_ADV:
+                continue
+            base = db_skills.get(sid, {})
+            sp = skills_sr.get(sid)
+            note = _apply_note_edit(str(base.get('note', '')), sp)
+            r = _scan_innate_note(note)
+            if r['harm'] > 0:
+                harm_src.append(('sk:' + sid, r['harm']))
+            if r['crit'] > 0:
+                crit_src.append(('sk:' + sid, r['crit']))
+            for e, v in r['elem'].items():
+                if v > 0:
+                    elem_src.setdefault(e, []).append(('sk:' + sid, v))
+            for k, v in r['skill'].items():
+                if v > 0:
+                    skill_src.setdefault(k, []).append(('sk:' + sid, v))
+            if base.get('scope', 0) in (0, 7, 8, 9, 10, 11):
+                effs = list(base.get('effects', []))
+                rem = (sp or {}).get('effects_remove', [])
+                if rem:
+                    rem_set = {(int(x[0]), int(x[1])) for x in rem if isinstance(x, list) and len(x) >= 2}
+                    effs = [e for e in effs if (int(e.get('code', -1)), int(e.get('dataId', -1))) not in rem_set]
+                effs.extend((sp or {}).get('effects_add', []))
+                for e in effs:
+                    if int(e.get('code', 0)) == 21 and int(e.get('dataId', 0)) > 0:
+                        states_added.add(str(int(e['dataId'])))
+            for ss in (sp or {}).get('self_states', []):
+                if isinstance(ss, dict) and ss.get('state'):
+                    states_added.add(str(int(ss['state'])))
+                elif isinstance(ss, int):
+                    states_added.add(str(ss))
+            for m in _RE_START_ST.finditer(note):
+                states_added.add(str(int(m.group(1))))
+            for m in _RE_PUSH_SELF.finditer(note):
+                states_added.add(str(int(m.group(1))))
+        for stid in sorted(states_added):
+            stb = db_states.get(stid, {})
+            stsp = states_sr.get(stid)
+            r = _scan_innate_note(_apply_note_edit(str(stb.get('note', '')), stsp))
+            if r['harm'] > 0:
+                harm_src.append(('st:' + stid, r['harm']))
+            if r['crit'] > 0:
+                crit_src.append(('st:' + stid, r['crit']))
+            for e, v in r['elem'].items():
+                if v > 0:
+                    elem_src.setdefault(e, []).append(('st:' + stid, v))
+            for k, v in r['skill'].items():
+                if v > 0:
+                    skill_src.setdefault(k, []).append(('st:' + stid, v))
+        hs = _max_with_mutex(harm_src, groups)
+        cs = _max_with_mutex(crit_src, groups)
+        if hs > INNATE_CAPS['harm'] + 1e-6:
+            bad.append('角色自带入池上限(T528)：actor/%s 合计终伤 +%.0f%% 超 +30%%' % (aid, hs))
+        if cs > INNATE_CAPS['crit'] + 1e-6:
+            bad.append('角色自带入池上限(T528)：actor/%s 合计爆伤 +%.0f%% 超 +50%%' % (aid, cs))
+        for e, lst in elem_src.items():
+            es = _max_with_mutex(lst, groups)
+            if es > INNATE_CAPS['elem'] + 1e-6:
+                bad.append('角色自带入池上限(T528)：actor/%s 元素%s合计 +%.0f%% 超 +30%%' % (aid, e, es))
+        st_m = max((_max_with_mutex(lst, groups) for k, lst in skill_src.items() if k.startswith('stype:')), default=0.0)
+        sk_m = max((_max_with_mutex(lst, groups) for k, lst in skill_src.items() if k.startswith('sket:')), default=0.0)
+        sp_m = max((_max_with_mutex(lst, groups) for k, lst in skill_src.items() if k.startswith('spass:')), default=0.0)
+        if st_m + sk_m + sp_m > INNATE_CAPS['skill'] + 1e-6:
+            bad.append('角色自带入池上限(T528)：actor/%s 合计技能伤 +%.0f%% 超 +30%%' % (aid, st_m + sk_m + sp_m))
+    return bad
+
+
 def check_skill_rework(_args) -> bool:
     path = DATA_DIR / 'skill_rework.json'
     if not path.is_file():
@@ -1455,7 +1710,7 @@ def check_skill_rework(_args) -> bool:
         return True
     try:
         table = json.loads(path.read_text(encoding='utf-8'))
-        bad = _with_tune(skill_rework_rules)(table) + coef_integer_rules(table) + forced_copy_rules(table)
+        bad = _with_tune(skill_rework_rules)(table) + coef_integer_rules(table) + forced_copy_rules(table) + actor_innate_cap_rules(table)
     except Exception as e:
         bad = ['能读表并跑完全部检查：%s: %s' % (type(e).__name__, e)]
     return _report('skill_rework.json', '规则自检', bad)
@@ -4282,6 +4537,74 @@ def check_suit_template(_args) -> bool:
     return _run_table('suit_template.json', lambda t: suit_template_rules(t, _load_opt('affix_table.json'), suits_db))
 
 
+ACTOR_NOTES_FORBIDDEN = re.compile(
+    r'[0-9%×*]|测试角色|定制角色|特殊角色|图像已接入|繁星版|纳西妲版本|高爆版|隐藏加成'
+    r'|候选池|暂未|编入|图鉴|收藏|模板|玩法'
+    r'|(?<![A-Za-z])(?:TP|MP|HP)(?![A-Za-z])'
+)
+# 特点行额外禁「倍」（防倍伤／倍增／双倍等倍率说法）；故事行保留 Kyo 审定样稿 127 小铃兰「九倍的温柔与坚强」
+ACTOR_NOTES_TRAIT_FORBIDDEN = re.compile(r'倍')
+ACTOR_NOTES_HIDDEN = {141, 157, 160, 161, 166}  # 同 core/imported_balance.gd（146 苍龙、152 徐凤年已解放）
+
+
+def actor_notes_rules(table: dict, actors_db=None) -> list:
+    """actor_notes.json（T556，天启篇人物图鉴全员备注，Kyo 11-27 事项 84 定稿）：
+    两行无前缀（story 一两句故事＋trait 角色定位与特点），禁止内部数值、编号与出戏元词；
+    转换产物 Actors.json 在时核对全部 163 位天启篇图鉴可见角色齐全且名字一致。"""
+    bad = []
+    def check(label, ok, val=None):
+        if not ok:
+            bad.append((label, val))
+    check('version 是 1', table.get('version') == 1, table.get('version'))
+    actors = table.get('actors')
+    check('actors 是非空字典', isinstance(actors, dict) and len(actors) > 0, type(actors).__name__)
+    if not isinstance(actors, dict):
+        return bad
+    check('天启篇可见角色共 163 人', len(actors) == 163, len(actors))
+    for k, row in actors.items():
+        check('键 %s 是正整数字符串' % k, isinstance(k, str) and k.isdigit() and int(k) > 0, k)
+        if not isinstance(row, dict):
+            check('actors.%s 是字典' % k, False, type(row).__name__)
+            continue
+        nm = row.get('name')
+        check('actors.%s.name 非空字符串' % k, isinstance(nm, str) and nm.strip() != '', nm)
+        for fld in ('story', 'trait'):
+            txt = row.get(fld)
+            ok_str = isinstance(txt, str) and txt.strip() != '' and txt == txt.strip()
+            check('actors.%s.%s 非空无首尾空白' % (k, fld), ok_str, txt)
+            if not ok_str:
+                continue
+            check('actors.%s.%s 不含换行' % (k, fld), '\n' not in txt and '\r' not in txt, txt)
+            check('actors.%s.%s 长度在 15～65 字内' % (k, fld), 15 <= len(txt) <= 65, len(txt))
+            check('actors.%s.%s 以中文句号结尾' % (k, fld), txt.endswith('。'), txt[-4:])
+            m = ACTOR_NOTES_FORBIDDEN.search(txt)
+            check('actors.%s.%s 不含内部数值编号与禁用词' % (k, fld), m is None, m.group(0) if m else None)
+            if fld == 'trait':
+                m2 = ACTOR_NOTES_TRAIT_FORBIDDEN.search(txt)
+                check('actors.%s.trait 不含倍率词「倍」' % k, m2 is None, m2.group(0) if m2 else None)
+    if isinstance(actors_db, list):
+        want = {}
+        for rec in actors_db:
+            if isinstance(rec, dict) and rec.get('name') and int(rec.get('id', 0)) not in ACTOR_NOTES_HIDDEN:
+                want[str(int(rec['id']))] = str(rec['name'])
+        want['180'] = '五条悟'  # 天启篇动态注册（core/gojo.gd）
+        missing = sorted(set(want) - set(actors), key=int)
+        extra = sorted(set(actors) - set(want), key=lambda x: int(x) if x.isdigit() else 999999)
+        check('覆盖全部天启篇图鉴可见角色', not missing, missing[:10])
+        check('无多余未知角色号', not extra, extra[:10])
+        for sid, wname in want.items():
+            if sid in actors and isinstance(actors[sid], dict):
+                check('actors.%s 名字与数据库一致' % sid, actors[sid].get('name') == wname,
+                      (actors[sid].get('name'), wname))
+    return bad
+
+
+def check_actor_notes(_args) -> bool:
+    actors_path = PROJECT / 'modes' / 'xiyou' / 'generated' / 'db' / 'Actors.json'
+    actors_db = json.loads(actors_path.read_text(encoding='utf-8')) if actors_path.is_file() else None
+    return _run_table('actor_notes.json', lambda t: actor_notes_rules(t, actors_db))
+
+
 # 每张表一个检查函数：(名字, 函数(args) -> 是否通过)。词条表那张单加 affix_table 时往这里登记。
 CHECKS = [
     ('balance_table', lambda args: check_balance_table(args.params)),
@@ -4332,6 +4655,7 @@ CHECKS = [
     ('general_books', check_general_books),
     ('gear_elem_amp', check_gear_elem_amp),
     ('suit_template', check_suit_template),
+    ('actor_notes', check_actor_notes),
 ]
 
 

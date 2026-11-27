@@ -409,7 +409,7 @@ static func status_ops(id: int, measure: Callable) -> Array:
 		y += LH
 		var ids := []
 		for t in traits:
-			if int(t.code) == kind[0]:
+			if int(t.code) == kind[0] and not (kind[0] == 52 and XSkinBookPage.armor_hidden(int(t.dataId))):   # T571：天启篇不列「矢」
 				ids.append(int(t.dataId))
 		ids.sort()
 		# 类型表里没有的 ID（174 的武器类型 13 起）原版 drawText(undefined) 不画，但仍占位
@@ -427,17 +427,25 @@ static func status_ops(id: int, measure: Callable) -> Array:
 				if names[i] != "":
 					ops.append(_t(names[i], gap * i, y, BOX_W, XUI.TEXT))
 		y += LH
-	# <ActorNote>…</ActorNote>：每 32 字一行，0..ceil(长/32) 共多画一行
-	var showing := false
-	for line in RegEx.create_from_string("[\\r\\n]+").sub(str(d.get("note", "")), "\n", true).split("\n"):
-		if line == "<ActorNote>" or showing:
-			showing = true
-			if line == "</ActorNote>":
-				showing = false
-			elif line != "<ActorNote>":
-				for a in range(int(ceilf(line.length() / 32.0)) + 1):
-					ops.append(_t(line.substr(a * 32, 32), 0, y, BOX_W, XUI.TEXT))
-					y += LH
+	# <ActorNote>…</ActorNote>：每 32 字一行，0..ceil(长/32) 共多画一行；T556 天启篇优先读统一备注（西游档返回空，零改动）
+	var tq_note := XTianqiActorNotes.lines_of(id)
+	if not tq_note.is_empty():
+		for line in tq_note:
+			var sline := str(line)
+			for a in range(int(ceilf(sline.length() / 32.0)) + 1):
+				ops.append(_t(sline.substr(a * 32, 32), 0, y, BOX_W, XUI.TEXT))
+				y += LH
+	else:
+		var showing := false
+		for line in RegEx.create_from_string("[\\r\\n]+").sub(str(d.get("note", "")), "\n", true).split("\n"):
+			if line == "<ActorNote>" or showing:
+				showing = true
+				if line == "</ActorNote>":
+					showing = false
+				elif line != "<ActorNote>":
+					for a in range(int(ceilf(line.length() / 32.0)) + 1):
+						ops.append(_t(line.substr(a * 32, 32), 0, y, BOX_W, XUI.TEXT))
+						y += LH
 	return ops
 
 
@@ -499,7 +507,7 @@ static func list_row_ops(id: int, s: Dictionary, y: float, measure: Callable) ->
 	var color := XUI.text_color(14) if t == 4 else XUI.text_color(3) if t >= 1 and t <= 3 else XUI.text_color(6)
 	var lw: float = measure.call(label, XUI.FONT_SIZE)
 	ops.append(_t(label, 6, y, lw + 8, color))
-	var preview := id in PREVIEW_ACTORS and not known_skill_ids(id).has(sid)
+	var preview := id in PREVIEW_ACTORS and not XTestMode.book_all() and not known_skill_ids(id).has(sid)
 	var pw: float = measure.call("未解锁", XUI.FONT_SIZE) + 8 if preview else 0.0
 	_item_name(ops, s, 6 + lw + 4, y, w - lw - 4 - pw)
 	if preview:

@@ -176,7 +176,10 @@ static var _re_bad_name: RegEx
 static var _re_permanent: RegEx
 
 ## installEquipmentStatusRuntime stateKind(s, passive)：passive＝不在 _states 里（重制：不在 state_ids，如套装状态）
+## tianqiKind：天启篇改写表显式指定的页签（XTianqiSkills.rec_state 写进记录，T566），先于原版规则；西游档记录没有这一项
 static func state_kind(st: Dictionary, passive: bool) -> String:
+	if st.has("tianqiKind"):
+		return str(st.tianqiKind)
 	if passive:
 		return "常驻"
 	if _re_bufftype == null:
@@ -214,20 +217,23 @@ static var _kind_cache := {}
 ## state_kind 按（状态号、是否被动）缓存：被动恒为「常驻」，不进缓存；只缓存数据库原条（XDB.rec 同一个字典），
 ## states() 换过的视图（XZhenqi.pojia_state 改特性 21 的倍率，可能改变「异常」判定）每次现算（审查第 76 期）
 static func _kind_cached(id: int, st: Dictionary, passive: bool) -> String:
-	if passive:
+	if passive and not st.has("tianqiKind"):
 		return "常驻"
 	if not is_same(st, XDB.rec("States", id)):
 		return state_kind(st, false)
-	if not _kind_cache.has(id):
-		_kind_cache[id] = state_kind(st, false)
-	return _kind_cache[id]
+	var key := XTianqiSkills.state_key(id)
+	if not _kind_cache.has(key):
+		_kind_cache[key] = state_kind(st, false)
+	return _kind_cache[key]
 
 
-## 状态数据不变（同号同一条），按号缓存；画面快照每条日志都要算
+## 状态数据不变（同号同一条），按号缓存；画面快照每条日志都要算。天启篇改写过的状态另存（state_key，T566）：
+## 两种存档的说明不同，同一次开游戏里换档不能串
 static func _visible_cached(id: int, st: Dictionary) -> bool:
-	if not _visible_cache.has(id):
-		_visible_cache[id] = visible_state(st)
-	return _visible_cache[id]
+	var key := XTianqiSkills.state_key(id)
+	if not _visible_cache.has(key):
+		_visible_cache[key] = visible_state(st)
+	return _visible_cache[key]
 
 
 ## installEquipmentStatusRuntime visibleState
