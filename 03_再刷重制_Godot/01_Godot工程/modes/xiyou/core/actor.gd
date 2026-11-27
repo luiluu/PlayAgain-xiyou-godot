@@ -87,7 +87,24 @@ static func is_absorb_actor(id: int) -> bool:
 	return _absorb_ids.has(id)
 
 ## CodexBalance41.hasWeapon：背包武器或任一角色身上的武器里有这个角色的开放专武
+## T574（O-待定）：先看有没有哪把开放专武写了本人（没有就一定是假），再逐处找、不把背包和各人身上的装备拼成一张新表。
+## 结果同下面的整段找法（只读、不分先后）；技能 id 表每建一次都要问一遍，背包装备多时一次 0.2～0.4 ms。回退：ABSORB_SCAN_FAST = false
+static var ABSORB_SCAN_FAST := true
 func has_absorb_weapon() -> bool:
+	if ABSORB_SCAN_FAST:
+		absorb_owners(0)
+		if not _absorb_ids.has(actor_id):
+			return false
+		if _absorb_in(raw_equip_list()):
+			return true
+		var cur = XState.current
+		if cur != null:
+			if _absorb_in(cur.gear):
+				return true
+			for other in cur.actors.values():
+				if other != self and other is XActor and _absorb_in(other.raw_equip_list()):
+					return true
+		return false
 	var list: Array = raw_equip_list()  # 只看 kind／base，不需要吸取视图（核查 P3，11-15）
 	var s = XState.current
 	if s != null:
@@ -95,6 +112,13 @@ func has_absorb_weapon() -> bool:
 		for other in s.actors.values():
 			if other != self and other is XActor:
 				list = list + other.raw_equip_list()
+	for e in list:
+		if e is Dictionary and e.get("kind") == "weapon" and absorb_owners(int(e.get("base", e.get("id", 0)))).has(actor_id):
+			return true
+	return false
+
+
+func _absorb_in(list: Array) -> bool:
 	for e in list:
 		if e is Dictionary and e.get("kind") == "weapon" and absorb_owners(int(e.get("base", e.get("id", 0)))).has(actor_id):
 			return true

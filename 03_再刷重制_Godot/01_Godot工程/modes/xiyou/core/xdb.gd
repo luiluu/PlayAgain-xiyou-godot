@@ -179,6 +179,8 @@ static func skill_for(u, id: int) -> Dictionary:
 ## 取一条记录；不存在或为空时返回 {}。
 static func rec(name: String, id: int) -> Dictionary:
 	var t: Array = table(name)
+	if XIYOU_REC_FAST and id > 0 and id < t.size() and name != "Items" and name != "CommonEvents" and not XTianqi.active(XState.current):
+		return _rec_xiyou(name, id, t)
 	if name == "Skills" and id >= t.size() and XTianqiSkills.has_new(id):
 		return XTianqiSkills.new_rec(id, t)  # 天启篇技能重构补的招（表外号段，按底号复制）
 	if name == "States" and id >= t.size() and XTianqiSkills.has_new_state(id):
@@ -247,6 +249,25 @@ static func rec(name: String, id: int) -> Dictionary:
 		out = XTianqiElements.rec(name, id, out)  # 天启篇元素重做：技能转属、被动转属、自然书改名
 	if XTianqiSecrets.touches_rec(name, id):
 		out = XTianqiSecrets.rec_view(name, id, out)  # 天启篇功法重标（T443）：50 本原版功法物品/技能与状态 1656 重标视图
+	return out
+
+
+## T574（O-待定）：西游档（含没有存档）取表内记录的快路。下面 rec 的二十几层改写里，西游档会改的只有三层：
+## 五条悟这类 _tq_always 的天启篇专属招（XTianqiSkills.rec）、西游档徐凤年重做（XXufeng）、西游档离群削弱（XXiyouNerf）；
+## 其余各层的判断都含天启篇档（XTianqi.active）、西游档一律原样返回。表内号段（0 < id < 表长）的表外分派也都不走。
+## 道具、公共事件另有西游档才改名的乌鸦配方（CROW_BLUEPRINT_*），不走快路。一次行动几千次取记录，每次省掉约 8 µs 的层层判档。
+## 回退：XIYOU_REC_FAST = false（全走下面的整条链）；专项 xiyou_t574_lag 逐表逐号比对两条路返回同一个对象。
+static var XIYOU_REC_FAST := true
+static func _rec_xiyou(name: String, id: int, t: Array) -> Dictionary:
+	if t[id] == null:
+		return {}
+	var out: Dictionary = t[id]
+	if name == "Skills" and XTianqiSkills.has(id):
+		out = XTianqiSkills.rec(id, out)
+	if XXufeng.touches(name, id) and XXufeng.xiyou_save_on():
+		out = XXufeng.rec(name, id, out)
+	if XXiyouNerf.touches(name, id) and XXiyouNerf.xiyou_save_on():
+		out = XXiyouNerf.rec(name, id, out)
 	return out
 
 

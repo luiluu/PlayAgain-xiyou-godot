@@ -143,6 +143,7 @@ func setup(troop: int, escape: bool, lose: bool, map: Dictionary, background: Te
 	can_lose = lose
 	map_data = map
 	logic.can_escape = escape
+	logic.yield_forced = true  # 敌群事件里的强制行动一次一帧（XBattleLogic.FORCE_YIELD，T574）
 	logic.setup(troop, XState.current)
 	if random_encounter:
 		logic.roll_encounter()  # Game_Player.executeEncounter：BattleManager.setup 之后 onEncounter 掷先制／偷袭
@@ -1124,6 +1125,9 @@ func _play_troop_events(logs: Array) -> void:
 		if not logic.is_event_waiting():
 			return
 		var w := logic.event_waiting()
+		if bool(w.get("yield", false)):
+			logs = logic.resume_event(int(w.token))  # 强制行动之后的停顿（XBattleLogic.FORCE_YIELD）：上面演完这一次，接着算下一条
+			continue
 		var response = await message.run(w.msg)
 		logs = logic.resume_event(int(w.token), response)
 

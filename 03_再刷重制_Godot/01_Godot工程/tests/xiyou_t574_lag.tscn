@@ -1,0 +1,6 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://tests/xiyou_t574_lag.gd" id="1"]
+
+[node name="XiyouT574Lag" type="Node"]
+script = ExtResource("1")

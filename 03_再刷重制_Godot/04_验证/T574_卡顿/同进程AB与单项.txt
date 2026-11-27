@@ -1,0 +1,27 @@
+# 同进程交替 A/B（t574_ab.gd：同一存档、敌群 454、固定随机流 0000000000574574、40 次行动，每变体轮流跑、取最小；sig＝整场日志摘要）
+## 发行空壳树（patch/v0.04＋T572 三笔＋T563＋T574 原型 3717be915，--release），4 遍
+ABMIN new     act_ms=3867.1 per=96.7  worst=260.6 dec_ms=734.8 views_ms=219.5 sig=8e319923857e ×4
+ABMIN old     act_ms=4478.3 per=112.0 worst=309.8 dec_ms=767.3 views_ms=254.2 sig=8e319923857e ×4   （XIYOU_REC_FAST、ABSORB_SCAN_FAST 都关）
+ABMIN norec   act_ms=4003.4 per=100.1 worst=272.5 dec_ms=736.5 views_ms=235.8 sig=8e319923857e ×4   （只关 XIYOU_REC_FAST）
+ABMIN noabs   act_ms=4325.6 per=108.1 worst=306.8 dec_ms=761.3 views_ms=238.5 sig=8e319923857e ×4   （只关 ABSORB_SCAN_FAST）
+## 开发工程（本分支 main 线＋T572＋原型），3 遍
+ABMIN new     act_ms=5404.5 per=135.1 worst=375.0 sig=688599f58660 ×3
+ABMIN old     act_ms=6452.6 per=161.3 worst=443.0 sig=688599f58660 ×3
+ABMIN norec   act_ms=5961.4 per=149.0 worst=403.5 sig=688599f58660 ×3
+ABMIN noabs   act_ms=5844.4 per=146.1 worst=400.7 sig=688599f58660 ×3
+
+# 单项（t574_micro.gd，开发工程、非剖析模式；机器负载约 11，绝对值偏大）
+XTianqi.active(s)            0.41 µs／次（空循环 0.06）
+XDB.rec Skills（队伍技能号）  关 9.33 µs → 开 3.96 µs；原表直取 0.29 µs
+XDB.rec States 1..2000       关 7.30 µs → 开 2.23 µs
+XDB.rec Weapons 1..50        关 5.72 µs → 开 2.16 µs
+has_absorb_weapon（五人）     关 163～384 µs → 开 0.85～9.3 µs
+_skill_ids_now（五人）        351～676 µs（其中 native_skill_ids 154～345、XTusuXuan.skill_ids 59～94、XHeartsteel 26～32）
+mhp（作废后现读一次）         1.37～2.96 ms／人
+XDB.rec 全表逐号两路比对：31020 条（9 张表）0 条不同；专项 xiyou_t574_lag 扩到 11 张表 43134 条，西游档／没有存档／天启篇档三种都 0 条不同
+
+# 函数剖析（开发工程，逻辑基准 40 次行动，-d --profiling，T572 修后）：_skill_ids_now 5559 次 3.10 s、XDB.rec 16.4 万次 1.77 s、
+# XTianqi.active 225 万次 0.47 s（剖析模式放大小函数）；_param_now 5428 次 6.1 s 是总账。
+
+# 量数脚本：t574_frame.gd（帧探针，加了 --release、seed、逐帧 idb／stream／subj）、t574_ab.gd、t574_bench.gd、t574_micro.gd。
+# 跑法同 T572_卡顿/：复制进 01_Godot工程/tests/、临时建一个挂它的 .tscn；发行口径先 `发行空壳.py tree --src <工程> <空壳树>` 再在空壳树里 --import、跑。量完删掉复制件。
