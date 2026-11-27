@@ -513,9 +513,26 @@ func add_state(id: int, random: XRandomStream = null) -> void:
 	_adding_state = true
 	_add_state(id, random)
 	_adding_state = false
+	_tq_clamp_after_add()  # T584（O-待定）：天启篇角色加状态后补夹生命／魔法上限
 	XAlienBattle.after_add_state(self, id, alien_rev)  # 异化囚厄：其他角色得到的 jailStates 转给囚厄者
 	XGuyu.after_add_state(self, id)  # 谷雨 addState 包装（原 addState 之后）：谷雨自己倒下就归根
 	XTianqiElementEffects.after_add_state(self, id)  # 天启篇元素效果（T480）：旧停手、旧灼伤／麻痹挂上时顶掉元素标记
+
+## T584（O-待定·T584加状态夹上限）：原版 _Fix_StackOverflow 在 addState 期间把 Game_Battler.refresh 整个吞掉，角色加了压低上限的状态
+## （如诛仙 162 舍身剑·燃血 10458 收尾挂的 2720，生命上限×0.01）生命／魔法不夹，要等下一次 setHp／gainHp 才夹，期间能凭旧血量多扛一击。
+## 天启篇：锁放开后（最外层 add_state 末尾）高于上限就夹回上限。西游档照原版不动；敌人的 refresh 原版就会夹，不经这里。
+## false＝天启篇也照原版（不夹）。
+static var TQ_ADD_CLAMP := true
+func _tq_clamp_after_add() -> void:
+	if not TQ_ADD_CLAMP or self is XEnemy or hp <= 0.0 or not XTianqi.active(XState.current):
+		return
+	var m := mhp
+	if hp > m:
+		hp = m
+	var mm := mmp
+	if mp > mm:
+		mp = mm
+
 
 ## Game_BattlerBase.addNewState（不查抵抗）：死亡先 die，再进状态表、排序；魔冠的 addNewState 包装在这里。
 ## 谷雨强制归根被死亡抵抗挡下时也走这里（审查 31 P3-1）
