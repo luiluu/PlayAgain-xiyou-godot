@@ -954,9 +954,9 @@ func traits_with_id(code: int, id: int) -> Array:
 ## 也当场作废（read_touch）。所以读到的值和每次重算完全一样。
 ## 回退：READ_MEMO = false（每次重算，同原来）。READ_VERIFY＝测试用：每次命中都重算一遍比对，不一样就记进 read_mismatches。
 static var READ_MEMO := true
-static var READ_VERIFY := OS.get_environment("XIYOU_READ_VERIFY") == "1"
+static var READ_VERIFY := true  # T576 云端整轮比对用的临时提交，不合并
 ## 环境变量 XIYOU_READ_VERIFY=1（整轮测试带上它跑）：全程比对，一次不一致就当场崩掉，那个测试必挂
-static var READ_VERIFY_FATAL := OS.get_environment("XIYOU_READ_VERIFY") == "1"
+static var READ_VERIFY_FATAL := true  # T576 临时
 static var read_mismatches: Array = []
 static var read_hits := 0
 static var _read_depth := 0
