@@ -1,5 +1,5 @@
 {
- "_note": "六维打分.py 的实测输入：peak＝T558 R3 炼狱口径（t445_book_probe --book-build=lianyu --noisy --seed=1 --force-all-tiers --cond-full）整次施放合计、三档强制量条件全中且乘卡面条件倍率、取 peak（含随机再放，179 流萤取 peak_base，同 T527 平衡报告）；peak_rand＝打分那招含随机再放的最大；peak_base／skill_base＝全部招不含随机再放取最大（对照）；cond_fac＝打分那招的卡面条件倍率；peak_k＝T558 前 k_calibrate 旧口径（对照用，不参与打分）；stat＝--stats 标准养成面板；surv＝--survive 3 种子；no_damage_row＝探针量不出伤害",
+ "_note": "六维打分.py 的实测输入：peak＝T558 R4 炼狱口径（t445_book_probe --book-build=lianyu --noisy --seed=1/2/3 --force-all-tiers --cond-full --act-tail）整次施放合计（含行动收尾的词条再释放、技能卡追加释放）、三档强制量条件全中（合法配装、同一时刻能同时成立的最大组合）且乘卡面条件倍率、取 peak（含随机再放，179 流萤取 peak_base，同 T527 平衡报告）；每个种子内取一人最大，三种子取中位（median_low，seed_pick 是取到的种子），逐种子在 peak_seeds／peak_base_seeds／skill_seeds；tail＝打分那次施放里行动收尾段（kind recast＝词条再释放、follow＝技能卡追加）；peak_rand＝打分那招含随机再放的最大；peak_base／skill_base＝全部招不含随机再放取最大（对照）；cond_fac＝打分那招的卡面条件倍率；peak_k＝T558 前 k_calibrate 旧口径（对照用，不参与打分）；stat＝--stats 标准养成面板；surv＝--survive 3 种子；no_damage_row＝探针量不出伤害",
  "actors": {
   "1": {
    "mhp": 266739.0,
@@ -50,15 +50,31 @@
    },
    "peak_k": 8301246.0,
    "skill_k": 4752,
-   "peak": 845192,
-   "peak_rand": 845192,
-   "peak_base": 845192,
+   "peak": 946616,
+   "peak_rand": 946616,
+   "peak_base": 946616,
    "skill_base": 3632,
    "cond_fac": 1.3,
    "skill": 3632,
    "input_skill": 3632,
    "segs": 3,
-   "forced": true
+   "forced": true,
+   "seed_pick": "seed=3",
+   "peak_seeds": {
+    "seed=1": 845192,
+    "seed=2": 1192815,
+    "seed=3": 946616
+   },
+   "peak_base_seeds": {
+    "seed=1": 845192,
+    "seed=2": 845192,
+    "seed=3": 946616
+   },
+   "skill_seeds": {
+    "seed=1": 3632,
+    "seed=2": 4752,
+    "seed=3": 3632
+   }
   },
   "2": {
    "mhp": 287936.0,
@@ -109,15 +125,39 @@
    },
    "peak_k": 10627844.0,
    "skill_k": 4759,
-   "peak": 488392,
-   "peak_rand": 488392,
+   "peak": 976783,
+   "peak_rand": 976783,
    "peak_base": 488392,
    "skill_base": 504,
    "cond_fac": 1.2,
    "skill": 504,
    "input_skill": 504,
-   "segs": 1,
-   "forced": true
+   "segs": 2,
+   "forced": true,
+   "tail": [
+    {
+     "fac": 1.2,
+     "kind": "recast",
+     "skill": 504,
+     "sum": 488392
+    }
+   ],
+   "seed_pick": "seed=1",
+   "peak_seeds": {
+    "seed=1": 976783,
+    "seed=2": 976783,
+    "seed=3": 488392
+   },
+   "peak_base_seeds": {
+    "seed=1": 488392,
+    "seed=2": 494149,
+    "seed=3": 488392
+   },
+   "skill_seeds": {
+    "seed=1": 504,
+    "seed=2": 504,
+    "seed=3": 504
+   }
   },
   "3": {
    "mhp": 291244.0,
@@ -168,15 +208,39 @@
    },
    "peak_k": 1291083.0,
    "skill_k": 506,
-   "peak": 373698,
-   "peak_rand": 373698,
-   "peak_base": 373698,
+   "peak": 512354,
+   "peak_rand": 512354,
+   "peak_base": 512354,
    "skill_base": 506,
    "cond_fac": 1.0,
    "skill": 506,
    "input_skill": 506,
-   "segs": 3,
-   "forced": false
+   "segs": 9,
+   "forced": true,
+   "tail": [
+    {
+     "fac": 1.3,
+     "kind": "follow",
+     "skill": 4370,
+     "sum": 161186
+    }
+   ],
+   "seed_pick": "seed=2",
+   "peak_seeds": {
+    "seed=1": 655139,
+    "seed=2": 512354,
+    "seed=3": 464365
+   },
+   "peak_base_seeds": {
+    "seed=1": 555212,
+    "seed=2": 512354,
+    "seed=3": 464365
+   },
+   "skill_seeds": {
+    "seed=1": 506,
+    "seed=2": 506,
+    "seed=3": 506
+   }
   },
   "4": {
    "mhp": 304960.0,
@@ -235,7 +299,23 @@
    "skill": 3517,
    "input_skill": 3517,
    "segs": 5,
-   "forced": true
+   "forced": true,
+   "seed_pick": "seed=1",
+   "peak_seeds": {
+    "seed=1": 1476184,
+    "seed=2": 1591938,
+    "seed=3": 1469444
+   },
+   "peak_base_seeds": {
+    "seed=1": 1476184,
+    "seed=2": 1591938,
+    "seed=3": 1469444
+   },
+   "skill_seeds": {
+    "seed=1": 3517,
+    "seed=2": 3517,
+    "seed=3": 3517
+   }
   },
   "5": {
    "mhp": 281687.0,
@@ -286,15 +366,39 @@
    },
    "peak_k": 969536.0,
    "skill_k": 2770,
-   "peak": 307036,
-   "peak_rand": 307036,
-   "peak_base": 307036,
-   "skill_base": 2770,
+   "peak": 492282,
+   "peak_rand": 492282,
+   "peak_base": 492282,
+   "skill_base": 4764,
    "cond_fac": 1.0,
-   "skill": 2770,
-   "input_skill": 2770,
-   "segs": 4,
-   "forced": false
+   "skill": 4764,
+   "input_skill": 4764,
+   "segs": 10,
+   "forced": true,
+   "tail": [
+    {
+     "fac": 1.0,
+     "kind": "follow",
+     "skill": 4765,
+     "sum": 215814
+    }
+   ],
+   "seed_pick": "seed=2",
+   "peak_seeds": {
+    "seed=1": 529080,
+    "seed=2": 492282,
+    "seed=3": 492282
+   },
+   "peak_base_seeds": {
+    "seed=1": 529080,
+    "seed=2": 492282,
+    "seed=3": 492282
+   },
+   "skill_seeds": {
+    "seed=1": 4764,
+    "seed=2": 4764,
+    "seed=3": 4764
+   }
   },
   "6": {
    "mhp": 266732.0,
@@ -345,15 +449,39 @@
    },
    "peak_k": 882072.0,
    "skill_k": 164,
-   "peak": 278697,
-   "peak_rand": 278697,
+   "peak": 557394,
+   "peak_rand": 557394,
    "peak_base": 278697,
    "skill_base": 164,
    "cond_fac": 1.0,
    "skill": 164,
    "input_skill": 164,
-   "segs": 3,
-   "forced": false
+   "segs": 6,
+   "forced": false,
+   "tail": [
+    {
+     "fac": 1.0,
+     "kind": "follow",
+     "skill": 164,
+     "sum": 278697
+    }
+   ],
+   "seed_pick": "seed=1",
+   "peak_seeds": {
+    "seed=1": 557394,
+    "seed=2": 598524,
+    "seed=3": 557394
+   },
+   "peak_base_seeds": {
+    "seed=1": 278697,
+    "seed=2": 299262,
+    "seed=3": 278697
+   },
+   "skill_seeds": {
+    "seed=1": 164,
+    "seed=2": 164,
+    "seed=3": 164
+   }
   },
   "7": {
    "mhp": 288723.0,
@@ -404,15 +532,39 @@
    },
    "peak_k": 1234680.0,
    "skill_k": 3518,
-   "peak": 356151,
-   "peak_rand": 356151,
-   "peak_base": 356151,
+   "peak": 465433,
+   "peak_rand": 465433,
+   "peak_base": 394559,
    "skill_base": 3518,
    "cond_fac": 1.0,
-   "skill": 3518,
-   "input_skill": 3518,
-   "segs": 6,
-   "forced": false
+   "skill": 4774,
+   "input_skill": 4774,
+   "segs": 12,
+   "forced": true,
+   "tail": [
+    {
+     "fac": 1.0,
+     "kind": "follow",
+     "skill": 4775,
+     "sum": 150162
+    }
+   ],
+   "seed_pick": "seed=3",
+   "peak_seeds": {
+    "seed=1": 425324,
+    "seed=2": 470606,
+    "seed=3": 465433
+   },
+   "peak_base_seeds": {
+    "seed=1": 356151,
+    "seed=2": 385177,
+    "seed=3": 394559
+   },
+   "skill_seeds": {
+    "seed=1": 4774,
+    "seed=2": 4774,
+    "seed=3": 4774
+   }
   },
   "8": {
    "mhp": 288723.0,
@@ -471,7 +623,23 @@
    "skill": 4787,
    "input_skill": 4787,
    "segs": 5,
-   "forced": true
+   "forced": true,
+   "seed_pick": "seed=1",
+   "peak_seeds": {
+    "seed=1": 321305,
+    "seed=2": 346939,
+    "seed=3": 321305
+   },
+   "peak_base_seeds": {
+    "seed=1": 321305,
+    "seed=2": 346939,
+    "seed=3": 321305
+   },
+   "skill_seeds": {
+    "seed=1": 4787,
+    "seed=2": 4787,
+    "seed=3": 4787
+   }
   },
   "9": {
    "mhp": 273768.0,
@@ -530,7 +698,23 @@
    "skill": 3641,
    "input_skill": 3641,
    "segs": 3,
-   "forced": true
+   "forced": true,
+   "seed_pick": "seed=1",
+   "peak_seeds": {
+    "seed=1": 241336,
+    "seed=2": 223063,
+    "seed=3": 297537
+   },
+   "peak_base_seeds": {
+    "seed=1": 241336,
+    "seed=2": 223063,
+    "seed=3": 223153
+   },
+   "skill_seeds": {
+    "seed=1": 3641,
+    "seed=2": 3641,
+    "seed=3": 3641
+   }
   },
   "10": {
    "mhp": 296107.0,
@@ -589,7 +773,23 @@
    "skill": 3645,
    "input_skill": 3644,
    "segs": 6,
-   "forced": true
+   "forced": true,
+   "seed_pick": "seed=1",
+   "peak_seeds": {
+    "seed=1": 388160,
+    "seed=2": 348952,
+    "seed=3": 421752
+   },
+   "peak_base_seeds": {
+    "seed=1": 388160,
+    "seed=2": 348952,
+    "seed=3": 361501
+   },
+   "skill_seeds": {
+    "seed=1": 3645,
+    "seed=2": 3645,
+    "seed=3": 3645
+   }
   },
   "11": {
    "mhp": 287456.0,
@@ -640,15 +840,31 @@
    },
    "peak_k": 1117860.0,
    "skill_k": 4411,
-   "peak": 370553,
-   "peak_rand": 370553,
-   "peak_base": 370553,
+   "peak": 430586,
+   "peak_rand": 430586,
+   "peak_base": 430586,
    "skill_base": 4411,
    "cond_fac": 1.656,
    "skill": 4411,
    "input_skill": 4410,
    "segs": 6,
-   "forced": true
+   "forced": true,
+   "seed_pick": "seed=2",
+   "peak_seeds": {
+    "seed=1": 447133,
+    "seed=2": 430586,
+    "seed=3": 416865
+   },
+   "peak_base_seeds": {
+    "seed=1": 370553,
+    "seed=2": 430586,
+    "seed=3": 416865
+   },
+   "skill_seeds": {
+    "seed=1": 4411,
+    "seed=2": 4411,
+    "seed=3": 4411
+   }
   },
   "12": {
    "mhp": 266732.0,
@@ -707,7 +923,23 @@
    "skill": 318,
    "input_skill": 318,
    "segs": 4,
-   "forced": true
+   "forced": true,
+   "seed_pick": "seed=1",
+   "peak_seeds": {
+    "seed=1": 326409,
+    "seed=2": 438926,
+    "seed=3": 326409
+   },
+   "peak_base_seeds": {
+    "seed=1": 326409,
+    "seed=2": 351140,
+    "seed=3": 326409
+   },
+   "skill_seeds": {
+    "seed=1": 318,
+    "seed=2": 318,
+    "seed=3": 318
+   }
   },
   "13": {
    "mhp": 273768.0,
@@ -766,7 +998,23 @@
    "skill": 72,
    "input_skill": 72,
    "segs": 1,
-   "forced": true
+   "forced": true,
+   "seed_pick": "seed=1",
+   "peak_seeds": {
+    "seed=1": 128888,
+    "seed=2": 120052,
+    "seed=3": 130689
+   },
+   "peak_base_seeds": {
+    "seed=1": 128888,
+    "seed=2": 120052,
+    "seed=3": 130689
+   },
+   "skill_seeds": {
+    "seed=1": 72,
+    "seed=2": 634,
+    "seed=3": 72
+   }
   },
   "14": {
    "mhp": 266732.0,
@@ -817,15 +1065,39 @@
    },
    "peak_k": 1044980.0,
    "skill_k": 322,
-   "peak": 326892,
-   "peak_rand": 326892,
+   "peak": 363802,
+   "peak_rand": 363802,
    "peak_base": 326892,
    "skill_base": 322,
-   "cond_fac": 2.0,
-   "skill": 322,
-   "input_skill": 322,
-   "segs": 2,
-   "forced": true
+   "cond_fac": 1.0,
+   "skill": 521,
+   "input_skill": 521,
+   "segs": 11,
+   "forced": true,
+   "tail": [
+    {
+     "fac": 1.0,
+     "kind": "follow",
+     "skill": 1799,
+     "sum": 118630
+    }
+   ],
+   "seed_pick": "seed=1",
+   "peak_seeds": {
+    "seed=1": 363802,
+    "seed=2": 363802,
+    "seed=3": 363802
+   },
+   "peak_base_seeds": {
+    "seed=1": 326892,
+    "seed=2": 326892,
+    "seed=3": 326892
+   },
+   "skill_seeds": {
+    "seed=1": 521,
+    "seed=2": 521,
+    "seed=3": 521
+   }
   },
   "15": {
    "mhp": 341261.0,
@@ -876,15 +1148,31 @@
    },
    "peak_k": 2155256.0,
    "skill_k": 523,
-   "peak": 324320,
-   "peak_rand": 324320,
-   "peak_base": 324320,
+   "peak": 348248,
+   "peak_rand": 348248,
+   "peak_base": 348248,
    "skill_base": 523,
    "cond_fac": 1.0,
    "skill": 523,
    "input_skill": 523,
    "segs": 4,
-   "forced": true
+   "forced": true,
+   "seed_pick": "seed=3",
+   "peak_seeds": {
+    "seed=1": 324320,
+    "seed=2": 405400,
+    "seed=3": 348248
+   },
+   "peak_base_seeds": {
+    "seed=1": 324320,
+    "seed=2": 324320,
+    "seed=3": 348248
+   },
+   "skill_seeds": {
+    "seed=1": 523,
+    "seed=2": 523,
+    "seed=3": 523
+   }
   },
   "16": {
    "mhp": 274165.0,
@@ -935,15 +1223,31 @@
    },
    "peak_k": 10081.0,
    "skill_k": 4552,
-   "peak": 1253,
-   "peak_rand": 1253,
-   "peak_base": 1253,
+   "peak": 1385,
+   "peak_rand": 1385,
+   "peak_base": 1385,
    "skill_base": 4552,
    "cond_fac": 1.0,
    "skill": 4552,
    "input_skill": 4552,
    "segs": 1,
-   "forced": true
+   "forced": true,
+   "seed_pick": "seed=3",
+   "peak_seeds": {
+    "seed=1": 1253,
+    "seed=2": 2882,
+    "seed=3": 1385
+   },
+   "peak_base_seeds": {
+    "seed=1": 1253,
+    "seed=2": 1441,
+    "seed=3": 1385
+   },
+   "skill_seeds": {
+    "seed=1": 4552,
+    "seed=2": 4552,
+    "seed=3": 4552
+   }
   },
   "17": {
    "mhp": 281491.0,
@@ -994,15 +1298,39 @@
    },
    "peak_k": 99558.0,
    "skill_k": 190,
-   "peak": 28074,
-   "peak_rand": 28074,
+   "peak": 51294,
+   "peak_rand": 51294,
    "peak_base": 28074,
    "skill_base": 190,
    "cond_fac": 1.0,
-   "skill": 190,
-   "input_skill": 190,
-   "segs": 6,
-   "forced": false
+   "skill": 188,
+   "input_skill": 188,
+   "segs": 10,
+   "forced": false,
+   "tail": [
+    {
+     "fac": 1.0,
+     "kind": "follow",
+     "skill": 190,
+     "sum": 28074
+    }
+   ],
+   "seed_pick": "seed=1",
+   "peak_seeds": {
+    "seed=1": 51294,
+    "seed=2": 48348,
+    "seed=3": 54850
+   },
+   "peak_base_seeds": {
+    "seed=1": 28074,
+    "seed=2": 26460,
+    "seed=3": 30018
+   },
+   "skill_seeds": {
+    "seed=1": 188,
+    "seed=2": 188,
+    "seed=3": 188
+   }
   },
   "18": {
    "mhp": 260164.0,
@@ -1061,7 +1389,23 @@
    "skill": 814,
    "input_skill": 814,
    "segs": 12,
-   "forced": false
+   "forced": false,
+   "seed_pick": "seed=1",
+   "peak_seeds": {
+    "seed=1": 356100,
+    "seed=2": 386064,
+    "seed=3": 353748
+   },
+   "peak_base_seeds": {
+    "seed=1": 178050,
+    "seed=2": 193032,
+    "seed=3": 176874
+   },
+   "skill_seeds": {
+    "seed=1": 814,
+    "seed=2": 814,
+    "seed=3": 814
+   }
   },
   "19": {
    "mhp": 281687.0,
@@ -1112,15 +1456,31 @@
    },
    "peak_k": 902776.0,
    "skill_k": 731,
-   "peak": 274444,
-   "peak_rand": 274444,
-   "peak_base": 274444,
+   "peak": 233212,
+   "peak_rand": 233212,
+   "peak_base": 233212,
    "skill_base": 731,
    "cond_fac": 1.0,
    "skill": 731,
    "input_skill": 731,
    "segs": 4,
-   "forced": false
+   "forced": false,
+   "seed_pick": "seed=2",
+   "peak_seeds": {
+    "seed=1": 343055,
+    "seed=2": 233212,
+    "seed=3": 233212
+   },
+   "peak_base_seeds": {
+    "seed=1": 274444,
+    "seed=2": 233212,
+    "seed=3": 233212
+   },
+   "skill_seeds": {
+    "seed=1": 731,
+    "seed=2": 731,
+    "seed=3": 731
+   }
   },
   "20": {
    "mhp": 266732.0,
@@ -1179,7 +1539,23 @@
    "skill": 530,
    "input_skill": 530,
    "segs": 6,
-   "forced": true
+   "forced": true,
+   "seed_pick": "seed=1",
+   "peak_seeds": {
+    "seed=1": 423958,
+    "seed=2": 423958,
+    "seed=3": 494617
+   },
+   "peak_base_seeds": {
+    "seed=1": 423958,
+    "seed=2": 423958,
+    "seed=3": 423958
+   },
+   "skill_seeds": {
+    "seed=1": 530,
+    "seed=2": 530,
+    "seed=3": 530
+   }
   },
   "21": {
    "mhp": 281687.0,
@@ -1230,15 +1606,31 @@
    },
    "peak_k": 333683.0,
    "skill_k": 4507,
-   "peak": 90821,
-   "peak_rand": 90821,
-   "peak_base": 90821,
+   "peak": 97557,
+   "peak_rand": 97557,
+   "peak_base": 97557,
    "skill_base": 4507,
    "cond_fac": 1.3,
    "skill": 4507,
    "input_skill": 4507,
    "segs": 3,
-   "forced": true
+   "forced": true,
+   "seed_pick": "seed=3",
+   "peak_seeds": {
+    "seed=1": 122542,
+    "seed=2": 90821,
+    "seed=3": 97557
+   },
+   "peak_base_seeds": {
+    "seed=1": 90821,
+    "seed=2": 90821,
+    "seed=3": 97557
+   },
+   "skill_seeds": {
+    "seed=1": 4507,
+    "seed=2": 4507,
+    "seed=3": 4507
+   }
   },
   "22": {
    "mhp": 272009.0,
@@ -1297,7 +1689,23 @@
    "skill": 3768,
    "input_skill": 3768,
    "segs": 2,
-   "forced": true
+   "forced": true,
+   "seed_pick": "seed=1",
+   "peak_seeds": {
+    "seed=1": 688450,
+    "seed=2": 688450,
+    "seed=3": 1032674
+   },
+   "peak_base_seeds": {
+    "seed=1": 688450,
+    "seed=2": 688450,
+    "seed=3": 688450
+   },
+   "skill_seeds": {
+    "seed=1": 3768,
+    "seed=2": 3768,
+    "seed=3": 3768
+   }
   },
   "23": {
    "mhp": 281687.0,
@@ -1348,25 +1756,75 @@
    },
    "peak_k": 859259.0,
    "skill_k": 217,
-   "peak": 244540,
-   "peak_rand": 244540,
-   "peak_base": 244540,
+   "peak": 297474,
+   "peak_rand": 297474,
+   "peak_base": 252814,
    "skill_base": 217,
    "cond_fac": 1.0,
    "skill": 217,
    "input_skill": 217,
-   "segs": 1,
+   "segs": 6,
    "forced": false,
+   "tail": [
+    {
+     "fac": 1.0,
+     "kind": "follow",
+     "skill": 533,
+     "sum": 44660
+    }
+   ],
+   "seed_pick": "seed=2",
+   "peak_seeds": {
+    "seed=1": 287740,
+    "seed=2": 297474,
+    "seed=3": 337448
+   },
+   "peak_base_seeds": {
+    "seed=1": 244540,
+    "seed=2": 252814,
+    "seed=3": 286178
+   },
+   "skill_seeds": {
+    "seed=1": 217,
+    "seed=2": 217,
+    "seed=3": 217
+   },
    "excluded_landings": [
     {
+     "seed": "seed=1",
      "input_skill": 533,
      "skill": 5158,
      "peak": 2924397490
     },
     {
+     "seed": "seed=1",
      "input_skill": 533,
      "skill": 5157,
      "peak": 2291483830
+    },
+    {
+     "seed": "seed=2",
+     "input_skill": 533,
+     "skill": 5157,
+     "peak": 2406422040
+    },
+    {
+     "seed": "seed=2",
+     "input_skill": 533,
+     "skill": 5158,
+     "peak": 3071348660
+    },
+    {
+     "seed": "seed=3",
+     "input_skill": 533,
+     "skill": 5158,
+     "peak": 3335890745
+    },
+    {
+     "seed": "seed=3",
+     "input_skill": 533,
+     "skill": 5157,
+     "peak": 2614511244
     }
    ]
   },
@@ -1419,15 +1877,31 @@
    },
    "peak_k": 644799.0,
    "skill_k": 5088,
-   "peak": 212326,
-   "peak_rand": 212326,
-   "peak_base": 212326,
+   "peak": 234062,
+   "peak_rand": 234062,
+   "peak_base": 234062,
    "skill_base": 5088,
    "cond_fac": 1.0,
    "skill": 5088,
    "input_skill": 223,
    "segs": 1,
-   "forced": false
+   "forced": false,
+   "seed_pick": "seed=3",
+   "peak_seeds": {
+    "seed=1": 424652,
+    "seed=2": 189577,
+    "seed=3": 234062
+   },
+   "peak_base_seeds": {
+    "seed=1": 212326,
+    "seed=2": 189577,
+    "seed=3": 234062
+   },
+   "skill_seeds": {
+    "seed=1": 5088,
+    "seed=2": 5088,
+    "seed=3": 5088
+   }
   },
   "25": {
    "mhp": 311996.0,
@@ -1478,15 +1952,39 @@
    },
    "peak_k": 391866.0,
    "skill_k": 228,
-   "peak": 48602,
-   "peak_rand": 48602,
-   "peak_base": 48602,
+   "peak": 97204,
+   "peak_rand": 97204,
+   "peak_base": 97204,
    "skill_base": 228,
    "cond_fac": 1.0,
    "skill": 228,
    "input_skill": 228,
-   "segs": 2,
-   "forced": false
+   "segs": 4,
+   "forced": false,
+   "tail": [
+    {
+     "fac": 1.0,
+     "kind": "follow",
+     "skill": 228,
+     "sum": 48602
+    }
+   ],
+   "seed_pick": "seed=1",
+   "peak_seeds": {
+    "seed=1": 97204,
+    "seed=2": 97204,
+    "seed=3": 97204
+   },
+   "peak_base_seeds": {
+    "seed=1": 97204,
+    "seed=2": 97204,
+    "seed=3": 97204
+   },
+   "skill_seeds": {
+    "seed=1": 228,
+    "seed=2": 228,
+    "seed=3": 228
+   }
   },
   "26": {
    "mhp": 267125.0,
@@ -1537,15 +2035,39 @@
    },
    "peak_k": 1673736.0,
    "skill_k": 379,
-   "peak": 587388,
-   "peak_rand": 587388,
-   "peak_base": 587388,
+   "peak": 1160496,
+   "peak_rand": 1160496,
+   "peak_base": 580248,
    "skill_base": 379,
    "cond_fac": 1.0,
    "skill": 379,
    "input_skill": 379,
-   "segs": 6,
-   "forced": false
+   "segs": 12,
+   "forced": false,
+   "tail": [
+    {
+     "fac": 1.0,
+     "kind": "follow",
+     "skill": 379,
+     "sum": 580248
+    }
+   ],
+   "seed_pick": "seed=2",
+   "peak_seeds": {
+    "seed=1": 1174776,
+    "seed=2": 1160496,
+    "seed=3": 1087974
+   },
+   "peak_base_seeds": {
+    "seed=1": 587388,
+    "seed=2": 580248,
+    "seed=3": 543984
+   },
+   "skill_seeds": {
+    "seed=1": 379,
+    "seed=2": 379,
+    "seed=3": 378
+   }
   },
   "27": {
    "mhp": 592523.0,
@@ -1604,7 +2126,23 @@
    "skill": 387,
    "input_skill": 387,
    "segs": 3,
-   "forced": true
+   "forced": true,
+   "seed_pick": "seed=1",
+   "peak_seeds": {
+    "seed=1": 507566,
+    "seed=2": 585376,
+    "seed=3": 485196
+   },
+   "peak_base_seeds": {
+    "seed=1": 507566,
+    "seed=2": 585376,
+    "seed=3": 485196
+   },
+   "skill_seeds": {
+    "seed=1": 387,
+    "seed=2": 387,
+    "seed=3": 387
+   }
   },
   "28": {
    "mhp": 266732.0,
@@ -1663,7 +2201,23 @@
    "skill": 5421,
    "input_skill": 5421,
    "segs": 12,
-   "forced": true
+   "forced": true,
+   "seed_pick": "seed=1",
+   "peak_seeds": {
+    "seed=1": 1447262,
+    "seed=2": 1598267,
+    "seed=3": 1447262
+   },
+   "peak_base_seeds": {
+    "seed=1": 1447262,
+    "seed=2": 1598267,
+    "seed=3": 1447262
+   },
+   "skill_seeds": {
+    "seed=1": 5421,
+    "seed=2": 5421,
+    "seed=3": 5421
+   }
   },
   "29": {
    "mhp": 288723.0,
@@ -1722,7 +2276,23 @@
    "skill": 562,
    "input_skill": 562,
    "segs": 2,
-   "forced": false
+   "forced": false,
+   "seed_pick": "seed=1",
+   "peak_seeds": {
+    "seed=1": 472036,
+    "seed=2": 493916,
+    "seed=3": 472036
+   },
+   "peak_base_seeds": {
+    "seed=1": 236018,
+    "seed=2": 246958,
+    "seed=3": 236018
+   },
+   "skill_seeds": {
+    "seed=1": 562,
+    "seed=2": 562,
+    "seed=3": 562
+   }
   },
   "30": {
    "mhp": 267130.0,
@@ -1773,15 +2343,31 @@
    },
    "peak_k": 1062288.0,
    "skill_k": 597,
-   "peak": 414937,
-   "peak_rand": 414937,
-   "peak_base": 248501,
+   "peak": 398997,
+   "peak_rand": 398997,
+   "peak_base": 221226,
    "skill_base": 597,
    "cond_fac": 1.0,
    "skill": 597,
    "input_skill": 597,
    "segs": 2,
-   "forced": false
+   "forced": false,
+   "seed_pick": "seed=3",
+   "peak_seeds": {
+    "seed=1": 414937,
+    "seed=2": 337985,
+    "seed=3": 398997
+   },
+   "peak_base_seeds": {
+    "seed=1": 248501,
+    "seed=2": 249867,
+    "seed=3": 221226
+   },
+   "skill_seeds": {
+    "seed=1": 597,
+    "seed=2": 597,
+    "seed=3": 597
+   }
   },
   "31": {
    "mhp": 288723.0,
@@ -1840,7 +2426,23 @@
    "skill": 625,
    "input_skill": 625,
    "segs": 2,
-   "forced": false
+   "forced": false,
+   "seed_pick": "seed=1",
+   "peak_seeds": {
+    "seed=1": 53538,
+    "seed=2": 48390,
+    "seed=3": 72585
+   },
+   "peak_base_seeds": {
+    "seed=1": 53538,
+    "seed=2": 48390,
+    "seed=3": 48390
+   },
+   "skill_seeds": {
+    "seed=1": 625,
+    "seed=2": 625,
+    "seed=3": 625
+   }
   },
   "32": {
    "mhp": 306871.0,
@@ -1891,15 +2493,39 @@
    },
    "peak_k": 3798252.0,
    "skill_k": 6913,
-   "peak": 631644,
-   "peak_rand": 631644,
-   "peak_base": 631644,
+   "peak": 736917,
+   "peak_rand": 736917,
+   "peak_base": 736917,
    "skill_base": 6913,
    "cond_fac": 1.0,
    "skill": 6913,
    "input_skill": 6913,
-   "segs": 6,
-   "forced": true
+   "segs": 9,
+   "forced": true,
+   "tail": [
+    {
+     "fac": 1.0,
+     "kind": "follow",
+     "skill": 5424,
+     "sum": 105273
+    }
+   ],
+   "seed_pick": "seed=1",
+   "peak_seeds": {
+    "seed=1": 736917,
+    "seed=2": 736917,
+    "seed=3": 736917
+   },
+   "peak_base_seeds": {
+    "seed=1": 736917,
+    "seed=2": 736917,
+    "seed=3": 736917
+   },
+   "skill_seeds": {
+    "seed=1": 6913,
+    "seed=2": 6913,
+    "seed=3": 6913
+   }
   },
   "33": {
    "mhp": 288723.0,
@@ -1958,7 +2584,23 @@
    "skill": 743,
    "input_skill": 743,
    "segs": 1,
-   "forced": false
+   "forced": false,
+   "seed_pick": "seed=1",
+   "peak_seeds": {
+    "seed=1": 233820,
+    "seed=2": 233820,
+    "seed=3": 271345
+   },
+   "peak_base_seeds": {
+    "seed=1": 233820,
+    "seed=2": 233820,
+    "seed=3": 271345
+   },
+   "skill_seeds": {
+    "seed=1": 743,
+    "seed=2": 743,
+    "seed=3": 743
+   }
   },
   "34": {
    "mhp": 288723.0,
@@ -2017,7 +2659,23 @@
    "skill": 1017,
    "input_skill": 1017,
    "segs": 12,
-   "forced": true
+   "forced": true,
+   "seed_pick": "seed=1",
+   "peak_seeds": {
+    "seed=1": 283176,
+    "seed=2": 263466,
+    "seed=3": 302652
+   },
+   "peak_base_seeds": {
+    "seed=1": 141588,
+    "seed=2": 131733,
+    "seed=3": 151326
+   },
+   "skill_seeds": {
+    "seed=1": 1017,
+    "seed=2": 1017,
+    "seed=3": 1017
+   }
   },
   "35": {
    "mhp": 266732.0,
@@ -2076,7 +2734,23 @@
    "skill": 1060,
    "input_skill": 1060,
    "segs": 3,
-   "forced": false
+   "forced": false,
+   "seed_pick": "seed=1",
+   "peak_seeds": {
+    "seed=1": 357390,
+    "seed=2": 498016,
+    "seed=3": 357390
+   },
+   "peak_base_seeds": {
+    "seed=1": 357390,
+    "seed=2": 373512,
+    "seed=3": 357390
+   },
+   "skill_seeds": {
+    "seed=1": 1060,
+    "seed=2": 1060,
+    "seed=3": 1060
+   }
   },
   "36": {
    "mhp": 266732.0,
@@ -2135,7 +2809,23 @@
    "skill": 3589,
    "input_skill": 3589,
    "segs": 6,
-   "forced": true
+   "forced": true,
+   "seed_pick": "seed=1",
+   "peak_seeds": {
+    "seed=1": 592275,
+    "seed=2": 609442,
+    "seed=3": 560735
+   },
+   "peak_base_seeds": {
+    "seed=1": 592275,
+    "seed=2": 609442,
+    "seed=3": 560735
+   },
+   "skill_seeds": {
+    "seed=1": 3589,
+    "seed=2": 3589,
+    "seed=3": 3589
+   }
   },
   "37": {
    "mhp": 315757.0,
@@ -2186,15 +2876,31 @@
    },
    "peak_k": 947700.0,
    "skill_k": 1098,
-   "peak": 185346,
-   "peak_rand": 185346,
-   "peak_base": 185346,
+   "peak": 184044,
+   "peak_rand": 184044,
+   "peak_base": 184044,
    "skill_base": 1098,
    "cond_fac": 1.0,
    "skill": 1098,
    "input_skill": 1098,
    "segs": 6,
-   "forced": false
+   "forced": false,
+   "seed_pick": "seed=3",
+   "peak_seeds": {
+    "seed=1": 185346,
+    "seed=2": 177426,
+    "seed=3": 184044
+   },
+   "peak_base_seeds": {
+    "seed=1": 185346,
+    "seed=2": 177426,
+    "seed=3": 184044
+   },
+   "skill_seeds": {
+    "seed=1": 1098,
+    "seed=2": 1098,
+    "seed=3": 1098
+   }
   },
   "38": {
    "mhp": 266732.0,
@@ -2245,15 +2951,39 @@
    },
    "peak_k": 1086164.0,
    "skill_k": 1070,
-   "peak": 345408,
-   "peak_rand": 345408,
-   "peak_base": 345408,
+   "peak": 401118,
+   "peak_rand": 401118,
+   "peak_base": 401118,
    "skill_base": 1070,
    "cond_fac": 1.0,
    "skill": 1070,
    "input_skill": 1070,
-   "segs": 2,
-   "forced": false
+   "segs": 5,
+   "forced": false,
+   "tail": [
+    {
+     "fac": 1.0,
+     "kind": "follow",
+     "skill": 1073,
+     "sum": 55710
+    }
+   ],
+   "seed_pick": "seed=1",
+   "peak_seeds": {
+    "seed=1": 401118,
+    "seed=2": 436408,
+    "seed=3": 401118
+   },
+   "peak_base_seeds": {
+    "seed=1": 401118,
+    "seed=2": 436408,
+    "seed=3": 401118
+   },
+   "skill_seeds": {
+    "seed=1": 1070,
+    "seed=2": 1070,
+    "seed=3": 1070
+   }
   },
   "39": {
    "mhp": 495083.0,
@@ -2304,15 +3034,31 @@
    },
    "peak_k": 1118304.0,
    "skill_k": 1111,
-   "peak": 203346,
-   "peak_rand": 203346,
-   "peak_base": 203346,
+   "peak": 209928,
+   "peak_rand": 209928,
+   "peak_base": 209928,
    "skill_base": 1111,
    "cond_fac": 1.0,
    "skill": 1111,
    "input_skill": 1111,
    "segs": 6,
-   "forced": false
+   "forced": false,
+   "seed_pick": "seed=2",
+   "peak_seeds": {
+    "seed=1": 203346,
+    "seed=2": 209928,
+    "seed=3": 213996
+   },
+   "peak_base_seeds": {
+    "seed=1": 203346,
+    "seed=2": 209928,
+    "seed=3": 213996
+   },
+   "skill_seeds": {
+    "seed=1": 1111,
+    "seed=2": 1111,
+    "seed=3": 1111
+   }
   },
   "40": {
    "mhp": 279631.0,
@@ -2371,7 +3117,23 @@
    "skill": 1117,
    "input_skill": 1117,
    "segs": 4,
-   "forced": false
+   "forced": false,
+   "seed_pick": "seed=1",
+   "peak_seeds": {
+    "seed=1": 11704,
+    "seed=2": 11704,
+    "seed=3": 11704
+   },
+   "peak_base_seeds": {
+    "seed=1": 11704,
+    "seed=2": 11704,
+    "seed=3": 11704
+   },
+   "skill_seeds": {
+    "seed=1": 1117,
+    "seed=2": 1117,
+    "seed=3": 1117
+   }
   },
   "41": {
    "mhp": 304960.0,
@@ -2422,15 +3184,39 @@
    },
    "peak_k": 1681014.0,
    "skill_k": 1155,
-   "peak": 293922,
-   "peak_rand": 293922,
-   "peak_base": 293922,
+   "peak": 355758,
+   "peak_rand": 355758,
+   "peak_base": 355758,
    "skill_base": 1155,
    "cond_fac": 1.0,
    "skill": 1155,
    "input_skill": 1155,
-   "segs": 3,
-   "forced": true
+   "segs": 6,
+   "forced": true,
+   "tail": [
+    {
+     "fac": 1.0,
+     "kind": "follow",
+     "skill": 3713,
+     "sum": 61836
+    }
+   ],
+   "seed_pick": "seed=1",
+   "peak_seeds": {
+    "seed=1": 355758,
+    "seed=2": 389919,
+    "seed=3": 328230
+   },
+   "peak_base_seeds": {
+    "seed=1": 355758,
+    "seed=2": 305724,
+    "seed=3": 328230
+   },
+   "skill_seeds": {
+    "seed=1": 1155,
+    "seed=2": 1155,
+    "seed=3": 1155
+   }
   },
   "42": {
    "mhp": 311996.0,
@@ -2481,15 +3267,39 @@
    },
    "peak_k": 1469496.0,
    "skill_k": 1158,
-   "peak": 236118,
-   "peak_rand": 236118,
-   "peak_base": 236118,
+   "peak": 256543,
+   "peak_rand": 256543,
+   "peak_base": 219894,
    "skill_base": 1158,
    "cond_fac": 1.0,
    "skill": 1158,
    "input_skill": 1158,
-   "segs": 6,
-   "forced": true
+   "segs": 7,
+   "forced": true,
+   "tail": [
+    {
+     "fac": 1.0,
+     "kind": "recast",
+     "skill": 1158,
+     "sum": 36649
+    }
+   ],
+   "seed_pick": "seed=3",
+   "peak_seeds": {
+    "seed=1": 236118,
+    "seed=2": 275471,
+    "seed=3": 256543
+   },
+   "peak_base_seeds": {
+    "seed=1": 236118,
+    "seed=2": 236118,
+    "seed=3": 219894
+   },
+   "skill_seeds": {
+    "seed=1": 1158,
+    "seed=2": 1158,
+    "seed=3": 1158
+   }
   },
   "43": {
    "mhp": 304960.0,
@@ -2540,15 +3350,31 @@
    },
    "peak_k": 1663844.0,
    "skill_k": 1180,
-   "peak": 298622,
-   "peak_rand": 298622,
-   "peak_base": 298622,
+   "peak": 324687,
+   "peak_rand": 324687,
+   "peak_base": 324687,
    "skill_base": 1180,
    "cond_fac": 1.0,
    "skill": 1180,
    "input_skill": 1180,
    "segs": 7,
-   "forced": false
+   "forced": false,
+   "seed_pick": "seed=3",
+   "peak_seeds": {
+    "seed=1": 341612,
+    "seed=2": 298622,
+    "seed=3": 324687
+   },
+   "peak_base_seeds": {
+    "seed=1": 298622,
+    "seed=2": 298622,
+    "seed=3": 324687
+   },
+   "skill_seeds": {
+    "seed=1": 1180,
+    "seed=2": 1180,
+    "seed=3": 1180
+   }
   },
   "44": {
    "mhp": 288723.0,
@@ -2599,15 +3425,39 @@
    },
    "peak_k": 78568.0,
    "skill_k": 1167,
-   "peak": 19076,
-   "peak_rand": 19076,
-   "peak_base": 19076,
+   "peak": 38152,
+   "peak_rand": 38152,
+   "peak_base": 38152,
    "skill_base": 1167,
    "cond_fac": 1.0,
    "skill": 1167,
    "input_skill": 1167,
-   "segs": 1,
-   "forced": false
+   "segs": 2,
+   "forced": false,
+   "tail": [
+    {
+     "fac": 1.0,
+     "kind": "follow",
+     "skill": 1169,
+     "sum": 19076
+    }
+   ],
+   "seed_pick": "seed=1",
+   "peak_seeds": {
+    "seed=1": 38152,
+    "seed=2": 38152,
+    "seed=3": 38152
+   },
+   "peak_base_seeds": {
+    "seed=1": 38152,
+    "seed=2": 38152,
+    "seed=3": 38152
+   },
+   "skill_seeds": {
+    "seed=1": 1167,
+    "seed=2": 1167,
+    "seed=3": 1167
+   }
   },
   "45": {
    "mhp": 259152.0,
@@ -2658,15 +3508,39 @@
    },
    "peak_k": 375928.0,
    "skill_k": 6161,
-   "peak": 453814,
-   "peak_rand": 453814,
-   "peak_base": 453814,
+   "peak": 481530,
+   "peak_rand": 481530,
+   "peak_base": 452473,
    "skill_base": 6161,
-   "cond_fac": 1.3,
-   "skill": 6161,
-   "input_skill": 6161,
-   "segs": 8,
-   "forced": true
+   "cond_fac": 1.0,
+   "skill": 1188,
+   "input_skill": 1188,
+   "segs": 6,
+   "forced": false,
+   "tail": [
+    {
+     "fac": 1.0,
+     "kind": "follow",
+     "skill": 1194,
+     "sum": 242963
+    }
+   ],
+   "seed_pick": "seed=2",
+   "peak_seeds": {
+    "seed=1": 506507,
+    "seed=2": 481530,
+    "seed=3": 449688
+   },
+   "peak_base_seeds": {
+    "seed=1": 453814,
+    "seed=2": 452473,
+    "seed=3": 428750
+   },
+   "skill_seeds": {
+    "seed=1": 1188,
+    "seed=2": 1188,
+    "seed=3": 1188
+   }
   },
   "46": {
    "mhp": 288723.0,
@@ -2717,15 +3591,39 @@
    },
    "peak_k": 1325714.0,
    "skill_k": 2034,
-   "peak": 312778,
-   "peak_rand": 312778,
-   "peak_base": 156389,
+   "peak": 340195,
+   "peak_rand": 340195,
+   "peak_base": 183806,
    "skill_base": 2034,
    "cond_fac": 1.0,
    "skill": 2034,
    "input_skill": 2034,
-   "segs": 2,
-   "forced": false
+   "segs": 5,
+   "forced": false,
+   "tail": [
+    {
+     "fac": 1.0,
+     "kind": "follow",
+     "skill": 5445,
+     "sum": 27417
+    }
+   ],
+   "seed_pick": "seed=1",
+   "peak_seeds": {
+    "seed=1": 340195,
+    "seed=2": 340195,
+    "seed=3": 367338
+   },
+   "peak_base_seeds": {
+    "seed=1": 183806,
+    "seed=2": 183806,
+    "seed=3": 198471
+   },
+   "skill_seeds": {
+    "seed=1": 2034,
+    "seed=2": 2034,
+    "seed=3": 2034
+   }
   },
   "47": {
    "mhp": 266732.0,
@@ -2776,15 +3674,45 @@
    },
    "peak_k": 381996.0,
    "skill_k": 1199,
-   "peak": 119103,
-   "peak_rand": 119103,
-   "peak_base": 119103,
-   "skill_base": 1199,
+   "peak": 350742,
+   "peak_rand": 350742,
+   "peak_base": 350742,
+   "skill_base": 1200,
    "cond_fac": 1.0,
-   "skill": 1199,
-   "input_skill": 1199,
+   "skill": 1200,
+   "input_skill": 1200,
    "segs": 3,
-   "forced": false
+   "forced": false,
+   "tail": [
+    {
+     "fac": 1.0,
+     "kind": "follow",
+     "skill": 1205,
+     "sum": 124083
+    },
+    {
+     "fac": 1.0,
+     "kind": "follow",
+     "skill": 1206,
+     "sum": 124083
+    }
+   ],
+   "seed_pick": "seed=2",
+   "peak_seeds": {
+    "seed=1": 336664,
+    "seed=2": 350742,
+    "seed=3": 405224
+   },
+   "peak_base_seeds": {
+    "seed=1": 336664,
+    "seed=2": 350742,
+    "seed=3": 313531
+   },
+   "skill_seeds": {
+    "seed=1": 1200,
+    "seed=2": 1200,
+    "seed=3": 1200
+   }
   },
   "48": {
    "mhp": 281687.0,
@@ -2835,15 +3763,39 @@
    },
    "peak_k": 1360970.0,
    "skill_k": 1212,
-   "peak": 379264,
-   "peak_rand": 379264,
-   "peak_base": 379264,
+   "peak": 433758,
+   "peak_rand": 433758,
+   "peak_base": 433758,
    "skill_base": 1212,
    "cond_fac": 1.0,
    "skill": 1212,
    "input_skill": 1212,
-   "segs": 2,
-   "forced": false
+   "segs": 3,
+   "forced": false,
+   "tail": [
+    {
+     "fac": 1.0,
+     "kind": "follow",
+     "skill": 10708,
+     "sum": 54494
+    }
+   ],
+   "seed_pick": "seed=1",
+   "peak_seeds": {
+    "seed=1": 433758,
+    "seed=2": 431855,
+    "seed=3": 440890
+   },
+   "peak_base_seeds": {
+    "seed=1": 433758,
+    "seed=2": 431855,
+    "seed=3": 440890
+   },
+   "skill_seeds": {
+    "seed=1": 1212,
+    "seed=2": 1212,
+    "seed=3": 1212
+   }
   },
   "49": {
    "mhp": 266732.0,
@@ -2894,15 +3846,39 @@
    },
    "peak_k": 620610.0,
    "skill_k": 1232,
-   "peak": 232062,
-   "peak_rand": 232062,
-   "peak_base": 232062,
+   "peak": 272650,
+   "peak_rand": 272650,
+   "peak_base": 228876,
    "skill_base": 1232,
    "cond_fac": 1.0,
-   "skill": 1232,
-   "input_skill": 1232,
-   "segs": 6,
-   "forced": false
+   "skill": 1229,
+   "input_skill": 1229,
+   "segs": 2,
+   "forced": false,
+   "tail": [
+    {
+     "fac": 1.0,
+     "kind": "recast",
+     "skill": 1229,
+     "sum": 136325
+    }
+   ],
+   "seed_pick": "seed=3",
+   "peak_seeds": {
+    "seed=1": 276444,
+    "seed=2": 232062,
+    "seed=3": 272650
+   },
+   "peak_base_seeds": {
+    "seed=1": 232062,
+    "seed=2": 232062,
+    "seed=3": 228876
+   },
+   "skill_seeds": {
+    "seed=1": 1229,
+    "seed=2": 1232,
+    "seed=3": 1229
+   }
   },
   "50": {
    "mhp": 266732.0,
@@ -2953,15 +3929,39 @@
    },
    "peak_k": 2238785.0,
    "skill_k": 1340,
-   "peak": 817573,
-   "peak_rand": 817573,
+   "peak": 1001270,
+   "peak_rand": 1001270,
    "peak_base": 817573,
    "skill_base": 1340,
    "cond_fac": 2.16,
    "skill": 1340,
    "input_skill": 1340,
-   "segs": 9,
-   "forced": true
+   "segs": 18,
+   "forced": true,
+   "tail": [
+    {
+     "fac": 1.2,
+     "kind": "follow",
+     "skill": 1348,
+     "sum": 183697
+    }
+   ],
+   "seed_pick": "seed=1",
+   "peak_seeds": {
+    "seed=1": 1001270,
+    "seed=2": 998825,
+    "seed=3": 1070172
+   },
+   "peak_base_seeds": {
+    "seed=1": 817573,
+    "seed=2": 817573,
+    "seed=3": 873839
+   },
+   "skill_seeds": {
+    "seed=1": 1340,
+    "seed=2": 1340,
+    "seed=3": 1340
+   }
   },
   "51": {
    "mhp": 281687.0,
@@ -3012,15 +4012,39 @@
    },
    "peak_k": 442521.0,
    "skill_k": 2004,
-   "peak": 299718,
-   "peak_rand": 299718,
-   "peak_base": 149859,
+   "peak": 371646,
+   "peak_rand": 371646,
+   "peak_base": 139437,
    "skill_base": 2004,
    "cond_fac": 1.0,
    "skill": 2004,
    "input_skill": 2004,
-   "segs": 18,
-   "forced": false
+   "segs": 27,
+   "forced": false,
+   "tail": [
+    {
+     "fac": 1.0,
+     "kind": "follow",
+     "skill": 2011,
+     "sum": 92772
+    }
+   ],
+   "seed_pick": "seed=2",
+   "peak_seeds": {
+    "seed=1": 399420,
+    "seed=2": 371646,
+    "seed=3": 325296
+   },
+   "peak_base_seeds": {
+    "seed=1": 149859,
+    "seed=2": 139437,
+    "seed=3": 162648
+   },
+   "skill_seeds": {
+    "seed=1": 2004,
+    "seed=2": 2004,
+    "seed=3": 2004
+   }
   },
   "52": {
    "mhp": 315757.0,
@@ -3071,15 +4095,39 @@
    },
    "peak_k": 1866861.0,
    "skill_k": 6013,
-   "peak": 657220,
-   "peak_rand": 657220,
-   "peak_base": 357481,
+   "peak": 671411,
+   "peak_rand": 671411,
+   "peak_base": 374509,
    "skill_base": 6013,
    "cond_fac": 1.0,
    "skill": 6013,
    "input_skill": 6013,
-   "segs": 6,
-   "forced": false
+   "segs": 7,
+   "forced": false,
+   "tail": [
+    {
+     "fac": 1.0,
+     "kind": "follow",
+     "skill": 10709,
+     "sum": 23377
+    }
+   ],
+   "seed_pick": "seed=2",
+   "peak_seeds": {
+    "seed=1": 681258,
+    "seed=2": 671411,
+    "seed=3": 572356
+   },
+   "peak_base_seeds": {
+    "seed=1": 381519,
+    "seed=2": 374509,
+    "seed=3": 385874
+   },
+   "skill_seeds": {
+    "seed=1": 6013,
+    "seed=2": 6013,
+    "seed=3": 6013
+   }
   },
   "53": {
    "mhp": 281687.0,
@@ -3130,15 +4178,31 @@
    },
    "peak_k": 651902.0,
    "skill_k": 2058,
-   "peak": 198069,
-   "peak_rand": 198069,
-   "peak_base": 198069,
+   "peak": 212807,
+   "peak_rand": 212807,
+   "peak_base": 212807,
    "skill_base": 2058,
    "cond_fac": 1.5,
    "skill": 2058,
    "input_skill": 2058,
    "segs": 2,
-   "forced": true
+   "forced": true,
+   "seed_pick": "seed=2",
+   "peak_seeds": {
+    "seed=1": 293659,
+    "seed=2": 212807,
+    "seed=3": 198069
+   },
+   "peak_base_seeds": {
+    "seed=1": 198069,
+    "seed=2": 212807,
+    "seed=3": 198069
+   },
+   "skill_seeds": {
+    "seed=1": 2058,
+    "seed=2": 2058,
+    "seed=3": 2058
+   }
   },
   "54": {
    "mhp": 266732.0,
@@ -3197,7 +4261,23 @@
    "skill": 2067,
    "input_skill": 2067,
    "segs": 10,
-   "forced": true
+   "forced": true,
+   "seed_pick": "seed=2",
+   "peak_seeds": {
+    "seed=1": 649161,
+    "seed=2": 590146,
+    "seed=3": 549888
+   },
+   "peak_base_seeds": {
+    "seed=1": 295073,
+    "seed=2": 295073,
+    "seed=3": 274944
+   },
+   "skill_seeds": {
+    "seed=1": 2067,
+    "seed=2": 2067,
+    "seed=3": 2067
+   }
   },
   "55": {
    "mhp": 273768.0,
@@ -3248,15 +4328,39 @@
    },
    "peak_k": 524429.0,
    "skill_k": 2082,
-   "peak": 308059,
-   "peak_rand": 308059,
-   "peak_base": 308059,
+   "peak": 556493,
+   "peak_rand": 556493,
+   "peak_base": 556493,
    "skill_base": 2082,
    "cond_fac": 1.0,
    "skill": 2082,
    "input_skill": 2082,
-   "segs": 1,
-   "forced": false
+   "segs": 2,
+   "forced": false,
+   "tail": [
+    {
+     "fac": 1.0,
+     "kind": "follow",
+     "skill": 2086,
+     "sum": 248434
+    }
+   ],
+   "seed_pick": "seed=1",
+   "peak_seeds": {
+    "seed=1": 556493,
+    "seed=2": 556493,
+    "seed=3": 556493
+   },
+   "peak_base_seeds": {
+    "seed=1": 556493,
+    "seed=2": 556493,
+    "seed=3": 556493
+   },
+   "skill_seeds": {
+    "seed=1": 2082,
+    "seed=2": 2082,
+    "seed=3": 2082
+   }
   },
   "56": {
    "mhp": 295321.0,
@@ -3315,7 +4419,23 @@
    "skill": 5494,
    "input_skill": 5494,
    "segs": 5,
-   "forced": true
+   "forced": true,
+   "seed_pick": "seed=1",
+   "peak_seeds": {
+    "seed=1": 178935,
+    "seed=2": 178935,
+    "seed=3": 178935
+   },
+   "peak_base_seeds": {
+    "seed=1": 178935,
+    "seed=2": 178935,
+    "seed=3": 178935
+   },
+   "skill_seeds": {
+    "seed=1": 5494,
+    "seed=2": 5494,
+    "seed=3": 5494
+   }
   },
   "57": {
    "mhp": 266732.0,
@@ -3366,15 +4486,31 @@
    },
    "peak_k": 1079260.0,
    "skill_k": 2125,
-   "peak": 391012,
-   "peak_rand": 391012,
-   "peak_base": 391012,
+   "peak": 330580,
+   "peak_rand": 330580,
+   "peak_base": 330580,
    "skill_base": 2125,
    "cond_fac": 1.0,
    "skill": 2125,
    "input_skill": 2125,
    "segs": 4,
-   "forced": false
+   "forced": false,
+   "seed_pick": "seed=2",
+   "peak_seeds": {
+    "seed=1": 391012,
+    "seed=2": 330580,
+    "seed=3": 307884
+   },
+   "peak_base_seeds": {
+    "seed=1": 391012,
+    "seed=2": 330580,
+    "seed=3": 307884
+   },
+   "skill_seeds": {
+    "seed=1": 2125,
+    "seed=2": 2125,
+    "seed=3": 2125
+   }
   },
   "58": {
    "mhp": 266732.0,
@@ -3433,7 +4569,23 @@
    "skill": 10711,
    "input_skill": 10711,
    "segs": 1,
-   "forced": false
+   "forced": false,
+   "seed_pick": "seed=1",
+   "peak_seeds": {
+    "seed=1": 221096,
+    "seed=2": 199349,
+    "seed=3": 398698
+   },
+   "peak_base_seeds": {
+    "seed=1": 221096,
+    "seed=2": 199349,
+    "seed=3": 199349
+   },
+   "skill_seeds": {
+    "seed=1": 10711,
+    "seed=2": 10711,
+    "seed=3": 10711
+   }
   },
   "59": {
    "mhp": 289072.0,
@@ -3492,7 +4644,23 @@
    "skill": 6905,
    "input_skill": 6905,
    "segs": 11,
-   "forced": true
+   "forced": true,
+   "seed_pick": "seed=1",
+   "peak_seeds": {
+    "seed=1": 412016,
+    "seed=2": 415998,
+    "seed=3": 385440
+   },
+   "peak_base_seeds": {
+    "seed=1": 412016,
+    "seed=2": 415998,
+    "seed=3": 385440
+   },
+   "skill_seeds": {
+    "seed=1": 6905,
+    "seed=2": 6905,
+    "seed=3": 6905
+   }
   },
   "60": {
    "mhp": 335624.0,
@@ -3543,15 +4711,31 @@
    },
    "peak_k": 1458111.0,
    "skill_k": 2226,
-   "peak": 231756,
-   "peak_rand": 231756,
-   "peak_base": 231756,
+   "peak": 225513,
+   "peak_rand": 225513,
+   "peak_base": 225513,
    "skill_base": 2226,
    "cond_fac": 1.0,
    "skill": 2226,
    "input_skill": 2226,
    "segs": 3,
-   "forced": false
+   "forced": false,
+   "seed_pick": "seed=2",
+   "peak_seeds": {
+    "seed=1": 231756,
+    "seed=2": 225513,
+    "seed=3": 207987
+   },
+   "peak_base_seeds": {
+    "seed=1": 231756,
+    "seed=2": 225513,
+    "seed=3": 207987
+   },
+   "skill_seeds": {
+    "seed=1": 2226,
+    "seed=2": 2226,
+    "seed=3": 2226
+   }
   },
   "61": {
    "mhp": 276137.0,
@@ -3602,15 +4786,31 @@
    },
    "peak_k": 1590318.0,
    "skill_k": 5526,
-   "peak": 446846,
-   "peak_rand": 446846,
-   "peak_base": 223423,
+   "peak": 422211,
+   "peak_rand": 422211,
+   "peak_base": 211105,
    "skill_base": 5526,
    "cond_fac": 1.56,
    "skill": 5526,
    "input_skill": 5526,
    "segs": 12,
-   "forced": true
+   "forced": true,
+   "seed_pick": "seed=2",
+   "peak_seeds": {
+    "seed=1": 446846,
+    "seed=2": 422211,
+    "seed=3": 223292
+   },
+   "peak_base_seeds": {
+    "seed=1": 223423,
+    "seed=2": 211105,
+    "seed=3": 223292
+   },
+   "skill_seeds": {
+    "seed=1": 5526,
+    "seed=2": 5526,
+    "seed=3": 5526
+   }
   },
   "62": {
    "mhp": 281687.0,
@@ -3661,15 +4861,31 @@
    },
    "peak_k": 1061637.0,
    "skill_k": 10715,
-   "peak": 309363,
-   "peak_rand": 309363,
-   "peak_base": 309363,
+   "peak": 288089,
+   "peak_rand": 288089,
+   "peak_base": 288089,
    "skill_base": 10715,
    "cond_fac": 1.5,
    "skill": 10715,
    "input_skill": 10715,
    "segs": 3,
-   "forced": true
+   "forced": true,
+   "seed_pick": "seed=2",
+   "peak_seeds": {
+    "seed=1": 309363,
+    "seed=2": 288089,
+    "seed=3": 288089
+   },
+   "peak_base_seeds": {
+    "seed=1": 309363,
+    "seed=2": 288089,
+    "seed=3": 288089
+   },
+   "skill_seeds": {
+    "seed=1": 10715,
+    "seed=2": 10715,
+    "seed=3": 10715
+   }
   },
   "63": {
    "mhp": 284564.0,
@@ -3720,15 +4936,31 @@
    },
    "peak_k": 378112.0,
    "skill_k": 5455,
-   "peak": 169229,
-   "peak_rand": 169229,
-   "peak_base": 169229,
+   "peak": 175770,
+   "peak_rand": 175770,
+   "peak_base": 175770,
    "skill_base": 5455,
    "cond_fac": 1.0833,
    "skill": 5455,
    "input_skill": 5455,
    "segs": 8,
-   "forced": true
+   "forced": true,
+   "seed_pick": "seed=3",
+   "peak_seeds": {
+    "seed=1": 169229,
+    "seed=2": 175941,
+    "seed=3": 175770
+   },
+   "peak_base_seeds": {
+    "seed=1": 169229,
+    "seed=2": 175941,
+    "seed=3": 175770
+   },
+   "skill_seeds": {
+    "seed=1": 5455,
+    "seed=2": 5455,
+    "seed=3": 5455
+   }
   },
   "64": {
    "mhp": 266732.0,
@@ -3779,15 +5011,31 @@
    },
    "peak_k": 701139.0,
    "skill_k": 2358,
-   "peak": 495083,
-   "peak_rand": 495083,
-   "peak_base": 249466,
+   "peak": 442040,
+   "peak_rand": 442040,
+   "peak_base": 222739,
    "skill_base": 2358,
    "cond_fac": 1.2,
    "skill": 2358,
    "input_skill": 2358,
    "segs": 6,
-   "forced": true
+   "forced": true,
+   "seed_pick": "seed=2",
+   "peak_seeds": {
+    "seed=1": 495083,
+    "seed=2": 442040,
+    "seed=3": 261442
+   },
+   "peak_base_seeds": {
+    "seed=1": 249466,
+    "seed=2": 222739,
+    "seed=3": 222739
+   },
+   "skill_seeds": {
+    "seed=1": 2358,
+    "seed=2": 2358,
+    "seed=3": 2357
+   }
   },
   "65": {
    "mhp": 273768.0,
@@ -3838,15 +5086,31 @@
    },
    "peak_k": 620031.0,
    "skill_k": 2586,
-   "peak": 189087,
-   "peak_rand": 189087,
-   "peak_base": 189087,
+   "peak": 184395,
+   "peak_rand": 184395,
+   "peak_base": 184395,
    "skill_base": 2586,
    "cond_fac": 1.0,
    "skill": 2586,
    "input_skill": 2586,
    "segs": 3,
-   "forced": false
+   "forced": false,
+   "seed_pick": "seed=3",
+   "peak_seeds": {
+    "seed=1": 189087,
+    "seed=2": 169401,
+    "seed=3": 184395
+   },
+   "peak_base_seeds": {
+    "seed=1": 189087,
+    "seed=2": 169401,
+    "seed=3": 184395
+   },
+   "skill_seeds": {
+    "seed=1": 2586,
+    "seed=2": 2586,
+    "seed=3": 2586
+   }
   },
   "66": {
    "mhp": 281687.0,
@@ -3905,7 +5169,23 @@
    "skill": 10717,
    "input_skill": 10717,
    "segs": 3,
-   "forced": true
+   "forced": true,
+   "seed_pick": "seed=1",
+   "peak_seeds": {
+    "seed=1": 277160,
+    "seed=2": 306081,
+    "seed=3": 277160
+   },
+   "peak_base_seeds": {
+    "seed=1": 277160,
+    "seed=2": 306081,
+    "seed=3": 277160
+   },
+   "skill_seeds": {
+    "seed=1": 10717,
+    "seed=2": 10717,
+    "seed=3": 10717
+   }
   },
   "67": {
    "mhp": 273768.0,
@@ -3964,7 +5244,23 @@
    "skill": 2386,
    "input_skill": 2386,
    "segs": 3,
-   "forced": false
+   "forced": false,
+   "seed_pick": "seed=2",
+   "peak_seeds": {
+    "seed=1": 642800,
+    "seed=2": 491770,
+    "seed=3": 478826
+   },
+   "peak_base_seeds": {
+    "seed=1": 491770,
+    "seed=2": 491770,
+    "seed=3": 478826
+   },
+   "skill_seeds": {
+    "seed=1": 2386,
+    "seed=2": 2386,
+    "seed=3": 2386
+   }
   },
   "68": {
    "mhp": 289072.0,
@@ -4015,15 +5311,39 @@
    },
    "peak_k": 903105.0,
    "skill_k": 2342,
-   "peak": 239079,
-   "peak_rand": 239079,
-   "peak_base": 239079,
+   "peak": 304314,
+   "peak_rand": 304314,
+   "peak_base": 239841,
    "skill_base": 2342,
    "cond_fac": 1.0,
    "skill": 2342,
    "input_skill": 2342,
-   "segs": 3,
-   "forced": false
+   "segs": 4,
+   "forced": false,
+   "tail": [
+    {
+     "fac": 1.0,
+     "kind": "follow",
+     "skill": 2348,
+     "sum": 64473
+    }
+   ],
+   "seed_pick": "seed=2",
+   "peak_seeds": {
+    "seed=1": 303348,
+    "seed=2": 304314,
+    "seed=3": 345800
+   },
+   "peak_base_seeds": {
+    "seed=1": 239079,
+    "seed=2": 239841,
+    "seed=3": 259350
+   },
+   "skill_seeds": {
+    "seed=1": 2342,
+    "seed=2": 2342,
+    "seed=3": 2342
+   }
   },
   "69": {
    "mhp": 273768.0,
@@ -4074,15 +5394,39 @@
    },
    "peak_k": 736548.0,
    "skill_k": 2415,
-   "peak": 215616,
-   "peak_rand": 215616,
-   "peak_base": 215616,
+   "peak": 273950,
+   "peak_rand": 273950,
+   "peak_base": 273950,
    "skill_base": 2415,
    "cond_fac": 1.0,
    "skill": 2415,
    "input_skill": 2415,
-   "segs": 3,
-   "forced": false
+   "segs": 4,
+   "forced": false,
+   "tail": [
+    {
+     "fac": 1.0,
+     "kind": "follow",
+     "skill": 2420,
+     "sum": 32459
+    }
+   ],
+   "seed_pick": "seed=3",
+   "peak_seeds": {
+    "seed=1": 244597,
+    "seed=2": 316469,
+    "seed=3": 273950
+   },
+   "peak_base_seeds": {
+    "seed=1": 244597,
+    "seed=2": 244597,
+    "seed=3": 273950
+   },
+   "skill_seeds": {
+    "seed=1": 2415,
+    "seed=2": 2415,
+    "seed=3": 2415
+   }
   },
   "70": {
    "mhp": 267125.0,
@@ -4133,15 +5477,39 @@
    },
    "peak_k": 1645824.0,
    "skill_k": 2396,
-   "peak": 197637,
-   "peak_rand": 197637,
-   "peak_base": 197637,
+   "peak": 227060,
+   "peak_rand": 227060,
+   "peak_base": 211164,
    "skill_base": 2396,
    "cond_fac": 1.0,
-   "skill": 2396,
-   "input_skill": 2396,
-   "segs": 3,
-   "forced": false
+   "skill": 2394,
+   "input_skill": 2394,
+   "segs": 2,
+   "forced": false,
+   "tail": [
+    {
+     "fac": 1.0,
+     "kind": "recast",
+     "skill": 2394,
+     "sum": 113530
+    }
+   ],
+   "seed_pick": "seed=3",
+   "peak_seeds": {
+    "seed=1": 212514,
+    "seed=2": 244828,
+    "seed=3": 227060
+   },
+   "peak_base_seeds": {
+    "seed=1": 197637,
+    "seed=2": 183621,
+    "seed=3": 211164
+   },
+   "skill_seeds": {
+    "seed=1": 2394,
+    "seed=2": 2396,
+    "seed=3": 2394
+   }
   },
   "71": {
    "mhp": 266732.0,
@@ -4192,15 +5560,31 @@
    },
    "peak_k": 342403.0,
    "skill_k": 2528,
-   "peak": 122002,
-   "peak_rand": 122002,
-   "peak_base": 61001,
+   "peak": 120006,
+   "peak_rand": 120006,
+   "peak_base": 60003,
    "skill_base": 2528,
    "cond_fac": 1.0,
    "skill": 2528,
    "input_skill": 2528,
    "segs": 2,
-   "forced": true
+   "forced": true,
+   "seed_pick": "seed=2",
+   "peak_seeds": {
+    "seed=1": 122002,
+    "seed=2": 120006,
+    "seed=3": 55167
+   },
+   "peak_base_seeds": {
+    "seed=1": 61001,
+    "seed=2": 60003,
+    "seed=3": 55167
+   },
+   "skill_seeds": {
+    "seed=1": 2528,
+    "seed=2": 2528,
+    "seed=3": 2528
+   }
   },
   "72": {
    "mhp": 288723.0,
@@ -4259,7 +5643,23 @@
    "skill": 2704,
    "input_skill": 2704,
    "segs": 12,
-   "forced": true
+   "forced": true,
+   "seed_pick": "seed=1",
+   "peak_seeds": {
+    "seed=1": 616092,
+    "seed=2": 616092,
+    "seed=3": 658876
+   },
+   "peak_base_seeds": {
+    "seed=1": 308046,
+    "seed=2": 308046,
+    "seed=3": 308046
+   },
+   "skill_seeds": {
+    "seed=1": 2704,
+    "seed=2": 2704,
+    "seed=3": 2704
+   }
   },
   "73": {
    "mhp": 281687.0,
@@ -4310,15 +5710,39 @@
    },
    "peak_k": 2456080.0,
    "skill_k": 2735,
-   "peak": 515600,
-   "peak_rand": 515600,
-   "peak_base": 257800,
+   "peak": 535112,
+   "peak_rand": 535112,
+   "peak_base": 277376,
    "skill_base": 2735,
    "cond_fac": 1.0,
    "skill": 2735,
    "input_skill": 2735,
-   "segs": 10,
-   "forced": false
+   "segs": 11,
+   "forced": false,
+   "tail": [
+    {
+     "fac": 1.0,
+     "kind": "follow",
+     "skill": 5121,
+     "sum": 19512
+    }
+   ],
+   "seed_pick": "seed=3",
+   "peak_seeds": {
+    "seed=1": 535034,
+    "seed=2": 559274,
+    "seed=3": 535112
+   },
+   "peak_base_seeds": {
+    "seed=1": 277350,
+    "seed=2": 289953,
+    "seed=3": 277376
+   },
+   "skill_seeds": {
+    "seed=1": 2735,
+    "seed=2": 2735,
+    "seed=3": 2735
+   }
   },
   "74": {
    "mhp": 326067.0,
@@ -4369,15 +5793,31 @@
    },
    "peak_k": 2289018.0,
    "skill_k": 2613,
-   "peak": 345961,
-   "peak_rand": 345961,
-   "peak_base": 345961,
+   "peak": 387473,
+   "peak_rand": 387473,
+   "peak_base": 387473,
    "skill_base": 2613,
    "cond_fac": 1.7999,
    "skill": 2613,
    "input_skill": 2613,
    "segs": 3,
-   "forced": true
+   "forced": true,
+   "seed_pick": "seed=2",
+   "peak_seeds": {
+    "seed=1": 345961,
+    "seed=2": 387473,
+    "seed=3": 397851
+   },
+   "peak_base_seeds": {
+    "seed=1": 345961,
+    "seed=2": 387473,
+    "seed=3": 397851
+   },
+   "skill_seeds": {
+    "seed=1": 2613,
+    "seed=2": 2613,
+    "seed=3": 2613
+   }
   },
   "75": {
    "mhp": 304960.0,
@@ -4428,15 +5868,39 @@
    },
    "peak_k": 2112936.0,
    "skill_k": 5128,
-   "peak": 316932,
-   "peak_rand": 316932,
-   "peak_base": 316932,
+   "peak": 375622,
+   "peak_rand": 375622,
+   "peak_base": 375622,
    "skill_base": 5128,
    "cond_fac": 1.0,
    "skill": 5128,
    "input_skill": 5128,
-   "segs": 12,
-   "forced": true
+   "segs": 13,
+   "forced": true,
+   "tail": [
+    {
+     "fac": 1.0,
+     "kind": "follow",
+     "skill": 5130,
+     "sum": 58690
+    }
+   ],
+   "seed_pick": "seed=1",
+   "peak_seeds": {
+    "seed=1": 375622,
+    "seed=2": 375622,
+    "seed=3": 375622
+   },
+   "peak_base_seeds": {
+    "seed=1": 375622,
+    "seed=2": 375622,
+    "seed=3": 375622
+   },
+   "skill_seeds": {
+    "seed=1": 5128,
+    "seed=2": 5128,
+    "seed=3": 5128
+   }
   },
   "76": {
    "mhp": 319719.0,
@@ -4495,7 +5959,23 @@
    "skill": 3502,
    "input_skill": 3502,
    "segs": 4,
-   "forced": true
+   "forced": true,
+   "seed_pick": "seed=1",
+   "peak_seeds": {
+    "seed=1": 305838,
+    "seed=2": 303758,
+    "seed=3": 369445
+   },
+   "peak_base_seeds": {
+    "seed=1": 305838,
+    "seed=2": 303758,
+    "seed=3": 295556
+   },
+   "skill_seeds": {
+    "seed=1": 3502,
+    "seed=2": 3502,
+    "seed=3": 3502
+   }
   },
   "77": {
    "mhp": 288723.0,
@@ -4554,7 +6034,23 @@
    "skill": 3761,
    "input_skill": 3761,
    "segs": 2,
-   "forced": true
+   "forced": true,
+   "seed_pick": "seed=1",
+   "peak_seeds": {
+    "seed=1": 216862,
+    "seed=2": 216862,
+    "seed=3": 233258
+   },
+   "peak_base_seeds": {
+    "seed=1": 108431,
+    "seed=2": 108431,
+    "seed=3": 116629
+   },
+   "skill_seeds": {
+    "seed=1": 3761,
+    "seed=2": 3761,
+    "seed=3": 3761
+   }
   },
   "78": {
    "mhp": 281687.0,
@@ -4613,7 +6109,23 @@
    "skill": 10721,
    "input_skill": 10721,
    "segs": 4,
-   "forced": true
+   "forced": true,
+   "seed_pick": "seed=1",
+   "peak_seeds": {
+    "seed=1": 538205,
+    "seed=2": 556929,
+    "seed=3": 526821
+   },
+   "peak_base_seeds": {
+    "seed=1": 269102,
+    "seed=2": 278465,
+    "seed=3": 263411
+   },
+   "skill_seeds": {
+    "seed=1": 10721,
+    "seed=2": 10721,
+    "seed=3": 10721
+   }
   },
   "79": {
    "mhp": 458779.0,
@@ -4672,7 +6184,23 @@
    "skill": 10722,
    "input_skill": 10722,
    "segs": 5,
-   "forced": true
+   "forced": true,
+   "seed_pick": "seed=1",
+   "peak_seeds": {
+    "seed=1": 333998,
+    "seed=2": 331867,
+    "seed=3": 410399
+   },
+   "peak_base_seeds": {
+    "seed=1": 333998,
+    "seed=2": 331867,
+    "seed=3": 341999
+   },
+   "skill_seeds": {
+    "seed=1": 10722,
+    "seed=2": 10722,
+    "seed=3": 10722
+   }
   },
   "80": {
    "mhp": 497203.0,
@@ -4723,15 +6251,31 @@
    },
    "peak_k": 1394937.0,
    "skill_k": 4450,
-   "peak": 314061,
-   "peak_rand": 314061,
-   "peak_base": 314061,
+   "peak": 346972,
+   "peak_rand": 346972,
+   "peak_base": 346972,
    "skill_base": 4450,
    "cond_fac": 1.6667,
    "skill": 4450,
    "input_skill": 4450,
    "segs": 3,
-   "forced": true
+   "forced": true,
+   "seed_pick": "seed=2",
+   "peak_seeds": {
+    "seed=1": 418748,
+    "seed=2": 346972,
+    "seed=3": 310886
+   },
+   "peak_base_seeds": {
+    "seed=1": 314061,
+    "seed=2": 346972,
+    "seed=3": 310886
+   },
+   "skill_seeds": {
+    "seed=1": 4450,
+    "seed=2": 4450,
+    "seed=3": 4450
+   }
   },
   "81": {
    "mhp": 311209.0,
@@ -4782,15 +6326,31 @@
    },
    "peak_k": 175742.0,
    "skill_k": 4833,
-   "peak": 16844,
-   "peak_rand": 16844,
-   "peak_base": 16844,
+   "peak": 18120,
+   "peak_rand": 18120,
+   "peak_base": 18120,
    "skill_base": 4833,
    "cond_fac": 1.0,
    "skill": 4833,
    "input_skill": 4833,
    "segs": 1,
-   "forced": true
+   "forced": true,
+   "seed_pick": "seed=3",
+   "peak_seeds": {
+    "seed=1": 16844,
+    "seed=2": 19018,
+    "seed=3": 18120
+   },
+   "peak_base_seeds": {
+    "seed=1": 16844,
+    "seed=2": 19018,
+    "seed=3": 18120
+   },
+   "skill_seeds": {
+    "seed=1": 4833,
+    "seed=2": 4833,
+    "seed=3": 4833
+   }
   },
   "82": {
    "mhp": 304174.0,
@@ -4849,7 +6409,23 @@
    "skill": 4938,
    "input_skill": 4938,
    "segs": 2,
-   "forced": false
+   "forced": false,
+   "seed_pick": "seed=1",
+   "peak_seeds": {
+    "seed=1": 96246,
+    "seed=2": 96246,
+    "seed=3": 101232
+   },
+   "peak_base_seeds": {
+    "seed=1": 48123,
+    "seed=2": 48123,
+    "seed=3": 50616
+   },
+   "skill_seeds": {
+    "seed=1": 4938,
+    "seed=2": 4938,
+    "seed=3": 4938
+   }
   },
   "83": {
    "mhp": 671196.0,
@@ -4908,7 +6484,23 @@
    "skill": 5999,
    "input_skill": 5999,
    "segs": 6,
-   "forced": true
+   "forced": true,
+   "seed_pick": "seed=1",
+   "peak_seeds": {
+    "seed=1": 356616,
+    "seed=2": 340620,
+    "seed=3": 412601
+   },
+   "peak_base_seeds": {
+    "seed=1": 356616,
+    "seed=2": 340620,
+    "seed=3": 353658
+   },
+   "skill_seeds": {
+    "seed=1": 5999,
+    "seed=2": 5999,
+    "seed=3": 5999
+   }
   },
   "84": {
    "mhp": 307838.0,
@@ -4959,15 +6551,31 @@
    },
    "peak_k": 284709.0,
    "skill_k": 5540,
-   "peak": 119253,
-   "peak_rand": 119253,
-   "peak_base": 119253,
+   "peak": 112515,
+   "peak_rand": 112515,
+   "peak_base": 112515,
    "skill_base": 5540,
    "cond_fac": 1.0,
    "skill": 5540,
    "input_skill": 5540,
    "segs": 3,
-   "forced": false
+   "forced": false,
+   "seed_pick": "seed=2",
+   "peak_seeds": {
+    "seed=1": 119253,
+    "seed=2": 112515,
+    "seed=3": 112515
+   },
+   "peak_base_seeds": {
+    "seed=1": 119253,
+    "seed=2": 112515,
+    "seed=3": 112515
+   },
+   "skill_seeds": {
+    "seed=1": 5540,
+    "seed=2": 5540,
+    "seed=3": 5540
+   }
   },
   "85": {
    "mhp": 351913.0,
@@ -5026,7 +6634,23 @@
    "skill": 7327,
    "input_skill": 7327,
    "segs": 1,
-   "forced": false
+   "forced": false,
+   "seed_pick": "seed=1",
+   "peak_seeds": {
+    "seed=1": 570956,
+    "seed=2": 545003,
+    "seed=3": 610404
+   },
+   "peak_base_seeds": {
+    "seed=1": 570956,
+    "seed=2": 545003,
+    "seed=3": 610404
+   },
+   "skill_seeds": {
+    "seed=1": 7327,
+    "seed=2": 7327,
+    "seed=3": 7327
+   }
   },
   "86": {
    "mhp": 273768.0,
@@ -5077,15 +6701,31 @@
    },
    "peak_k": 299092.0,
    "skill_k": 5860,
-   "peak": 85582,
-   "peak_rand": 85582,
-   "peak_base": 85582,
+   "peak": 93376,
+   "peak_rand": 93376,
+   "peak_base": 93376,
    "skill_base": 5860,
    "cond_fac": 1.3,
    "skill": 5860,
    "input_skill": 5860,
    "segs": 4,
-   "forced": true
+   "forced": true,
+   "seed_pick": "seed=2",
+   "peak_seeds": {
+    "seed=1": 106977,
+    "seed=2": 93376,
+    "seed=3": 79394
+   },
+   "peak_base_seeds": {
+    "seed=1": 85582,
+    "seed=2": 93376,
+    "seed=3": 79394
+   },
+   "skill_seeds": {
+    "seed=1": 5860,
+    "seed=2": 5860,
+    "seed=3": 5860
+   }
   },
   "87": {
    "mhp": 285794.0,
@@ -5136,15 +6776,31 @@
    },
    "peak_k": 766740.0,
    "skill_k": 5852,
-   "peak": 209282,
-   "peak_rand": 209282,
-   "peak_base": 209282,
+   "peak": 216824,
+   "peak_rand": 216824,
+   "peak_base": 216824,
    "skill_base": 5852,
    "cond_fac": 1.3,
    "skill": 5852,
    "input_skill": 5852,
    "segs": 6,
-   "forced": true
+   "forced": true,
+   "seed_pick": "seed=3",
+   "peak_seeds": {
+    "seed=1": 209282,
+    "seed=2": 281454,
+    "seed=3": 216824
+   },
+   "peak_base_seeds": {
+    "seed=1": 209282,
+    "seed=2": 241246,
+    "seed=3": 216824
+   },
+   "skill_seeds": {
+    "seed=1": 5852,
+    "seed=2": 5852,
+    "seed=3": 5852
+   }
   },
   "88": {
    "mhp": 293405.0,
@@ -5203,7 +6859,23 @@
    "skill": 5912,
    "input_skill": 5912,
    "segs": 12,
-   "forced": true
+   "forced": true,
+   "seed_pick": "seed=1",
+   "peak_seeds": {
+    "seed=1": 663960,
+    "seed=2": 708084,
+    "seed=3": 663960
+   },
+   "peak_base_seeds": {
+    "seed=1": 663960,
+    "seed=2": 708084,
+    "seed=3": 663960
+   },
+   "skill_seeds": {
+    "seed=1": 5912,
+    "seed=2": 5912,
+    "seed=3": 5912
+   }
   },
   "89": {
    "mhp": 310178.0,
@@ -5262,7 +6934,23 @@
    "skill": 5935,
    "input_skill": 5935,
    "segs": 1,
-   "forced": true
+   "forced": true,
+   "seed_pick": "seed=1",
+   "peak_seeds": {
+    "seed=1": 148837,
+    "seed=2": 140886,
+    "seed=3": 297675
+   },
+   "peak_base_seeds": {
+    "seed=1": 148837,
+    "seed=2": 140886,
+    "seed=3": 148837
+   },
+   "skill_seeds": {
+    "seed=1": 5935,
+    "seed=2": 5935,
+    "seed=3": 5935
+   }
   },
   "90": {
    "mhp": 562627.0,
@@ -5321,7 +7009,23 @@
    "skill": 10726,
    "input_skill": 10726,
    "segs": 2,
-   "forced": false
+   "forced": false,
+   "seed_pick": "seed=1",
+   "peak_seeds": {
+    "seed=1": 182234,
+    "seed=2": 182234,
+    "seed=3": 182234
+   },
+   "peak_base_seeds": {
+    "seed=1": 182234,
+    "seed=2": 182234,
+    "seed=3": 182234
+   },
+   "skill_seeds": {
+    "seed=1": 10726,
+    "seed=2": 10726,
+    "seed=3": 10726
+   }
   },
   "91": {
    "mhp": 300802.0,
@@ -5380,7 +7084,23 @@
    "skill": 7467,
    "input_skill": 7467,
    "segs": 8,
-   "forced": false
+   "forced": false,
+   "seed_pick": "seed=1",
+   "peak_seeds": {
+    "seed=1": 535784,
+    "seed=2": 535784,
+    "seed=3": 1117312
+   },
+   "peak_base_seeds": {
+    "seed=1": 535784,
+    "seed=2": 535784,
+    "seed=3": 558656
+   },
+   "skill_seeds": {
+    "seed=1": 7467,
+    "seed=2": 7467,
+    "seed=3": 7467
+   }
   },
   "92": {
    "mhp": 303407.0,
@@ -5439,7 +7159,23 @@
    "skill": 7007,
    "input_skill": 7007,
    "segs": 4,
-   "forced": false
+   "forced": false,
+   "seed_pick": "seed=1",
+   "peak_seeds": {
+    "seed=1": 229392,
+    "seed=2": 229392,
+    "seed=3": 243936
+   },
+   "peak_base_seeds": {
+    "seed=1": 229392,
+    "seed=2": 229392,
+    "seed=3": 243936
+   },
+   "skill_seeds": {
+    "seed=1": 7007,
+    "seed=2": 7007,
+    "seed=3": 7007
+   }
   },
   "93": {
    "stat": {
@@ -5538,15 +7274,31 @@
    },
    "peak_k": 635422.0,
    "skill_k": 6867,
-   "peak": 213837,
-   "peak_rand": 213837,
-   "peak_base": 213837,
+   "peak": 218354,
+   "peak_rand": 218354,
+   "peak_base": 218354,
    "skill_base": 6867,
    "cond_fac": 1.0,
    "skill": 6867,
    "input_skill": 6867,
    "segs": 3,
-   "forced": true
+   "forced": true,
+   "seed_pick": "seed=3",
+   "peak_seeds": {
+    "seed=1": 213837,
+    "seed=2": 268023,
+    "seed=3": 218354
+   },
+   "peak_base_seeds": {
+    "seed=1": 213837,
+    "seed=2": 268023,
+    "seed=3": 218354
+   },
+   "skill_seeds": {
+    "seed=1": 6867,
+    "seed=2": 6867,
+    "seed=3": 6867
+   }
   },
   "95": {
    "mhp": 285060.0,
@@ -5597,15 +7349,31 @@
    },
    "peak_k": 5781244.0,
    "skill_k": 10729,
-   "peak": 906635,
-   "peak_rand": 906635,
-   "peak_base": 906635,
+   "peak": 971727,
+   "peak_rand": 971727,
+   "peak_base": 971727,
    "skill_base": 10731,
    "cond_fac": 1.1,
    "skill": 10731,
    "input_skill": 10731,
    "segs": 4,
-   "forced": true
+   "forced": true,
+   "seed_pick": "seed=3",
+   "peak_seeds": {
+    "seed=1": 906635,
+    "seed=2": 1037540,
+    "seed=3": 971727
+   },
+   "peak_base_seeds": {
+    "seed=1": 906635,
+    "seed=2": 1037540,
+    "seed=3": 971727
+   },
+   "skill_seeds": {
+    "seed=1": 10731,
+    "seed=2": 10731,
+    "seed=3": 10731
+   }
   },
   "96": {
    "mhp": 299043.0,
@@ -5656,15 +7424,39 @@
    },
    "peak_k": 286884.0,
    "skill_k": 8150,
-   "peak": 61484,
-   "peak_rand": 61484,
-   "peak_base": 61484,
+   "peak": 69464,
+   "peak_rand": 69464,
+   "peak_base": 55676,
    "skill_base": 8150,
-   "cond_fac": 1.0,
-   "skill": 8150,
-   "input_skill": 8150,
-   "segs": 4,
-   "forced": false
+   "cond_fac": 2.0,
+   "skill": 8151,
+   "input_skill": 8151,
+   "segs": 2,
+   "forced": true,
+   "tail": [
+    {
+     "fac": 2.0,
+     "kind": "recast",
+     "skill": 8151,
+     "sum": 34732
+    }
+   ],
+   "seed_pick": "seed=2",
+   "peak_seeds": {
+    "seed=1": 76712,
+    "seed=2": 69464,
+    "seed=3": 55968
+   },
+   "peak_base_seeds": {
+    "seed=1": 61484,
+    "seed=2": 55676,
+    "seed=3": 55968
+   },
+   "skill_seeds": {
+    "seed=1": 8151,
+    "seed=2": 8151,
+    "seed=3": 8150
+   }
   },
   "97": {
    "mhp": 459456.0,
@@ -5723,7 +7515,23 @@
    "skill": 7057,
    "input_skill": 7057,
    "segs": 4,
-   "forced": true
+   "forced": true,
+   "seed_pick": "seed=1",
+   "peak_seeds": {
+    "seed=1": 454029,
+    "seed=2": 499812,
+    "seed=3": 427214
+   },
+   "peak_base_seeds": {
+    "seed=1": 227014,
+    "seed=2": 249906,
+    "seed=3": 213607
+   },
+   "skill_seeds": {
+    "seed=1": 7057,
+    "seed=2": 7057,
+    "seed=3": 7057
+   }
   },
   "98": {
    "mhp": 288723.0,
@@ -5774,15 +7582,31 @@
    },
    "peak_k": 213144.0,
    "skill_k": 7074,
-   "peak": 128035,
-   "peak_rand": 128035,
-   "peak_base": 64018,
+   "peak": 118920,
+   "peak_rand": 118920,
+   "peak_base": 59460,
    "skill_base": 7074,
    "cond_fac": 1.2,
    "skill": 7074,
    "input_skill": 7074,
    "segs": 4,
-   "forced": true
+   "forced": true,
+   "seed_pick": "seed=3",
+   "peak_seeds": {
+    "seed=1": 128035,
+    "seed=2": 114110,
+    "seed=3": 118920
+   },
+   "peak_base_seeds": {
+    "seed=1": 64018,
+    "seed=2": 57055,
+    "seed=3": 59460
+   },
+   "skill_seeds": {
+    "seed=1": 7074,
+    "seed=2": 7074,
+    "seed=3": 7074
+   }
   },
   "99": {
    "mhp": 292883.0,
@@ -5833,15 +7657,31 @@
    },
    "peak_k": 85359.0,
    "skill_k": 8087,
-   "peak": 16581,
-   "peak_rand": 16581,
-   "peak_base": 16581,
+   "peak": 16335,
+   "peak_rand": 16335,
+   "peak_base": 16335,
    "skill_base": 8087,
    "cond_fac": 1.0,
    "skill": 8087,
    "input_skill": 8087,
    "segs": 3,
-   "forced": true
+   "forced": true,
+   "seed_pick": "seed=2",
+   "peak_seeds": {
+    "seed=1": 16581,
+    "seed=2": 16335,
+    "seed=3": 14805
+   },
+   "peak_base_seeds": {
+    "seed=1": 16581,
+    "seed=2": 16335,
+    "seed=3": 14805
+   },
+   "skill_seeds": {
+    "seed=1": 8087,
+    "seed=2": 8087,
+    "seed=3": 8087
+   }
   },
   "100": {
    "mhp": 299043.0,
@@ -5892,15 +7732,31 @@
    },
    "peak_k": 102534.0,
    "skill_k": 5572,
-   "peak": 46298,
-   "peak_rand": 46298,
-   "peak_base": 46298,
+   "peak": 49312,
+   "peak_rand": 49312,
+   "peak_base": 49312,
    "skill_base": 5572,
    "cond_fac": 1.0,
    "skill": 5572,
    "input_skill": 5572,
    "segs": 2,
-   "forced": false
+   "forced": false,
+   "seed_pick": "seed=2",
+   "peak_seeds": {
+    "seed=1": 46298,
+    "seed=2": 49312,
+    "seed=3": 75477
+   },
+   "peak_base_seeds": {
+    "seed=1": 46298,
+    "seed=2": 49312,
+    "seed=3": 50318
+   },
+   "skill_seeds": {
+    "seed=1": 5572,
+    "seed=2": 5572,
+    "seed=3": 5572
+   }
   },
   "101": {
    "mhp": 277932.0,
@@ -5959,7 +7815,23 @@
    "skill": 10733,
    "input_skill": 10733,
    "segs": 2,
-   "forced": false
+   "forced": false,
+   "seed_pick": "seed=1",
+   "peak_seeds": {
+    "seed=1": 636814,
+    "seed=2": 636814,
+    "seed=3": 683224
+   },
+   "peak_base_seeds": {
+    "seed=1": 636814,
+    "seed=2": 636814,
+    "seed=3": 683224
+   },
+   "skill_seeds": {
+    "seed=1": 10733,
+    "seed=2": 10733,
+    "seed=3": 10733
+   }
   },
   "102": {
    "mhp": 345425.0,
@@ -6018,7 +7890,23 @@
    "skill": 5592,
    "input_skill": 5592,
    "segs": 1,
-   "forced": true
+   "forced": true,
+   "seed_pick": "seed=1",
+   "peak_seeds": {
+    "seed=1": 290551,
+    "seed=2": 314810,
+    "seed=3": 270317
+   },
+   "peak_base_seeds": {
+    "seed=1": 290551,
+    "seed=2": 275954,
+    "seed=3": 270317
+   },
+   "skill_seeds": {
+    "seed=1": 5592,
+    "seed=2": 5592,
+    "seed=3": 5592
+   }
   },
   "103": {
    "mhp": 266732.0,
@@ -6069,15 +7957,31 @@
    },
    "peak_k": 806884.0,
    "skill_k": 7090,
-   "peak": 194485,
-   "peak_rand": 194485,
-   "peak_base": 194485,
+   "peak": 192245,
+   "peak_rand": 192245,
+   "peak_base": 192245,
    "skill_base": 7090,
    "cond_fac": 1.0,
    "skill": 7090,
    "input_skill": 7090,
    "segs": 2,
-   "forced": false
+   "forced": false,
+   "seed_pick": "seed=3",
+   "peak_seeds": {
+    "seed=1": 194485,
+    "seed=2": 183593,
+    "seed=3": 192245
+   },
+   "peak_base_seeds": {
+    "seed=1": 194485,
+    "seed=2": 183593,
+    "seed=3": 192245
+   },
+   "skill_seeds": {
+    "seed=1": 7090,
+    "seed=2": 7090,
+    "seed=3": 7090
+   }
   },
   "104": {
    "mhp": 527966.0,
@@ -6128,15 +8032,31 @@
    },
    "peak_k": 4656305.0,
    "skill_k": 7485,
-   "peak": 1118247,
-   "peak_rand": 1118247,
-   "peak_base": 1118247,
+   "peak": 776560,
+   "peak_rand": 776560,
+   "peak_base": 776560,
    "skill_base": 7485,
-   "cond_fac": 2.2464,
+   "cond_fac": 1.56,
    "skill": 7485,
    "input_skill": 7485,
    "segs": 5,
-   "forced": true
+   "forced": true,
+   "seed_pick": "seed=1",
+   "peak_seeds": {
+    "seed=1": 776560,
+    "seed=2": 747404,
+    "seed=3": 783853
+   },
+   "peak_base_seeds": {
+    "seed=1": 776560,
+    "seed=2": 747404,
+    "seed=3": 783853
+   },
+   "skill_seeds": {
+    "seed=1": 7485,
+    "seed=2": 7485,
+    "seed=3": 7485
+   }
   },
   "105": {
    "mhp": 309935.0,
@@ -6195,7 +8115,23 @@
    "skill": 7030,
    "input_skill": 7030,
    "segs": 10,
-   "forced": true
+   "forced": true,
+   "seed_pick": "seed=1",
+   "peak_seeds": {
+    "seed=1": 278236,
+    "seed=2": 271568,
+    "seed=3": 302770
+   },
+   "peak_base_seeds": {
+    "seed=1": 147627,
+    "seed=2": 146143,
+    "seed=3": 160189
+   },
+   "skill_seeds": {
+    "seed=1": 7030,
+    "seed=2": 7030,
+    "seed=3": 7030
+   }
   },
   "106": {
    "mhp": 288728.0,
@@ -6254,7 +8190,23 @@
    "skill": 7226,
    "input_skill": 7226,
    "segs": 1,
-   "forced": true
+   "forced": true,
+   "seed_pick": "seed=1",
+   "peak_seeds": {
+    "seed=1": 359409,
+    "seed=2": 358253,
+    "seed=3": 373368
+   },
+   "peak_base_seeds": {
+    "seed=1": 359409,
+    "seed=2": 358253,
+    "seed=3": 373368
+   },
+   "skill_seeds": {
+    "seed=1": 7226,
+    "seed=2": 7226,
+    "seed=3": 7226
+   }
   },
   "107": {
    "mhp": 633813.0,
@@ -6305,15 +8257,31 @@
    },
    "peak_k": 3838658.0,
    "skill_k": 5673,
-   "peak": 1035068,
-   "peak_rand": 1035068,
-   "peak_base": 1035068,
+   "peak": 971815,
+   "peak_rand": 971815,
+   "peak_base": 971815,
    "skill_base": 5670,
    "cond_fac": 1.3,
    "skill": 5670,
    "input_skill": 5670,
    "segs": 2,
-   "forced": true
+   "forced": true,
+   "seed_pick": "seed=3",
+   "peak_seeds": {
+    "seed=1": 1035068,
+    "seed=2": 943140,
+    "seed=3": 971815
+   },
+   "peak_base_seeds": {
+    "seed=1": 1035068,
+    "seed=2": 943140,
+    "seed=3": 971815
+   },
+   "skill_seeds": {
+    "seed=1": 5670,
+    "seed=2": 5670,
+    "seed=3": 5670
+   }
   },
   "108": {
    "mhp": 329402.0,
@@ -6364,15 +8332,31 @@
    },
    "peak_k": 7214312.0,
    "skill_k": 5706,
-   "peak": 964846,
-   "peak_rand": 964846,
-   "peak_base": 964846,
+   "peak": 959790,
+   "peak_rand": 959790,
+   "peak_base": 959790,
    "skill_base": 5706,
    "cond_fac": 1.0,
    "skill": 5706,
    "input_skill": 5706,
    "segs": 4,
-   "forced": false
+   "forced": false,
+   "seed_pick": "seed=3",
+   "peak_seeds": {
+    "seed=1": 964846,
+    "seed=2": 954140,
+    "seed=3": 959790
+   },
+   "peak_base_seeds": {
+    "seed=1": 964846,
+    "seed=2": 954140,
+    "seed=3": 959790
+   },
+   "skill_seeds": {
+    "seed=1": 5706,
+    "seed=2": 5706,
+    "seed=3": 5706
+   }
   },
   "109": {
    "mhp": 349053.0,
@@ -6431,7 +8415,23 @@
    "skill": 5761,
    "input_skill": 5761,
    "segs": 4,
-   "forced": true
+   "forced": true,
+   "seed_pick": "seed=1",
+   "peak_seeds": {
+    "seed=1": 474338,
+    "seed=2": 435886,
+    "seed=3": 585872
+   },
+   "peak_base_seeds": {
+    "seed=1": 474338,
+    "seed=2": 435886,
+    "seed=3": 450497
+   },
+   "skill_seeds": {
+    "seed=1": 5761,
+    "seed=2": 5761,
+    "seed=3": 5764
+   }
   },
   "115": {
    "mhp": 640835.0,
@@ -6490,7 +8490,23 @@
    "skill": 5759,
    "input_skill": 5759,
    "segs": 5,
-   "forced": true
+   "forced": true,
+   "seed_pick": "seed=1",
+   "peak_seeds": {
+    "seed=1": 360580,
+    "seed=2": 333872,
+    "seed=3": 377421
+   },
+   "peak_base_seeds": {
+    "seed=1": 360580,
+    "seed=2": 333872,
+    "seed=3": 377421
+   },
+   "skill_seeds": {
+    "seed=1": 5759,
+    "seed=2": 5759,
+    "seed=3": 5759
+   }
   },
   "117": {
    "stat": {
@@ -6597,7 +8613,23 @@
    "skill": 5601,
    "input_skill": 5601,
    "segs": 6,
-   "forced": true
+   "forced": true,
+   "seed_pick": "seed=1",
+   "peak_seeds": {
+    "seed=1": 577926,
+    "seed=2": 540839,
+    "seed=3": 646781
+   },
+   "peak_base_seeds": {
+    "seed=1": 577926,
+    "seed=2": 540839,
+    "seed=3": 646781
+   },
+   "skill_seeds": {
+    "seed=1": 5601,
+    "seed=2": 5601,
+    "seed=3": 5601
+   }
   },
   "119": {
    "mhp": 310472.0,
@@ -6648,15 +8680,31 @@
    },
    "peak_k": 472272.0,
    "skill_k": 5609,
-   "peak": 142401,
-   "peak_rand": 142401,
-   "peak_base": 142401,
+   "peak": 117729,
+   "peak_rand": 117729,
+   "peak_base": 117729,
    "skill_base": 5609,
    "cond_fac": 1.0,
    "skill": 5609,
    "input_skill": 5609,
    "segs": 3,
-   "forced": false
+   "forced": false,
+   "seed_pick": "seed=2",
+   "peak_seeds": {
+    "seed=1": 189868,
+    "seed=2": 117729,
+    "seed=3": 117729
+   },
+   "peak_base_seeds": {
+    "seed=1": 142401,
+    "seed=2": 117729,
+    "seed=3": 117729
+   },
+   "skill_seeds": {
+    "seed=1": 5609,
+    "seed=2": 5609,
+    "seed=3": 5609
+   }
   },
   "120": {
    "mhp": 738225.0,
@@ -6715,7 +8763,23 @@
    "skill": 5625,
    "input_skill": 5625,
    "segs": 2,
-   "forced": false
+   "forced": false,
+   "seed_pick": "seed=1",
+   "peak_seeds": {
+    "seed=1": 668652,
+    "seed=2": 755336,
+    "seed=3": 668652
+   },
+   "peak_base_seeds": {
+    "seed=1": 668652,
+    "seed=2": 755336,
+    "seed=3": 668652
+   },
+   "skill_seeds": {
+    "seed=1": 5625,
+    "seed=2": 5625,
+    "seed=3": 5625
+   }
   },
   "122": {
    "mhp": 288485.0,
@@ -6766,15 +8830,31 @@
    },
    "peak_k": 7705492.0,
    "skill_k": 6039,
-   "peak": 867109,
-   "peak_rand": 867109,
-   "peak_base": 867109,
+   "peak": 971161,
+   "peak_rand": 971161,
+   "peak_base": 971161,
    "skill_base": 6026,
    "cond_fac": 1.1321,
    "skill": 6026,
    "input_skill": 6026,
    "segs": 2,
-   "forced": true
+   "forced": true,
+   "seed_pick": "seed=2",
+   "peak_seeds": {
+    "seed=1": 1300664,
+    "seed=2": 971161,
+    "seed=3": 867109
+   },
+   "peak_base_seeds": {
+    "seed=1": 867109,
+    "seed=2": 971161,
+    "seed=3": 867109
+   },
+   "skill_seeds": {
+    "seed=1": 6026,
+    "seed=2": 6026,
+    "seed=3": 6026
+   }
   },
   "123": {
    "mhp": 295814.0,
@@ -6825,15 +8905,39 @@
    },
    "peak_k": 5613616.0,
    "skill_k": 6039,
-   "peak": 1252167,
-   "peak_rand": 1252167,
+   "peak": 1348770,
+   "peak_rand": 1348770,
    "peak_base": 1252167,
    "skill_base": 6039,
    "cond_fac": 1.1321,
    "skill": 6039,
    "input_skill": 6039,
-   "segs": 4,
-   "forced": true
+   "segs": 5,
+   "forced": true,
+   "tail": [
+    {
+     "fac": 1.1321,
+     "kind": "recast",
+     "skill": 6039,
+     "sum": 210563
+    }
+   ],
+   "seed_pick": "seed=1",
+   "peak_seeds": {
+    "seed=1": 1348770,
+    "seed=2": 1308365,
+    "seed=3": 1414344
+   },
+   "peak_base_seeds": {
+    "seed=1": 1252167,
+    "seed=2": 1308365,
+    "seed=3": 1278808
+   },
+   "skill_seeds": {
+    "seed=1": 6039,
+    "seed=2": 6039,
+    "seed=3": 6039
+   }
   },
   "124": {
    "mhp": 292887.0,
@@ -6892,7 +8996,23 @@
    "skill": 6270,
    "input_skill": 6270,
    "segs": 5,
-   "forced": true
+   "forced": true,
+   "seed_pick": "seed=1",
+   "peak_seeds": {
+    "seed=1": 566797,
+    "seed=2": 780921,
+    "seed=3": 545791
+   },
+   "peak_base_seeds": {
+    "seed=1": 566797,
+    "seed=2": 780921,
+    "seed=3": 545791
+   },
+   "skill_seeds": {
+    "seed=1": 6270,
+    "seed=2": 6270,
+    "seed=3": 6270
+   }
   },
   "127": {
    "mhp": 306428.0,
@@ -6951,7 +9071,23 @@
    "skill": 5735,
    "input_skill": 5735,
    "segs": 4,
-   "forced": true
+   "forced": true,
+   "seed_pick": "seed=1",
+   "peak_seeds": {
+    "seed=1": 136465,
+    "seed=2": 166758,
+    "seed=3": 127495
+   },
+   "peak_base_seeds": {
+    "seed=1": 136465,
+    "seed=2": 138566,
+    "seed=3": 127495
+   },
+   "skill_seeds": {
+    "seed=1": 5735,
+    "seed=2": 5735,
+    "seed=3": 5735
+   }
   },
   "128": {
    "mhp": 311355.0,
@@ -7002,15 +9138,31 @@
    },
    "peak_k": 1224237.0,
    "skill_k": 5746,
-   "peak": 252244,
-   "peak_rand": 252244,
-   "peak_base": 252244,
+   "peak": 270138,
+   "peak_rand": 270138,
+   "peak_base": 270138,
    "skill_base": 5746,
    "cond_fac": 1.0,
    "skill": 5746,
    "input_skill": 5746,
    "segs": 3,
-   "forced": false
+   "forced": false,
+   "seed_pick": "seed=3",
+   "peak_seeds": {
+    "seed=1": 252244,
+    "seed=2": 285506,
+    "seed=3": 270138
+   },
+   "peak_base_seeds": {
+    "seed=1": 252244,
+    "seed=2": 285506,
+    "seed=3": 270138
+   },
+   "skill_seeds": {
+    "seed=1": 5746,
+    "seed=2": 5746,
+    "seed=3": 5746
+   }
   },
   "129": {
    "mhp": 288485.0,
@@ -7061,15 +9213,31 @@
    },
    "peak_k": 2472426.0,
    "skill_k": 5636,
-   "peak": 563896,
-   "peak_rand": 563896,
-   "peak_base": 563896,
+   "peak": 567010,
+   "peak_rand": 567010,
+   "peak_base": 567010,
    "skill_base": 5636,
    "cond_fac": 1.4,
    "skill": 5636,
    "input_skill": 5636,
    "segs": 6,
-   "forced": true
+   "forced": true,
+   "seed_pick": "seed=3",
+   "peak_seeds": {
+    "seed=1": 563896,
+    "seed=2": 607068,
+    "seed=3": 567010
+   },
+   "peak_base_seeds": {
+    "seed=1": 563896,
+    "seed=2": 607068,
+    "seed=3": 567010
+   },
+   "skill_seeds": {
+    "seed=1": 5636,
+    "seed=2": 5636,
+    "seed=3": 5636
+   }
   },
   "130": {
    "mhp": 310769.0,
@@ -7128,7 +9296,23 @@
    "skill": 5662,
    "input_skill": 5662,
    "segs": 1,
-   "forced": false
+   "forced": false,
+   "seed_pick": "seed=1",
+   "peak_seeds": {
+    "seed=1": 189954,
+    "seed=2": 176783,
+    "seed=3": 199842
+   },
+   "peak_base_seeds": {
+    "seed=1": 189954,
+    "seed=2": 176783,
+    "seed=3": 199842
+   },
+   "skill_seeds": {
+    "seed=1": 5662,
+    "seed=2": 5662,
+    "seed=3": 5662
+   }
   },
   "131": {
    "mhp": 310472.0,
@@ -7179,15 +9363,39 @@
    },
    "peak_k": 1207020.0,
    "skill_k": 5650,
-   "peak": 334831,
-   "peak_rand": 334831,
+   "peak": 390636,
+   "peak_rand": 390636,
    "peak_base": 334831,
    "skill_base": 5650,
    "cond_fac": 1.3,
    "skill": 5650,
    "input_skill": 5650,
-   "segs": 6,
-   "forced": true
+   "segs": 7,
+   "forced": true,
+   "tail": [
+    {
+     "fac": 1.3,
+     "kind": "recast",
+     "skill": 5650,
+     "sum": 55805
+    }
+   ],
+   "seed_pick": "seed=1",
+   "peak_seeds": {
+    "seed=1": 390636,
+    "seed=2": 411918,
+    "seed=3": 334828
+   },
+   "peak_base_seeds": {
+    "seed=1": 334831,
+    "seed=2": 411918,
+    "seed=3": 334828
+   },
+   "skill_seeds": {
+    "seed=1": 5650,
+    "seed=2": 5650,
+    "seed=3": 5650
+   }
   },
   "141": {
    "state_resist_n": 0,
@@ -7242,15 +9450,39 @@
    },
    "peak_k": 2528511.0,
    "skill_k": 10100,
-   "peak": 770328,
-   "peak_rand": 770328,
-   "peak_base": 770328,
+   "peak": 705424,
+   "peak_rand": 705424,
+   "peak_base": 651581,
    "skill_base": 10100,
    "cond_fac": 1.3,
-   "skill": 10100,
-   "input_skill": 10100,
-   "segs": 3,
-   "forced": true
+   "skill": 10099,
+   "input_skill": 10099,
+   "segs": 6,
+   "forced": true,
+   "tail": [
+    {
+     "fac": 1.3,
+     "kind": "follow",
+     "skill": 10100,
+     "sum": 325790
+    }
+   ],
+   "seed_pick": "seed=3",
+   "peak_seeds": {
+    "seed=1": 833984,
+    "seed=2": 681989,
+    "seed=3": 705424
+   },
+   "peak_base_seeds": {
+    "seed=1": 770328,
+    "seed=2": 606403,
+    "seed=3": 651581
+   },
+   "skill_seeds": {
+    "seed=1": 10099,
+    "seed=2": 10099,
+    "seed=3": 10099
+   }
   },
   "146": {
    "stat": {
@@ -7350,7 +9582,23 @@
    "skill": 10737,
    "input_skill": 10737,
    "segs": 2,
-   "forced": true
+   "forced": true,
+   "seed_pick": "seed=1",
+   "peak_seeds": {
+    "seed=1": 652390,
+    "seed=2": 652390,
+    "seed=3": 652390
+   },
+   "peak_base_seeds": {
+    "seed=1": 652390,
+    "seed=2": 652390,
+    "seed=3": 652390
+   },
+   "skill_seeds": {
+    "seed=1": 10737,
+    "seed=2": 10737,
+    "seed=3": 10737
+   }
   },
   "148": {
    "mhp": 307197.0,
@@ -7401,15 +9649,31 @@
    },
    "peak_k": 1589709.0,
    "skill_k": 10540,
-   "peak": 439500,
-   "peak_rand": 439500,
-   "peak_base": 439500,
+   "peak": 221684,
+   "peak_rand": 221684,
+   "peak_base": 221684,
    "skill_base": 10540,
-   "cond_fac": 2.4883,
+   "cond_fac": 1.2,
    "skill": 10540,
    "input_skill": 10540,
    "segs": 3,
-   "forced": true
+   "forced": true,
+   "seed_pick": "seed=3",
+   "peak_seeds": {
+    "seed=1": 211950,
+    "seed=2": 316512,
+    "seed=3": 221684
+   },
+   "peak_base_seeds": {
+    "seed=1": 211950,
+    "seed=2": 237384,
+    "seed=3": 221684
+   },
+   "skill_seeds": {
+    "seed=1": 10540,
+    "seed=2": 10540,
+    "seed=3": 10540
+   }
   },
   "149": {
    "mhp": 334872.0,
@@ -7468,7 +9732,23 @@
    "skill": 9960,
    "input_skill": 9960,
    "segs": 1,
-   "forced": false
+   "forced": false,
+   "seed_pick": "seed=1",
+   "peak_seeds": {
+    "seed=1": 521521,
+    "seed=2": 521521,
+    "seed=3": 541485
+   },
+   "peak_base_seeds": {
+    "seed=1": 521521,
+    "seed=2": 521521,
+    "seed=3": 541485
+   },
+   "skill_seeds": {
+    "seed=1": 9960,
+    "seed=2": 9960,
+    "seed=3": 9960
+   }
   },
   "150": {
    "mhp": 298026.0,
@@ -7527,7 +9807,23 @@
    "skill": 9973,
    "input_skill": 9973,
    "segs": 10,
-   "forced": true
+   "forced": true,
+   "seed_pick": "seed=1",
+   "peak_seeds": {
+    "seed=1": 311431,
+    "seed=2": 281476,
+    "seed=3": 312560
+   },
+   "peak_base_seeds": {
+    "seed=1": 311431,
+    "seed=2": 281476,
+    "seed=3": 312560
+   },
+   "skill_seeds": {
+    "seed=1": 9973,
+    "seed=2": 9973,
+    "seed=3": 9973
+   }
   },
   "151": {
    "mhp": 297633.0,
@@ -7578,15 +9874,31 @@
    },
    "peak_k": 3487896.0,
    "skill_k": 10738,
-   "peak": 838807,
-   "peak_rand": 838807,
-   "peak_base": 838807,
+   "peak": 857311,
+   "peak_rand": 857311,
+   "peak_base": 857311,
    "skill_base": 10738,
    "cond_fac": 1.1,
    "skill": 10738,
    "input_skill": 10738,
    "segs": 1,
-   "forced": true
+   "forced": true,
+   "seed_pick": "seed=2",
+   "peak_seeds": {
+    "seed=1": 838807,
+    "seed=2": 857311,
+    "seed=3": 905318
+   },
+   "peak_base_seeds": {
+    "seed=1": 838807,
+    "seed=2": 857311,
+    "seed=3": 905318
+   },
+   "skill_seeds": {
+    "seed=1": 10738,
+    "seed=2": 10738,
+    "seed=3": 10738
+   }
   },
   "152": {
    "mhp": 275294.0,
@@ -7638,7 +9950,23 @@
    "skill": 9995,
    "input_skill": 9995,
    "segs": 8,
-   "forced": false
+   "forced": false,
+   "seed_pick": "seed=2",
+   "peak_seeds": {
+    "seed=1": 1092915,
+    "seed=2": 971480,
+    "seed=3": 971480
+   },
+   "peak_base_seeds": {
+    "seed=1": 971480,
+    "seed=2": 971480,
+    "seed=3": 971480
+   },
+   "skill_seeds": {
+    "seed=1": 9995,
+    "seed=2": 9995,
+    "seed=3": 9995
+   }
   },
   "153": {
    "mhp": 290249.0,
@@ -7689,15 +10017,31 @@
    },
    "peak_k": 5169096.0,
    "skill_k": 10008,
-   "peak": 971073,
-   "peak_rand": 971073,
-   "peak_base": 971073,
+   "peak": 979374,
+   "peak_rand": 979374,
+   "peak_base": 979374,
    "skill_base": 10008,
    "cond_fac": 1.0,
    "skill": 10008,
    "input_skill": 10008,
    "segs": 3,
-   "forced": false
+   "forced": false,
+   "seed_pick": "seed=2",
+   "peak_seeds": {
+    "seed=1": 971073,
+    "seed=2": 979374,
+    "seed=3": 1009737
+   },
+   "peak_base_seeds": {
+    "seed=1": 971073,
+    "seed=2": 979374,
+    "seed=3": 1009737
+   },
+   "skill_seeds": {
+    "seed=1": 10008,
+    "seed=2": 10008,
+    "seed=3": 10008
+   }
   },
   "154": {
    "mhp": 275294.0,
@@ -7748,15 +10092,31 @@
    },
    "peak_k": 2024120.0,
    "skill_k": 10015,
-   "peak": 428707,
-   "peak_rand": 428707,
-   "peak_base": 428707,
+   "peak": 425052,
+   "peak_rand": 425052,
+   "peak_base": 425052,
    "skill_base": 10015,
    "cond_fac": 1.0,
    "skill": 10015,
    "input_skill": 10015,
    "segs": 10,
-   "forced": false
+   "forced": false,
+   "seed_pick": "seed=3",
+   "peak_seeds": {
+    "seed=1": 428707,
+    "seed=2": 392926,
+    "seed=3": 425052
+   },
+   "peak_base_seeds": {
+    "seed=1": 428707,
+    "seed=2": 392926,
+    "seed=3": 425052
+   },
+   "skill_seeds": {
+    "seed=1": 10015,
+    "seed=2": 10015,
+    "seed=3": 10015
+   }
   },
   "155": {
    "mhp": 277480.0,
@@ -7815,7 +10175,23 @@
    "skill": 10023,
    "input_skill": 10023,
    "segs": 1,
-   "forced": false
+   "forced": false,
+   "seed_pick": "seed=1",
+   "peak_seeds": {
+    "seed=1": 79829,
+    "seed=2": 82614,
+    "seed=3": 79829
+   },
+   "peak_base_seeds": {
+    "seed=1": 79829,
+    "seed=2": 82614,
+    "seed=3": 79829
+   },
+   "skill_seeds": {
+    "seed=1": 10023,
+    "seed=2": 10023,
+    "seed=3": 10023
+   }
   },
   "156": {
    "mhp": 353633.0,
@@ -7866,15 +10242,31 @@
    },
    "peak_k": 1133988.0,
    "skill_k": 10739,
-   "peak": 271556,
-   "peak_rand": 271556,
-   "peak_base": 271556,
+   "peak": 270990,
+   "peak_rand": 270990,
+   "peak_base": 270990,
    "skill_base": 10739,
    "cond_fac": 1.0,
    "skill": 10739,
    "input_skill": 10739,
    "segs": 2,
-   "forced": false
+   "forced": false,
+   "seed_pick": "seed=2",
+   "peak_seeds": {
+    "seed=1": 271556,
+    "seed=2": 270990,
+    "seed=3": 250966
+   },
+   "peak_base_seeds": {
+    "seed=1": 271556,
+    "seed=2": 270990,
+    "seed=3": 250966
+   },
+   "skill_seeds": {
+    "seed=1": 10739,
+    "seed=2": 10739,
+    "seed=3": 10739
+   }
   },
   "158": {
    "mhp": 286483.0,
@@ -7933,7 +10325,23 @@
    "skill": 10048,
    "input_skill": 10048,
    "segs": 12,
-   "forced": false
+   "forced": false,
+   "seed_pick": "seed=1",
+   "peak_seeds": {
+    "seed=1": 243365,
+    "seed=2": 223912,
+    "seed=3": 279172
+   },
+   "peak_base_seeds": {
+    "seed=1": 243365,
+    "seed=2": 223912,
+    "seed=3": 279172
+   },
+   "skill_seeds": {
+    "seed=1": 10048,
+    "seed=2": 10048,
+    "seed=3": 10048
+   }
   },
   "159": {
    "mhp": 293276.0,
@@ -7984,15 +10392,39 @@
    },
    "peak_k": 2741769.0,
    "skill_k": 10057,
-   "peak": 428042,
-   "peak_rand": 428042,
-   "peak_base": 428042,
+   "peak": 735193,
+   "peak_rand": 735193,
+   "peak_base": 369478,
    "skill_base": 10057,
    "cond_fac": 1.3,
    "skill": 10057,
    "input_skill": 10057,
-   "segs": 1,
-   "forced": true
+   "segs": 2,
+   "forced": true,
+   "tail": [
+    {
+     "fac": 1.3,
+     "kind": "recast",
+     "skill": 10057,
+     "sum": 387321
+    }
+   ],
+   "seed_pick": "seed=2",
+   "peak_seeds": {
+    "seed=1": 823980,
+    "seed=2": 735193,
+    "seed=3": 433343
+   },
+   "peak_base_seeds": {
+    "seed=1": 409635,
+    "seed=2": 369478,
+    "seed=3": 433343
+   },
+   "skill_seeds": {
+    "seed=1": 10057,
+    "seed=2": 10057,
+    "seed=3": 10057
+   }
   },
   "161": {
    "state_resist_n": 0,
@@ -8047,15 +10479,31 @@
    },
    "peak_k": 8607472.0,
    "skill_k": 10462,
-   "peak": 3164954,
-   "peak_rand": 3164954,
-   "peak_base": 3164954,
+   "peak": 3632602,
+   "peak_rand": 3632602,
+   "peak_base": 3632602,
    "skill_base": 10462,
    "cond_fac": 1.495,
    "skill": 10462,
    "input_skill": 10462,
    "segs": 4,
-   "forced": true
+   "forced": true,
+   "seed_pick": "seed=3",
+   "peak_seeds": {
+    "seed=1": 3164954,
+    "seed=2": 3931841,
+    "seed=3": 3632602
+   },
+   "peak_base_seeds": {
+    "seed=1": 3164954,
+    "seed=2": 3162363,
+    "seed=3": 3632602
+   },
+   "skill_seeds": {
+    "seed=1": 10462,
+    "seed=2": 10462,
+    "seed=3": 10462
+   }
   },
   "163": {
    "mhp": 491657.0,
@@ -8106,15 +10554,31 @@
    },
    "peak_k": 4863675.0,
    "skill_k": 9938,
-   "peak": 1441983,
-   "peak_rand": 1441983,
-   "peak_base": 1441983,
+   "peak": 1472844,
+   "peak_rand": 1472844,
+   "peak_base": 1472844,
    "skill_base": 9938,
    "cond_fac": 1.2264,
    "skill": 9938,
    "input_skill": 9938,
    "segs": 3,
-   "forced": true
+   "forced": true,
+   "seed_pick": "seed=3",
+   "peak_seeds": {
+    "seed=1": 1843851,
+    "seed=2": 1467710,
+    "seed=3": 1472844
+   },
+   "peak_base_seeds": {
+    "seed=1": 1441983,
+    "seed=2": 1467710,
+    "seed=3": 1472844
+   },
+   "skill_seeds": {
+    "seed=1": 9938,
+    "seed=2": 9938,
+    "seed=3": 9938
+   }
   },
   "164": {
    "mhp": 285847.0,
@@ -8165,15 +10629,39 @@
    },
    "peak_k": 1658920.0,
    "skill_k": 9944,
-   "peak": 496840,
-   "peak_rand": 496840,
+   "peak": 621050,
+   "peak_rand": 621050,
    "peak_base": 496840,
    "skill_base": 9944,
    "cond_fac": 1.0,
    "skill": 9944,
    "input_skill": 9944,
-   "segs": 4,
-   "forced": true
+   "segs": 5,
+   "forced": true,
+   "tail": [
+    {
+     "fac": 1.0,
+     "kind": "recast",
+     "skill": 9944,
+     "sum": 124210
+    }
+   ],
+   "seed_pick": "seed=1",
+   "peak_seeds": {
+    "seed=1": 621050,
+    "seed=2": 496840,
+    "seed=3": 621050
+   },
+   "peak_base_seeds": {
+    "seed=1": 496840,
+    "seed=2": 496840,
+    "seed=3": 496840
+   },
+   "skill_seeds": {
+    "seed=1": 9944,
+    "seed=2": 9944,
+    "seed=3": 9944
+   }
   },
   "165": {
    "mhp": 308186.0,
@@ -8224,15 +10712,31 @@
    },
    "peak_k": 2506572.0,
    "skill_k": 10752,
-   "peak": 636426,
-   "peak_rand": 636426,
-   "peak_base": 636426,
+   "peak": 693876,
+   "peak_rand": 693876,
+   "peak_base": 693876,
    "skill_base": 10752,
    "cond_fac": 1.0,
    "skill": 10752,
    "input_skill": 10752,
    "segs": 3,
-   "forced": false
+   "forced": false,
+   "seed_pick": "seed=3",
+   "peak_seeds": {
+    "seed=1": 636426,
+    "seed=2": 718977,
+    "seed=3": 693876
+   },
+   "peak_base_seeds": {
+    "seed=1": 636426,
+    "seed=2": 718977,
+    "seed=3": 693876
+   },
+   "skill_seeds": {
+    "seed=1": 10752,
+    "seed=2": 10752,
+    "seed=3": 10752
+   }
   },
   "167": {
    "mhp": 290249.0,
@@ -8283,15 +10787,31 @@
    },
    "peak_k": 3707752.0,
    "skill_k": 10125,
-   "peak": 1665437,
-   "peak_rand": 1665437,
-   "peak_base": 838771,
+   "peak": 1605061,
+   "peak_rand": 1605061,
+   "peak_base": 825562,
    "skill_base": 10125,
    "cond_fac": 1.333,
    "skill": 10125,
    "input_skill": 10125,
    "segs": 8,
-   "forced": true
+   "forced": true,
+   "seed_pick": "seed=2",
+   "peak_seeds": {
+    "seed=1": 1665437,
+    "seed=2": 1605061,
+    "seed=3": 1552926
+   },
+   "peak_base_seeds": {
+    "seed=1": 838771,
+    "seed=2": 825562,
+    "seed=3": 819313
+   },
+   "skill_seeds": {
+    "seed=1": 10125,
+    "seed=2": 10125,
+    "seed=3": 10125
+   }
   },
   "168": {
    "mhp": 292883.0,
@@ -8342,15 +10862,31 @@
    },
    "peak_k": 4160364.0,
    "skill_k": 10151,
-   "peak": 1046118,
-   "peak_rand": 1046118,
-   "peak_base": 1046118,
+   "peak": 1160728,
+   "peak_rand": 1160728,
+   "peak_base": 1160728,
    "skill_base": 10151,
    "cond_fac": 1.0,
    "skill": 10151,
    "input_skill": 10151,
    "segs": 3,
-   "forced": true
+   "forced": true,
+   "seed_pick": "seed=2",
+   "peak_seeds": {
+    "seed=1": 1046118,
+    "seed=2": 1160728,
+    "seed=3": 1596020
+   },
+   "peak_base_seeds": {
+    "seed=1": 1046118,
+    "seed=2": 1160728,
+    "seed=3": 1197015
+   },
+   "skill_seeds": {
+    "seed=1": 10151,
+    "seed=2": 10151,
+    "seed=3": 10151
+   }
   },
   "169": {
    "mhp": 275687.0,
@@ -8401,15 +10937,31 @@
    },
    "peak_k": 5156382.0,
    "skill_k": 10174,
-   "peak": 770566,
-   "peak_rand": 770566,
-   "peak_base": 770566,
+   "peak": 772406,
+   "peak_rand": 772406,
+   "peak_base": 772406,
    "skill_base": 10173,
    "cond_fac": 1.0,
    "skill": 10173,
    "input_skill": 10173,
    "segs": 2,
-   "forced": false
+   "forced": false,
+   "seed_pick": "seed=3",
+   "peak_seeds": {
+    "seed=1": 770566,
+    "seed=2": 974907,
+    "seed=3": 772406
+   },
+   "peak_base_seeds": {
+    "seed=1": 770566,
+    "seed=2": 974907,
+    "seed=3": 772406
+   },
+   "skill_seeds": {
+    "seed=1": 10173,
+    "seed=2": 10173,
+    "seed=3": 10173
+   }
   },
   "170": {
    "mhp": 655023.0,
@@ -8460,15 +11012,31 @@
    },
    "peak_k": 3453121.0,
    "skill_k": 10192,
-   "peak": 600271,
-   "peak_rand": 600271,
-   "peak_base": 600271,
+   "peak": 634585,
+   "peak_rand": 634585,
+   "peak_base": 634585,
    "skill_base": 10192,
    "cond_fac": 1.0,
    "skill": 10192,
    "input_skill": 10192,
    "segs": 7,
-   "forced": true
+   "forced": true,
+   "seed_pick": "seed=3",
+   "peak_seeds": {
+    "seed=1": 600271,
+    "seed=2": 986666,
+    "seed=3": 634585
+   },
+   "peak_base_seeds": {
+    "seed=1": 600271,
+    "seed=2": 600271,
+    "seed=3": 634585
+   },
+   "skill_seeds": {
+    "seed=1": 10192,
+    "seed=2": 10193,
+    "seed=3": 10192
+   }
   },
   "171": {
    "mhp": 613621.0,
@@ -8527,7 +11095,23 @@
    "skill": 10218,
    "input_skill": 10218,
    "segs": 2,
-   "forced": true
+   "forced": true,
+   "seed_pick": "seed=1",
+   "peak_seeds": {
+    "seed=1": 966129,
+    "seed=2": 909234,
+    "seed=3": 1785898
+   },
+   "peak_base_seeds": {
+    "seed=1": 757422,
+    "seed=2": 712646,
+    "seed=3": 804294
+   },
+   "skill_seeds": {
+    "seed=1": 10218,
+    "seed=2": 10218,
+    "seed=3": 10218
+   }
   },
   "172": {
    "mhp": 275294.0,
@@ -8578,15 +11162,31 @@
    },
    "peak_k": 3175124.0,
    "skill_k": 10230,
-   "peak": 1050252,
-   "peak_rand": 1050252,
-   "peak_base": 1050252,
+   "peak": 1069778,
+   "peak_rand": 1069778,
+   "peak_base": 1069778,
    "skill_base": 10231,
    "cond_fac": 1.0,
    "skill": 10231,
    "input_skill": 10231,
    "segs": 3,
-   "forced": true
+   "forced": true,
+   "seed_pick": "seed=2",
+   "peak_seeds": {
+    "seed=1": 1050252,
+    "seed=2": 1069778,
+    "seed=3": 1105031
+   },
+   "peak_base_seeds": {
+    "seed=1": 1050252,
+    "seed=2": 1069778,
+    "seed=3": 1105031
+   },
+   "skill_seeds": {
+    "seed=1": 10231,
+    "seed=2": 10231,
+    "seed=3": 10231
+   }
   },
   "173": {
    "mhp": 275294.0,
@@ -8637,15 +11237,31 @@
    },
    "peak_k": 3912828.0,
    "skill_k": 10263,
-   "peak": 1103769,
-   "peak_rand": 1103769,
-   "peak_base": 1103769,
+   "peak": 1120539,
+   "peak_rand": 1120539,
+   "peak_base": 1120539,
    "skill_base": 10263,
    "cond_fac": 1.0,
    "skill": 10263,
    "input_skill": 10263,
    "segs": 3,
-   "forced": true
+   "forced": true,
+   "seed_pick": "seed=3",
+   "peak_seeds": {
+    "seed=1": 1103769,
+    "seed=2": 1479060,
+    "seed=3": 1120539
+   },
+   "peak_base_seeds": {
+    "seed=1": 1103769,
+    "seed=2": 1109295,
+    "seed=3": 1120539
+   },
+   "skill_seeds": {
+    "seed=1": 10263,
+    "seed=2": 10263,
+    "seed=3": 10263
+   }
   },
   "174": {
    "mhp": 296112.0,
@@ -8704,7 +11320,23 @@
    "skill": 10274,
    "input_skill": 10274,
    "segs": 2,
-   "forced": true
+   "forced": true,
+   "seed_pick": "seed=1",
+   "peak_seeds": {
+    "seed=1": 232788,
+    "seed=2": 232788,
+    "seed=3": 260722
+   },
+   "peak_base_seeds": {
+    "seed=1": 232788,
+    "seed=2": 232788,
+    "seed=3": 260722
+   },
+   "skill_seeds": {
+    "seed=1": 10274,
+    "seed=2": 10274,
+    "seed=3": 10274
+   }
   },
   "175": {
    "mhp": 841110.0,
@@ -8763,7 +11395,23 @@
    "skill": 10292,
    "input_skill": 10292,
    "segs": 1,
-   "forced": true
+   "forced": true,
+   "seed_pick": "seed=1",
+   "peak_seeds": {
+    "seed=1": 1053134,
+    "seed=2": 1053134,
+    "seed=3": 1053134
+   },
+   "peak_base_seeds": {
+    "seed=1": 1053134,
+    "seed=2": 1053134,
+    "seed=3": 1053134
+   },
+   "skill_seeds": {
+    "seed=1": 10292,
+    "seed=2": 10292,
+    "seed=3": 10292
+   }
   },
   "176": {
    "mhp": 281157.0,
@@ -8822,7 +11470,23 @@
    "skill": 10315,
    "input_skill": 10315,
    "segs": 3,
-   "forced": true
+   "forced": true,
+   "seed_pick": "seed=1",
+   "peak_seeds": {
+    "seed=1": 858623,
+    "seed=2": 858623,
+    "seed=3": 858623
+   },
+   "peak_base_seeds": {
+    "seed=1": 858623,
+    "seed=2": 858623,
+    "seed=3": 858623
+   },
+   "skill_seeds": {
+    "seed=1": 10315,
+    "seed=2": 10315,
+    "seed=3": 10315
+   }
   },
   "177": {
    "mhp": 509312.0,
@@ -8881,7 +11545,23 @@
    "skill": 10337,
    "input_skill": 10337,
    "segs": 6,
-   "forced": true
+   "forced": true,
+   "seed_pick": "seed=1",
+   "peak_seeds": {
+    "seed=1": 879379,
+    "seed=2": 840856,
+    "seed=3": 963258
+   },
+   "peak_base_seeds": {
+    "seed=1": 879379,
+    "seed=2": 840856,
+    "seed=3": 785161
+   },
+   "skill_seeds": {
+    "seed=1": 10337,
+    "seed=2": 10337,
+    "seed=3": 10337
+   }
   },
   "178": {
    "mhp": 298420.0,
@@ -8932,15 +11612,39 @@
    },
    "peak_k": 1802682.0,
    "skill_k": 10439,
-   "peak": 241026,
-   "peak_rand": 241026,
+   "peak": 271225,
+   "peak_rand": 271225,
    "peak_base": 241026,
    "skill_base": 10440,
    "cond_fac": 1.0,
-   "skill": 10440,
-   "input_skill": 10440,
-   "segs": 1,
-   "forced": false
+   "skill": 10439,
+   "input_skill": 10439,
+   "segs": 7,
+   "forced": false,
+   "tail": [
+    {
+     "fac": 1.0,
+     "kind": "recast",
+     "skill": 10439,
+     "sum": 47863
+    }
+   ],
+   "seed_pick": "seed=1",
+   "peak_seeds": {
+    "seed=1": 271225,
+    "seed=2": 276558,
+    "seed=3": 245762
+   },
+   "peak_base_seeds": {
+    "seed=1": 241026,
+    "seed=2": 245762,
+    "seed=3": 245762
+   },
+   "skill_seeds": {
+    "seed=1": 10439,
+    "seed=2": 10439,
+    "seed=3": 10440
+   }
   },
   "179": {
    "mhp": 335500.0,
@@ -8991,15 +11695,31 @@
    },
    "peak_k": 2165270.0,
    "skill_k": 10622,
-   "peak": 737623,
-   "peak_rand": 1482076,
-   "peak_base": 737623,
+   "peak": 720663,
+   "peak_rand": 1447998,
+   "peak_base": 720663,
    "skill_base": 10623,
    "cond_fac": 1.0,
    "skill": 10623,
    "input_skill": 10623,
    "segs": 18,
-   "forced": false
+   "forced": false,
+   "seed_pick": "seed=2",
+   "peak_seeds": {
+    "seed=1": 737623,
+    "seed=2": 720663,
+    "seed=3": 657910
+   },
+   "peak_base_seeds": {
+    "seed=1": 737623,
+    "seed=2": 720663,
+    "seed=3": 657910
+   },
+   "skill_seeds": {
+    "seed=1": 10623,
+    "seed=2": 10623,
+    "seed=3": 10623
+   }
   },
   "180": {
    "mhp": 281687.0,
@@ -9057,7 +11777,23 @@
    "skill": 10641,
    "input_skill": 10641,
    "segs": 4,
-   "forced": true
+   "forced": true,
+   "seed_pick": "seed=1",
+   "peak_seeds": {
+    "seed=1": 971176,
+    "seed=2": 1142848,
+    "seed=3": 971176
+   },
+   "peak_base_seeds": {
+    "seed=1": 971176,
+    "seed=2": 1142848,
+    "seed=3": 971176
+   },
+   "skill_seeds": {
+    "seed=1": 10641,
+    "seed=2": 10641,
+    "seed=3": 10641
+   }
   }
  }
 }
