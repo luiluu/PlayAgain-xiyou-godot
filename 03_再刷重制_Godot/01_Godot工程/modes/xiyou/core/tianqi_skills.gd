@@ -668,6 +668,10 @@ static func rec_state(id: int, base: Dictionary) -> Dictionary:
 		return hit[2]
 	var sp: Dictionary = _states[id]
 	var r: Dictionary = base.duplicate(true)
+	if sp.has("name"):  # T566：改写表的名字进运行时记录（原版名带旧数值、带 BOM 或为空，空名在状态窗整条被滤掉）
+		r.name = str(sp.name)
+	if sp.has("state_kind"):  # T566：状态窗页签按改写表显式指定（持续火伤、承伤上升、输出下降进「异常」），见 XSideStatus.state_kind
+		r.tianqiKind = str(sp.state_kind)
 	var note := _note_edit(str(r.get("note", "")), sp)
 	note += str(sp.get("note_add", ""))
 	if sp.has("state_note"):

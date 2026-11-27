@@ -609,6 +609,16 @@ class SkillReworkGrowth(unittest.TestCase):
             t['states']['850']['state_note_append'] = wrong
             self.assertTrue(any('states/850 state_note_append' in b for b in chk.skill_rework_rules(t)), repr(wrong))
 
+    def test_state_kind_value(self):
+        t = self._table()
+        self.assertFalse([b for b in chk.skill_rework_rules(t) if 'state_kind' in b])
+        for ok in ('异常', '增益', '常驻'):
+            t['states']['850']['state_kind'] = ok
+            self.assertFalse([b for b in chk.skill_rework_rules(t) if 'state_kind' in b])
+        for wrong in ('减益', '', True, None):
+            t['states']['850']['state_kind'] = wrong
+            self.assertTrue(any('states/850 state_kind' in b for b in chk.skill_rework_rules(t)), repr(wrong))
+
     def test_battle_end_bool(self):
         t = self._table()
         self.assertFalse([b for b in chk.skill_rework_rules(t) if 'battle_end' in b])

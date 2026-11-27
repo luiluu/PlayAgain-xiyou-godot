@@ -176,7 +176,10 @@ static var _re_bad_name: RegEx
 static var _re_permanent: RegEx
 
 ## installEquipmentStatusRuntime stateKind(s, passive)：passive＝不在 _states 里（重制：不在 state_ids，如套装状态）
+## tianqiKind：天启篇改写表显式指定的页签（XTianqiSkills.rec_state 写进记录，T566），先于原版规则；西游档记录没有这一项
 static func state_kind(st: Dictionary, passive: bool) -> String:
+	if st.has("tianqiKind"):
+		return str(st.tianqiKind)
 	if passive:
 		return "常驻"
 	if _re_bufftype == null:
@@ -214,7 +217,7 @@ static var _kind_cache := {}
 ## state_kind 按（状态号、是否被动）缓存：被动恒为「常驻」，不进缓存；只缓存数据库原条（XDB.rec 同一个字典），
 ## states() 换过的视图（XZhenqi.pojia_state 改特性 21 的倍率，可能改变「异常」判定）每次现算（审查第 76 期）
 static func _kind_cached(id: int, st: Dictionary, passive: bool) -> String:
-	if passive:
+	if passive and not st.has("tianqiKind"):
 		return "常驻"
 	if not is_same(st, XDB.rec("States", id)):
 		return state_kind(st, false)
