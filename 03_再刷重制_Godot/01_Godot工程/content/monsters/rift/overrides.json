@@ -25,7 +25,7 @@
   "sv_enemies/DLC11": {"_who": "【外界罪孽·灾厄】呕心肉之影", "root_uv": [0.45, 0.61], "k_mul": 0.74, "back_mul": 0.65},
   "sv_enemies/DLC12": {"_who": "【外界天狼·阴】星华破夜之影", "root_uv": [0.42, 0.56], "k_mul": 0.74, "back_mul": 0.65},
   "sv_enemies/DLC13": {"_who": "【外界天狼·阳】炎傲裂昼之影", "root_uv": [0.44, 0.56], "k_mul": 0.74, "back_mul": 0.65},
-  "sv_enemies/DLC14": {"_who": "【外界末世蛛·古】阿尼耶古加之影", "root_uv": [0.71, 0.84], "k_mul": 0.6, "back_mul": 1.05},
+  "sv_enemies/DLC14": {"_who": "【外界末世蛛·古】阿尼耶古加之影", "root_uv": [0.77, 0.84], "k_mul": 0.6, "back_mul": 1.05},
   "sv_enemies/DLC15": {"_who": "【外界噩梦妖·古】异手姬之影", "root_uv": [0.44, 0.67], "k_mul": 0.71, "back_mul": 0.63},
   "sv_enemies/DLC2": {"_who": "【外界虫仙·鬼】食界虫王之影", "root_uv": [0.43, 0.66], "k_mul": 0.73, "back_mul": 0.65},
   "sv_enemies/DLC5": {"_who": "【外界收割者·鬼镰】阴界鬼神之影", "root_uv": [0.48, 0.56], "k_mul": 0.75, "back_mul": 0.66},
