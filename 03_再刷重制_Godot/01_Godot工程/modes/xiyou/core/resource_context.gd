@@ -198,7 +198,7 @@ func _gain(b: XBattler, resource: String, amount: float) -> Dictionary:
 	# KRZ 收到 Boss 缩放后的值；敌人 gainHp 另在 ShieldSystem 吸收之后才进入 KRZ。
 	# 角色 gainHp 自有包装收到护盾前值。取整／敌人护盾归零均不额外置 dirty。
 	if shown != 0.0:
-		b.param_mark_dirty()
+		b.param_mark_dirty_resource()  # T576：只有资源写入，技能表不换代（SKILLS_HOLD 关时同 param_mark_dirty）
 	var after := snapshot(b)
 	var entry := {"receiver": labels.get(b, "b"), "resource": resource, "requestedDelta": requested,
 		"actualDelta": float(b.get(resource)) - old, "before": before, "after": after}

@@ -48,6 +48,8 @@ static func art_path(folder: String, name: String) -> String:
 ##   原版进阶次数取订单账本（独立文件，天衣铺进阶才会变），重制进阶次数本来就在存档里，不另设；账本、订单、天衣铺是养成期。
 ## 第二期：觉醒、赊账、幽灵、借技能、赠行／储行、拆段、符针、御风、天衣各件的战斗效果、自动战斗。
 const ACTOR := 174
+## 空袖藏星天衣的序号（key）：借用技能随队友、醒取变（XActor 技能 id 表保留认它，T576）
+const BORROW_KEY := 6
 const RELIC := 7935
 const ROBE_FIRST := 7920
 const ROBE_END := 7935  # 不含
@@ -637,7 +639,7 @@ static func skill_ids(a, ids: Array) -> Array:
 	var extra: int = {0: MOUNTAIN, 4: EXCHANGE, 11: GIFT, 9: STORE}.get(k, 0)
 	if extra != 0 and not ids.has(extra):
 		ids.append(extra)
-	if k == 6:  # 空袖藏星（第 248 行）：天衣铺设的借用技能，没醒取前 1 个、醒取前 3 个；主人在出战且会、可借
+	if k == BORROW_KEY:  # 空袖藏星（第 248 行）：天衣铺设的借用技能，没醒取前 1 个、醒取前 3 个；主人在出战且会、可借
 		for r in (setting(a).borrow as Array).slice(0, 3 if awake(a) else 1):
 			var owner = _borrow_owner(int(r.owner))
 			var sid := int(r.skill)

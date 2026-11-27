@@ -143,6 +143,7 @@ var _names_count := {}
 
 func setup(troop: int, s: XState, random_context: XBattleRandom = null) -> void:
 	XActor.batch_reset()
+	XActor.hold_off()  # T576：上一场万一没走 end_battle，留下的保留在这里关掉
 	XGuyu.setup(self)  # 谷雨 BattleManager.setup 包装（原 setup 之前）：reset、activeBattle
 	XShieldLedger.setup(self)  # 护盾账本 startBattle 包装：清空、开始记账
 	s.sync_difficulty_on_battle()
@@ -3995,6 +3996,7 @@ func _phase(name: String) -> void:
 ## result：0 胜、1 逃、2 败，-1 不跑胜逃败效果（测试夹具等）。
 ## Custom Victory／Escape／Defeat Effect 只对我方（含后备），在原 endBattle 之前；胜利时 processVictory 已先 removeBattleStates。
 func end_battle(result := -1) -> void:
+	XActor.hold_off()  # T576：技能 id 表的保留不带出战斗
 	tianqi_restore()  # T086-a：收口开头再还原一次（打输、逃跑、事件中止、回标题都经过这里；结算前已还原过的是空的）
 	XTianqiEnemyAI.note_decision(self, null, [])  # 天启篇六维（T277 r1 P3-1）：不在静态变量里留上一场的敌人
 	XActor.batch_reset()

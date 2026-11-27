@@ -167,6 +167,7 @@ func change_class(id: int, keep_exp: bool) -> void:
 		_level_up()
 	while _lv > 1 and exp_total < exp_for_level(_lv):
 		_lv -= 1
+		hold_touch()  # T576
 	refresh_passive()
 	refresh_resources()
 
@@ -502,6 +503,7 @@ func _level_up() -> void:
 	# O-177 回退支：照原版，战斗中 krz 能力值缓存还是升级前的上限，回满只回到旧上限
 	var stale := [] if FIX_BATTLE_LEVELUP_MAX or not XBinding.in_battle() else [mhp, mmp]
 	_lv += 1
+	hold_touch()  # T576：屠苏／璇看本体等级解锁别人身上的专属技能
 	for l in learnings():
 		if int(l.level) == _lv:
 			learn_skill(int(l.skillId))
@@ -537,6 +539,7 @@ func change_level_mv(lv: int) -> Array:
 		_level_up()
 	while _lv > lv:
 		_lv -= 1
+		hold_touch()  # T576
 		XActorModules.level_down(self)  # 专属角色模块的 levelDown 包装
 	XLiuying.sync(self)  # 流萤 changeLevel 包装：同级也整理一次（原版 changeLevel 之后 L.sync）
 	refresh_passive()
@@ -547,6 +550,7 @@ func change_level_mv(lv: int) -> Array:
 func change_level(lv: int) -> void:
 	var before := _lv
 	_lv = clampi(lv, 1, int(data().get("maxLevel", 99)))
+	hold_touch()  # T576
 	exp_total = exp_for_level(_lv)
 	for l in learnings():
 		if int(l.level) <= _lv:
@@ -708,6 +712,7 @@ static var skills_xcall_builds := 0
 ## 测试切了影响技能记录的回退开关、重载了数据表之后调：所有角色的技能表缓存作废
 static func skills_touch() -> void:
 	_skills_epoch += 1
+	_hold_gen += 1
 
 func _skills_key() -> Array:
 	var cur := XState.current
@@ -726,8 +731,89 @@ static func _skills_switches() -> int:
 		bits = bits * 2 + (1 if v else 0)
 	return bits
 
-func _skills_entry() -> Dictionary:
+## T576 西游档卡顿（O-684）：技能 id 表在战斗里跨「轻写入」保留。
+## 一次给全队回 HP／MP／TP 的行动（朵莉亚「逐浪·再释放」8153：10 人 × 三项）每写一次资源，只读窗口就作废，接着读生命／魔法上限
+## 要整套重算能力值，每次都现算一遍 id 表（各 skills 包装，玩家档一次约 0.2 ms）；那一次行动现算 455 次，长帧 350 ms。
+## id 表不读 HP／MP／TP、被动缓存、不带技能的状态，所以这些写入（资源写入、gain 末尾标脏、refresh 末尾 passive_touch、
+## 非 STATE_HARD 的状态增减）之后照用上一次的 id 表；记录那一步跟着同一份缓存项（_skills_entry 的键，见 _skills_key）。
+## 保留只在战斗里（每次行动开头 read_reset 打开，end_battle 关掉），遇到以下任何一样就作废重算：
+##   - 全体：read_touch（学／忘技能、换装、HP 以外的全部已知写入）、read_reset（行动开头）、batch_begin、skills_touch、STATE_HARD 状态增减；
+##   - 本人（取用时逐项比）：等级、职业、身上每格装备（按对象）、状态表、陈旧状态表、学会的技能、背包装备件数（专武吸取看背包）、
+##     异化借装备的三个标记（xalien_ghosts／received／possession）。
+## id 表里会在战斗中变、又没有已知写入的输入不保留（每次现算，同原来）：谷雨（花期阶段）、穿空袖藏星天衣的（借用随队友与醒取）、
+##   异化词条角色（借用、仿形、夺舍、饕餮）。逐处清单见 T576 交付单。
+## 回退：SKILLS_HOLD = false（每次现算 id 表；加减状态、被动缓存换新、gain 标脏照旧让技能表换代，同 T574）。
+## XIYOU_READ_VERIFY=1：每次命中都现算比对，不一样当场崩。
+static var SKILLS_HOLD := true
+static var _hold_on := false
+static var _hold_gen := 0
+## 角色实例号 → [_cat_bare 为假的项, 为真的项]（不挂在角色身上：影子克隆照抄全部字段）
+static var _hold_store := {}
+static var skills_hold_hits := 0
+
+## end_battle、开战：关掉保留（战斗外的写入大多不报，不跨出战斗）
+## 战斗里会改 id 表、又不走 read_touch 的写入（等级升降：渡鸦／米拉、屠苏／璇按等级解锁；法宝升级：按等级学的技能）调这个
+static func hold_touch() -> void:
+	_hold_gen += 1
+
+static func hold_off() -> void:
+	_hold_on = false
+	_hold_gen += 1
+	_hold_store = {}
+
+func _ids_held() -> Array[int]:
+	if not (SKILLS_HOLD and _hold_on):
+		return _skill_ids_now()
+	var slot := 1 if _cat_bare else 0
+	var pair = _hold_store.get(get_instance_id())
+	var c = pair[slot] if pair != null else null
+	if c != null and _hold_same(c):
+		skills_hold_hits += 1
+		if READ_VERIFY:
+			verify_memo("skills_hold", self, c.ids, _skill_ids_now())
+		return (c.ids as Array[int]).duplicate()
+	var gen := _hold_gen
+	var fp := _hold_fp()
 	var ids := _skill_ids_now()
+	if gen == _hold_gen and _hold_same(fp) and not _hold_volatile():
+		fp.ids = ids.duplicate()
+		if pair == null:
+			if _hold_store.size() >= 64:
+				_hold_store = {}  # 影子克隆留下的项：攒多了整表丢
+			pair = [null, null]
+			_hold_store[get_instance_id()] = pair
+		pair[slot] = fp
+	return ids
+
+func _hold_fp() -> Dictionary:
+	var cur = XState.current
+	return {"gen": _hold_gen, "lv": _lv, "cls": class_id, "eq": equips.duplicate(), "st": state_ids.duplicate(),
+		"stale": stale_state_ids.duplicate(), "sk": skill_ids.duplicate(), "gear": cur.gear.size() if cur != null else -1,
+		"alien": has_meta("xalien_ghosts") or has_meta("xalien_received") or has_meta("xalien_possession")}
+
+func _hold_same(c: Dictionary) -> bool:
+	if c.gen != _hold_gen or c.lv != _lv or c.cls != class_id or c.st != state_ids or c.stale != stale_state_ids or c.sk != skill_ids:
+		return false
+	var cur = XState.current
+	if c.gear != (cur.gear.size() if cur != null else -1):
+		return false
+	if c.alien != (has_meta("xalien_ghosts") or has_meta("xalien_received") or has_meta("xalien_possession")):
+		return false
+	var eq: Array = c.eq
+	if eq.size() != equips.size():
+		return false
+	for i in eq.size():
+		if not is_same(eq[i], equips[i]):  # 装备按对象比
+			return false
+	return true
+
+## id 表里有战斗中会变、又没有已知写入的输入：不保留
+func _hold_volatile() -> bool:
+	return XGuyu.own(self) or XYunshang.key(self) == XYunshang.BORROW_KEY or not XAlienation.for_actor(self).is_empty() \
+		or XAlienBattle.devours(self) or has_meta("xalien_ghosts") or has_meta("xalien_received") or has_meta("xalien_possession")
+
+func _skills_entry() -> Dictionary:
+	var ids := _ids_held()
 	var key := _skills_key()
 	var me := get_instance_id()
 	if not is_same(_skc_tbl, XDB._tables.get("Skills")):  # 底表整张换过：全部作废（is_same 只比引用）
@@ -893,6 +979,8 @@ static func read_reset() -> void:
 	_read_gen += 1
 	_write_gen += 1
 	_skills_epoch += 1
+	_hold_gen += 1
+	_hold_on = true  # T576：行动开头起保留 id 表（end_battle 关）
 	batch_reset()
 
 ## 已知的写入：作废所有角色的窗口缓存
@@ -900,6 +988,7 @@ static func read_touch() -> void:
 	_read_gen += 1
 	_write_gen += 1
 	_skills_epoch += 1
+	_hold_gen += 1
 
 
 # ---- 整批加减状态（O-398，进出战斗卡顿 C 车道）----
@@ -923,6 +1012,7 @@ static var carry_hits := 0
 
 static func batch_begin() -> void:
 	_skills_epoch += 1
+	_hold_gen += 1
 	if _batch_depth == 0:
 		_write_gen += 1
 	_batch_depth += 1
@@ -948,17 +1038,26 @@ static func batch_reset() -> void:
 
 ## 加减状态：批里不是 STATE_HARD 的只换代（只读窗口作废；跨步保留的表下次取用时按指纹的出入丢该丢的）；其余同 read_touch
 static func state_touch(id: int) -> void:
-	_skills_epoch += 1  # 技能表跨调用缓存（T546）：加减状态一律换代（不分类别，宁可多建）
-	if STATE_BATCH and _batch_depth > 0 and XBattler.state_class(id) != XBattler.STATE_HARD:
+	var hard := XBattler.state_class(id) == XBattler.STATE_HARD
+	if hard or not SKILLS_HOLD:
+		_skills_epoch += 1  # 技能表跨调用缓存（T546）：加减状态换代（T576 起只有 STATE_HARD 换代：别的状态不改 id 表、不改记录）
+	if STATE_BATCH and _batch_depth > 0 and not hard:
 		_read_gen += 1
+	elif SKILLS_HOLD and not hard:
+		_read_gen += 1  # T576：批外不带技能的状态——只读窗口、跨步保留作废，技能表（id 表保留、记录）不动
+		_write_gen += 1
 	else:
 		read_touch()
 
 ## 被动缓存换新：它不是技能表、特性表的输入，批里只作废只读窗口
 static func passive_touch() -> void:
-	_skills_epoch += 1
+	if not SKILLS_HOLD:
+		_skills_epoch += 1  # T576 起不换代：被动缓存不是技能表的输入
 	if STATE_BATCH and _batch_depth > 0:
 		_read_gen += 1
+	elif SKILLS_HOLD:
+		_read_gen += 1
+		_write_gen += 1
 	else:
 		read_touch()
 
