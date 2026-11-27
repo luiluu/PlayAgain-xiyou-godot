@@ -1,7 +1,7 @@
 # 交付：luiluu/t558
 
 - 车道／工作者：T558 六维降档改先降手标维＋T528 合后整轮重量；R2 续做：输出换炼狱口径重量；R3 续做：随机再放算进、强制量乘卡面条件倍率重量（cc，claude-opus-5-5＋medium，P8；第 74 任项目经理cc 派）
-- 状态：可合并
+- 状态：可合并（云端唯一失败 xiyou_tianqi_t566 是 main 原有的，见「测试（R3）」）
 
 ## 变更记录草稿
 
@@ -201,7 +201,8 @@ R1（已合在本分支）：
 
 - `天启篇数据校验.py`：退出码 0。
 - 本机：xiyou_tianqi_six_dim 69/69、xiyou_tianqi_six_dim_book_boss 66/66、xiyou_tianqi_six_dim_radar 33/33、xiyou_tianqi_six_dim_resist 69/69、xiyou_tianqi_enemy_ai 103/103（全部 `--audio-driver Dummy`）。
-- 云端选测：CLOUD_LINE
+- 云端选测：https://github.com/luiluu/PlayAgain-xiyou-godot/actions/runs/45987096160 （f10ba35e4，整轮 834 个场景、16 片，`gh run watch` 等完）：833 过，**1 个失败 `xiyou_tianqi_t566`（`xiyou_untouched_272 [908]`，西游档状态 908 说明和原表不一致）**。
+  - 不是本单带来的：本单 8 个文件都不碰状态说明；我在本树把这 8 个文件临时换回 main 3c8389600 的版本单跑 `xiyou_tianqi_t566`，照样 18/19、同一条挂（跑完已还原，`git diff main` 照旧 8 个文件）。是 main 上 T566 自己的问题，归 T566 线处理，本单没修。
 - 没截图：只改数据，没起图鉴页看。
 
 
