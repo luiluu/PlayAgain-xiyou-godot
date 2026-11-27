@@ -61,9 +61,11 @@ func _run() -> void:
 	_test_1_leaked_tags_and_unreworked()
 	_test_1_innate_caps_runtime()
 	_test_1_folded_coefs()
+	_test_1_r2_folds()
 	_test_2_vegito_four_forms()
 	_test_2b_vegito_two_turn_upgrade()
 	_test_2c_vegito_cards()
+	_test_2d_card_fixes()
 	_test_3_t527_outliers()
 	_test_5_xiyou_zero_change()
 
@@ -187,6 +189,19 @@ func _test_1_folded_coefs() -> void:
 	_check("t1_folded_coefs_applied", bad.is_empty(), [bad, checks])
 
 
+## 1D. T528 R2（核查 P2-1）：露丝、要乐奈的超额折进整数项（奥能轰炸随机 4 个敌人；独奏风暴、野调终章条件上限 +40%）
+func _test_1_r2_folds() -> void:
+	_new_tianqi_state([43, 129])
+	var r1181 := XDB.rec("Skills", 1181)
+	var c5635: Array = XTianqiSkills.spec(5635).damage.get("conds", [])
+	var c5636: Array = XTianqiSkills.spec(5636).damage.get("conds", [])
+	_check("t1_r2_folds",
+		int(r1181.get("scope", 0)) == 6 and str(r1181.get("note", "")).contains("对象:随机4个敌人")
+		and c5635.size() == 1 and is_equal_approx(float(c5635[0].per), 0.004) and is_equal_approx(float(c5635[0].cap), 0.4)
+		and c5636.size() == 1 and is_equal_approx(float(c5636[0].per), 0.6) and is_equal_approx(float(c5636[0].cap), 0.4),
+		[r1181.get("scope"), c5635, c5636])
+
+
 ## 2. 贝吉特四形态保留并重标（去 ×6、去 +200 TP、留换装外观、与自我极意功合计 ≤+30%）
 func _test_2_vegito_four_forms() -> void:
 	var s := _new_tianqi_state([164, 1, 2, 3])
@@ -301,6 +316,20 @@ func _test_2c_vegito_cards() -> void:
 		bad.is_empty() and blue.contains("战斗结束时，贝吉特会倒下") and notes.is_empty()
 		and str(XDB.rec("States", 2774).get("note", "")).contains("战斗结束时倒下"),
 		[bad, blue, notes])
+
+
+## 2D. T528 R2（核查 P2-3）：黑翼裁决段数与正文一致、怒拳不再写「×1／合计×9」、欢歌去「泳池1」残字
+func _test_2d_card_fixes() -> void:
+	_new_tianqi_state([167, 50, 96])
+	var n10125 := str(XDB.rec("Skills", 10125).get("note", ""))
+	var d10125 := " ".join(XTianqiSkills.spec(10125).get("desc", []))
+	var d1340 := " ".join(XTianqiSkills.spec(1340).get("desc", []))
+	var d8151 := " ".join(XTianqiSkills.spec(8151).get("desc", []))
+	_check("t2d_card_fixes",
+		n10125.contains("攻击次数：4") and not n10125.contains("攻击次数：1") and d10125.contains("基础四段")
+		and d1340.contains("104%") and not d1340.contains("×1") and not d1340.contains("×9")
+		and not d8151.contains("泳池1"),
+		[n10125.contains("攻击次数：4"), d10125, d1340, d8151])
 
 
 ## 3. T527 越线 4 人（107/167/171/175）D287 调数验证
