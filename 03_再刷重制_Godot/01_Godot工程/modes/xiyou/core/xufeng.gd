@@ -12,6 +12,14 @@ extends RefCounted
 ## 开关 REWORK = false 后 clear_cache() 回原版数据；原版参照测试由 XCanglong.original_data() 一并关闭。
 
 static var REWORK := true
+## 剑一～剑九、九阶基因锁收口（T585，Kyo 11-27 事项 95 定「直接去掉经验锁，老档读档自动好」，O-待定）：
+## 原版 1704／1705 两条公共事件是空的（徐凤年原版停用、没做完），9996 自带经验 −100% 又没法撕开，正常升级卡死在 60 级。
+## 开着时西游档：9996 去掉 passiveSPBST9 与公共事件、改不可点纯被动，卡面写已解开；
+## 剑一～剑八场合改「永不」（同其它被动，菜单不再写「战斗专用」），删卡面打不出的「伤害:xxx」。
+## 剑九 9995 不在这里改（Kyo 11-27 另开新卡做成主动战技）。
+## 开战附伤状态 2530～2538、元素增伤与穿透照旧（D272 平衡不动）。只在 xiyou_save_on() 时经 rec 分派，天启篇不读。
+## 回退：LOCK_FIX = false（回到 T440 口径：60 级起经验 −100%、基因锁可点但无事发生、剑一～剑八写「战斗专用」）。
+static var LOCK_FIX := true
 
 const ACTOR := 152
 const SK_DAHUANGTING := 9985
@@ -130,7 +138,8 @@ static func clear_cache() -> void:
 static func touches(table_name: String, id: int) -> bool:
 	match table_name:
 		"Skills":
-			return id == SK_DAHUANGTING or id == SK_TIANXIA or id == SK_GUNLONG or SWORDS.has(id)
+			return id == SK_DAHUANGTING or id == SK_TIANXIA or id == SK_GUNLONG or SWORDS.has(id) \
+				or (LOCK_FIX and id == SK_GENELOCK)
 		"States":
 			return id == ST_TRUE_SWORD9
 		"Armors":
@@ -144,7 +153,7 @@ static func touches(table_name: String, id: int) -> bool:
 static func rec(table_name: String, id: int, base: Dictionary) -> Dictionary:
 	if not REWORK or base.is_empty():
 		return base
-	var scale_tag := ":s1" if XMagicWeapon.SCALE_99_TO_888 else ":s0"
+	var scale_tag := (":s1" if XMagicWeapon.SCALE_99_TO_888 else ":s0") + (":L1" if LOCK_FIX else ":L0")
 	var key := "%s:%d%s" % [table_name, id, scale_tag]
 	var cached = _rec_cache.get(key)
 	if cached is Array and cached.size() == 2 and is_same(cached[0], base):
@@ -156,6 +165,10 @@ static func rec(table_name: String, id: int, base: Dictionary) -> Dictionary:
 				_patch_9985(r)
 			elif SWORDS.has(id):
 				_patch_sword(r, id, SWORDS[id])
+				if LOCK_FIX:
+					_fix_sword_passive(r)
+			elif id == SK_GENELOCK and LOCK_FIX:
+				_fix_genelock(r)
 			elif id == SK_TIANXIA:
 				_patch_9997(r)
 				_redirect_9997_state(r)
@@ -603,6 +616,54 @@ static func _patch_sword(s, _id: int, cfg: Array) -> void:
 	if old_el != "" and old_de != "":
 		_replace_note_meta(s, "物理/寒冰伤害+%s 无视敌人物理/寒冰抗性+%s" % [old_el, old_de],
 			"物理/寒冰伤害+%d%% 无视敌人物理/寒冰抗性+%d%%" % [el_pct, de_pct])
+
+
+## T585：剑一～剑八本是被动（元素增伤＋穿透一直生效），场合改「永不」；卡面「伤害:xxx」是打不出来的固定伤害，删掉
+static func _fix_sword_passive(s: Dictionary) -> void:
+	s.occasion = 3
+	_drop_aps_line(s, "伤害:")
+
+
+## T585：九阶基因锁去掉经验 −100%（passiveSPBST9）与空公共事件 1705，改不可点纯被动；卡面写已解开
+static func _fix_genelock(s: Dictionary) -> void:
+	s.occasion = 3
+	_drop_effect(s, 44, 1705)
+	_drop_tag(s, "passiveSPBST9")
+	_drop_aps_line(s, "使用:撕裂基因锁")
+	_replace_note_meta(s, "效果:经验获取率-100%", "效果:基因锁已解开")
+
+
+static func _drop_effect(s: Dictionary, code: int, data_id: int) -> void:
+	s.effects = (s.get("effects", []) as Array).filter(func(e): return not (e is Dictionary and int(e.get("code", 0)) == code and int(e.get("dataId", 0)) == data_id))
+
+
+static func _drop_tag(s: Dictionary, tag: String) -> void:
+	var re := RegEx.create_from_string("<" + _re_escape(tag) + ":[^>]*>[ \\t]*\\n?")
+	s.note = re.sub(str(s.get("note", "")), "", true)
+	var meta = s.get("meta", {})
+	if meta is Dictionary:
+		meta.erase(tag)
+
+
+## 删掉备注里含 needle 的 <pos=APs …> 整行，并删掉 meta 里对应的键（APs 行在 meta 里按第一个冒号拆成键、值）
+static func _drop_aps_line(s: Dictionary, needle: String) -> void:
+	var lines := str(s.get("note", "")).split("\n")
+	var kept := PackedStringArray()
+	for ln in lines:
+		if ln.strip_edges().begins_with("<pos=APs ") and ln.contains(needle):
+			continue
+		kept.append(ln)
+	s.note = "\n".join(kept)
+	var meta = s.get("meta", {})
+	if meta is Dictionary:
+		for k in meta.keys():
+			var ks := str(k)
+			if not ks.begins_with("pos=APs "):
+				continue
+			var v = meta[k]
+			var whole := ks if v is bool else ks + ":" + str(v)
+			if whole.contains(needle):
+				meta.erase(k)
 
 
 static func _patch_9997(s) -> void:
