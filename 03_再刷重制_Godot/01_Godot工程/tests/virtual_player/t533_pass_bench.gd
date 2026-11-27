@@ -42,7 +42,9 @@ func _fight_floor(s: XState, f: int, ln: String, sd: int) -> Dictionary:
 				if d.is_empty() or not int(item.get("damage", {}).get("type", 0)) in [1, 2, 5, 6]:
 					continue
 				var mode := XDamage.item_mode(item)
-				var w := [0.0, 1.0] if mode == "magical" else ([0.5, 0.5] if mode == "mixed" else [1.0, 0.0])
+				var w := [0.0, 1.0] if mode == "magical" else ([1.0, 0.0])
+				if mode == "mixed":
+					w = XDamage._mixed_weights(item, a, e, [])  # 同正式结算：按公式对物攻、魔攻微扰取权重
 				var before: float = w[0] * XDamage.defense_rate(a.atk, e.def) + w[1] * XDamage.defense_rate(a.mat, e.mdf)
 				var va := XDamage.main_stat_value(d, a, "A")
 				var vb := XDamage.main_stat_value(d, a, "B")

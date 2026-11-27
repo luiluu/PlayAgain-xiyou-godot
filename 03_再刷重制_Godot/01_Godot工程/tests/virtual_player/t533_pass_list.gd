@@ -3,7 +3,7 @@ extends Node
 ## 天启篇档，全体可选角色（超强者／强者／弱者＋天启篇五条悟）各升到 81 级、不穿装备，取已学会的走角色卡公式的伤害招，
 ## 目标双防都取标准线 81 级攻击 1640（同《基础数值重构》「六项相等」的标准角色），逐招打一行：
 ## T533_ROW|角色号|角色名|梯队|招号|招名|mode|卡上属性|改前通过率|A（产品）|B（取最大项）|改前用的攻击值|A 主属性值|B 主属性值
-## mixed mode 两侧权重取 0.5／0.5（真实结算按公式微扰权重，这里只为看形状）。
+## mixed mode 两侧权重同正式结算按公式微扰取（XDamage._mixed_weights，目标用一只 1 号敌人占位）。
 
 const LV := 81
 const REF_DEF := 1640.0
@@ -23,6 +23,7 @@ func _run() -> void:
 	XState.current = s
 	if not ids.has(180):
 		ids.append(180)  # 五条悟只在天启篇
+	var dummy := XEnemy.new().setup(1, 3, 100.0)
 	var rows := 0
 	for id in ids:
 		if s.actor(int(id)) == null:
@@ -44,7 +45,9 @@ func _run() -> void:
 			if d.is_empty() or not int(item.get("damage", {}).get("type", 0)) in [1, 2, 5, 6]:
 				continue
 			var mode := XDamage.item_mode(item)
-			var w := [0.0, 1.0] if mode == "magical" else ([0.5, 0.5] if mode == "mixed" else [1.0, 0.0])
+			var w := [0.0, 1.0] if mode == "magical" else ([1.0, 0.0])
+			if mode == "mixed":
+				w = XDamage._mixed_weights(item, a, dummy, [])  # 同正式结算：按公式对物攻、魔攻微扰取权重
 			var before: float = w[0] * XDamage.defense_rate(a.atk, REF_DEF) + w[1] * XDamage.defense_rate(a.mat, REF_DEF)
 			var va := XDamage.main_stat_value(d, a, "A")
 			var vb := XDamage.main_stat_value(d, a, "B")

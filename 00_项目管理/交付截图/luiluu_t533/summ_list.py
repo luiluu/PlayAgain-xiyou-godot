@@ -16,15 +16,17 @@ changed=[r for r in rows if not single_attack(r)]
 same=len(rows)-len(changed)
 zero_ok=all(abs(r['bef']-r['pa'])<1e-9 for r in rows if single_attack(r))
 print(f"总行数 {len(rows)}（角色×招，含同招多人）；纯物攻物理招／纯魔攻魔法招 {same} 行，改前改后{'全部相同' if zero_ok else '有不同！'}；其余 {len(changed)} 行见下。\n")
-print("| 角色 | 梯队 | 招 | mode | 卡上属性 | 改前 | 改后(A) | 变化 | B | A−B |")
-print("|---|---|---|---|---|---|---|---|---|---|")
 big=[]
-for r in sorted(changed,key=lambda r:(r['aid'],r['sid'])):
-    rel=(r['pa']/r['bef']-1)*100 if r['bef']>0 else 0
-    flag=' **⚑**' if abs(rel)>20 else ''
-    if flag: big.append(r)
-    print(f"| {r['aid']} {r['name']} | {r['tier']} | {r['sid']} {r['sname']} | {r['mode']} | {r['stats'].replace('|','/')} | {r['bef']*100:.1f}% | {r['pa']*100:.1f}% | {rel:+.0f}%{flag} | {r['pb']*100:.1f}% | {(r['pa']-r['pb'])*100:+.1f} |")
-multi=[r for r in changed if len(keys(r['stats']))>1]
+for sec,cond in (('### 单属性（非本侧攻击）的招',lambda r:len(keys(r['stats']))<=1 and 'max_of' not in r['stats']),('### 多属性招（含 max_of）：A＝加权平均（产品），B＝取最大项（只对照）',lambda r:len(keys(r['stats']))>1 or 'max_of' in r['stats'])):
+  print('\n'+sec+'\n')
+  print("| 角色 | 梯队 | 招 | mode | 卡上属性 | 改前 | 改后(A) | 变化 | B | A−B |")
+  print("|---|---|---|---|---|---|---|---|---|---|")
+  for r in sorted([r for r in changed if cond(r)],key=lambda r:(r['aid'],r['sid'])):
+      rel=(r['pa']/r['bef']-1)*100 if r['bef']>0 else 0
+      flag=' **⚑**' if abs(rel)>20 else ''
+      if flag: big.append(r)
+      print(f"| {r['aid']} {r['name']} | {r['tier']} | {r['sid']} {r['sname']} | {r['mode']} | {r['stats'].replace('|','/')} | {r['bef']*100:.1f}% | {r['pa']*100:.1f}% | {rel:+.0f}%{flag} | {r['pb']*100:.1f}% | {(r['pa']-r['pb'])*100:+.1f} |")
+multi=[r for r in changed if len(keys(r['stats']))>1 or 'max_of' in r['stats']]
 print(f"\n变化超过 ±20%（相对）共 {len(big)} 行；多属性招 {len(multi)} 行（A 与 B 差见上表最后一列），其中 |A−B|>5 个百分点 {sum(1 for r in multi if abs(r['pa']-r['pb'])>0.05)} 行。")
 ups=sum(1 for r in changed if r['pa']>r['bef']+1e-9); downs=sum(1 for r in changed if r['pa']<r['bef']-1e-9)
 print(f"方向：变高 {ups} 行，变低 {downs} 行，不变 {len(changed)-ups-downs} 行。")
