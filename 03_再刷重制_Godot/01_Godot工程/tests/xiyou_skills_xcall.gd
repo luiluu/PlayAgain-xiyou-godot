@@ -41,7 +41,7 @@ func ids_of(a: XActor) -> Array:
 
 
 ## 改动 change 之后：要重建、结果与现算相同；want_changed＝结果确实变了（这个输入真的会改技能表）
-func entry(name: String, a: XActor, change: Callable, want_changed := true) -> void:
+func entry(name: String, a: XActor, change: Callable, want_changed := true, want_rebuilt := true) -> void:
 	var before := cached(a)
 	cached(a)
 	var b0 := XActor.skills_xcall_builds
@@ -49,7 +49,7 @@ func entry(name: String, a: XActor, change: Callable, want_changed := true) -> v
 	var after := cached(a)
 	var built := XActor.skills_xcall_builds > b0
 	var f := fresh(a)
-	check(name + ".rebuilt", built, {"builds": XActor.skills_xcall_builds - b0})
+	check(name + (".rebuilt" if want_rebuilt else ".kept"), built == want_rebuilt, {"builds": XActor.skills_xcall_builds - b0})
 	check(name + ".same_as_fresh", after == f, {"after": after[0].map(func(s): return s.id), "fresh": f[0].map(func(s): return s.id)})
 	if want_changed:
 		check(name + ".changed", after != before, {"ids": after[0].map(func(s): return s.id)})
@@ -180,11 +180,23 @@ func _run() -> void:
 	XTianqiWeakAffix.test_entries.erase("w17")
 	s.flags.erase("tianqi")
 	cached(a)
-	# 15 已有的写入点都换代（宁可多建）：read_touch、state_touch、passive_touch、read_reset、batch_begin、skills_touch
-	for pair in [["read_touch", func(): XActor.read_touch()], ["state_touch", func(): XActor.state_touch(4)],
-			["passive_touch", func(): XActor.passive_touch()], ["read_reset", func(): XActor.read_reset()],
+	# 15 已有的写入点都换代：read_touch、STATE_HARD 状态的 state_touch、read_reset、batch_begin、skills_touch。
+	# T576（XActor.SKILLS_HOLD）起不带技能的状态（4）、被动缓存换新不换代（不是技能记录的输入）；开关关着照旧换代（宁可多建）
+	check("epoch.fixture_state4_not_hard", XBattler.state_class(4) != XBattler.STATE_HARD and XBattler.state_class(971) == XBattler.STATE_HARD)
+	for pair in [["read_touch", func(): XActor.read_touch()], ["state_touch_hard", func(): XActor.state_touch(971)],
+			["read_reset", func(): XActor.read_reset()],
 			["batch_begin", func(): XActor.batch_begin(); XActor.batch_end()], ["skills_touch", func(): XActor.skills_touch()]]:
 		entry("epoch." + str(pair[0]), a, pair[1], false)
+	for hold in [true, false]:
+		if hold:
+			XActor.SKILLS_HOLD = true
+		else:  # 回退支
+			XActor.SKILLS_HOLD = false
+		var tag := "" if hold else ".hold_off"
+		entry("epoch.state_touch" + tag, a, func(): XActor.state_touch(4), false, not hold)
+		entry("epoch.passive_touch" + tag, a, func(): XActor.passive_touch(), false, not hold)
+	XActor.SKILLS_HOLD = true
+	XActor.hold_off()  # read_reset 打开了保留（测试不在战斗里），关掉
 	# 16（P1-1）徐凤年 9998 系数（XMagicWeapon.SCALE_99_TO_888，西游档：130000 ↔ 209000）
 	var xf := s.actor(152)
 	xf.learn_skill(9998)
