@@ -47,14 +47,17 @@ func _run() -> void:
 			ps.random_master = XRandomStream.hex64(20261127)
 			ps.battle_serial = 0
 			return ps
-		var rp := _battle(mk_p, 454, 15, 0)
+		var rounds := 15
+		for a in OS.get_cmdline_user_args():
+			if a.begins_with("--rounds="): rounds = int(a.substr(9))
+		var rp := _battle(mk_p, 454, rounds, 0)
 		print("CROSS player454 sig=%s size=%d acts=%d won=%s" % [rp.sig, rp.size, rp.acts, str(rp.won)])
 		if verify:
 			var by := {}
 			for m in XActor.read_mismatches:
 				var k := "%s/%s" % [str(m[0]), str(m[1])]
 				by[k] = by.get(k, 0) + 1
-			print("VERIFY hits=%d mismatches=%d by=%s hold_hits=%d" % [XActor.read_hits, XActor.read_mismatches.size(), JSON.stringify(by), int(XActor.get("skills_hold_hits") if XActor.get("skills_hold_hits") != null else -1)])
+			print("VERIFY hits=%d mismatches=%d by=%s hold_hits=%d" % [XActor.read_hits, XActor.read_mismatches.size(), JSON.stringify(by), int(load("res://modes/xiyou/core/actor.gd").get("skills_hold_hits") if load("res://modes/xiyou/core/actor.gd").get("skills_hold_hits") != null else -1)])
 		get_tree().quit(0)
 		return
 	for c in [["battle2", _new_state.bind(20261102), 2, 3, 0], ["battle70", _new_state.bind(20261170), 70, 3, 0], ["ce1222", _doria_state, 2, 2, CE_ZHULANG], ["tianqi", mk_tq, 2, 3, 0], ["battle454", _new_state.bind(20261127), 454, 4, 0]]:
