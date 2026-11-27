@@ -1210,7 +1210,7 @@ func _p7() -> void:
 			ok = ok and (is_equal_approx(v, roundf(v)) or (v < 1.0 and is_equal_approx(v * 100.0, roundf(v * 100.0))))
 		return ok)
 	var on287 := [XTianqiSkills.spec(9938).damage.stats.get("atk"), XSukuna.tq_terminal_hits(10235), XTianqiSkills.spec(10641).get("gojo_pairs"), XGuyu.tq_pct("finish_pct", 100.0),
-		float(XTianqiSkills.spec(3776).damage.coef), str(XDB.rec("Skills", 10292).get("note", "")).contains("×9%"),
+		float(XTianqiSkills.spec(3776).damage.coef), str(XDB.rec("Skills", 10292).get("note", "")).contains("×7%"), # T528 调数 9%→7%
 		int(XTianqiSkills.spec(10315).damage.stats.get("atk", 0)), int(XTianqiSkills.spec(10315).damage.get("cap_hits", 1)),
 		int(XTianqiSkills.spec(10337).damage.stats.get("mat", 0)), float(XTianqiSkills.spec(10337).damage.stats.get("mhp", 0.0)),
 		str(XDB.rec("Skills", 10315).get("note", "")).contains("物理攻击×23"),
@@ -1224,7 +1224,7 @@ func _p7() -> void:
 	XTianqiBase.TUNE_D287 = d287_on
 	XTianqiSkills.reload_table()
 	_check("p7_d287_table", not XTianqiBase.TUNE_D287 or (d287_int and int(on287[0]) == 3 and on287[1] == [1.0, 2.0, 3.0] and (on287[2] as Array).map(func(x): return int(x)) == [2, 4, 9]
-		and is_equal_approx(on287[3], 0.09) and is_equal_approx(on287[4], 1.0) and on287[5]
+		and is_equal_approx(on287[3], 0.07) and is_equal_approx(on287[4], 1.0) and on287[5]
 		and int(on287[6]) == 23 and int(on287[7]) == 3 and int(on287[8]) == 6 and is_equal_approx(float(on287[9]), 0.01) and on287[10] and on287[11]
 		and int(off287[0]) == 5 and off287[1] == [6.0, 7.0, 8.0] and is_equal_approx(off287[3], 0.93) and is_equal_approx(off287[4], 6.0)
 		and int(off287[5]) == 10 and int(off287[6]) == 1 and is_equal_approx(float(off287[7]), 10.0)), [d287_int, on287, off287])
