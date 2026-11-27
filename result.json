@@ -1,0 +1,22 @@
+{
+ "sha": "118048a46d5d1dd7e98583c20a2c02d5d0b1346f",
+ "branch": "ci/cc/t577",
+ "mode": "affected",
+ "base": "3c83896002e69b8a11cc14ddad0c9377620b5d8f",
+ "passed": true,
+ "scenes": 1,
+ "failed": [],
+ "flaky": [],
+ "lostShards": [],
+ "jobStatus": "success",
+ "shards": 1,
+ "longestShardSeconds": 14.3,
+ "testSeconds": 12,
+ "generatedRef": "refs/ci/generated/main",
+ "generatedCommit": "7f7cc73cc504821d93480d517c372a4708690bec",
+ "runUrl": "https://github.com/luiluu/PlayAgain-xiyou-godot/actions/runs/45993841283",
+ "sceneNames": [
+  "xiyou_tianqi_t566.tscn"
+ ],
+ "time": "2026-11-27T12:01:39+00:00"
+}
