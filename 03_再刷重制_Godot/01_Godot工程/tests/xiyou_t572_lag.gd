@@ -21,9 +21,14 @@ func check(label: String, ok: bool, detail = null) -> void:
 
 
 func _switches(on: bool) -> void:
-	XTianqiWeakAffix.XIYOU_SKIP = on
-	XActor.SKILLS_ENTRY_HELD = on
-	XSideStatus.LIVE_WINDOW = on
+	if on:
+		XTianqiWeakAffix.XIYOU_SKIP = true
+		XActor.SKILLS_ENTRY_HELD = true
+		XSideStatus.LIVE_WINDOW = true
+	else:  # 回退支（回退开关覆盖.py 认字面量）
+		XTianqiWeakAffix.XIYOU_SKIP = false
+		XActor.SKILLS_ENTRY_HELD = false
+		XSideStatus.LIVE_WINDOW = false
 	XActor.skills_touch()
 
 
