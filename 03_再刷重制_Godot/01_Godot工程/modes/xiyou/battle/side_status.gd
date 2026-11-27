@@ -218,16 +218,19 @@ static func _kind_cached(id: int, st: Dictionary, passive: bool) -> String:
 		return "常驻"
 	if not is_same(st, XDB.rec("States", id)):
 		return state_kind(st, false)
-	if not _kind_cache.has(id):
-		_kind_cache[id] = state_kind(st, false)
-	return _kind_cache[id]
+	var key := XTianqiSkills.state_key(id)
+	if not _kind_cache.has(key):
+		_kind_cache[key] = state_kind(st, false)
+	return _kind_cache[key]
 
 
-## 状态数据不变（同号同一条），按号缓存；画面快照每条日志都要算
+## 状态数据不变（同号同一条），按号缓存；画面快照每条日志都要算。天启篇改写过的状态另存（state_key，T566）：
+## 两种存档的说明不同，同一次开游戏里换档不能串
 static func _visible_cached(id: int, st: Dictionary) -> bool:
-	if not _visible_cache.has(id):
-		_visible_cache[id] = visible_state(st)
-	return _visible_cache[id]
+	var key := XTianqiSkills.state_key(id)
+	if not _visible_cache.has(key):
+		_visible_cache[key] = visible_state(st)
+	return _visible_cache[key]
 
 
 ## installEquipmentStatusRuntime visibleState
