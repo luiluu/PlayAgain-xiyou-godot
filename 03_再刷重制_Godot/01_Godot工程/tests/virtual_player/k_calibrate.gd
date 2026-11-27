@@ -141,6 +141,8 @@ func _ready() -> void:
 			single = true
 		elif a == "--debug-cast":
 			_debug_cast = true
+		elif a == "--old-cast":  # T558：回到「apply 单下×段数比（中位）」旧口径对照
+			old_cast = true
 		elif a == "--add-rework":
 			add_rework = true
 		elif a == "--survive":
@@ -688,9 +690,19 @@ func _measure_in(s: XState, a, tier: String, greedy: bool) -> Dictionary:
 			var row: Dictionary = _rows[sid]
 			var cr := _cast_ratio(s, a, XDB.rec("Skills", int(sid)))
 			row["segs"] = cr
-			row["peak"] = roundf(float(row.peak_single) * float(cr.ratio))
+			if old_cast:
+				row["peak"] = roundf(float(row.peak_single) * float(cr.ratio))
+			else:
+				# T558（T569 ①②，Kyo D292 补）：整次施放各段直接相加（落地招自己的段、按 execute 结算），再乘「条件全中÷当下条件×浮动掷满」
+				# （＝这一招峰值单段÷同一下实际 apply 出来的数）。旧口径「apply 单下×段数比」在落地招≠被量的招（4759→4760）、
+				# 模块把一下拆段（屠苏 10315）、随机变身（4752→4753）时拼错；--old-cast 回旧口径对照
+				var fac := float(row.peak_single) / maxf(1.0, float(row.dealt))
+				row["cast_fac"] = snappedf(fac, 0.0001)
+				row["peak"] = roundf(float(cr.total) * fac)
+				if not (cr.landing as Array).is_empty() and (cr.landing as Array) != [int(sid)]:
+					print("K_WARN %d %d landing=%s（落地招不是被量的招；按整次施放合计算，条件倍率仍按被量的招）" % [id, int(sid), cr.landing])
 			if per_skill:
-				print("K_CAST %d %d single=%d ratio=%s total=%d" % [id, int(sid), row.peak_single, cr.ratio, row.peak])
+				print("K_CAST %d %d single=%d ratio=%s total=%d landing=%s" % [id, int(sid), row.peak_single, cr.ratio, row.peak, cr.get("landing", [])])
 			if best.is_empty() or float(row.peak) > float(best.peak):
 				best = row
 		if affixes != null:
@@ -936,23 +948,45 @@ func _cast_ratio(s: XState, a, sk: Dictionary) -> Dictionary:
 		XSukuna.cast = {}
 		var segs := []
 		_collect_hits(logs, e, segs)
+		var landing := []
+		_collect_landing(logs, e, landing)
 		logic.end_battle(0)
 		var mx := 0.0
 		var sum := 0.0
 		for v in segs:
 			mx = maxf(mx, v)
 			sum += v
-		runs.append({"n": segs.size(), "ratio": sum / mx if mx > 0.0 else 1.0, "segs": segs.map(func(v): return roundi(v))})
+		runs.append({"n": segs.size(), "ratio": sum / mx if mx > 0.0 else 1.0, "total": sum, "segs": segs.map(func(v): return roundi(v)), "landing": landing})
 	if runs.is_empty():
-		return {"ratio": 1.0, "n": 0, "segs": [], "ratios": []}
-	runs.sort_custom(func(x, y): return float(x.ratio) < float(y.ratio))
-	var mid: Dictionary = runs[runs.size() / 2]
+		return {"ratio": 1.0, "n": 0, "segs": [], "ratios": [], "total": 0.0, "landing": []}
+	var ratios: Array = runs.map(func(r): return snappedf(float(r.ratio), 0.001))
+	var pick: Dictionary
+	if old_cast:
+		runs.sort_custom(func(x, y): return float(x.ratio) < float(y.ratio))
+		pick = runs[runs.size() / 2]
+	else:
+		# T558：随机变身／随机再放取段数最少的那几次里合计最大的（同 t445 peak_base），不取中位
+		runs.sort_custom(func(x, y): return int(x.n) < int(y.n) or (int(x.n) == int(y.n) and float(x.total) > float(y.total)))
+		pick = runs[0]
 	# yep_effects：数据里的段数（yepEffects×repeats，智能 AI 估段数同口径），和实测 n 对照（卡面写的段数对不上时看这个）
-	return {"ratio": snappedf(float(mid.ratio), 0.001), "n": mid.n, "segs": mid.segs, "ratios": runs.map(func(r): return snappedf(float(r.ratio), 0.001)),
+	return {"ratio": snappedf(float(pick.ratio), 0.001), "n": pick.n, "segs": pick.segs, "ratios": ratios, "total": float(pick.total), "landing": pick.landing,
 		"yep_effects": int(sk.get("yepEffects", 1)) * maxi(1, int(sk.get("repeats", 1)))}
 
 
+## T558：整次施放里落到木桩上的各段是哪一招（去重、按出现顺序）
+static func _collect_landing(logs, e, out: Array) -> void:
+	for x in logs:
+		if x is Array:
+			_collect_landing(x, e, out)
+		elif x is Dictionary and str(x.get("type", "")) == "hit" and is_same(x.get("target"), e) and not bool(x.get("reflected", false)):
+			var v := float(x.get("shown", {}).get("hp", 0.0)) + float(x.get("hit_extra", 0.0))
+			var sid := int(x.get("skill", {}).get("id", 0)) if x.get("skill") is Dictionary else 0
+			if v > 0.0 and not out.has(sid):
+				out.append(sid)
+
+
 static var _debug_cast := false
+var old_cast := false
 static func _collect_hits(logs, e, out: Array) -> void:
 	for x in logs:
 		if x is Array:

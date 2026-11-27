@@ -108,6 +108,7 @@ var _t488_applied := false
 var invalid := false
 var _prime_forced := false
 var k_scan := false  # T496：--k-scan 炼狱/证道配装不变，改用 K 探针 _measure_in（D209 量法：公式条件全中＋整次施放段数比）对照
+var force_all := false  # T558（Kyo D292 补 11-27 事项 83 第 2 条）：--force-all-tiers 强者、弱者也像超强者一样强制量本角色全部改写伤害招（条件全中），六维输出用；缺省只超强者（平衡探针口径不变）
 var bind_probe := true  # T502：炼狱/证道下对 176 屠苏（2 人化武）、177 璇（4 人列星＋2 人自律同调监控）启用编组探针；--no-bind-probe 回退单人对照
 
 
@@ -125,6 +126,8 @@ func _ready() -> void:
 			t488_proposal = true
 		elif arg == "--k-scan":
 			k_scan = true
+		elif arg == "--force-all-tiers":
+			force_all = true
 		elif arg == "--no-bind-probe":
 			bind_probe = false
 		elif arg == "--no-d287":  # T496：关掉 D287 收拢覆盖层（改前对照）；k_calibrate 也会读到同一开关
@@ -189,11 +192,28 @@ func _secret_loadout(actor_id: int) -> Array:
 	return NORMAL_SECRETS.get(actor_id, []).duplicate()
 
 
+## T558：LIANYU_SECRETS 里没列的角色（六维全库量）按 T496 同口径自动配：自然体质主系书（actor_nature.json 第一个元素；没有或不在下表走 2471 物理）、
+## 2480、6139、6159，再按格数补 488／489（主属性魔攻高先 489）、490、第二本主系书（2471，主系已是 2471 时取 2472）。证道另加 ZHENGDAO_EXTRA_SECRET。
+const NATURE_BOOK := {1: 2471, 2: 2472, 3: 2473, 4: 2474, 5: 2475, 6: 2780, 7: 2782, 8: 2478, 9: 2479}
+func _auto_loadout(a: XActor) -> Array:
+	var nat: Array = XTianqiNature.natures_of_actor_id(int(a.actor_id))
+	var main := int(NATURE_BOOK.get(int(nat[0]), 2471)) if not nat.is_empty() else 2471
+	var magic := a.param(4) > a.param(2)
+	var order := [main, 2480, 6139, 6159, 489 if magic else 488, 488 if magic else 489, 490, 2472 if main == 2471 else 2471]
+	var n := XTianqiSecrets.limit(a) - (1 if book_build == ZHENGDAO else 0)
+	var list := order.slice(0, clampi(n, 0, order.size()))
+	if book_build == ZHENGDAO:
+		list.append(ZHENGDAO_EXTRA_SECRET)
+	return list
+
+
 func _secrets(a: XActor) -> void:
 	if historical:
 		super._secrets(a)
 		return
 	var loadout := _secret_loadout(a.actor_id)
+	if _is_d271_build() and not LIANYU_SECRETS.has(int(a.actor_id)):
+		loadout = _auto_loadout(a)
 	for sid in loadout:
 		a.learn_skill(int(sid))
 	var slots := XTianqiSecrets.active_ids(a)
@@ -269,8 +289,10 @@ func _weapon_for(a: XActor) -> String:
 	for t in XTianqiQiyinGear.weapon_types():
 		if wtypes.has(int(t.get("wtype_id", -1))):
 			keys.append(str(t.get("key", "")))
-	if want == "" or keys.has(want) or keys.is_empty():
+	if keys.has(want):
 		return want
+	if keys.is_empty():  # T558：没列（六维全库量）、职业又没写武器类的，按主属性取（法杖／剑），同 T496 的「无武器要求的纯法系走法杖」
+		return want if want != "" else ("staff" if a.param(4) > a.param(2) else "sword")
 	var magic := a.param(4) > a.param(2)
 	for k in keys:
 		if magic == (k in ["staff", "book"]):
@@ -394,7 +416,7 @@ func _measure_lianyu(s: XState, a: XActor, tier: String) -> Dictionary:
 	# T496：超强者另把本角色全部改写伤害招（含屠苏武器招、五条悟茈）强制各量一遍（条件全中），量「主招」在炼狱 80% 的峰值，
 	# 补上单人木桩开场放不出来的形态／资源招；记 forced_main，与自然出招的 best 取大作为该角色峰值。谷雨走储备终结（K 探针同口径）。
 	var forced_main := []
-	if tier == XTier.SUPER:
+	if tier == XTier.SUPER or force_all:
 		if XGuyu.own(a):
 			var gs := XState.from_dict(snapshot.duplicate(true))
 			XState._become_current(gs)
