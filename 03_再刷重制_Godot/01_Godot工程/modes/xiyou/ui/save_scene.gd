@@ -234,7 +234,7 @@ func _paint_info(c: XMVCanvas) -> void:
 		var rec := XDB.rec("Actors", id)
 		var row: Dictionary = d.actors.get(str(id), {})
 		c.face(str(rec.get("faceName", "")), int(rec.get("faceIndex", 0)), i * dw, FACE_TOP, dw, 144)
-		c.text(str(rec.get("name", "")), i * dw, 180, dw, "center", XUI.TEXT, 20, LH)
+		c.text(XTextFix.actor_name_in(id, XSave._is_tianqi_data(d), str(rec.get("name", ""))), i * dw, 180, dw, "center", XUI.TEXT, 20, LH)  # 按存档自己的档位取名（T562 P2-1）
 		var lv_text := "\\c[16]%s \\c[0]%s" % [str(XDB.system().get("terms", {}).get("basic", ["", "", "Lv"])[1] if XDB.system().get("terms", {}).get("basic", []).size() > 1 else "Lv"), XMenu._group(int(row.get("level", 1)))]
 		var t := XMVText.new(XMVText.convert_escapes(lv_text), 0, 0, dw, 20)
 		t.run()

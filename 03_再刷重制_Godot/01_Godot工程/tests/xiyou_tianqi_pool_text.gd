@@ -86,7 +86,8 @@ func _run() -> void:
 		var want: String = plain[[en[0], en[1]]]
 		for p in en[2]:
 			want = want.replace(p[0], p[1])
-		want = want.replace("<RightDownNote:\"挣脱天道的枷锁\">", "<RightDownNote:\"挣脱启示的枷锁\">")  # T193 的天启篇备注替换（1001～1003、2442）与本单叠在同一条备注上
+		want = want.replace("<RightDownNote:\"挣脱天道的枷锁\">", "<RightDownNote:\"挣脱启示的枷锁\">")
+		want = _d294_note(en[0], en[1], want)  # T562 天启篇改名（如 152 徐凤年专武行）与本单叠在同一条备注上  # T193 的天启篇备注替换（1001～1003、2442）与本单叠在同一条备注上
 		var got := str(_t(en[0], en[1]).note)
 		if got != want:
 			bad.append([en[0], en[1], got.substr(0, 80)])
@@ -187,3 +188,14 @@ func _run() -> void:
 	var passed := results.filter(func(r): return r.passed).size()
 	print("TEST_RESULT=" + JSON.stringify({"passed": passed, "total": results.size()}))
 	get_tree().quit.call_deferred(0 if passed == results.size() else 1)
+
+
+## T562（D294）：按 actor_names.json 登记的备注行套天启篇新名，和 XTextFix.patch_actor_names 同口径
+func _d294_note(table: String, id: int, note: String) -> String:
+	var entries: Dictionary = XTextFix.actor_names().get("tables", {}).get(table, {})
+	var lines := note.split("\n")
+	for path in entries:
+		var parts: PackedStringArray = str(path).split("/")
+		if parts.size() == 3 and int(parts[0]) == id and parts[1] == "note" and int(parts[2]) < lines.size():
+			lines[int(parts[2])] = XTextFix.rename_actor_reference(lines[int(parts[2])], entries[path])
+	return "\n".join(lines)

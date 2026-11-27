@@ -259,7 +259,7 @@ func _battle_hooks() -> void:
 	logic.grant(logic.rewards())
 	logic.grant(logic.rewards())
 	var expect := 333 if logic.actors.has(a) else 330
-	check("battle.grant", XGarou.breakthroughs(a) == expect and (logic.victory_texts == [XGarou.CATALYST_TEXT]) == logic.actors.has(a), [XGarou.breakthroughs(a), logic.victory_texts])
+	check("battle.grant", XGarou.breakthroughs(a) == expect and (logic.victory_texts == [XGarou.CATALYST_TEXT % XTextFix.actor_name(XGarou.ACTOR, "饿狼")]) == logic.actors.has(a), [XGarou.breakthroughs(a), logic.victory_texts])
 
 
 ## XAdvance.advance 分派：星空只扣 1 个神之触媒（表里另有 2939×1，不重扣）

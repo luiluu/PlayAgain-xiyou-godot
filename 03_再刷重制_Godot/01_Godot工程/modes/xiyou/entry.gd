@@ -725,7 +725,7 @@ func _tq_lineup(slot: int, key: String, lineup: Array) -> void:
 		var row := _tq_actor_row(int(lineup[i]), i == 0)
 		row.name = "TianqiActor%d" % i   # 同新界面的角色卡：测试按名字和 meta 取阵容
 		row.set_meta("actor_id", int(lineup[i]))
-		row.set_meta("actor_name", str(XDB.rec("Actors", int(lineup[i])).get("name", "")))
+		row.set_meta("actor_name", XTextFix.actor_rec_name(int(lineup[i]), true))
 		column.add_child(row)
 	var roll := XUI.button("重新随机")
 	roll.name = "TianqiReroll"
@@ -750,7 +750,7 @@ func _tq_actor_row(id: int, first: bool) -> Control:
 	row.add_child(face)
 	var tier := XTianqiSkills.tier_of(id, true)  # 天启篇档位名单
 	var color := XUI.text_color(17) if tier == XTier.SUPER else XUI.text_color(23) if tier == XTier.STRONG else XUI.TEXT
-	var lbl := XUI.label("%s%s" % [str(rec.get("name", "")), "　（1 号位）" if first else ""])
+	var lbl := XUI.label("%s%s" % [XTextFix.actor_rec_name(id, true), "　（1 号位）" if first else ""])
 	lbl.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	row.add_child(lbl)
 	row.add_child(XUI.label(tier, XUI.FONT_SIZE, color))

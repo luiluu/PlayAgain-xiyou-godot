@@ -41,7 +41,6 @@ const WOUND := 2637
 const DOMAIN := 2636
 const MAHO := 2638
 const AWAKE := 2639
-const RECRUIT_TEXT := "宿傩加入队伍，已装备神武解。"
 const WEIGHTS := {10229: 1.0, 10230: 1.6, 10231: 1.0, 10232: 4.0, 10233: 5.4, 10234: 4.0, 10235: 7.0, 10236: 0.2, 10237: 9.0, 10238: 0.3}
 const SLASH := [10229, 10230, 10231, 10234, 10235, 10236, 10237]
 const PRIMARY := [10229, 10230, 10231]
@@ -272,6 +271,10 @@ static func damage_ops(item: Dictionary, a) -> Array:
 	if stage(a) == 3:
 		ops.append({"op": "mul", "field": "settlementMultiplier", "value": 1.5})
 	return ops
+
+static func recruit_text() -> String:
+	return "%s加入队伍，已装备神武解。" % XTextFix.actor_name(ACTOR, "宿傩")
+
 
 ## CodexSukuna.recruit()
 static func recruit(s: XState) -> bool:

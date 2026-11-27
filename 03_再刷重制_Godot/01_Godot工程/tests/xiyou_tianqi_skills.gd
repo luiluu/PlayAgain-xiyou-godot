@@ -842,7 +842,7 @@ func _p6() -> void:
 	var fl := XTianqiSkills._follow_of(ql, XDB.rec("Skills", 10098))
 	_check("p6_qilin_follow", fl.size() == 1 and int(fl[0][0].id) == 10099 and is_equal_approx(float(fl[0][1]), 0.2) and is_equal_approx(float(fl[0][2]), 0.5), fl.size())
 	# 新招、补学、状态
-	_check("p6_new_skills", str(XDB.rec("Skills", 10737).name) == "剑*非天·一线" and int(XDB.rec("Skills", 10737).scope) == 1 and str(XDB.rec("Skills", 10753).name) == "万剑归宗·三段")
+	_check("p6_new_skills", str(XDB.rec("Skills", 10737).name) == "剑*狂千年·一线" and int(XDB.rec("Skills", 10737).scope) == 1 and str(XDB.rec("Skills", 10753).name) == "万剑归宗·三段")
 	_check("p6_learn", (XTianqiSkills.data().learn.get("165", []) as Array).size() == 2 and (XTianqiSkills.data().learn.get("156", []) as Array).size() == 2)
 	_check("p6_states", str(XDB.rec("States", 10826).name) == "趴下" and is_equal_approx(float(XTianqiSkills._states[2550].get("reflect", 0.0)), 0.3))
 	lg.end_battle(0)

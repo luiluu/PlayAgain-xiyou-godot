@@ -48,7 +48,7 @@ const CHI_RAN_RATE := 0.33
 const EMBER_FULL := 2000.0
 const LEVEL_MAP := [[1, PIAN_SHI], [20, GUO_ZAI], [35, ZI_XIAN], [35, CHI_RAN]]
 const RANK_MAP := [[1, ZHUI_LUO], [2, RANSHAO], [2, XING_HE], [2, FEI_YING], [3, CHANG_YE], [3, MING_TIAN]]
-const RECRUIT_TEXT := ["小伙伴 流萤 加入队伍", "获得并装备专属武器：飞萤逐火·向死而生", "获得并装备专属法宝：萨姆变身器"]
+const RECRUIT_TEXT := ["获得并装备专属武器：飞萤逐火·向死而生", "获得并装备专属法宝：萨姆变身器"]
 
 static var _meng := -1
 static var _syncing := false
@@ -392,7 +392,9 @@ static func recruit(s: XState) -> Array:
 		return []  # 超强者门槛挡下（原版包在 recruit 外层，不会走到这里；重制兜底）
 	_equip_base(s, a, "weapon", WEAPON)
 	_equip_base(s, a, "armor", ARMOR)
-	return RECRUIT_TEXT.duplicate()
+	var lines := RECRUIT_TEXT.duplicate()
+	lines.push_front("小伙伴 %s 加入队伍" % XTextFix.actor_name(ACTOR, "流萤"))
+	return lines
 
 
 ## equipBase：第一个类型相符的槽；已经穿着同款就不动；不是独立物品时也照样生成实例（重制装备一律是实例）

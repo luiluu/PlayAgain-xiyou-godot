@@ -320,7 +320,7 @@ static func _lobby_additions(out: Array, horn_before: bool) -> void:
 			_push(out, 0, id)
 		_push(out, 0, _guyu_horn)
 	# 流萤的 prepare 包装在谷雨与云裳之间（参照里 3063 排在 2943 之后、2941 之前）
-	if out.any(func(g): return g[0] == 0 and g[1] == LOBBY_LINK_HORN) and str(XDB.rec("Items", LOBBY_LIUYING_HORN).get("name", "")) == "伙伴号角：流萤":
+	if out.any(func(g): return g[0] == 0 and g[1] == LOBBY_LINK_HORN) and str(XDB.rec("Items", LOBBY_LIUYING_HORN).get("name", "")) == "伙伴号角：" + XTextFix.actor_name(XLiuying.ACTOR, "流萤"):
 		_push(out, 0, LOBBY_LIUYING_HORN)
 	if horn_before:
 		_push(out, 0, LOBBY_YUNSHANG_HORN)

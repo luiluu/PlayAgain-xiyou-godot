@@ -112,6 +112,8 @@ static func table(name: String) -> Variant:
 	if not _tables.has(name):
 		# 原版文字错的统一规则与逐条覆盖（乙类文字审，开关见 XTextFix）；修正后的结果也走解析缓存
 		_tables[name] = XTextFix.load_table(name) if XTextFix.TABLES.has(name) else load_json("db/%s.json" % name)
+		if name == "System":
+			XTextFix.patch_actor_names(name, _tables[name])  # 技能栏类型按原下标取天启篇名
 		if name == "Skills" and _tables[name] is Array:
 			XZhenqi.patch_rewards(_tables[name])  # 真气突破奖励的数值（CodexZhenqi.patchRewards）
 			XCanglong.patch_skills(_tables[name])  # 苍龙破晓重做（O-314，开关 XCanglong.REWORK）
@@ -128,6 +130,7 @@ static func table(name: String) -> Variant:
 			XStateEffects.patch_states(_tables[name])  # 半步真仙效果 1666 从持有者自删（FIX_HALFSTEP_1666，T205 R1）
 		if name == "Plugins" and _tables[name] is Dictionary:
 			XGojo.patch_plugins(_tables[name])  # 五条悟的进阶行
+			XTextFix.patch_actor_advance(_tables[name])
 		if name == "Armors" and _tables[name] is Array:
 			# H／U.describe 在 isDatabaseLoaded 里就地改四件成长装备原件的说明与成长行（installNativeHeartsteel／HubrisRuntime；
 			# v0.62.12 数据库里狂妄原件写「物理伤害忽略18%目标物防」，开机后才改成「效果：物防穿透18%」，锻造出的实例照抄改过的）

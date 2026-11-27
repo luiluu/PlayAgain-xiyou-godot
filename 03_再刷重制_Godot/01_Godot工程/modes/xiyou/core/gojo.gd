@@ -80,7 +80,7 @@ const UNLOCK_DIFFICULTY := "zhengdao"
 static var BEFORE_ZHENGDAO_LIANYU := true
 const UNLOCK_DIFFICULTY_BEFORE_OPEN := "lianyu"
 const UNLOCK_WITH := [171, 172]
-const UNLOCK_TEXT := "五条悟：「你们打得不错嘛。」\n最强之名已解锁：之后天启篇的候选池里会出现五条悟。"
+const UNLOCK_TEXT := "{180}：「你们打得不错嘛。」\n最强之名已解锁：之后天启篇的候选池里会出现{180}。"
 ## 测试用：-1 读全局配置，0／1 强制没解锁／已解锁
 static var unlock_override := -1
 
@@ -129,7 +129,7 @@ static func patch_actors(t: Array) -> void:
 	var r: Dictionary = (t[TEMPLATE_ACTOR] as Dictionary).duplicate(true)
 	r.id = ACTOR
 	r._gojo = true
-	r.name = "五条悟"
+	r.name = XTextFix.actor_name(ACTOR, "五条悟")
 	r.nickname = "最强"
 	r.classId = CLASS
 	r.battlerName = "Codex_Gojo_SV"
@@ -205,7 +205,7 @@ static func patch_skills(t: Array) -> void:
 		_set_module(r, "gojo" if id in [PURPLE_IN, PURPLE_OUT] else XTianqiSkills.MODULE)
 		r._tq_always = true  # T209 R1 P1-1：底表只放底子，卡（XTianqiSkills.build）只在 XDB.rec → XTianqiSkills.rec 套一次（不看 PHASE4），reload_table 后随 TUNE_* 切换
 		t[id] = r
-	var passives := {SIX_EYES: ["六眼", icon(11)], INFINITY: ["无下限", icon(12)], STRONGEST: ["最强", icon(13)], AWAKENING: ["黑闪觉醒：五条悟", icon(14)],
+	var passives := {SIX_EYES: ["六眼", icon(11)], INFINITY: ["无下限", icon(12)], STRONGEST: ["最强", icon(13)], AWAKENING: ["黑闪觉醒：" + XTextFix.actor_name(ACTOR, "五条悟"), icon(14)],
 		ADV[0]: ["进阶·茈收束", icon(15)], ADV[1]: ["进阶·茈贯穿", icon(16)], ADV[2]: ["进阶·自动反转", icon(17)], ADV[3]: ["进阶·领域强化", icon(10)]}
 	for id in passives:
 		var r: Dictionary = (t[TEMPLATE_PASSIVE] as Dictionary).duplicate(true)
@@ -226,10 +226,11 @@ static func patch_armors(t: Array) -> void:
 	r.id = ARMOR
 	r._gojo = true
 	r.name = "眼罩"
-	r.description = "法宝\n五条悟遮住六眼的黑色眼罩。"
+	var name := XTextFix.actor_name(ACTOR, "五条悟")
+	r.description = "法宝\n%s遮住六眼的黑色眼罩。" % name
 	r.iconIndex = icon(18)
 	r.traits = []
-	r.note = "<req_level:1>\n<req_actors: %d>\n<pos=APs text=\\c[2]专属：五条悟 size=18 color=rgba(255,255,255,1) line=false align=0>\n<pos=APs text=\\c[1]特效：虚式「茈」结算后，返还苍印、赫印各1 size=18 color=rgba(255,255,255,1) line=false align=0>" % ACTOR
+	r.note = "<req_level:1>\n<req_actors: %d>\n<pos=APs text=\\c[2]专属：%s size=18 color=rgba(255,255,255,1) line=false align=0>\n<pos=APs text=\\c[1]特效：虚式「茈」结算后，返还苍印、赫印各1 size=18 color=rgba(255,255,255,1) line=false align=0>" % [ACTOR, name]
 	r.meta = XTianqiSkills.parse_meta(r.note)
 	if r.get("equipment") is Dictionary:
 		r.equipment.requirements = {"actors": [ACTOR]}
@@ -296,9 +297,9 @@ static func patch_states(t: Array) -> void:
 		if not _free(t, id, "状态"):
 			return
 	var names := {ST_BLUE: "苍印·一", ST_BLUE + 1: "苍印·二", ST_BLUE + 2: "苍印·三", ST_RED: "赫印·一", ST_RED + 1: "赫印·二", ST_RED + 2: "赫印·三",
-		ST_DOMAIN: "无量空处", ST_AWAKE: "觉醒：五条悟", ST_SLOW: "赫·减速"}
+		ST_DOMAIN: "无量空处", ST_AWAKE: "觉醒：" + XTextFix.actor_name(ACTOR, "五条悟"), ST_SLOW: "赫·减速"}
 	var icons := {ST_BLUE: icon(3), ST_RED: icon(4), ST_DOMAIN: icon(10), ST_AWAKE: icon(14), ST_SLOW: 828}
-	var notes := {ST_DOMAIN: "无量空处：用苍类赫印另＋1、用赫类苍印另＋1；敌人行动前判信息过载；五条悟的术式必中。",
+	var notes := {ST_DOMAIN: "无量空处：用苍类赫印另＋1、用赫类苍印另＋1；敌人行动前判信息过载；%s的术式必中。" % XTextFix.actor_name(ACTOR, "五条悟"),
 		ST_AWAKE: "直接术式伤害×1.2，黑闪概率＋15%；咒力打击给较少的那种印＋1。持续后续3个完整回合。", ST_SLOW: "速度－10%"}
 	for id in names:
 		var r: Dictionary = (t[2640] as Dictionary).duplicate(true)  # 宿傩「看破·一」：没有特性、战斗结束去掉的显示状态
@@ -338,7 +339,7 @@ static func patch_plugins(p: Dictionary) -> void:
 			push_error("XGojo: 进阶行 %s 已被占用" % key)
 			return
 		var r: Array = rows[i]
-		adv[key] = JSON.stringify({"AdvancedName": "五条悟%s" % ["一阶", "二阶", "三阶", "四阶"][i], "AdvancedActNum": str(r[0]), "AdvancedActNumMaX": "4",
+		adv[key] = JSON.stringify({"AdvancedName": XTextFix.actor_name(ACTOR, "五条悟") + ["一阶", "二阶", "三阶", "四阶"][i], "AdvancedActNum": str(r[0]), "AdvancedActNumMaX": "4",
 			"AdvancedActId": str(ACTOR), "AdvancedActLevel": str(r[1]), "AdvancedGold": str(r[2]), "AdvancedItem": r[3],
 			"AdvancedSkiId": "[%d,%d]" % [r[4], ADV[i]], "AdvancedForId": "[]", "AdvancedNote": "\"\""})
 

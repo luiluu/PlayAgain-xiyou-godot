@@ -266,6 +266,10 @@ static func view(obj: Dictionary, rows: Array, list_costs := false) -> Array:
 	for t in texts:
 		extra[t] = true
 	var copy = COPIES.get(id)
+	if copy != null and XTextFix.tq_on():
+		var name := XTextFix.actor_name(108, "奈叶")
+		copy = {"source": copy.source.map(func(t): return t.replace("奈叶", name)),
+			"rows": copy.rows.map(func(t): return t.replace("奈叶", name))}
 	var use_copy: bool = copy != null and texts == copy.source
 	var header := []
 	var info := []

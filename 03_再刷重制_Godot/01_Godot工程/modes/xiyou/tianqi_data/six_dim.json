@@ -1375,7 +1375,7 @@
    "support": "C"
   },
   "24": {
-   "name": "克比",
+   "name": "粉毛新兵",
    "class": "weak",
    "output": "E",
    "survive": "D",
@@ -1385,7 +1385,7 @@
    "support": "C"
   },
   "25": {
-   "name": "雷加尔",
+   "name": "老狗萨",
    "class": "weak",
    "output": "E",
    "survive": "C",
@@ -1495,7 +1495,7 @@
    "support": "B"
   },
   "36": {
-   "name": "至尊宝",
+   "name": "斧头帮主",
    "class": "weak",
    "output": "C",
    "survive": "E",
@@ -1556,7 +1556,7 @@
    "support": "C"
   },
   "42": {
-   "name": "布兰德瓦登",
+   "name": "战马哥",
    "class": "weak",
    "output": "D",
    "survive": "C",
@@ -1606,7 +1606,7 @@
    "support": "B"
   },
   "47": {
-   "name": "酒剑仙",
+   "name": "醉剑老道",
    "class": "strong",
    "output": "D",
    "survive": "D",
@@ -1616,7 +1616,7 @@
    "support": "C"
   },
   "48": {
-   "name": "莉娜",
+   "name": "火女",
    "class": "weak",
    "output": "C",
    "survive": "D",
@@ -1656,7 +1656,7 @@
    "support": "B"
   },
   "52": {
-   "name": "孙悟空",
+   "name": "赛亚猴",
    "class": "weak",
    "output": "C",
    "survive": "D",
@@ -1706,7 +1706,7 @@
    "support": "SS"
   },
   "57": {
-   "name": "龙马",
+   "name": "刀神武士",
    "class": "weak",
    "output": "D",
    "survive": "E",
@@ -1836,7 +1836,7 @@
    "support": "B"
   },
   "70": {
-   "name": "紫霞仙子",
+   "name": "日月灯芯",
    "class": "strong",
    "output": "A",
    "survive": "D",
@@ -1876,7 +1876,7 @@
    "support": "C"
   },
   "74": {
-   "name": "陈",
+   "name": "熊猫酒仙",
    "class": "weak",
    "output": "C",
    "survive": "C",
@@ -1896,7 +1896,7 @@
    "support": "B"
   },
   "76": {
-   "name": "白晶晶",
+   "name": "白骨小师妹",
    "class": "weak",
    "output": "D",
    "survive": "D",
@@ -1926,7 +1926,7 @@
    "support": "B"
   },
   "79": {
-   "name": "裴钱",
+   "name": "小黑炭",
    "class": "weak",
    "output": "C",
    "survive": "D",
@@ -1986,7 +1986,7 @@
    "support": "S"
   },
   "85": {
-   "name": "爱莉",
+   "name": "粉红妖精",
    "class": "strong",
    "output": "C",
    "survive": "D",
@@ -2006,7 +2006,7 @@
    "support": "A"
   },
   "87": {
-   "name": "张无忌",
+   "name": "明教大教主",
    "class": "weak",
    "output": "D",
    "survive": "D",
@@ -2047,7 +2047,7 @@
    "support": "C"
   },
   "91": {
-   "name": "宇智波·鼬",
+   "name": "一打七",
    "class": "weak",
    "output": "C",
    "survive": "C",
@@ -2057,7 +2057,7 @@
    "support": "B"
   },
   "92": {
-   "name": "八重樱",
+   "name": "嘤嘤怪",
    "class": "strong",
    "output": "B",
    "survive": "C",
@@ -2067,7 +2067,7 @@
    "support": "C"
   },
   "93": {
-   "name": "炭治郎",
+   "name": "头柱",
    "class": "strong",
    "output": "B",
    "survive": "C",
@@ -2087,7 +2087,7 @@
    "support": "C"
   },
   "95": {
-   "name": "三笠",
+   "name": "三爷",
    "class": "super",
    "output": "S",
    "survive": "B",
@@ -2097,7 +2097,7 @@
    "support": "C"
   },
   "96": {
-   "name": "朵莉亚",
+   "name": "人鱼歌姬",
    "class": "strong",
    "output": "D",
    "survive": "B",
@@ -2167,7 +2167,7 @@
    "support": "A"
   },
   "103": {
-   "name": "波风水门",
+   "name": "黄闪",
    "class": "weak",
    "output": "D",
    "survive": "E",
@@ -2177,7 +2177,7 @@
    "support": "C"
   },
   "104": {
-   "name": "天虎令",
+   "name": "虎面剑客",
    "class": "strong",
    "output": "A",
    "survive": "D",
@@ -2187,7 +2187,7 @@
    "support": "C"
   },
   "105": {
-   "name": "唐三",
+   "name": "三哥",
    "class": "weak",
    "output": "C",
    "survive": "E",
@@ -2197,7 +2197,7 @@
    "support": "A"
   },
   "106": {
-   "name": "甘雨",
+   "name": "椰羊",
    "class": "strong",
    "output": "B",
    "survive": "C",
@@ -2207,7 +2207,7 @@
    "support": "C"
   },
   "107": {
-   "name": "钟离",
+   "name": "岩王爷",
    "class": "super",
    "output": "A",
    "survive": "S",
@@ -2217,7 +2217,7 @@
    "support": "A"
   },
   "108": {
-   "name": "奈叶",
+   "name": "白色恶魔",
    "class": "super",
    "output": "S",
    "survive": "S",
@@ -2237,7 +2237,7 @@
    "support": "E"
   },
   "115": {
-   "name": "蕾姆",
+   "name": "蓝毛女仆",
    "class": "strong",
    "output": "A",
    "survive": "E",
@@ -2257,7 +2257,7 @@
    "support": "S"
   },
   "118": {
-   "name": "高松灯",
+   "name": "咕咕嘎嘎",
    "class": "strong",
    "output": "A",
    "survive": "A",
@@ -2267,7 +2267,7 @@
    "support": "B"
   },
   "119": {
-   "name": "千早爱音",
+   "name": "糖粉毛",
    "class": "strong",
    "output": "D",
    "survive": "B",
@@ -2277,7 +2277,7 @@
    "support": "A"
   },
   "120": {
-   "name": "希格雯",
+   "name": "护士长",
    "class": "strong",
    "output": "A",
    "survive": "B",
@@ -2287,7 +2287,7 @@
    "support": "A"
   },
   "122": {
-   "name": "南宫恨·狂刀",
+   "name": "黑白狂人·狂刀",
    "class": "super",
    "output": "A",
    "survive": "A",
@@ -2297,7 +2297,7 @@
    "support": "C"
   },
   "123": {
-   "name": "南宫恨·武道",
+   "name": "黑白狂人·武道",
    "class": "strong",
    "output": "A",
    "survive": "A",
@@ -2307,7 +2307,7 @@
    "support": "B"
   },
   "124": {
-   "name": "伊莉雅",
+   "name": "银发小魔导",
    "class": "strong",
    "output": "A",
    "survive": "S",
@@ -2317,7 +2317,7 @@
    "support": "B"
   },
   "127": {
-   "name": "小铃兰",
+   "name": "我们的光",
    "class": "strong",
    "output": "D",
    "survive": "B",
@@ -2327,7 +2327,7 @@
    "support": "S"
   },
   "128": {
-   "name": "张楚岚",
+   "name": "不摇碧莲",
    "class": "strong",
    "output": "C",
    "survive": "B",
@@ -2337,7 +2337,7 @@
    "support": "B"
   },
   "129": {
-   "name": "要乐奈",
+   "name": "抹茶野猫",
    "class": "strong",
    "output": "B",
    "survive": "A",
@@ -2347,7 +2347,7 @@
    "support": "B"
   },
   "130": {
-   "name": "长崎爽世",
+   "name": "重力贝斯",
    "class": "strong",
    "output": "D",
    "survive": "A",
@@ -2357,7 +2357,7 @@
    "support": "SS"
   },
   "131": {
-   "name": "椎名立希",
+   "name": "压力怪",
    "class": "strong",
    "output": "C",
    "survive": "B",
@@ -2377,7 +2377,7 @@
    "support": "C"
   },
   "142": {
-   "name": "天海麒麟星",
+   "name": "半边天",
    "class": "strong",
    "output": "A",
    "survive": "S",
@@ -2397,7 +2397,7 @@
    "support": "C"
   },
   "147": {
-   "name": "天剑 非天",
+   "name": "狂千年",
    "class": "strong",
    "output": "B",
    "survive": "A",
@@ -2407,7 +2407,7 @@
    "support": "C"
   },
   "148": {
-   "name": "黑崎一护",
+   "name": "草莓",
    "class": "strong",
    "output": "C",
    "survive": "C",
@@ -2417,7 +2417,7 @@
    "support": "C"
   },
   "149": {
-   "name": "祈求者",
+   "name": "钢琴卡",
    "class": "strong",
    "output": "A",
    "survive": "B",
@@ -2427,7 +2427,7 @@
    "support": "B"
   },
   "150": {
-   "name": "桐人",
+   "name": "封弊剑士",
    "class": "strong",
    "output": "B",
    "survive": "D",
@@ -2437,7 +2437,7 @@
    "support": "C"
   },
   "151": {
-   "name": "亚斯娜",
+   "name": "闪光剑姬",
    "class": "strong",
    "output": "B",
    "survive": "D",
@@ -2447,7 +2447,7 @@
    "support": "C"
   },
   "152": {
-   "name": "徐凤年",
+   "name": "北凉柿子",
    "class": "super",
    "output": "C",
    "survive": "C",
@@ -2457,7 +2457,7 @@
    "support": "C"
   },
   "153": {
-   "name": "惠惠",
+   "name": "爆裂丫头",
    "class": "strong",
    "output": "A",
    "survive": "B",
@@ -2467,7 +2467,7 @@
    "support": "E"
   },
   "154": {
-   "name": "夏娜",
+   "name": "菠萝包",
    "class": "strong",
    "output": "A",
    "survive": "D",
@@ -2507,7 +2507,7 @@
    "support": "C"
   },
   "159": {
-   "name": "五河琴里",
+   "name": "棒棒糖司令",
    "class": "strong",
    "output": "A",
    "survive": "A",
@@ -2547,7 +2547,7 @@
    "support": "C"
   },
   "164": {
-   "name": "贝吉特",
+   "name": "超级逼王",
    "class": "strong",
    "output": "C",
    "survive": "A",
@@ -2557,7 +2557,7 @@
    "support": "C"
   },
   "165": {
-   "name": "李逍遥",
+   "name": "客栈小二",
    "class": "strong",
    "output": "B",
    "survive": "B",
@@ -2587,7 +2587,7 @@
    "support": "B"
   },
   "169": {
-   "name": "黄泉",
+   "name": "路痴刀客",
    "class": "super",
    "output": "S",
    "survive": "A",
@@ -2597,7 +2597,7 @@
    "support": "C"
   },
   "170": {
-   "name": "镜流",
+   "name": "眼罩师祖",
    "class": "strong",
    "output": "A",
    "survive": "B",
@@ -2607,7 +2607,7 @@
    "support": "B"
   },
   "171": {
-   "name": "伏黑甚尔",
+   "name": "爹咪",
    "class": "super",
    "output": "S",
    "survive": "A",
@@ -2617,7 +2617,7 @@
    "support": "C"
   },
   "172": {
-   "name": "宿傩",
+   "name": "大爷",
    "class": "super",
    "output": "A",
    "survive": "A",
@@ -2627,7 +2627,7 @@
    "support": "C"
   },
   "173": {
-   "name": "饿狼",
+   "name": "英雄猎人",
    "class": "super",
    "output": "SS",
    "survive": "A",
@@ -2688,7 +2688,7 @@
    "support": "C"
   },
   "179": {
-   "name": "流萤",
+   "name": "机甲女友",
    "class": "super",
    "output": "A",
    "survive": "S",
@@ -2698,7 +2698,7 @@
    "support": "E"
   },
   "180": {
-   "name": "五条悟",
+   "name": "5t5",
    "class": "super",
    "output": "S",
    "survive": "A",

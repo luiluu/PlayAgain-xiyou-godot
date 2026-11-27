@@ -170,7 +170,7 @@ func _put_glyphs(types: Array) -> void:
 static func glyph_of(type_name: String, used := []) -> String:
 	if type_name == "":
 		return "他"
-	var g := str(TYPE_GLYPH.get(type_name, type_name.substr(0, 1)))
+	var g := "专" if type_name == XTextFix.actor_name(124, "伊莉雅") + "被动" else str(TYPE_GLYPH.get(type_name, type_name.substr(0, 1)))
 	if used.has(g):   # 撞字：从第 2 字起找没用过的
 		for i in range(1, type_name.length()):
 			if not used.has(type_name.substr(i, 1)):

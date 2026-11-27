@@ -4548,15 +4548,17 @@ def check_suit_template(_args) -> bool:
 
 ACTOR_NOTES_FORBIDDEN = re.compile(
     r'[0-9%×*]|测试角色|定制角色|特殊角色|图像已接入|繁星版|纳西妲版本|高爆版|隐藏加成'
-    r'|候选池|暂未|编入|图鉴|收藏|模板|玩法'
+    r'|候选池|图鉴|玩法'
     r'|(?<![A-Za-z])(?:TP|MP|HP)(?![A-Za-z])'
 )
+ACTOR_NOTES_STORY_META = re.compile(r'暂未(?:被)?编入天启篇|(?:角色|人物|战斗)模板')
+ACTOR_NOTES_TRAIT_META = re.compile(r'收藏|模板|编入|暂未')
 # 特点行额外禁「倍」（防倍伤／倍增／双倍等倍率说法）；故事行保留 Kyo 审定样稿 127 小铃兰「九倍的温柔与坚强」
 ACTOR_NOTES_TRAIT_FORBIDDEN = re.compile(r'倍')
 ACTOR_NOTES_HIDDEN = {141, 157, 160, 161, 166}  # 同 core/imported_balance.gd（146 苍龙、152 徐凤年已解放）
 
 
-def actor_notes_rules(table: dict, actors_db=None) -> list:
+def actor_notes_rules(table: dict, actors_db=None, actor_names=None) -> list:
     """actor_notes.json（T556，天启篇人物图鉴全员备注，Kyo 11-27 事项 84 定稿）：
     两行无前缀（story 一两句故事＋trait 角色定位与特点），禁止内部数值、编号与出戏元词；
     转换产物 Actors.json 在时核对全部 163 位天启篇图鉴可见角色齐全且名字一致。"""
@@ -4586,17 +4588,24 @@ def actor_notes_rules(table: dict, actors_db=None) -> list:
             check('actors.%s.%s 不含换行' % (k, fld), '\n' not in txt and '\r' not in txt, txt)
             check('actors.%s.%s 长度在 15～65 字内' % (k, fld), 15 <= len(txt) <= 65, len(txt))
             check('actors.%s.%s 以中文句号结尾' % (k, fld), txt.endswith('。'), txt[-4:])
-            m = ACTOR_NOTES_FORBIDDEN.search(txt)
+            meta = ACTOR_NOTES_STORY_META if fld == 'story' else ACTOR_NOTES_TRAIT_META
+            m = ACTOR_NOTES_FORBIDDEN.search(txt) or meta.search(txt)
             check('actors.%s.%s 不含内部数值编号与禁用词' % (k, fld), m is None, m.group(0) if m else None)
             if fld == 'trait':
                 m2 = ACTOR_NOTES_TRAIT_FORBIDDEN.search(txt)
                 check('actors.%s.trait 不含倍率词「倍」' % k, m2 is None, m2.group(0) if m2 else None)
+    names = actor_names or {}
+    for sid, name in names.items():
+        check('actors.%s 名字与天启篇命名表一致' % sid,
+              isinstance(actors.get(sid), dict) and actors[sid].get('name') == name, name)
     if isinstance(actors_db, list):
         want = {}
         for rec in actors_db:
             if isinstance(rec, dict) and rec.get('name') and int(rec.get('id', 0)) not in ACTOR_NOTES_HIDDEN:
                 want[str(int(rec['id']))] = str(rec['name'])
         want['180'] = '五条悟'  # 天启篇动态注册（core/gojo.gd）
+        for sid in want.keys() & names.keys():
+            want[sid] = names[sid]
         missing = sorted(set(want) - set(actors), key=int)
         extra = sorted(set(actors) - set(want), key=lambda x: int(x) if x.isdigit() else 999999)
         check('覆盖全部天启篇图鉴可见角色', not missing, missing[:10])
@@ -4611,7 +4620,108 @@ def actor_notes_rules(table: dict, actors_db=None) -> list:
 def check_actor_notes(_args) -> bool:
     actors_path = PROJECT / 'modes' / 'xiyou' / 'generated' / 'db' / 'Actors.json'
     actors_db = json.loads(actors_path.read_text(encoding='utf-8')) if actors_path.is_file() else None
-    return _run_table('actor_notes.json', lambda t: actor_notes_rules(t, actors_db))
+    names = _load_opt('actor_names.json').get('names', {})
+    return _run_table('actor_notes.json', lambda t: actor_notes_rules(t, actors_db, names))
+
+
+def actor_names_rules(table: dict) -> list:
+    bad = []
+    names = table.get('names')
+    if not isinstance(names, dict) or len(names) != 57:
+        return [('names 应有 57 个人物新名', type(names).__name__)]
+    if any(not k.isdecimal() or int(k) < 1 or not isinstance(v, str) or not v.strip() for k, v in names.items()):
+        return [('names 须为角色号到非空文字的表', names)]
+    saved = table.get('saved_names')
+    if not isinstance(saved, dict) or saved.keys() != names.keys() or any(
+        not isinstance(row, list) or not row or any(not isinstance(v, str) or not v for v in row)
+        for row in saved.values()
+    ):
+        bad.append(('saved_names 须逐角色列出可识别的旧名', None))
+
+    def check_pairs(label, pairs):
+        if not isinstance(pairs, list):
+            bad.append((label + ' 须为替换数组', pairs))
+            return
+        for pair in pairs:
+            if not isinstance(pair, list) or len(pair) != 2 or any(not isinstance(x, str) or not x for x in pair):
+                bad.append((label + ' 须为 [原文字, 新文字]', pair))
+                continue
+            if any(ref not in names for ref in re.findall(r'\{([^{}]+)\}', pair[1])):
+                bad.append((label + ' 引用了不存在的角色', pair))
+
+    for section in ('tables', 'advance', 'wardrobe'):
+        rows = table.get(section)
+        if not isinstance(rows, dict) or not rows:
+            bad.append((section + ' 须为非空字典', rows))
+            continue
+        for key, row in rows.items():
+            if section == 'advance':
+                check_pairs(key, row)
+                continue
+            if not isinstance(row, dict) or not row:
+                bad.append((section + '.' + key + ' 须为非空字典', row))
+                continue
+            for path, pairs in row.items():
+                check_pairs(key + '/' + path, pairs)
+    return bad
+
+
+# T562：skill_rework.json 写的是天启篇卡面字面文字，不过 actor_names.json；别的车道合进来时容易把原名带回（T528 合并带回「超级贝吉特」）。
+ACTOR_NAMES_REWORK_HOMOGRAPHS = ('黄泉路见',)  # 81 申公豹「道友请上路」的效果名，与 169 黄泉无关
+
+
+def actor_names_leftover_rules(table: dict, rework) -> list:
+    """skill_rework.json 里玩家可见的字段（跳过 _ 开头的注释键与 note_* 正则）不应再出现已改名角色的原名。
+    单字原名（74 陈）太容易误伤，只在两种结构里查：本角色的技能（skills.*.actor 是它）里任何可见文字，和「觉醒／进阶／羁绊:名」这类标签。
+    note_add 是要加进备注的字面文字，只查其中 <pos … text=… size=…> 的展示文字，内部标签照旧跳过（T562 P3-1）。"""
+    if not isinstance(rework, dict):
+        return []
+    saved = table.get('saved_names') or {}
+    olds = sorted({o for row in saved.values() if isinstance(row, list)
+                   for o in row if isinstance(o, str) and len(o) >= 2}, key=len, reverse=True)
+    singles = {str(aid): o for aid, row in saved.items() if isinstance(row, list)
+               for o in row if isinstance(o, str) and len(o) == 1}
+    if not olds and not singles:
+        return []
+    pat = re.compile('|'.join(map(re.escape, olds))) if olds else None
+    tag_pat = re.compile('(?:觉醒|进阶|羁绊)\\s*[:：·]\\s*(%s)' % '|'.join(map(re.escape, singles.values()))) if singles else None
+    pos_pat = re.compile(r'<pos=\S+\s+text=([\s\S]*?)\s+size=')
+    bad = []
+
+    def check(text, raw, path, owner):
+        for h in ACTOR_NAMES_REWORK_HOMOGRAPHS:
+            text = text.replace(h, '')
+        m = pat.search(text) if pat else None
+        if m is None and tag_pat:
+            m = tag_pat.search(text)
+            if m:
+                bad.append(('skill_rework%s 仍写原名「%s」（天启篇改名 D294，改成 actor_names.json 的新名）' % (path, m.group(1)), raw[:60]))
+                return
+        if m is None and owner in singles and singles[owner] in text:
+            bad.append(('skill_rework%s 仍写原名「%s」（天启篇改名 D294，改成 actor_names.json 的新名）' % (path, singles[owner]), raw[:60]))
+            return
+        if m:
+            bad.append(('skill_rework%s 仍写原名「%s」（天启篇改名 D294，改成 actor_names.json 的新名）' % (path, m.group(0)), raw[:60]))
+
+    def walk(x, path, owner):
+        if isinstance(x, str):
+            check(x, x, path, owner)
+        elif isinstance(x, list):
+            for i, v in enumerate(x):
+                walk(v, '%s/%d' % (path, i), owner)
+        elif isinstance(x, dict):
+            if 'actor' in x and not isinstance(x.get('actor'), (dict, list)):
+                owner = str(x.get('actor'))
+            for k, v in x.items():
+                k = str(k)
+                if k == 'note_add' and isinstance(v, str):
+                    for pm in pos_pat.finditer(v):
+                        check(pm.group(1), v, '%s/%s' % (path, k), owner)
+                elif not k.startswith('_') and not k.startswith('note_'):
+                    walk(v, '%s/%s' % (path, k), owner)
+
+    walk(rework, '', '')
+    return bad
 
 
 # 每张表一个检查函数：(名字, 函数(args) -> 是否通过)。词条表那张单加 affix_table 时往这里登记。
@@ -4665,6 +4775,8 @@ CHECKS = [
     ('gear_elem_amp', check_gear_elem_amp),
     ('suit_template', check_suit_template),
     ('actor_notes', check_actor_notes),
+    ('actor_names', lambda _args: _run_table('actor_names.json', lambda t: actor_names_rules(t)
+                                             + actor_names_leftover_rules(t, _load_opt('skill_rework.json')))),
 ]
 
 

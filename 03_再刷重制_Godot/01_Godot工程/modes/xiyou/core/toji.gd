@@ -107,7 +107,6 @@ const BALANCE_AT_70 := 0.188208
 ## repair 的 unlock 表：技能 → 解锁等级
 const UNLOCK := {10203: 1, 10205: 1, 10206: 10, 10207: 20, 10208: 30, 10209: 35, 10212: 1, 10213: 15, 10214: 30, 10215: 40,
 	10216: 1, 10217: 15, 10218: 30, 10219: 40}
-const RECRUIT_TEXT := ["小伙伴 伏黑甚尔 加入队伍", "获得并装备专属法宝：藏兵咒灵"]
 
 
 ## ---- 天启篇（技能重构第七期，稿子 171 号）：只在 XTianqiSkills.cards_on() 时走 ----
@@ -778,4 +777,4 @@ static func recruit(s: XState) -> Array:
 		a.equips[slot] = item
 		a.refresh_passive()  # changeEquip 刷新特性与被动
 	s.add_actor(ACTOR)
-	return RECRUIT_TEXT.duplicate()
+	return ["小伙伴 %s 加入队伍" % XTextFix.actor_name(ACTOR, "伏黑甚尔"), "获得并装备专属法宝：藏兵咒灵"]

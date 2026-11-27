@@ -1033,7 +1033,7 @@
   {
    "kind": "state_shield",
    "id": 1180,
-   "name": "椎名立希进阶",
+   "name": "压力怪进阶",
    "orig": "<ShieldEffect:150>",
    "new": {
     "mode": "raw",
@@ -1614,7 +1614,7 @@
   {
    "kind": "skill_fixed_heal",
    "id": 6240,
-   "name": "龙马复活术",
+   "name": "刀神武士复活术",
    "enemy": false,
    "orig": "1000",
    "new": {
@@ -13513,7 +13513,7 @@
   {
    "kind": "state_shuxing",
    "id": 1800,
-   "name": "奈叶角色血量",
+   "name": "白色恶魔角色血量",
    "orig": [
     1,
     0,
@@ -14149,7 +14149,7 @@
   {
    "kind": "state_shuxing",
    "id": 2574,
-   "name": "非天逆斩",
+   "name": "狂千年逆斩",
    "orig": [
     0,
     0,

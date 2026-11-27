@@ -250,6 +250,7 @@ static func _fresh_seed() -> int:
 ## XDungeon.battle 记最近一场事件战斗的胜负与神秘珠／种族补给是否已领，不随存档。
 static func _become_current(s: XState) -> void:
 	current = s
+	XTextFix.end_load()
 	XTextFix.sync_mode()  # D126：西游档／天启篇的去西游化文字口径不同，换档重读表
 	XDungeon.battle = {}
 	XHonghuang.power_battle = {}
@@ -909,7 +910,7 @@ func to_dict() -> Dictionary:
 		if x2.class_id != int(x2.data().get("classId", 0)) or not x2.class_exp.is_empty():
 			a[str(id)]["classId"] = x2.class_id
 			a[str(id)]["classExp"] = x2.class_exp
-		if x2.nickname != str(x2.data().get("nickname", "")):
+		if x2.nickname_saved or x2.nickname != str(x2.data().get("nickname", "")):
 			a[str(id)]["nickname"] = x2.nickname
 		if not x2.looks.is_empty():
 			a[str(id)]["looks"] = x2.looks
@@ -928,6 +929,9 @@ static func from_dict(d: Dictionary) -> XState:
 	# dev.099 once persisted strict engine-specific RNG state. Ignore that obsolete
 	# field even across engine upgrades; fresh runtime streams start lazily.
 	var s := XState.new()
+	# T562 P1-1：按目标存档的档位读表（没存称号的角色取目标档默认称号，免得再存时把另一档默认写成显式值），_become_current 里收回
+	var tq_flags = d.get("flags", {}).get("tianqi") if d.get("flags") is Dictionary else null
+	XTextFix.begin_load(tq_flags is Dictionary and int(tq_flags.get("rules", 0)) >= 1)
 	s.difficulty = int(d.difficulty)
 	for id_s in d.actors:
 		var row: Dictionary = d.actors[id_s]
@@ -937,7 +941,9 @@ static func from_dict(d: Dictionary) -> XState:
 		for k in row.get("classExp", {}):
 			x2.class_exp[int(k)] = int(row.classExp[k])
 		if row.has("nickname"):
+			# T562 R3：存什么读什么，不按档位改存值（换名只在显示层 display_nickname）；再存时原样写回
 			x2.nickname = str(row.nickname)
+			x2.nickname_saved = true
 		if row.get("looks") is Dictionary:
 			x2.set_looks(row.looks)
 		x2.change_level(int(row.level))

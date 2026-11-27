@@ -337,8 +337,9 @@ static func roll_advance_stone(s: XState, who: Dictionary) -> String:
 		return ""
 	if s.item_count(int(who.stone)) >= need or MVInterpreter.random_int(0, 49, s) != 0:
 		return ""
-	s.gain_item(int(who.stone), 1)
-	return "获得了 %s！" % ("甚尔进阶石" if who == TOJI else "咒王进阶石")
+	var id := int(who.stone)
+	s.gain_item(id, 1)
+	return "获得了 %s！" % str(XDB.rec("Items", id).get("name", "甚尔进阶石" if who == TOJI else "咒王进阶石"))
 
 
 # ---- 秘境抽奖（installNativeMijingDrawRuntime：CE1440 特殊被动书等） ----

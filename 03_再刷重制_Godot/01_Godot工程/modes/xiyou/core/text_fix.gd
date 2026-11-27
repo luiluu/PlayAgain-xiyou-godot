@@ -29,8 +29,9 @@ static var OVERRIDES := true
 
 const RULES_PATH := "res://modes/xiyou/text_fix/rules.json"
 const OVERRIDES_PATH := "res://modes/xiyou/text_fix/overrides.json"
+const ACTOR_NAMES_PATH := "res://modes/xiyou/tianqi_data/actor_names.json"
 ## 改了修正逻辑（不只是 rules／overrides 数据）就加 1，让旧的修正缓存作废（导出版脚本源码可能读不到，不能只靠源码哈希）
-const CACHE_VER := 4
+const CACHE_VER := 5
 const TABLES := ["Actors", "Classes", "Skills", "Items", "Weapons", "Armors", "Enemies", "States", "Troops", "CommonEvents",
 	"MapInfos", "EquipSuits", "Runewords"]
 const TEXT_KEYS := ["name", "nickname", "profile", "description", "message1", "message2", "message3", "message4"]
@@ -53,6 +54,7 @@ static var _gate: RegEx  # 零宽／繁体／词典任一命中的总预筛
 static var _pos_re: RegEx
 static var _namebox_re: RegEx
 static var _lone_n_re: RegEx
+static var _actor_names = null
 
 
 ## 测试用：一次开关全部（按原版比对时关掉），并清缓存让表重读
@@ -68,7 +70,22 @@ static func set_all(on: bool) -> void:
 
 ## 现在是不是天启篇存档（D126 去西游化词典 tianqi_dict 只在天启篇套用；西游档 1:1 原貌）
 static func tq_on() -> bool:
+	if _loading_tq != null:
+		return bool(_loading_tq)
 	return XState.current != null and XTianqi.active(XState.current)
+
+
+## 读档期间（XState.from_dict 到 _become_current）按目标存档的档位取表：角色 setup 的默认称号等要取目标档的文字，
+## 不能沿用上一档（T562 P1-1：天启档里读西游档会把天启称号带进西游档并在存档时写成显式称号）。
+static var _loading_tq = null
+
+static func begin_load(tq: bool) -> void:
+	_loading_tq = tq
+	sync_mode()
+
+
+static func end_load() -> void:
+	_loading_tq = null
 
 
 ## 存档模式（西游档／天启篇）变了就清缓存让表与地图按新口径重读。
@@ -86,8 +103,181 @@ static func any_on() -> bool:
 ## 清掉 XDB 里受影响的表与地图缓存，下次读按当前开关重新处理
 static func clear_cache() -> void:
 	for k in XDB._tables.keys():
-		if str(k).begins_with("map:") or TABLES.has(k):
+		if str(k).begins_with("map:") or TABLES.has(k) or k in ["System", "Plugins"]:
 			XDB._tables.erase(k)
+
+
+static func actor_names() -> Dictionary:
+	if _actor_names == null:
+		var data = XDB.parse_file(ACTOR_NAMES_PATH) if FileAccess.file_exists(ACTOR_NAMES_PATH) else null
+		_actor_names = data if data is Dictionary else {}
+	return _actor_names
+
+
+## 共用文案按当前存档取名。调用方提供西游档原文，发行空壳也可直接走原文。
+static func actor_name(id: int, original: String) -> String:
+	return str(actor_names().get("names", {}).get(str(id), original)) if tq_on() else original
+
+
+## 按指定档位取角色名（T562 P2-1）：标题态的天启篇阵容、存档格预览等不在目标档里时用。
+## current_text 是现在 Actors 表里的名字；表可能按任一档位口径读过（标题态、刚换档），所以不看 tq_on()，
+## 两个方向都按 actor_names.json 直接换：要天启篇取 names，要西游档且现在是天启名就换回 saved_names 的原名。
+static func actor_name_in(id: int, tq: bool, current_text: String) -> String:
+	var nm = actor_names().get("names", {}).get(str(id))
+	if nm == null:
+		return current_text
+	if tq:
+		return str(nm)
+	var orig: Array = actor_names().get("saved_names", {}).get(str(id), [])
+	return str(orig[0]) if not orig.is_empty() and current_text == str(nm) else current_text
+
+
+## 按指定档位取默认称号（同 actor_name_in，两向都幂等，不看 tq_on()）
+static func actor_nickname_in(id: int, tq: bool, current_text: String) -> String:
+	var pairs: Array = actor_names().get("tables", {}).get("Actors", {}).get("%d/nickname" % id, [])
+	if tq:
+		return rename_actor_reference(current_text, pairs)
+	for pair in pairs:
+		var to := tianqi_actor_text(pair[1])
+		if current_text.contains(to):
+			current_text = current_text.replace(to, pair[0])
+	return current_text
+
+
+## 角色记录按指定档位取名字（读 Actors 表后换口径）
+static func actor_rec_name(id: int, tq: bool) -> String:
+	return actor_name_in(id, tq, str(XDB.rec("Actors", id).get("name", "")))
+
+
+## 天启篇旧装备实例的显示视图（T562 P2-3）：实例自带名字、说明、备注，登记时照抄的是原文模板。
+## 按底号取 actor_names.json 的 Weapons／Armors 定向条目，实例里「改名后正好等于现在的模板行」的行才换（保留词缀、强化等实例自有字段）；
+## 西游档或没有对应条目时原样返回 obj。
+static func gear_actor_view(obj: Dictionary) -> Dictionary:
+	var base_id := int(obj.get("base", 0))
+	if base_id <= 0 or not tq_on():
+		return obj
+	var table := "Weapons" if str(obj.get("kind", "")) == "weapon" else "Armors" if str(obj.get("kind", "")) == "armor" else ""
+	if table == "":
+		return obj
+	var entries: Dictionary = actor_names().get("tables", {}).get(table, {})
+	var prefix := "%d/" % base_id
+	var base := XDB.rec(table, base_id)
+	if base.is_empty():
+		return obj
+	var out := obj
+	for path in entries:
+		if not str(path).begins_with(prefix):
+			continue
+		var parts: PackedStringArray = str(path).split("/")
+		var field := parts[1]
+		if not (obj.get(field) is String) or not (base.get(field) is String):
+			continue
+		var cur: String = out[field]
+		var fixed := cur
+		if parts.size() == 2:
+			var renamed := rename_actor_reference(cur, entries[path])
+			if renamed == str(base[field]):
+				fixed = renamed
+		elif parts.size() == 3 and parts[2].is_valid_int():
+			var want: PackedStringArray = str(base[field]).split("\n")
+			var line := int(parts[2])
+			if line >= want.size():
+				continue
+			var lines: PackedStringArray = cur.split("\n")
+			for i in lines.size():
+				if lines[i] != want[line] and rename_actor_reference(lines[i], entries[path]) == want[line]:
+					lines[i] = want[line]
+			fixed = "\n".join(lines)
+		if fixed != cur:
+			if out == obj:
+				out = obj.duplicate()
+			out[field] = fixed
+	return out
+
+
+## 仅用于明确写入「{角色号}」的天启篇文案。
+static func tianqi_actor_text(text: String) -> String:
+	return text.format(actor_names().get("names", {})) if text.contains("{") else text
+
+
+## 旧天启档可能用事件 320 存过原名。只在显示时处理已登记的原文，保留自定义名字与原存档值。
+static func saved_actor_name(id: int, text: String) -> String:
+	if tq_on() and actor_names().get("saved_names", {}).get(str(id), []).has(text):
+		return actor_name(id, text)
+	return text
+
+
+## 称号显示（T562 R3）：只在天启篇、且整串正好是登记过的西游原称号时换成天启篇称号（事件 324 按原文设的、旧天启档存的）；
+## 含原名的自订长称号（如「裴钱的旧友」）是玩家／事件写的，原样显示。只换显示，不改存值。
+static func actor_nickname(id: int, text: String) -> String:
+	if not tq_on():
+		return text
+	var fields: Dictionary = actor_names().get("tables", {}).get("Actors", {})
+	var pairs: Array = fields.get("%d/nickname" % id, [])
+	for pair in pairs:
+		if text == str(pair[0]):
+			return tianqi_actor_text(pair[1])
+	# R4：整串等于完整西游默认称号（如「丢你蕾姆」「狂龙刀法·南宫恨」）时显示天启篇默认称号；
+	# 默认称号按 Actors 表现值两向换算，不论表按哪个档位口径读过。
+	if not pairs.is_empty():
+		var xy_default := actor_nickname_in(id, false, str(XDB.rec("Actors", id).get("nickname", "")))
+		if xy_default != "" and text == xy_default:
+			return actor_nickname_in(id, true, xy_default)
+	return saved_actor_name(id, text)
+
+
+static func rename_actor_reference(text: String, pairs: Array) -> String:
+	for pair in pairs:
+		if text.contains(pair[0]):
+			text = text.replace(pair[0], tianqi_actor_text(pair[1]))
+	return text
+
+
+## 天启篇定向覆盖。路径从记录号或事件下标开始，末级数字可取备注中的一行。
+static func patch_actor_names(table: String, data) -> void:
+	if not tq_on():
+		return
+	var entries: Dictionary = actor_names().get("tables", {}).get(table, {})
+	for path in entries:
+		var parts: PackedStringArray = path.split("/")
+		var parent = data
+		var key: Variant
+		for depth in parts.size():
+			var part := parts[depth]
+			if parent is Array:
+				key = int(part)
+				if key >= parent.size():
+					break
+			elif parent is Dictionary and parent.has(part):
+				key = part
+			else:
+				break
+			var value = parent[key]
+			if value is String:
+				var last := parts.size() - 1
+				if depth == last:
+					parent[key] = rename_actor_reference(value, entries[path])
+				elif depth + 1 == last and parts[last].is_valid_int():
+					var lines: PackedStringArray = value.split("\n")
+					var line := int(parts[last])
+					if line < lines.size():
+						lines[line] = rename_actor_reference(lines[line], entries[path])
+						parent[key] = "\n".join(lines)
+				break
+			parent = value
+
+
+static func patch_actor_advance(plugins: Dictionary) -> void:
+	if not tq_on():
+		return
+	var rows: Dictionary = actor_names().get("advance", {})
+	var advance: Dictionary = plugins.get("Star_ActorAdvanced", {})
+	for id in rows:
+		var key := "Advanced " + str(id)
+		var row = JSON.parse_string(str(advance.get(key, "null")))
+		if row is Dictionary and row.get("AdvancedName") is String:
+			row.AdvancedName = rename_actor_reference(row.AdvancedName, rows[id])
+			advance[key] = JSON.stringify(row)
 
 
 static func rules() -> Dictionary:
@@ -203,7 +393,7 @@ static func _signature() -> String:
 		var h := HashingContext.new()
 		h.start(HashingContext.HASH_SHA256)
 		h.update(str(CACHE_VER).to_utf8_buffer())
-		for p in [RULES_PATH, OVERRIDES_PATH, "res://modes/xiyou/core/text_fix.gd"]:
+		for p in [RULES_PATH, OVERRIDES_PATH, ACTOR_NAMES_PATH, "res://modes/xiyou/core/text_fix.gd"]:
 			h.update(FileAccess.get_file_as_bytes(p))
 		_sig_files = h.finish().hex_encode().substr(0, 16)
 	return "%d%d%d%d%d%d%d.%s" % [int(STRIP_ZW), int(NAMEBOX), int(PAIRS), int(DICT), int(TRAD), int(OVERRIDES), int(tq_on()), _sig_files]
@@ -216,11 +406,12 @@ static func _warn(msg: String) -> void:
 
 
 static func patch_table(name: String, data) -> void:
-	if not any_on() or not TABLES.has(name) or not data is Array:
+	if not TABLES.has(name) or not data is Array:
 		return
 	if OVERRIDES:
 		for e in overrides().get(name, []):
 			_apply_override(e, data, name)
+	patch_actor_names(name, data)
 	if not (STRIP_ZW or NAMEBOX or PAIRS or DICT or TRAD):
 		return
 	rules()
@@ -251,12 +442,14 @@ static func patch_table(name: String, data) -> void:
 
 
 static func patch_map(map_id: int, data) -> void:
-	if not any_on() or not data is Dictionary:
+	if not data is Dictionary:
 		return
 	_applied_tq = tq_on()
+	var table := "Map%03d" % map_id
 	if OVERRIDES:
-		for e in overrides().get("Map%03d" % map_id, []):
-			_apply_override(e, data, "Map%03d" % map_id)
+		for e in overrides().get(table, []):
+			_apply_override(e, data, table)
+	patch_actor_names(table, data)
 	if not (STRIP_ZW or NAMEBOX or PAIRS or DICT or TRAD):
 		return
 	rules()

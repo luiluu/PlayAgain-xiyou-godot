@@ -489,7 +489,7 @@ func _fill_card(slot: int) -> void:
 				var x := 24.0 + i * 84.0
 				var ft := _face(int(party[i]))
 				card.add_child(_at(_tex(ft, Vector2(56, 56)), Vector2(x + 8, y)) if ft != null else _at(_ring(52), Vector2(x + 10, y + 2)))
-				var nl := _label(str(XDB.rec("Actors", int(party[i])).get("name", "")), "body", XUiSkin.fs(15), XUiSkin.TEXT)
+				var nl := _label(XTextFix.actor_rec_name(int(party[i]), true), "body", XUiSkin.fs(15), XUiSkin.TEXT)
 				nl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 				nl.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
 				nl.clip_text = true
@@ -764,7 +764,7 @@ func _actor_card(id: int, i: int) -> Panel:
 	var tier := XTianqiSkills.tier_of(id, true)
 	var p := _panel(Rect2(0, 0, ACTOR_W, ACTOR_H), XUiSkin.GOLD if tier == XTier.SUPER else Color(0, 0, 0, 0))
 	p.name = "TianqiActor%d" % i
-	var nm := str(rec.get("name", ""))
+	var nm := XTextFix.actor_name_in(id, true, str(rec.get("name", "")))  # 标题态也按天启篇取名（T562 P2-1）
 	p.set_meta("actor_id", id)
 	p.set_meta("actor_name", nm)
 	p.pivot_offset = Vector2(ACTOR_W, ACTOR_H) / 2.0
@@ -778,7 +778,7 @@ func _actor_card(id: int, i: int) -> Panel:
 	nl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	p.add_child(_fit(_at(nl, Vector2(12, 150)) as Label, w - 24, 22))
 	nl.size.y = 36
-	var nick := str(rec.get("nickname", ""))
+	var nick := XTextFix.actor_nickname_in(id, true, str(rec.get("nickname", "")))
 	if nick != "" and nick != nm:   # 称号和名字一样时不画（白起、要乐奈）
 		var kl := _label(nick, "body", XUiSkin.fs(15), XUiSkin.TEXT_2)
 		kl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER

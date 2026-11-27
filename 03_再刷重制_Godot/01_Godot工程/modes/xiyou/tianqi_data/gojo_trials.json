@@ -10,7 +10,7 @@
   "1": {
    "key": "huaiyu",
    "name": "怀玉",
-   "foe": "伏黑甚尔的影子",
+   "foe": "爹咪的影子",
    "sv": "Codex_Toji_SV",
    "hp_units": 16,
    "atk_def": 3,
@@ -23,7 +23,7 @@
   "2": {
    "key": "xinsu",
    "name": "新宿",
-   "foe": "两面宿傩的影子",
+   "foe": "大爷的影子",
    "sv": "Codex_Sukuna_SV",
    "hp_units": 60,
    "atk_def": 3,
