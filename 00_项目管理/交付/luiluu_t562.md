@@ -20,6 +20,13 @@
 - 合并 main（fa8fa07ab）：T528 改了 skill_rework.json 里 127、159 的数值，和本单改名在同几行冲突，取 main 的数值＋本单的新名。T528 还新写了贝吉特 10563～10566 四个形态技能的天启篇卡面（名字「超级贝吉特…」、描述「贝吉特会倒下」），一并改成新名；同时发现小o 的表对这四个技能按「贝吉特」→新名替换，会拼出「超级超级逼王」，改成整段「超级贝吉特」→{164}（5f40d630c 加了断言）。
 - 防回流：`天启篇数据校验.py` 的 actor_names 检查加 `actor_names_leftover_rules`——skill_rework.json 玩家可见字段（跳过 `_` 注释键和 `note_*` 正则）再出现已改名角色的原名就报错，「黄泉路见」等同形字列白名单；单测 `test_skill_rework_leftover_old_names`。
 - 不改：非角色皮肤名（典藏衣橱纳西妲、芙宁娜等，换装卡 6808 一拳超人／6812 佩恩／6816 白胡子）、12 人待确认名单里除 127、85 以外的 10 人、已隐藏的 161 胡桃／166 利姆露、已化名角色称号里的原作名，都留给另单。
+- **R2 返修（cc，c2b6e63bc；小o 核查退回的 5 条）**：
+  - P1-1 存档：`XState.from_dict` 开头按「目标存档」的档位读表（`XTextFix.begin_load`，`_become_current` 里 `end_load` 收回），角色 setup 的默认称号取目标档文字；从天启档读西游档不再把「小黑炭」带进西游档、也不再存成显式称号。已被写坏的旧档（显式称号正好等于另一档位的默认称号，只认 actor_names.json 登记过的称号改名）读档时换回目标档默认称号，下次存档就不再写；玩家自订称号不动。主菜单／状态页称号走的是 `display_nickname()`，读的就是这里的 nickname，跟着对。
+  - P2-1 标题阵容与存档预览：新增 `XTextFix.actor_name_in／actor_nickname_in／actor_rec_name`（按指定档位取名）。开局阵容卡（新旧两版界面）按天启篇取名；`XSave.summary／summary_dict` 的队长名、开局页覆盖确认的阵容、读档页 `XSaveScene` 的头像下名字都按存档自己的档位取名。
+  - P2-2 `XHelpCard.unique_global_keys` 缓存记下算它时的武器、防具表对象，换档重读表后自动重算；两种切换顺序都有断言。
+  - P2-3 `XTextFix.gear_actor_view`：天启篇里装备实例按底号取 actor_names.json 的 Weapons／Armors 定向条目，实例里「改名后正好等于现在模板行」的那一行才换（名字、说明、备注行），词缀、强化等实例自有内容不动、存档值不动；接在 `_content` 与 `detail_rows` 最前面。
+  - P3-1 回流校验：单字原名（74 陈）按两种结构查——本角色技能（skill_rework 里 `actor` 是它）的可见文字、「觉醒／进阶／羁绊:陈」标签；`note_add` 只查 `<pos … text=… size=>` 的展示文字。新单测 `test_skill_rework_leftover_single_char_and_note_add` 五个反例逐个独立。新规则当场抓到一处真漏：5470 琉璃金身说明「身与意合，陈开局时获得」，改为「熊猫酒仙开局时获得」。
+  - 测试：`xiyou_text_fix` 新增 15 条 t562_* 断言（天启→读西游档→存→冷读、写坏档还原、自订称号保留、反向读、两向预览、唯一标签换档、旧天启档 2003 实例经 XSave 读回后卡面新名＋◆唯一＋词缀保留、西游档同实例仍原文）。把 xstate／help_card 两处修复撤掉重跑，P1 断言确实失败（「小黑炭」），恢复后 92/92。
 - 玩家可见：天启篇里 57 名角色换成新名（如 五条悟→5t5、宿傩→大爷、伏黑甚尔→爹咪、小铃兰→我们的光、爱莉→粉红妖精），连带称号、职业、专属技能、号角、进阶石、专武说明、换装卡与对话；西游档不变。
 
 ## 交接板
@@ -55,6 +62,10 @@
 - 云端选测第三轮（5f40d630c，合并 main 后，基准 f7bd82c19）：88 个场景，87 过、1 失败、1 偶发（xiyou_tianqi_followup_kill 单跑通过算过）。https://github.com/luiluu/PlayAgain-xiyou-godot/actions/runs/45930813606
   - 失败的 `xiyou_tianqi_t528` 写死「战斗结束时，贝吉特会倒下」，T528 卡面现在是天启篇新名；改成按 `XTextFix.actor_name(164, …)` 断言（aa495569b），本机 19/19。
 - 云端选测第四轮（aa495569b，基准 5f40d630c）：1/1 通过。https://github.com/luiluu/PlayAgain-xiyou-godot/actions/runs/45932118261
+- R2 本机：`xiyou_text_fix` 92/92；`测试天启篇数据校验.py` 167 个单测 OK；`天启篇数据校验.py` 退出码 0。
+- R2 云端选测第五轮（c2b6e63bc，基准 926737a34）：725 个场景，724 过、1 失败、1 偶发（xiyou_map_hotkeys 单跑通过算过）。https://github.com/luiluu/PlayAgain-xiyou-godot/actions/runs/45947518800
+  - 失败的 `xiyou_text_fix` 断言其实 92/92 全过，是新断言里天启档样本沿用 Kit 的图号 0，存档预览读地图名时日志出「读取失败 maps/Map000.json」，跑测脚本把 ERROR 行算失败；改成给样本真图号 4（6bfc95f2f），本机 92/92、日志无 ERROR。
+- R2 云端选测第六轮（6bfc95f2f，基准 c2b6e63bc）：1/1 通过。https://github.com/luiluu/PlayAgain-xiyou-godot/actions/runs/45951006717
 - 截图：没截（本单验收不要求；名字由 xiyou_text_fix 两档断言覆盖）。
 
 ## 本分支提交
@@ -66,3 +77,5 @@
 - fa8fa07ab 合并 main 进 luiluu/t562：skill_rework 冲突取 main 数值＋天启篇新名；补贝吉特 10563～10566 新名、原名回流校验（cc）
 - 5f40d630c T562 断言贝吉特四个形态技能取新名、不叠「超级」（cc）
 - aa495569b T562 T528 专项的贝吉特代价描述按天启篇新名断言（cc）
+- c2b6e63bc T562 R2：跨档读档称号、存档预览取名、唯一标签缓存、旧天启档装备实例、回流校验单字与 note_add（cc）
+- 6bfc95f2f T562 R2 专项：天启档预览样本给真地图号（cc）
