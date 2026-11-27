@@ -60,7 +60,7 @@
 | `XTianqiGear.elem_amp_view`（多写 `_tq_ea_amp`；ARMOR_FINAL 开时读 final） | 3 处（`git grep -n "elem_amp_view(" -- '*.gd' \| grep -v "func \|tests/"`：`stat_list`、`ui/help_card.gd` 两处） | 调用方 3 处逐处结论：说明卡两处只读 note／meta／yep，多一个私有键无影响；ARMOR_FINAL 默认关，关时行为与 T451 相同（`t451_*` 专项 25/25 照过） |
 | `XTianqiLedger.upgrade_amplify`（加可选参数 `src`，内部改走 `upgrade_holes`） | 1 处（`git grep -n "upgrade_amplify(" -- '*.gd' \| grep -v "func \|tests/"`） | 调用方 1 处逐处结论：`passive_buckets` 不传 `src`＝全部，与原来同值（`t530_ledger_core` 59/59、`t532_crystal_rune_split_per_hole` 验 enhance 合计） |
 | `XTianqiLedger.passive_buckets`（返回多 `enhanceSplit` 键） | 1 处（`core/actor.gd` 存进 `bySource`） | 调用方 1 处逐处结论：读 `bySource` 的地方都按名字取键，没有遍历全部键的；新键只给对账看 |
-| `XActor._refresh_passive_now` 的缓存签名（每件多加 `hash([yep, upgrades])`） | 1 处函数体内（`git grep -n "_refresh_passive_now()" -- '*.gd'` 5 处调用都经过这一段） | 调用方 5 处逐处结论：只让 yep／upgrades 变了时不复用旧缓存，算出的表与不缓存时相同（READ_VERIFY 同口径）；没变时照旧命中；西游档多一次哈希，结果不变 |
+| `XActor._refresh_passive_now` 的缓存签名（每件多加 `hash([yep, upgrades, instanceId, base, etypeId])`；R2 加后三项） | 1 处函数体内（`git grep -n "_refresh_passive_now()" -- '*.gd'` 5 处调用都经过这一段） | 调用方 5 处逐处结论：只让 yep／upgrades 变了时不复用旧缓存，算出的表与不缓存时相同（READ_VERIFY 同口径）；没变时照旧命中；西游档多一次哈希，结果不变 |
 | `XTianqiGear.plain_armor`（新） | 2 处（`armor_elem_capped`、`elem_amp_view` 的终态判定） | 只认副手～戒指栏且无七印／奖励标记 |
 | 新开关 `XTianqiGear.ARMOR_ELEM_CAP`（默认开）、`XTianqiGear.ARMOR_FINAL`（默认关） | — | 专项 `t532_armor_cap_in_ledger_and_switch`、`t532_armor_final_switch` 各设回退值验 |
 
@@ -69,13 +69,15 @@
 | # | 验收项 | 状态 | 证据 |
 | --- | --- | --- | --- |
 | 1 | 过渡：武器全额＋防具合计 +20% | ✓ | `armor_elem_capped`；R1 `t532_qiyin_not_capped`（实际 `XTianqiQiyinEquip.make` 两件七印＋一件普通防具：七印 19%／20% 原样，普通 15% 不缩；终态开时七印仍 19%，普通读 final 2%）、`t532_switch_live_cache`（已建缓存的同一角色正常 `refresh_passive`：开 20%→关 47%→开 20%，九线元素裁切 0→0.17→0）；专项 `t532_armor_cap_combined`（3 件四档防具火系合计 47%→20%、武器物理 30% 全额）、`_proportional_no_mutation`、`_keeps_extras`（宝珠 +12% 不缩：32%）、`_skips_artifact`、`_in_ledger_and_switch`（账本 equip 桶 20%，关开关回 47%） |
-| 2 | 晶石、神文按孔拆单记 | ✓ | `upgrade_holes`＋`enhanceHoles`（R1）＋`enhanceSplit`；R1 `t532_holes_live_via_apply`（已建缓存的角色用正常 `XGearUpgrade.apply` 镶两颗火晶石、一颗雷神文，账本即时出 3 行：同实例孔 0、1 各 +5%、孔 2 神文 +1%，enhance 合计 0.10）；专项 `t532_crystal_rune_split_per_hole`（两颗晶石孔 0、1 各 +5%、神文孔 2 +1%，enhance 合计 0.10／0.01 不变） |
+| 2 | 晶石、神文按孔拆单记 | ✓ | R2 `t532_holes_follow_equip_change`（两把同底板、同镶嵌的武器走 `XEquipment.change` 正常换装 A→B→A，不手清缓存，逐孔行实例跟着 wa→wb→wa；不带修复时停在 wa，退出 1）；`upgrade_holes`＋`enhanceHoles`（R1）＋`enhanceSplit`；R1 `t532_holes_live_via_apply`（已建缓存的角色用正常 `XGearUpgrade.apply` 镶两颗火晶石、一颗雷神文，账本即时出 3 行：同实例孔 0、1 各 +5%、孔 2 神文 +1%，enhance 合计 0.10）；专项 `t532_crystal_rune_split_per_hole`（两颗晶石孔 0、1 各 +5%、神文孔 2 +1%，enhance 合计 0.10／0.01 不变） |
 | 3 | 终态重排防具单件入额 | ✓（数待 Kyo 定，开关默认关） | `gear_elem_amp.json` 540 件 `final`＋`armor_final_rule`；专项 `t532_armor_final_switch`（4535 开 3%／关 20%，卡面「所有伤害+3%」，合计兜底） |
 | 4 | 校验＋专项绿 | ✓ | `天启篇数据校验.py` 全部通过；专项见「测试」 |
 | 5 | 只改天启篇，西游档零改动 | ✓ | `elem_amp_on()` 含 `on()`（XTianqi.active）守卫；专项 `t532_west_unchanged`（西游档 stat_list 逐个 `is_same` 原对象） |
 
 ## 测试
 
+- R2 本机专项（提交 0d26ea85a）：`xiyou_tianqi_t532_elem_final` 12/12；回退 actor.gd 签名改动后同专项 11/12（`t532_holes_follow_equip_change` 失败，换到 wb 后三行仍是 wa），证明回归能抓到。本机其余 8 个回归排共用槽 30 多分钟没开跑，停掉改看云端。
+- R2 云端选测：https://github.com/luiluu/PlayAgain-xiyou-godot/actions/runs/46083612648 （提交 0d26ea85a，基准 288683262，480 场景 16 片，第 1 次 success，failed／flaky 均空；`gh run watch` 等完）。其中含 `xiyou_tianqi_t532_elem_final`、`xiyou_tianqi_ledger_p3`、`xiyou_t530_ledger_core`、`xiyou_tianqi_deck_phys_amp`、`xiyou_tianqi_qiyin_effects`、`xiyou_tianqi_nine_off`、`xiyou_equipment`、`xiyou_act_stat_memo`、`xiyou_battle_state_batch`。
 - R1 本机专项（`并行测试.py --full`，提交 f90fc13f5）：`xiyou_tianqi_t532_elem_final` 11/11、`xiyou_tianqi_ledger_p3` 44/44、`xiyou_t530_ledger_core` 59/59、`xiyou_t549_gear_skills` 1970/1970、`xiyou_tianqi_deck_phys_amp` 25/25、`xiyou_tianqi_ledger` 83/83、`xiyou_tianqi_orbs` 56/56、`xiyou_tianqi_nine_off` 19/19、`xiyou_tianqi_phase4` 178/178、`xiyou_tianqi_affix_battle` 89/89、`xiyou_tianqi_equip_roundtrip` 7/7、`xiyou_tianqi_qiyin_effects` 71/71、`xiyou_tianqi_skills` 248/248、`xiyou_tianqi_live_sample` 32/32。
 - R0 本机专项：`xiyou_tianqi_t532_elem_final` 8/8、`xiyou_tianqi_ledger_p3` 44/44、`xiyou_t530_ledger_core` 59/59、`xiyou_t549_gear_skills` 1970/1970、`xiyou_tianqi_deck_phys_amp` 25/25、`xiyou_tianqi_ledger` 83/83、`xiyou_tianqi_orbs` 56/56、`xiyou_tianqi_nine_off` 19/19、`xiyou_tianqi_phase4` 178/178、`xiyou_tianqi_affix_battle` 89/89、`xiyou_tianqi_suit_template` 48/48、`xiyou_tianqi_t528` 19/19、`xiyou_tianqi_t524_leaks` 22/22、`xiyou_tianqi_skills` 248/248、`xiyou_tianqi_live_sample` 32/32、`xiyou_virtual_player`（explore）16/16。
 - `天启篇数据校验.py`：全部通过；`发行空壳.py check`：0。
@@ -166,6 +168,14 @@
 | P1-2 账本丢孔位 | `passive_buckets` 出 `enhanceHoles` 逐孔行（实例、孔号、材料、值），`enhance`／`enhanceSplit` 合计照旧 | 专项 `t532_holes_live_via_apply` |
 | P1-3 正常镶嵌／同进程切开关缓存不失效 | `actor.gd` 缓存签名每件加 `hash([yep, upgrades])` | 专项 `t532_holes_live_via_apply`、`t532_switch_live_cache`（都不手清 `_pm_base`，走正常 `apply`／`refresh_passive`） |
 
+## R2 返修（小o 复核 R1：P1-3 仍打开）
+
+| 编号 | 改法 | 复判 |
+| --- | --- | --- |
+| P1-3 逐孔行换装后指向旧实例 | `actor.gd` 被动缓存签名每件再加 `instanceId`、`base`（无则 `id`）、`etypeId`（逐孔行记的正是这三项） | 专项 `t532_holes_follow_equip_change`：先回退 actor.gd 跑同专项 11/12（换到 wb 后三行仍是 wa，与小o 复现一致），带修复 12/12 |
+
+- 对战斗数的影响：签名只多了失效条件，复用的缓存与重算结果相同（READ_VERIFY 同口径），伤害、九线不读实例号；36 场没重跑。西游档同样多算这一次哈希，结果不变（`xiyou_equipment`、`xiyou_act_stat_memo`、`xiyou_battle_state_batch` 见「测试」）。
+
 - **另发现（没改，要协调定）**：T451 的 `elem_amp_view` 对七印生成件也按底板号套表：七印件底板效果 T082 已清空（`yep` 删掉），视图又把表里的单件数加回去（专项里两件七印读出火 +19%、+20%，小o 报告里那份 +59% 记在 `tianqi` 桶）。这是 T451 起就有的，不是本卡引入；本卡按小o 口径只让它不进合计。要不要让 `elem_amp_view` 跳过七印／奖励件（七印件元素伤归零），影响七印输出，请协调定，不定照现在。
 
 ## 虚拟玩家（DoD）
@@ -182,3 +192,5 @@
 - 1db5b6015 T532 补新增脚本的 .gd.uid
 - f90fc13f5 T532 R1 返修（小o 核 P1-1～3）
 - 7da775a02 T532 R1 复跑 36 场＋交付单逐条回应小o 核
+- 288683262 T532 R1 交付单：云端选测
+- 0d26ea85a T532 R2 返修（小o 核 P1-3）：缓存签名加装备实例／底板／栏位＋正常换装双实例回归
