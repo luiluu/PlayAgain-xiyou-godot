@@ -14,6 +14,8 @@ extends RefCounted
 ##   词缀只来自装备原配置的可选行；已有 13 档以上品质的词缀不会被后面的普通词缀盖掉。
 ## GM 工具（设置里「GM 工具」，要先开测试模式并已进入游戏）：加物品／装备、加金币、加经验、全队恢复、
 ## 肝帝积分／人道碎片／天道币（天启篇显示晨星币）／逆天币的增加或设为。会直接写进存档，和原版一样。
+## - 图鉴全开（T557，Kyo 11-27）：怪物图鉴全部当作已登记、天启篇异化图鉴全部点亮、人物图鉴技能不标「未解锁」。
+##   只在读的地方放行（book_all），不写存档、不写全局配置；关掉测试模式就回到原来的登记情况。
 ## 没移植：主菜单上的「GM 工具」入口、战斗外菜单用技能的熟练度训练、「待提交反馈」（要原版服务器）。
 
 const UNLOCK_PATH := "user://modes/xiyou/test_mode_unlock"
@@ -77,6 +79,11 @@ static func can_open(s: XState) -> bool:
 
 static func exp_rate() -> int:
 	return EXP_RATE if enabled() else 1
+
+
+## 图鉴是否全开（只影响图鉴显示，见头注释）
+static func book_all() -> bool:
+	return enabled()
 
 
 # ---- 技能熟练度（使用后升满当前上限）----
