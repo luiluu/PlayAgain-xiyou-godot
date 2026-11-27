@@ -1,0 +1,112 @@
+# 发行口径帧耗（小o 口径：发行空壳＋simulate_release，玩家档临时副本，敌群 454，四倍速，--fixed-fps 60，2400 帧，seed(20261127)，
+# 战斗 master＝XRandomStream.hex64(20261127)、battle_serial＝0；两棵树同一时段交替各 3 遍；Mac Apple Silicon 无头，--audio-driver Dummy）
+# V＝v0.04.04（c0e0c7c22，自己的空壳工具）；F＝patch/v0.04（146a60a5d）＋T572 三笔＋T563 净差分＋T574 两笔＋T576（f625a2025）
+V_1 RESULT speed=1 seg=true frames=2400 total_ms=12617 mean_ms=5.26 p50=0.94 p95=17.74 max=276.57 over50ms=25 actions=18
+F_1 RESULT speed=1 seg=true frames=2400 total_ms=11352 mean_ms=4.73 p50=0.90 p95=16.76 max=253.11 over50ms=17 actions=18
+V_2 RESULT speed=1 seg=true frames=2400 total_ms=12631 mean_ms=5.26 p50=0.94 p95=18.06 max=260.49 over50ms=25 actions=18
+F_2 RESULT speed=1 seg=true frames=2400 total_ms=11358 mean_ms=4.73 p50=0.92 p95=16.70 max=252.32 over50ms=17 actions=18
+V_3 RESULT speed=1 seg=true frames=2400 total_ms=12600 mean_ms=5.25 p50=0.94 p95=17.92 max=263.42 over50ms=25 actions=18
+F_3 RESULT speed=1 seg=true frames=2400 total_ms=11354 mean_ms=4.73 p50=0.90 p95=16.83 max=255.83 over50ms=17 actions=18
+
+# 同口径：T576 之前的候选（＝F 去掉 T576），两遍
+cand_1 RESULT speed=1 seg=true frames=2400 total_ms=11802 mean_ms=4.92 p50=0.93 p95=17.00 max=365.08 over50ms=22 actions=18
+cand_2 RESULT speed=1 seg=true frames=2400 total_ms=11698 mean_ms=4.87 p50=0.90 p95=16.75 max=345.76 over50ms=21 actions=18
+# 同口径方案比较（实验分支，不入库）：A1＝只跨 HP/MP/TP 写入保留 id 表；A3＝再加全部 param_mark_dirty 不换代；A4（定案）＝gain 那一处
+A1_1 RESULT speed=1 seg=true frames=2400 total_ms=11456 mean_ms=4.77 p50=0.92 p95=16.83 max=282.35 over50ms=19 actions=18
+A1_2 RESULT speed=1 seg=true frames=2400 total_ms=11479 mean_ms=4.78 p50=0.91 p95=16.89 max=279.66 over50ms=18 actions=18
+A3_1 RESULT speed=1 seg=true frames=2400 total_ms=11301 mean_ms=4.71 p50=0.90 p95=16.93 max=239.75 over50ms=16 actions=18
+A3_2 RESULT speed=1 seg=true frames=2400 total_ms=11289 mean_ms=4.70 p50=0.91 p95=16.80 max=249.53 over50ms=14 actions=18
+A4_1 RESULT speed=1 seg=true frames=2400 total_ms=11352 mean_ms=4.73 p50=0.90 p95=16.85 max=250.09 over50ms=16 actions=18
+A4_2 RESULT speed=1 seg=true frames=2400 total_ms=11352 mean_ms=4.73 p50=0.91 p95=16.80 max=249.12 over50ms=18 actions=18
+
+# 长帧（>50ms）帧号与毫秒
+V_1 BIG [[15,132],[20,99],[97,99],[367,51],[617,72],[697,68],[748,54],[774,98],[825,54],[851,72],[878,276],[949,57],[976,68],[1047,56],[1106,59],[1133,227],[1227,59],[1245,62],[1295,75],[1590,55],[1648,55],[1706,56],[1762,51],[2015,52],[2164,51]]
+V_2 BIG [[15,127],[20,99],[97,99],[367,52],[617,69],[697,66],[748,55],[774,97],[825,56],[851,71],[878,260],[949,57],[976,70],[1047,56],[1106,59],[1133,226],[1227,59],[1245,60],[1295,76],[1590,54],[1648,56],[1706,57],[1762,55],[2015,53],[2164,52]]
+V_3 BIG [[15,128],[20,96],[97,97],[367,51],[617,68],[697,66],[748,54],[774,96],[825,54],[851,72],[878,263],[949,58],[976,68],[1047,56],[1106,61],[1133,225],[1227,58],[1245,60],[1295,75],[1590,55],[1648,57],[1706,57],[1762,51],[2015,52],[2164,50]]
+F_1 BIG [[15,58],[20,65],[44,60],[97,55],[774,75],[851,64],[878,136],[950,62],[971,50],[998,129],[1167,52],[1248,54],[1271,253],[1993,68],[2122,98],[2243,72],[2301,62]]
+F_2 BIG [[15,58],[20,67],[44,62],[97,54],[774,74],[851,65],[878,136],[950,61],[971,51],[998,130],[1167,53],[1248,56],[1271,252],[1993,66],[2122,98],[2243,72],[2301,62]]
+F_3 BIG [[15,58],[20,68],[44,63],[97,57],[774,75],[851,64],[878,137],[950,62],[971,51],[998,130],[1167,54],[1248,54],[1271,255],[1993,66],[2122,99],[2243,72],[2301,61]]
+
+# 第 1271 帧（第二次强制行动 8153 逐浪·再释放）插桩拆分：候选（T576 前）与 T576，独占毫秒／次数（插桩本身拖慢约一成）
+## T576 前
+PROF f=1271 instrumented_ms=375.0 read_touch=101 st_o_1=15
+      55.27ms    455 _skill_ids_now
+      49.41ms    404 param_plus
+      23.87ms   1717 _traits_set_now
+      23.51ms   2787 _passive_values_now
+      20.02ms    404 _param_now
+      19.18ms   3954 equip_list
+      18.62ms    455 native_skill_ids
+      16.79ms    399 trait_objects
+      13.94ms     79 _skill_records
+      13.85ms    446 traits_pi
+      13.31ms     10 _calculate_damage
+      12.02ms     46 _refresh_passive_now
+      11.60ms    399 _all_traits_now
+      11.25ms      1 execute
+      10.81ms    404 param_base
+       9.62ms    404 param_rate
+       7.15ms     46 refresh
+       6.48ms     61 passive_state_resists
+       5.10ms    455 _skills_entry
+       5.06ms     10 _invoke_normal
+       3.94ms     10 add_state
+       3.88ms     40 _apply_effect
+## T576 前，各段含子调用
+I__apply=299.5ms
+I__apply_effect=180.5ms
+I__calculate_damage=48.9ms
+I__effect=180.8ms
+I__execute_hp_damage=47.8ms
+I__forced_run=366.0ms
+I__invoke_normal=311.7ms
+I__set_resource=97.3ms
+I__tick_states=0.1ms
+I_add_state=14.9ms
+I_execute=365.3ms
+I_gain=183.3ms
+I_mark_views=25.1ms
+I_refresh=110.0ms
+I_snapshot=100.6ms
+I_views=43.3ms
+## T576 前，_param_now／_skill_ids_now 调用来源（取样调用栈）
+   S   250 STK _skill_ids_now: _skills_entry < _skills_entry_carried < _skills_entry_held < _passive_values_now < _carry_fetch < passive_values < param_base
+   S    60 STK _param_now: param < @mmp_getter < _snapshot_now < snapshot < _gain < gain < _apply_effect < _effect
+   S    60 STK _param_now: param < @mhp_getter < _snapshot_now < snapshot < _gain < gain < _apply_effect < _effect
+   S    44 STK _skill_ids_now: _skills_entry < _skills_now < _carry_fetch < skills < _refresh_passive_now < refresh_passive < _refresh_type_after
+   S    41 STK _skill_ids_now: _skills_entry < _skills_now < _carry_fetch < skills < passive_state_resists < _traits_set_now < traits_set
+   S    40 STK _param_now: param < @mhp_getter < _refresh_base < refresh < _set_resource < _gain < gain
+   S    40 STK _param_now: param < @mmp_getter < _refresh_base < refresh < _set_resource < _gain < gain
+   S    40 STK _skill_ids_now: _skills_entry < _skills_entry_carried < _skills_entry_held < _passive_values_now < _carry_fetch < passive_values < _sparam_now
+   S    20 STK _param_now: param < @mmp_getter < _snapshot_now < snapshot < _run_item < run_item < _formula_raw < _calculate_damage
+   S    20 STK _param_now: param < @mmp_getter < _snapshot_now < snapshot < _gain < gain < _execute_hp_damage < _execute_hp_damage_ledger < execute_hp_damage
+   S    20 STK _skill_ids_now: _skills_entry < _skills_entry_carried < _skills_entry_held < _passive_values_now < _carry_fetch < passive_values < _xparam_now
+   S    20 STK _param_now: param < @mhp_getter < _snapshot_now < snapshot < _run_item < run_item < _formula_raw < _calculate_damage
+   S    20 STK _param_now: param < @mhp_getter < _snapshot_now < snapshot < _gain < gain < _execute_hp_damage < _execute_hp_damage_ledger < execute_hp_damage
+   S    18 STK _param_now: param < @mhp_getter < _view_now < view_of < views < mark_views < _action_effect < _command < _run_list < run
+   S    18 STK _param_now: param < @mmp_getter < _view_now < view_of < views < mark_views < _action_effect < _command < _run_list < run
+   S    11 STK _skill_ids_now: _skills_entry < _skills_entry_carried < _skills_entry_held < _passive_values_now < _carry_fetch < passive_values < _max_tp_now
+## T576
+PROF f=1271 instrumented_ms=257.0 st_o_1=15
+      51.76ms    404 param_plus
+      23.79ms   1717 _traits_set_now
+      19.97ms    404 _param_now
+      14.04ms    446 traits_pi
+      12.69ms     10 _calculate_damage
+      12.38ms   2469 equip_list
+      11.87ms    342 trait_objects
+      11.25ms     46 _refresh_passive_now
+      10.90ms      1 execute
+      10.37ms    404 param_base
+       9.89ms    342 _all_traits_now
+       9.59ms    404 param_rate
+       8.00ms   2787 _passive_values_now
+       6.72ms     46 refresh
+       6.25ms    455 _skills_entry
+       6.08ms     61 passive_state_resists
+       4.61ms     10 _invoke_normal
+       3.72ms     10 add_state
+       3.52ms     40 _apply_effect
+       3.40ms    141 run_one
+       3.13ms     10 _apply
+       1.95ms     10 _damage_value
