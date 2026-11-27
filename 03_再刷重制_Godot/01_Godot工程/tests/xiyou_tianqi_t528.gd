@@ -313,7 +313,7 @@ func _test_2c_vegito_cards() -> void:
 		if not str(XDB.rec("States", stid).get("note", "")).contains("<StateNote>"):
 			notes.append(stid)
 	_check("t2c_vegito_cards_self_and_notes",
-		bad.is_empty() and blue.contains("战斗结束时，贝吉特会倒下") and notes.is_empty()
+		bad.is_empty() and blue.contains("战斗结束时，%s会倒下" % XTextFix.actor_name(164, "贝吉特")) and notes.is_empty()
 		and str(XDB.rec("States", 2774).get("note", "")).contains("战斗结束时倒下"),
 		[bad, blue, notes])
 
