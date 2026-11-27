@@ -1722,6 +1722,42 @@ def actor_innate_cap_rules(table: dict, db_dir=None) -> list:
     return bad
 
 
+_RE_NEED_E = re.compile(r'e(\d+)')
+_RE_NEED_GEAR = re.compile(r'(weapon|armor):(\d+)')
+
+
+def need_gear_rules(table: dict) -> list:
+    """T579：条件「要有」的装备键。"e底号" 按 gear 表里这个底号登记的类别（武器／防具）比，所以底号在表里只能有一类；
+    两类都有的要写明 "weapon:底号"／"armor:底号"，写明的要在 gear 表里。"""
+    gear = {str(k) for k in table.get('gear', {}) if ':' in str(k)}
+    kinds = {}
+    for k in gear:
+        kind, _, base = k.partition(':')
+        kinds.setdefault(base, set()).add(kind)
+    bad, seen = [], set()
+
+    def walk(v, where):
+        if isinstance(v, dict):
+            for k, x in v.items():
+                walk(k, where)
+                walk(x, '%s/%s' % (where, k))
+        elif isinstance(v, list):
+            for x in v:
+                walk(x, where)
+        elif isinstance(v, str) and (where, v) not in seen:
+            seen.add((where, v))
+            m = _RE_NEED_E.fullmatch(v)
+            if m and len(kinds.get(m.group(1), ())) != 1:
+                bad.append('%s 要有 "%s"：gear 表里底号 %s 有 %s 类，要只有一类，不然写明 "weapon:%s"／"armor:%s"' % (
+                    where, v, m.group(1), len(kinds.get(m.group(1), ())), m.group(1), m.group(1)))
+            elif _RE_NEED_GEAR.fullmatch(v) and v not in gear:
+                bad.append('%s 要有 "%s"：gear 表里没有这件' % (where, v))
+
+    for sec in ('actors', 'skills', 'states', 'shared', 'rules'):
+        walk(table.get(sec, {}), sec)
+    return bad
+
+
 def check_skill_rework(_args) -> bool:
     path = DATA_DIR / 'skill_rework.json'
     if not path.is_file():
@@ -1729,7 +1765,7 @@ def check_skill_rework(_args) -> bool:
         return True
     try:
         table = _read_table('skill_rework.json')
-        bad = _with_tune(skill_rework_rules)(table) + coef_integer_rules(table) + forced_copy_rules(table) + actor_innate_cap_rules(table)
+        bad = _with_tune(skill_rework_rules)(table) + coef_integer_rules(table) + forced_copy_rules(table) + actor_innate_cap_rules(table) + need_gear_rules(table)
     except Exception as e:
         bad = ['能读表并跑完全部检查：%s: %s' % (type(e).__name__, e)]
     return _report('skill_rework.json', '规则自检', bad)
