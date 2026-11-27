@@ -1,0 +1,28 @@
+{
+ "sha": "ad179d33dcd5635c606832bd6e5e77e5fb753644",
+ "branch": "ci/luiluu/t563",
+ "mode": "affected",
+ "base": "a19c28dd9f5dc7375dd9c901f853a36966a6429d",
+ "passed": true,
+ "scenes": 7,
+ "failed": [],
+ "flaky": [],
+ "lostShards": [],
+ "jobStatus": "success",
+ "shards": 1,
+ "longestShardSeconds": 454.4,
+ "testSeconds": 897,
+ "generatedRef": "refs/ci/generated/main",
+ "generatedCommit": "7f7cc73cc504821d93480d517c372a4708690bec",
+ "runUrl": "https://github.com/luiluu/PlayAgain-xiyou-godot/actions/runs/45921335423",
+ "sceneNames": [
+  "xiyou_event_compare.tscn",
+  "xiyou_event_compare_b.tscn",
+  "xiyou_event_compare_c.tscn",
+  "xiyou_event_compare_d.tscn",
+  "xiyou_t463_t465.tscn",
+  "xiyou_t563_hunyuan.tscn",
+  "xiyou_tianqi_deck_phys_amp.tscn"
+ ],
+ "time": "2026-11-27T01:24:29+00:00"
+}
