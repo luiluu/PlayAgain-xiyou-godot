@@ -101,8 +101,17 @@ func _expected_hits(sk: Dictionary, n_enemies: int) -> int:
 	var seq = sk.get("yepSeq")
 	if seq is Dictionary:
 		for ph in ["target", "whole"]:
+			var armor_depth := 0  # T565：穿齐装备才放的条件段（3647 血月额外释放）测试角色没穿，不算段数
 			for c in seq.get(ph, []):
-				if c is Array and not c.is_empty() and str(c[0]).strip_edges().to_lower() == "action effect":
+				if not (c is Array) or c.is_empty():
+					continue
+				var nm := str(c[0]).strip_edges()
+				if nm.begins_with("if "):
+					if armor_depth > 0 or nm.contains("hasArmor"):
+						armor_depth += 1
+				elif nm == "end":
+					armor_depth = maxi(0, armor_depth - 1)
+				elif armor_depth == 0 and nm.to_lower() == "action effect":
 					n += 1
 	n = maxi(1, n)  # 有动作序列时 repeats 不重放（3557 repeats 2 实测每目标 2 段）
 	var scope := int(sk.get("scope", 1))
@@ -199,6 +208,45 @@ func _test_995() -> void:
 	var landed := logs2.filter(func(r): return r is Dictionary and r.get("type") == "hit" and is_same(r.get("user"), a2) and not r.missed and not r.evaded).size()
 	check("t549.995.miss_all", landed == 0, landed)
 	check("t549.995.no_heal_on_miss", is_equal_approx(a2.hp, hp1), {"hp": a2.hp, "hp0": hp1})
+
+
+## T565（D296，Kyo 11-27 事项 87）：3647 汲血连环斩恢复血月额外释放——没穿齐 6 段、穿齐 12 段；每三段后命中回 2% 最大生命（6 段合计 4%、12 段合计 8%）
+func _test_3647() -> void:
+	XTianqiSkills.ENABLED = true
+	XTianqiSkills.reload_table()
+	for with_set in [false, true]:
+		var s: XState = h._make_tianqi([3, 1, 2, 4], 25)
+		var a := _actor(s)
+		h._equip_weapon(a, 1609)
+		if with_set:
+			for id in [1568, 1569, 1570]:
+				h._equip_armor(a, id)
+		a.refresh_passive()
+		a.recover_all()
+		a.tp = 100
+		a.hp = floorf(a.mhp * 0.2)
+		var hp0 := a.hp
+		var lg: XBattleLogic = h._make_dummy_battle(s, 2, SEEDS[0])
+		var logs := lg.act(a, XDB.rec("Skills", 3647), lg.enemies[0])
+		var hits := logs.filter(func(r): return r is Dictionary and r.get("type") == "hit" and int((r.get("skill", {}) as Dictionary).get("id", 0)) == 3647).size()
+		var tag := "set" if with_set else "noset"
+		var n := 12 if with_set else 6
+		var per := floorf(a.mhp * 0.02)
+		check("t565.3647.hits_%s" % tag, hits == n, hits)
+		check("t565.3647.heal_%s" % tag, absf((a.hp - hp0) - per * (n / 3)) <= float(n / 3) + 1.0, {"heal": a.hp - hp0, "expect": per * (n / 3), "mhp": a.mhp})
+		print("T565_3647 %s hits=%d heal=%d mhp=%d pct=%.2f" % [tag, hits, int(a.hp - hp0), int(a.mhp), (a.hp - hp0) * 100.0 / a.mhp])
+	var desc := str(XTianqiSkills.spec(3647).get("desc", []))
+	check("t565.3647.card", desc.contains("若第 3 段命中，恢复自身最大生命的 2%") and desc.contains("穿齐血月三件套合计 8%") and desc.contains("12 段合计物理攻击×600%") and not desc.contains("消耗："), desc)
+	# 文字审：表头「命中类型」写必中（卡上显示「命中：必中」），TP 消耗只留数据库那一行
+	var note := str(XDB.rec("Skills", 3647).get("note", ""))
+	check("t565.3647.header", note.contains("命中类型:必中") and not note.contains("命中类型:物理") and int(XDB.rec("Skills", 3647).get("tpCost", 0)) == 35, note.substr(0, 400))
+	# 西游档零改动：关改写时是原记录（1855 底数、Hp +1500）
+	XTianqiSkills.ENABLED = false
+	XTianqiSkills.reload_table()
+	var raw := XDB.rec("Skills", 3647)
+	check("t565.3647.xiyou_raw", str(raw.damage.formula) == "1855 + a.atk * 25 - (0 * 4)" and str(raw.note).contains("Hp +1500"), raw.damage.formula)
+	XTianqiSkills.ENABLED = true
+	XTianqiSkills.reload_table()
 
 
 func _skill_pass_of(kind: String, id: int, sid: int) -> String:
@@ -557,6 +605,7 @@ func _run() -> void:
 	if OS.get_environment("T549_QUICK") != "1":  # 本地调试新断言时跳过逐招三种子对照（约 10 分钟）
 		_test_rows()
 	_test_995()
+	_test_3647()
 	_test_skill_pass()
 	_test_support()
 	_test_foe()

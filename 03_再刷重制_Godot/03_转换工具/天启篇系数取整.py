@@ -391,6 +391,12 @@ def regen(line, terms, old_dm):
     return head + term_text(terms, old_dm) + rest
 
 
+# 取整破例（Kyo 拍板留小数的技能，不进 tune.D200；数据校验 COEF_DECIMAL_EXEMPT 同名单）
+KEEP_DECIMAL = {
+    '10718': 'T565（D295，Kyo 11-27 事项 82）：怒战八方替换普攻回物攻×1.2，比 1 号普攻（T553 物攻×1）高 20%，取整对它破例',
+}
+
+
 def build(table: dict):
     merged = tq_check.apply_skill_tune({k: v for k, v in table.items() if k != 'tune'} | {'tune': {'D189': table.get('tune', {}).get('D189', {})}})
     d200 = {}
@@ -398,6 +404,8 @@ def build(table: dict):
     for sid, row in merged['skills'].items():
         dm = row.get('damage')
         if not str(sid).isdigit() or not isinstance(dm, dict):
+            continue
+        if sid in KEEP_DECIMAL:
             continue
         if not needs_work(dm):
             # 系数已是整数、卡面写成 6.0 这类：只换卡面
