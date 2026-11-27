@@ -654,6 +654,7 @@ func _skills_now() -> Array:
 
 ## 技能表的 id 部分（各 skills 包装都在这里）：跨调用缓存也每次现算，读别的角色、背包、战斗中与否、异化记录的都在这一段，所以这些变了不用挂作废
 func _skill_ids_now() -> Array[int]:
+	skill_ids_builds += 1
 	var ids: Array[int] = native_skill_ids()
 	ids.assign(XHeartsteel.skill_ids(self, ids))  # 心钢 skills 包装（第 15 个，在云裳、异化之内）：穿着时换成对应的巨人吞噬
 	XYunshang.skill_ids(self, ids)  # 云裳 skills 包装（在异化之内）：天衣给的赠行／收存余光
@@ -738,6 +739,52 @@ func _skills_entry() -> Dictionary:
 			_skc_store = {}  # 旧存档、影子克隆留下的项：攒多了整表丢
 		_skc_store[me] = c
 	return c
+
+## T572 西游档卡顿（O-待定-2）：passive_values 走跨调用缓存（O-677）后，每次都要现算一遍 id 表（各 skills 包装）来比对，
+## 绕过了只读窗口与跨步保留（O-348／状态批量）——原来走 skills() 时窗口里同一角色只建一次。玩家存档 40 次行动 id 表现算 5557→36501 次。
+## 这里把缓存项本身也按 skills() 的规矩记进只读窗口（窗口里没有写入）和跨步保留（同 skills() 的 "sk0"/"sk1" 作废时机）。
+## 回退：SKILLS_ENTRY_HELD = false（每次 _skills_entry 现算 id 表，同 O-677 原样）
+static var SKILLS_ENTRY_HELD := true
+## 专项量数：id 表现算了几次（_skill_ids_now）
+static var skill_ids_builds := 0
+
+func _skills_entry_held() -> Dictionary:
+	if not SKILLS_ENTRY_HELD:
+		return _skills_entry()
+	if READ_MEMO and _read_depth > 0:
+		var m := _read_memo()
+		var key := "ske1" if _cat_bare else "ske0"
+		if m.has(key):
+			if READ_VERIFY:
+				_read_verify("skills_entry", m[key].recs, _skill_records(_skill_ids_now()))
+			return m[key]
+		var gen := _read_gen
+		var fresh := _skills_entry_carried(key)
+		if gen == _read_gen:
+			m[key] = fresh
+		return fresh
+	if _batch_depth > 0:
+		return _skills_entry_carried("ske1" if _cat_bare else "ske0")
+	return _skills_entry()
+
+## 跨步保留（同 _carry_fetch 的 codes＝0 一组）：命中时 READ_VERIFY 只比 id 表与记录——缓存项的键里带 _skills_epoch，
+## 批内挂只带特性的状态会换代，但保留槽的指纹（_carry_fp）没变，记录本身不受影响（同 skills() 的 "sk0"）
+func _skills_entry_carried(key: String) -> Dictionary:
+	var c = _carry_slot()
+	if c == null:
+		return _skills_entry()
+	if c.has(key):
+		carry_hits += 1
+		var hit: Dictionary = c[key]
+		if READ_VERIFY:
+			var ids := _skill_ids_now()
+			verify_memo("carry " + key, self, [hit.ids, hit.recs], [ids, _skill_records(ids)])
+		return hit
+	var wgen := _write_gen
+	var fresh := _skills_entry()
+	if wgen == _write_gen and is_same(c, _carry_slot()):
+		c[key] = fresh
+	return fresh
 
 func _skill_records(ids: Array[int]) -> Array:
 	var out := []
@@ -1149,7 +1196,7 @@ func passive_values(tag: String) -> Array:
 func _passive_values_now(tag: String) -> Array:
 	var out := []
 	if SKILLS_XCALL and get_script() == XActor:  # 测试里改写了 skills() 的子类照旧走 skills()
-		var e := _skills_entry()
+		var e := _skills_entry_held()
 		var pv: Dictionary = e.pv
 		if not pv.has(tag):
 			var vals := []
