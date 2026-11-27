@@ -1174,6 +1174,9 @@ def _report(fname: str, what: str, bad: list) -> bool:
     if bad:
         print('%s %s %d 项不过：' % (fname, what, len(bad)))
         for b in bad:
+            if isinstance(b, tuple):  # 部分规则返回 (说明, 违例值)
+                label, val = b
+                b = label if val is None else '%s：%r' % (label, val)
             print('  ' + b)
         return False
     print('%s %s：通过' % (fname, what))
