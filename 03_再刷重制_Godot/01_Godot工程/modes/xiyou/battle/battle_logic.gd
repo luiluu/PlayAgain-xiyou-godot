@@ -3218,6 +3218,7 @@ func _apply(u: XBattler, skill: Dictionary, t: XBattler) -> Dictionary:
 		_damage_record = r
 		var value := _damage_value(XGuyu.owner(u), skill, dt, r.critical, true)  # 谷雨 makeDamageValue 包装：绽放按谷雨算（calcOwner）
 		value = XZhenhuo.scale(u, skill, value)  # 至尊宝真火印记 makeDamageValue 包装（最外层）：追击 1090 ×(0.6＋1%×等级)
+		value = XTianqiSkills.flat_final(skill, value)  # T549 R2 P2-6：天启篇固定伤害行（凌厉长鞭打队友 100 点真实伤害）不吃结算倍率
 		if XBlackFlash.boosted(dt):
 			r.critical = true  # 黑闪 modifyCritical：结果记为暴击
 			_action_resources.result(dt).critical = true

@@ -1235,7 +1235,10 @@ def skill_rework_rules(table: dict) -> list:
         if not str(sid).isdigit():
             continue
         d = row.get('damage')
-        if d is not None and not float(d.get('coef', 0)) > 0:
+        if d is not None and 'flat' in d:  # T549 R2 P2-6：固定伤害行（凌厉长鞭打队友 100）不带系数，只要求固定值是正整数
+            if not (isinstance(d['flat'], int) and d['flat'] > 0 and float(d.get('coef', 0)) == 0 and not d.get('stats')):
+                bad.append('skills/%s 固定伤害 flat 要正整数、不带系数和属性' % sid)
+        elif d is not None and not float(d.get('coef', 0)) > 0:
             bad.append('skills/%s 伤害系数要大于 0' % sid)
         if 'tags' in row:  # T519（T013 2J）：招式类别补标，符文之语认；只给主动招打
             tags = row['tags']

@@ -950,6 +950,20 @@ static func level_scale(a) -> float:
 	return lo + (1.0 - lo) * t
 
 
+## T549 R2 P2-6：改写行 damage.flat（固定真实伤害）——结算出口直接定成这个数，不吃属性、防御、暴击、状态与词条倍率。
+## 只认天启篇改写后的记录（公式是本模块的）；敌人拿的原记录（XDB.foe_skill）、西游档都不动。FLAT_FINAL 关掉回到只在公式里给固定值。
+static var FLAT_FINAL := true
+
+
+static func flat_final(skill: Dictionary, value: float) -> float:
+	if not FLAT_FINAL or not str(skill.get("damage", {}).get("formula", "")).begins_with("XTianqiSkills.formula("):
+		return value
+	var d: Dictionary = spec(int(skill.get("id", 0))).get("damage", {})
+	if not d.has("flat"):
+		return value
+	return -float(d.flat) if value < 0.0 else float(d.flat)
+
+
 ## 模块公式（XFormulaExecution 分派）：伤害为正，回复为负
 static func formula(a, b, item: Dictionary) -> float:
 	var prev := _cur_skill  # 求完复原（T281 核查 P3-2）：AI 选招试算几百招，不能把「正在算的技能号」留给后面的条件判断
@@ -967,6 +981,8 @@ static func _formula(a, b, item: Dictionary) -> float:
 		return -v if kind in [3, 4] else v
 	var d: Dictionary = sp.get("damage", {})
 	_cur_skill = int(item.get("id", 0))
+	if d.has("flat"):  # T549 R2 P2-6：固定伤害（凌厉长鞭打队友 100 点），不吃属性、等级、条件倍率；行上另写不暴击、无波动、无属性、必中
+		return -float(d.flat) if kind in [3, 4] else float(d.flat)
 	var base := 0.0
 	var stats: Dictionary = d.get("stats", {"atk": 1})
 	var wp := XTianqiWeakAffix.proj_of(a, _cur_skill)  # 天启篇弱者专属词条批 1：本人投影（玛莎换属性、克洛什单体 ×2）

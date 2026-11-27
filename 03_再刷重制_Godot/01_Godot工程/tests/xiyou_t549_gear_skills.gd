@@ -12,6 +12,8 @@ extends Node
 ##    同存档我方装备者的替换普攻（捕猎长枪 179）、武器触发（狼神爪 259）、装备授予主动（徘徊 雷行 3650）照样是改写记录。
 ## 7) T549 R1 P2-4 汲血斩只在命中时回血（目标闪避满时 0 回血）；P2-3／P2-4 卡面：技能卡逐行进备注、无开发用语，
 ##    装备面板描述替换普攻／武器触发的特效行全部换成改写后的说明（skill_rework.gear 与 gear_elem_amp 两路）。
+## 8) T549 R2 P2-5：替换普攻保留原公式全部伤害属性、原权重（赤羽三项、法轮四项、红牌／潮汐斩按原比例），普通档每目标 1.0、
+##    招牌 1.5，全体不再减半（彻地钉等 5 招每目标 1.0）；P2-6：凌厉长鞭 2602 天启篇打队友固定 100（FLAT_FINAL 回退开关），西游档原公式。
 
 const T541 = preload("res://tests/xiyou_t541_equip_skills.gd")
 const SEEDS := ["0000000000000001", "0000000000000002", "0000000000000003"]
@@ -472,6 +474,79 @@ func _test_cards() -> void:
 	check("t549.gearcard.xiyou_raw", str(XTianqiGear.stat_list([XGear.template("weapon", 675)])[0].get("note", "")).contains("敏捷高于对方则攻击3次"), "")
 
 
+## T549 R2（小o 核 P2-5／P2-6）：替换普攻保留原公式全部伤害属性、原权重；普通档每目标合计 1.0、招牌 1.5，全体不再减半；
+## 凌厉长鞭（2602）打队友固定 100 点真实伤害（西游档仍是原公式）
+func _total(sid: int) -> float:
+	var d: Dictionary = XTianqiSkills.spec(sid).damage
+	var w := 0.0
+	for k in d.get("stats", {}):
+		w += float(d.stats[k]) * (25.0 if str(k) == "mhp" else 1.0)
+	if d.has("max_of"):
+		w += 1.0
+	var sk := XDB.rec("Skills", sid)
+	var n := _expected_hits(sk, 1)  # 全体按每个目标算（scope 2 n_enemies＝1）
+	return snappedf(w * float(d.coef) * n, 0.0001)
+
+
+func _test_r2() -> void:
+	XTianqiSkills.ENABLED = true
+	XTianqiSkills.reload_table()
+	XState.current = h._make_tianqi([3, 1, 2, 4], 25)
+	# 赤羽：物攻、敏捷、幸运三项等权（原公式各 ×18）；尊胜法轮（法轮 4708）：物攻、魔攻、敏捷、幸运四项等权
+	for c in [[3575, ["atk", "agi", "luk"]], [4708, ["atk", "mat", "agi", "luk"]]]:
+		var st: Dictionary = XTianqiSkills.spec(c[0]).damage.stats
+		var ks := st.keys()
+		ks.sort()
+		var want: Array = c[1].duplicate()
+		want.sort()
+		check("t549.r2.%d.all_stats" % c[0], ks == want and st.values().all(func(v): return float(v) == float(st.values()[0])), st)
+	check("t549.r2.3575.card", str(XTianqiSkills.spec(3575).desc).contains("幸运") and str(XTianqiSkills.spec(3575).desc).contains("敏捷"), XTianqiSkills.spec(3575).desc)
+	check("t549.r2.4708.card", str(XTianqiSkills.spec(4708).desc).contains("魔法攻击") and str(XTianqiSkills.spec(4708).desc).contains("敏捷") and str(XTianqiSkills.spec(4708).desc).contains("幸运"), XTianqiSkills.spec(4708).desc)
+	# 原权重不等的照原比例：红牌幸运 25：物攻 10、潮汐斩魔攻 4：敏捷 2
+	var rp: Dictionary = XTianqiSkills.spec(3651).damage.stats
+	check("t549.r2.3651.ratio", rp.has("luk") and rp.has("atk") and absf(float(rp.luk) / float(rp.atk) - 2.5) < 0.15, rp)
+	var cx: Dictionary = XTianqiSkills.spec(4444).damage.stats
+	check("t549.r2.4444.ratio", absf(float(cx.mat) / float(cx.agi) - 2.0) < 0.1, cx)
+	# 全体替换普攻普通档：彻地钉等 5 招每目标合计 1.0（不再 0.50）
+	for sid in [494, 636, 658, 860, 1970]:
+		check("t549.r2.%d.area_1_0" % sid, int(XDB.rec("Skills", sid).scope) == 2 and _total(sid) == 1.0, _total(sid))
+		check("t549.r2.%d.card_no_half" % sid, not str(XTianqiSkills.spec(sid).desc).contains("×50%") and not str(XTianqiSkills.spec(sid).get("_note", "")).contains("全体减半"), XTianqiSkills.spec(sid).desc)
+	# 所有替换普攻／武器触发：普通档合计 0.9～1.0、招牌 1.35～1.5（整数百分比向下取整，不超）
+	for sid in _ids():
+		var sp := XTianqiSkills.spec(sid)
+		if str(sp.get("kind", "")) != "普攻" or not str(sp.get("_note", "")).contains("装备招批 2（替换普攻") or sid in [995, 1968]:
+			continue
+		var tt := _total(sid)
+		check("t549.r2.%d.total" % sid, (tt >= 0.9 and tt <= 1.0) or (tt >= 1.35 and tt <= 1.5), tt)
+	# 凌厉长鞭：天启篇打队友固定 100（三种子、暴击种子也一样），附加狂热斗志；西游档原公式不动
+	for sd in SEEDS:
+		var s: XState = h._make_tianqi([3, 1, 2, 4], 25)
+		var a := _actor(s)
+		var lg: XBattleLogic = h._make_dummy_battle(s, 2, sd)
+		var ally: XActor = lg.actors[1] if lg.actors[0] == a else lg.actors[0]
+		ally.recover_all()
+		var hp0 := ally.hp
+		lg.act(a, XDB.rec("Skills", 2602), ally)
+		check("t549.r2.2602.ally_100.%s" % sd, hp0 - ally.hp == 100.0 and ally.is_state_affected(265), {"loss": hp0 - ally.hp, "hp0": hp0})
+	check("t549.r2.2602.card", str(XTianqiSkills.spec(2602).desc[0]).contains("对一名队友造成 100 点真实伤害"), XTianqiSkills.spec(2602).desc)
+	check("t549.r2.2602.gearcard", str(XTianqiGear.stat_list([XGear.template("weapon", 201)])[0].get("note", "")).contains("对一名队友造成 100 点真实伤害"), "")
+	XTianqiSkills.FLAT_FINAL = false  # 回退开关：只在公式里给 100，结算倍率照吃（不再恰好 100）
+	var s2: XState = h._make_tianqi([3, 1, 2, 4], 25)
+	var a2 := _actor(s2)
+	var lg2: XBattleLogic = h._make_dummy_battle(s2, 2, SEEDS[1])
+	var al2: XActor = lg2.actors[1] if lg2.actors[0] == a2 else lg2.actors[0]
+	al2.recover_all()
+	var h2 := al2.hp
+	lg2.act(a2, XDB.rec("Skills", 2602), al2)
+	check("t549.r2.2602.flat_final_rollback", h2 - al2.hp != 100.0 and h2 - al2.hp > 0.0, h2 - al2.hp)
+	XTianqiSkills.FLAT_FINAL = true
+	XTianqiSkills.ENABLED = false
+	XTianqiSkills.reload_table()
+	check("t549.r2.2602.xiyou_raw", str(XDB.rec("Skills", 2602).damage.formula) == "100000+a.atk*1000", XDB.rec("Skills", 2602).damage.formula)
+	XTianqiSkills.ENABLED = true
+	XTianqiSkills.reload_table()
+
+
 func _run() -> void:
 	h = T541.new()
 	var was_en := XTianqiSkills.ENABLED
@@ -486,6 +561,7 @@ func _run() -> void:
 	_test_support()
 	_test_foe()
 	_test_cards()
+	_test_r2()
 	XTianqiSkills.ENABLED = was_en
 	XTianqiSkills.reload_table()
 	XEnemy.force_roll = was_force

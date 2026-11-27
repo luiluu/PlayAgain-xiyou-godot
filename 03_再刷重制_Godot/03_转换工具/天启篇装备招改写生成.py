@@ -200,9 +200,12 @@ def dmg_text(stats, per, n, area):
         if n > 1:
             return f'伤害：每段自身最大生命的 {p:g}%，{n} 段合计{each_t}自身最大生命的 {p * n:g}%'
         return f'伤害：自身最大生命的 {p:g}%'
-    each = '＋'.join(f'{STAT_NAME[k]}×{per}%' for k in stats)
+    pc = per if isinstance(per, dict) else {k: per for k in stats}  # 替换普攻按原公式权重，各属性系数可以不同（T549 R2 P2-5）
+    def t(k, x):
+        return f'自身最大生命×{x * 4 / 100:g}%' if k == 'mhp' else f'{STAT_NAME[k]}×{x}%'
+    each = '＋'.join(t(k, pc[k]) for k in stats)
     if n > 1:
-        tot = '＋'.join(f'{STAT_NAME[k]}×{per * n}%' for k in stats)
+        tot = '＋'.join(t(k, pc[k] * n) for k in stats)
         return f'伤害：每段{each}，{n} 段合计{each_t}{tot}'
     return f'伤害：{each}'
 
@@ -367,6 +370,7 @@ def plan():
         assert sk['damage']['type'] in (1, 2, 5, 6), sid
         rows[str(sid)], hits[sid] = attack_row(sk, elements, states)
     rows['4442'] = dict(BATCH2_HEAL_4442)
+    rows['2602'] = dict(BATCH2_WHIP_2602)
     return rows, hits
 
 
@@ -377,7 +381,7 @@ BATCH2_ATTACK = [
     12, 179, 288, 293, 299, 300, 301, 308, 344, 370, 444, 445, 491, 492, 493, 494, 554, 570, 572, 587, 616, 617,
     635, 636, 637, 639, 640, 647, 658, 682, 767, 768, 769, 770, 788, 811, 813, 834, 851, 860, 869, 871, 884, 885,
     886, 890, 891, 938, 944, 992, 1003, 1004, 1007, 1023, 1024, 1050, 1273, 1278, 1279, 1353, 1690, 1866, 1871,
-    1872, 1946, 1969, 1970, 2252, 2284, 2440, 2442, 2443, 2602, 2635, 2636, 2815, 2816, 3181, 3188, 3189, 3190,
+    1872, 1946, 1969, 1970, 2252, 2284, 2440, 2442, 2443, 2635, 2636, 2815, 2816, 3181, 3188, 3189, 3190,
     3191, 3547, 3548, 3573, 3575, 3649, 3651, 3887, 3888, 3889, 3890, 4369, 4437, 4441, 4444, 4708, 4716, 4722,
     5420, 6015, 6016, 6017, 6018,
     # 红牌 3651 的 <ChangeTo>（各 20% 变成黄牌／蓝牌），不改就漏
@@ -389,26 +393,68 @@ BATCH2_HEAL_4442 = {
     'name': '悦耳', 'kind': '普攻', 'heal': {'mhp_pct': 0.1}, 'mp': 0, 'tp': 0,
     'desc': ['效果：普通攻击变为治疗一名友方，恢复 10% 最大生命并附加「悦耳」'],
     '_note': f'{TAG} 装备招批 2：优雅提琴的替换普攻是单体治疗，原 800＋魔攻×2 → 最大生命 10%（普攻位，低于技能单体治疗 30% 的标准）'}
+# 传承:凌厉长鞭（weapon:201）的替换普攻打一名队友：原卡「造成 100 点真实伤害」，按固定 100 恢复（T549 R2 P2-6，协调定；
+# 底表公式 100000+a.atk*1000 在重制西游档实测一下打出四十万以上、队友直接倒地，与原卡不符，西游档不动）。
+# 不暴击、无波动、无属性、必中（原记录 hitType 0），状态照原记录挂狂热斗志、破阵——特殊魅惑
+BATCH2_WHIP_2602 = {
+    'name': '攻击', 'kind': '普攻', 'tp': 0, 'mp': 0, 'damage': {'stats': {}, 'coef': 0, 'flat': 100},
+    'critical': False, 'variance': 0, 'element': 0, 'seq': [{'op': 'drop_if'}, {'op': 'clear_effect_args'}],
+    'desc': ['效果：普通攻击变为对一名队友造成 100 点真实伤害；命中时附加「狂热斗志」，命中时附加「破阵——特殊魅惑」，必定命中'],
+    '_note': f'{TAG} 装备招批 2（R2 P2-6）：传承:凌厉长鞭打队友，原卡 100 点真实伤害 → 固定 100（不暴击、无波动、无属性），不按普攻 1.0'}
 STAT_KEYS = ('atk', 'mat', 'agi', 'luk', 'def', 'mdf')
 STAT_NAME.update({'luk': '幸运', 'def': '物理防御', 'mdf': '魔法防御'})
 
 
+# 公式里的属性项不是线性加的（乘在倍率里）或取高的，手工写原义（T549 R2 P2-5）
+ATTACK_STAT_OVERRIDE = {
+    4716: {'atk': 1, 'luk': 1},             # (atk+luk)*25*(1+(b.mdf+b.def-a.mdf-a.def)*0.01)：双防只在倍率里
+    4722: {'atk': 1, 'agi': 1, 'luk': 1},   # (atk+luk+agi)*35*(1+luk*0.002+…)：后面是倍率
+    2443: 'max_of',                         # a.atk >= a.mat ? atk*120 : mat*120
+}
+STAT_NAME['max_of'] = '物理攻击、魔法攻击取高'
+HP_EQ = 25  # 生命上限按标准线是攻击的 25 倍（同 STAT_WEIGHT mhp 0.04、XTianqiSkills.hit_weight）；公式里的生命系数×25 折成攻击当量再分
+
+
 def attack_stats(sk):
-    """主属性取公式里系数最大的那项；次属性系数不低于主属性一半才一起算（各占一份）。只吃生命的按生命折算。"""
+    """T549 R2 P2-5（事项 82 口径）：保留原公式全部伤害属性、原权重（{属性: 原系数}，生命按 25 倍折成攻击当量）。
+    只吃生命的返回 {'mhp': 1}；取高的返回 {'max_of': 1}；没属性项的按技能类型取物攻／魔攻。"""
+    ov = ATTACK_STAT_OVERRIDE.get(sk['id'])
+    if ov == 'max_of':
+        return {'max_of': 1.0}
+    if ov:
+        return dict(ov)
     f = sk['damage']['formula']
     w = {}
-    for k in STAT_KEYS:
+    for k in STAT_KEYS + ('mhp',):
         for m in re.finditer(rf'a\.{k}\s*\*\s*\(?\s*([\d.]+)|([\d.]+)\s*\*\s*a\.{k}\b', f):
             w[k] = max(w.get(k, 0.0), float(m.group(1) or m.group(2)))
         if k not in w and re.search(rf'\ba\.{k}\b', f):
             w[k] = 1.0
+    if 'mhp' in w:
+        if len(w) == 1:
+            return {'mhp': 1.0}
+        w['mhp'] *= HP_EQ
     if not w:
-        if re.search(r'\ba\.mhp\b', f):
-            return ('mhp',)
-        return ('atk',) if sk['stypeId'] in (0, 1) else ('mat',)
-    top = max(w.values())
-    order = sorted(w, key=lambda k: (-w[k], STAT_KEYS.index(k)))
-    return tuple(k for k in order if w[k] * 2 >= top)[:2]  # 最多两项（主＋次），多属性平均吃的取系数最高的两项
+        return {'atk': 1.0} if sk['stypeId'] in (0, 1) else {'mat': 1.0}
+    return {k: w[k] for k in sorted(w, key=lambda k: (-w[k], (STAT_KEYS + ('mhp',)).index(k)))}
+
+
+def attack_pcts(w, total):
+    """每段各属性的攻击当量整数百分比（合计 total÷段数，按原权重分，向下取整，附则 E）。生命项卡上写当量×0.04 的最大生命百分比（同批 1 只吃生命的写法）。"""
+    if 'mhp' in w and len(w) > 1:  # 生命项写最大生命整数百分比（至少 1%，数据校验）：每段份额够 1% 就按整数取，不够就去掉、份额并给别的属性（炽火斩 6 段、太乙神针 5 段）
+        m = int(total * w['mhp'] / sum(w.values()) / HP_EQ)
+        rest = {k: v for k, v in w.items() if k != 'mhp'}
+        out = attack_pcts(rest, total - m * HP_EQ)
+        if m >= 1:
+            out['mhp'] = m * HP_EQ
+        return out
+    W = sum(w.values())
+    out = {k: int(total * v / W) for k, v in w.items()}
+    if len(set(w.values())) > 1:  # 不等权的本来就各写各的：向下取整丢的点按余数大小补回，每段合计正好 total；等权的保持等权（附则 E，合计可能略低）
+        left = total - sum(out.values())
+        for k in sorted(w, key=lambda k: -(total * w[k] / W - out[k]))[:left]:
+            out[k] += 1
+    return out
 
 
 def attack_row(sk, elements, states):
@@ -416,10 +462,9 @@ def attack_row(sk, elements, states):
     area = scope in (2, 8, 10)
     rand = scope - 2 if 3 <= scope <= 6 else 1
     sig = int(str(sk['meta'].get('quality', '0')).strip() or 0) >= 8
-    total = 150 if sig else 100
-    if area:
-        total //= 2   # 全体按常规表「全体是单体一半」
-    stats = attack_stats(sk)
+    total = 150 if sig else 100   # 事项 82：普通档 1.0、招牌 1.5，全体替换普攻也按每个目标 1.0（不再另减半，T549 R2 P2-5）
+    w0 = attack_stats(sk)
+    stats = tuple(w0)
     ops = [{'op': 'drop_if'}, {'op': 'clear_effect_args'}]
     seq = sk.get('yepSeq') or {}
     gains = sorted({c[0] for ph in ('target', 'whole') for c in seq.get(ph, [])
@@ -427,20 +472,27 @@ def attack_row(sk, elements, states):
     ops += [{'op': 'drop_cmd', 'match': g} for g in gains]
     per_target = hits_per_target(sk, ops)  # 有动作序列时引擎不按 repeats 重放（T549 专项实测 3557 repeats 2 仍是每目标 2 段）
     hits = per_target * rand
-    per = total // (hits * len(stats))
     split = 1
-    while per > 100 or (per >= 100 and per % 100):
+    pc = attack_pcts(w0, total // hits)
+    while max(pc.values()) > 100 or (max(pc.values()) >= 100 and max(pc.values()) % 100):
         split += 1
-        per = total // (hits * split * len(stats))
-    if per < 1:
+        pc = attack_pcts(w0, total // (hits * split))
+    stats = tuple(k for k in w0 if k in pc)
+    if min(pc.values()) < 1:
         raise SystemExit(f'{sid} 段数 {hits} 太多，系数不到 1%')
     if split > 1:
         ops.append({'op': 'split_effects', 'n': split})
         per_target *= split
         hits *= split
-    w = {k: STAT_WEIGHT.get(k, 1) for k in stats}
+    if stats == ('max_of',):
+        dmg = {'stats': {}, 'max_of': ['atk', 'mat'], 'coef': pc['max_of'] / 100}
+    elif stats == ('mhp',) or len(set(pc.values())) == 1:  # 单属性或等权：权重 1（生命 0.04）、coef 放每段百分比
+        dmg = {'stats': {k: STAT_WEIGHT.get(k, 1) for k in stats}, 'coef': pc[stats[0]] / 100}
+    else:  # 不等权：coef 1、各权重写每段百分比（同 天启篇系数取整.py 多项写法）
+        dmg = {'stats': {k: round(pc[k] * STAT_WEIGHT.get(k, 1) / 100, 4) for k in stats}, 'coef': 1}
+    per = pc[stats[0]] if len(set(pc.values())) == 1 else pc
     row = {'name': sk['name'] or f'替换普攻{sid}', 'kind': '普攻', 'tp': 0, 'mp': 0,
-           'damage': {'stats': w, 'coef': per / 100}, 'seq': ops}
+           'damage': dmg, 'seq': ops}
     if re.search(r'(?i)<\s*Cooldown\s*:', sk['note']):
         row['note_remove'] = ['Cooldown']
     eff_rm = [[44, e['dataId']] for e in sk['effects'] if e['code'] == 44]
@@ -465,7 +517,7 @@ def attack_row(sk, elements, states):
     if subs:
         row['note_sub'] = subs
     row['_note'] = (f'{TAG} 装备招批 2（替换普攻，Kyo 事项 82 甲）：原 {sk["damage"]["formula"][:60]}'
-                    f' → 普攻{"招牌 1.5" if sig else " 1.0"}{"（全体减半）" if area else ""}，{hits} 段×{per}%×{len(stats)} 属性，去固定底数／熟练度／条件连段／耗蓝冷却')
+                    f' → 普攻{"招牌 1.5" if sig else " 1.0"}{"（每个目标）" if area else ""}，{hits} 段×每段 {"＋".join(f"{STAT_NAME[k]}{pc[k]}%" for k in stats)}（原公式全部属性、原权重，生命按 25 倍折攻击当量{"；原公式的最大生命项每段不够 1% 去掉、份额并给别的属性" if "mhp" in w0 and "mhp" not in pc else ""}），去固定底数／熟练度／条件连段／耗蓝冷却')
     return row, hits
 
 
@@ -629,7 +681,10 @@ def apply_elem_amp(ea, rows):
         row = out[sec][k]
         subs = row.setdefault('subs', [])
         for p in pairs:
-            if p not in subs:
+            same = [i for i, q in enumerate(subs) if q[0] == p[0] and q[2:] == p[2:]]
+            if same:  # 同一个匹配式的旧卡面换掉（T549 R2：追加会让旧文案先命中）
+                subs[same[0]] = p
+            elif p not in subs:
                 subs.append(p)
     return out
 
