@@ -15,6 +15,7 @@
 - **P2-4 西游明细（验收 7）**：`breakdown.row.suit` 只在天启篇档写；专项第 7 组加断言：西游档明细里没有 `suit`。
 - **P2-5 文案**：照报告建议文字替换（帮助卡固定值一栏「固定减伤穿透（天启篇对敌无效）」；牌局开时补「牌局开启时，对敌人的旧百分比穿透每 4% 折为 1% 无视防御，换算部分最多 15%。」；向导 f 段换成报告给的整段）。**玩家可见文字，待小A 审**。
 - 宝珠元素抗性：核查确认现行正常镶嵌到不了，交付单原「没核」一条按核查结论不再列为待办。
+- **P2-6 自带硬顶分施加者（小o R2 复核，协调口径）**：身上状态按 `state_origins` 施加者分桶：自己给自己的（或没记来源）留 `state` 桶，算自带；队友等别人施加的改记新桶 `ally_state`，另记、不进自带 30%（`XTianqiLedger._self_state_split`／`state_by_other`）。被动缓存签名（`_passive_states_signature` 与 O-396 备注签名）补一段「哪些状态是别人施加的」，同一状态换了施加者会重建分桶。`SELF_CAP` 关时都回 `state` 桶，和原来一样。专项第 13 组：本体 +30% 物理＋队友水之祝福 +5% → 物理池 1.35、`ally_state` 0.05；同样 +5% 自己施加 → 封到 1.30、`splitCap.self.element[1]` 0.05；已挂的状态改由队友重新施加 → 回到 1.35；开关关 → 1.35。
 
 ### R2 重量（修 bug 后重跑，不算新一轮）
 
@@ -123,6 +124,10 @@
 
 ## 测试
 
+**R2 P2-6（cc）**
+- 专项 `xiyou_t530_ledger_core`：58/58 过（新增第 13 组 4 条）；`xiyou_tianqi_ledger` 83/83、`xiyou_tianqi_ledger_p3` 44/44。本机单跑，`--audio-driver Dummy`。
+- 云端选测：见下（提交 c39e997d4）。
+
 **R2（cc）**
 - 专项 `xiyou_t530_ledger_core`：54/54 过（新增第 9～12 组：自带硬顶、追加吸血、全关法宝、持剑记账；第 4 组文案、第 7 组西游无 suit 改了断言）。本机单跑，临时 HOME，`--audio-driver Dummy`。
 - 本机相关专项：cat 1033/1033、guide 93/93、help_card 1075/1075、tianqi_affix_battle 89/89、tianqi_ledger 83/83、tianqi_ledger_p3 44/44、tianqi_live_sample 32/32、tianqi_phase4 178/178、tianqi_secrets 102/102、tianqi_t528 19/19，全过。
@@ -138,7 +143,7 @@
 ## 没核、没量的（cc）
 
 - 宝珠元素抗性：核查确认现行正常镶嵌写不出元素率 11 号特性，目前到不了这条路；以后要是新增宝珠元素抗性，归属按预算另定（T536）。
-- R2 角色自带硬顶把「队友给的增益状态」也算在 state 桶里（桶分不出施加者），会和本人自带的一起封 30%。我倾向这样，比较稳；要是想让队友增益不算，得另开一个桶，需要 Kyo 或协调定。
+- （P2-6 已改）队友施加的增益记 `ally_state` 另记，不进自带 30%；敌人给角色挂的状态也算「别人施加」，归 `ally_state`（伤害加成类基本是增益，没单独区分敌我）。
 - 七印「放两次」这类同一行动里重复放同一招的，吸血共用一份 20%（实例键分不开），比设计严一点。
 - 抗性矩阵（层段 × 系）、边际 8% 线、拆旧顶都归 T536（N13），本卡没量。
 - `boss_mech_flat_states` 名单现在是空的，等 T538／N15 逐只列名单。
@@ -159,6 +164,8 @@
 | `XTianqiAffixBattle.xparam` | 1 处（`actor.gd:1544`） | 回复（i＝7）在天启篇且 `SPLIT_CAPS` 开时改走 `cap_actor_hrg`；其他 xparam 照旧 |
 | `XTianqiAffixBattle.personal`／`_taken_mult` | 1／1 处 | `CAPS_V16`／`RESIST_PER_ELEMENT` 关或不在天启篇时回到旧算法 |
 | `XTianqiLedger.passive_buckets`（R2：`SELF_CAP` 开时超越极限 I～IV 记 `advance` 桶） | 1 处（`actor.gd` 被动缓存） | 旧合用顶和分池都不读 `actor`／`advance` 桶，只有 `_self_cap` 读 actor＋state；各桶合计不变 |
+| `XActor._passive_states_signature`＋O-396 备注签名（R2 P2-6：补「别人施加的状态」一段） | 3 处（`git grep -n "_passive_states_signature" -- '*.gd'`，全在 `actor.gd` 被动缓存读写） | 西游档、`SELF_CAP` 关或身上没有记来源的状态时补的那段为空，签名和原来一样；天启篇只在「本人／别人施加」变了时多重建一次 |
+| `XTianqiLedger.passive_buckets`（R2 P2-6：别人施加的状态记 `ally_state`） | 1 处 | 只有 `_self_cap` 读 state 桶，`ally_state` 没有任何顶读；各桶合计不变 |
 | 新开关 `XTianqiLedger.SPLIT_CAPS`、`REBUILD_SOURCES`、`ELEM_RESIST_CAP`、`NO_ENEMY_FLAT_MIT`、`SELF_CAP`（R2），`XTianqiAffixBattle.CAPS_V16`、`RESIST_PER_ELEMENT` | — | 默认开，关＝回退；专项第 7 组验西游档零改动 |
 
 ## 谁做了什么
