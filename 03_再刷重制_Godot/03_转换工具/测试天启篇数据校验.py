@@ -1618,5 +1618,19 @@ class ActorNotesT556(unittest.TestCase):
         rework['skills']['10563']['note_add'] = '<KyoUnique: 伏黑甚尔>'  # 内部标签不算
         self.assertEqual(chk.actor_names_leftover_rules(catalog, rework), [])
 
+    def test_tuple_violations_report_line_by_line(self):
+        # T583：actor_names／actor_notes 的规则返回 (说明, 违例值)，汇报要逐行打出、不能崩
+        rework = copy.deepcopy(chk._load_opt('skill_rework.json'))
+        rework['skills']['10563']['name'] = '超级贝吉特'
+        rework['skills']['5470']['desc'][0] = '陈开局时获得「凝神」状态'
+        bad = chk.actor_names_leftover_rules(chk._load_opt('actor_names.json'), rework)
+        self.assertEqual(len(bad), 2)
+        ok, out = run(chk._run_table, 'actor_names.json',
+                      lambda t: chk.actor_names_leftover_rules(t, rework) + [('只有说明', None), '纯文字违例'])
+        self.assertFalse(ok)
+        self.assertEqual(out.splitlines(), ['actor_names.json 规则自检 4 项不过：']
+                         + ['  %s：%r' % b for b in bad] + ['  只有说明', '  纯文字违例'])
+
+
 if __name__ == '__main__':
     unittest.main()
