@@ -48,6 +48,8 @@
 | 函数／开关 | 调用方 N 处（附 grep 命令） | 逐处结论 |
 | --- | --- | --- |
 | `XActor._skills_switches` | 2 处（`git grep -n "_skills_switches()" -- '*.gd'`，定义 1＋`_skills_key` 1） | 只多拼一位开关进缓存键；切开关时技能表作废重算，平时值不变，不影响其它调用 |
+| `XXufeng.rec` | 2 处（`git grep -nE "XXufeng\.rec\(" -- '*.gd'`，xdb.gd 两处，都在 `xiyou_save_on()` 之后） | 只在开关开着时多改 9996 与剑一～剑八的副本；缓存键带开关位，开关切换不会拿到旧副本；天启篇不分派 |
+| `XXufeng._patch_sword` | 1 处（`rec` 内） | 本体没改，后面追加 `_fix_sword_passive`，增伤／穿透／开战状态不动（专项 on.sword.* 逐件核） |
 | `XXufeng.touches` | 3 处（`git grep -nE "XXufeng\.touches\(" -- '*.gd'`，xdb.gd 两处＋定义） | 开着时多认 9996；两处调用都先判 `xiyou_save_on()`，天启篇不分派 |
 
 ## 测试
@@ -61,4 +63,6 @@
 - 6b828b8e7 T585 西游档徐凤年：九阶基因锁去经验锁、剑一～剑八改被动显示（XXufeng.LOCK_FIX，O-待定）
 - 06fc9e563 T585 补专项 .uid
 - e0b218889 T585 交付单（云端选测通过）
-- （本提交）交付自检返修：截图挪到归档／交付截图、补 t585_shots.gd.uid、优化登记行改回交付单表格（不直接改 优化登记.md，由合并工具并入）
+- f26620264 交付自检返修：截图挪到归档／交付截图、补 t585_shots.gd.uid、优化号占位改名
+- b433859ad 优化登记行改放交付单草稿表（优化登记.md 回到 main）
+- （本提交）补调用方逐处结论
