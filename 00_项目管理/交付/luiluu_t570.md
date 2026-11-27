@@ -81,7 +81,7 @@
 
 - 5a30d960a WIP：2562/2560/2554 削弱进预编译效果、1099/1178 复活一次掷骰＋专项
 - ab6c4ff68 首领状态窗天启篇显式异常进 Debuff、回退开关专项、数据校验
-- （续做）天启篇 2561 吃瘪之力 −10%，西游档不动
+- 350a20817 （续做）天启篇 2561 吃瘪之力 −10%，西游档不动
 
 ## 续做：2561 吃瘪之力（Kyo 11-27 事项 73，第 74 任项目经理cc 派）
 
@@ -89,3 +89,4 @@
 - 回退：`XTianqiSkills.EFFECT_NUMS = false` 回到 ×0.5（专项 `rollback.old_values` 带上 2561＝500）。
 - 测试（本机 `--headless --audio-driver Dummy`）：`xiyou_tianqi_t570` 26/26（新增 `tq.2561_minus10pct` 受 1000→900、`tq.2561_skill_desc`、`tq.2561_no_dead_note_sub`、`xy.2561_vegeta_half` 西游档受 1000→500；`xy.records_untouched` 本来就含 2561：西游档运行时记录与原表同一份）；`xiyou_tianqi_t566` 19/19（2561 说明期望改成 −10%）；`xiyou_vegeta_tune` 41/41（西游档贝吉特调整照旧）；`测试天启篇数据校验.py` 165/165；`天启篇数据校验.py` 全部通过。
 - 西游档零改动证据：`git diff ab6c4ff68..HEAD --stat` 只有改写表、两个天启篇专项和本交付单；`xy.2561_vegeta_half`、`xy.records_untouched`、`xiyou_vegeta_tune` 41/41 全过。
+- 云端选测：通过，提交 350a208171，基准 07cf27af41，10 个场景、1 片，`gh run watch` 前台等到完成，https://github.com/luiluu/PlayAgain-xiyou-godot/actions/runs/45969267673 。
