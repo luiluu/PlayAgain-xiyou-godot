@@ -1,7 +1,7 @@
 # 交付：luiluu/t572
 
 - 车道／工作者：T572 西游档四倍速点技能前卡顿、菜单栏滑动卡（cc，Opus＋high，P8）
-- 状态：进行中
+- 状态：可合并
 
 ## 结论（一句话）
 
@@ -57,7 +57,8 @@ OFF 档（`--speed=4`）同样：补丁线修前 7.03／544 → 修后 4.95／32
 ## 3. 修法（三个回退开关，默认开）
 
 1. O-待定-1 `XTianqiWeakAffix.XIYOU_SKIP`（`core/tianqi_weak_affix.gd`）：`proj_of` 先判 `on(s)`，不是天启篇档直接返回空，不建投影号表。几项都是只读判断，换序结果不变；天启篇档照旧往下判。
-2. O-待定-2 `XActor.SKILLS_ENTRY_HELD`（`core/actor.gd` 新 `_skills_entry_held`）：`_passive_values_now` 取缓存项时按 `skills()` 的规矩记进只读窗口（`_read_memo` 的 "ske0"/"ske1"）和跨步保留（`_carry_fetch`，与 `skills()` 的 "sk0"/"sk1" 同一作废时机）；窗口里命中时 `READ_VERIFY` 照旧现算比对。窗口外照旧 `_skills_entry()`。
+2. O-待定-2 `XActor.SKILLS_ENTRY_HELD`（`core/actor.gd` 新 `_skills_entry_held`、`_skills_entry_carried`）：`_passive_values_now` 取缓存项时按 `skills()` 的规矩记进只读窗口（`_read_memo` 的 "ske0"/"ske1"）和跨步保留（同 `_carry_fetch` codes＝0 那一组，与 `skills()` 的 "sk0"/"sk1" 同一作废时机）；命中时 `READ_VERIFY` 现算 id 表和记录比对。窗口外照旧 `_skills_entry()`。
+   - 返修（云端第一轮 3 场景失败）：跨步保留原来直接用 `_carry_fetch`，它的全程比对把整个缓存项连同键一起比，键里的 `_skills_epoch` 在批内挂「只带特性的状态」时会换代，于是报不一致；保留槽的指纹（`_carry_fp`，含会影响技能表的 STATE_HARD 状态、技能、装备等）没变，id 表和记录都一样。改成自取保留槽、命中只比 `[ids, recs]`。三个专项都开着全程比对，修后零不一致。
 3. O-待定-3 `XSideStatus.LIVE_WINDOW`（`battle/side_status.gd`）：`_v()` 没有快照时的实时读数包 `XActor.read_begin()`／`read_end()`（O-348 同款，只读）。新界面 `XSkinSideStatus` 继承同一个 `_v()`，一起受益。
 
 另加两个只读计数给专项用：`XActor.skill_ids_builds`（`_skill_ids_now` 次数）、`XTianqiWeakAffix.proj_ids_builds`（`_proj_ids` 次数）。
@@ -83,15 +84,15 @@ OFF 档（`--speed=4`）同样：补丁线修前 7.03／544 → 修后 4.95／32
 ## 5. 补丁线怎么落
 
 - 补丁线 `patch/v0.04`（`146a60a5d`，v0.04.07 dev.896）：三处在补丁线上都要——①弱者词条代码随底包 889 就在；②补丁线 `55e7ae828` 摘的 T546 同样是 `_passive_values_now` 直接调 `_skills_entry()`，同样绕过窗口；③老写法。
-- 验证：在 scratchpad 克隆里把本单提交 `6238229b6` 用 `cherry-pick -n` 摘到 `patch/v0.04` 上，三个文件自动合并、无冲突；补丁线上跑 `xiyou_t572_lag` 15/15、`xiyou_skills_xcall` 97/97、`xiyou_tianqi_weak_affix` 101/101、`xiyou_tianqi_weak_b1` 31/31、`xiyou_side_status_order` 15/15、`xiyou_guyu_ui` 791/791、`xiyou_ui_skin_hud` 112/112、`xiyou_battle_speed` 34/34 全过；量数见第 1 节（补丁线修后帧耗均值 5.28 ms，回到旧版 5.83 ms 的水平）。
-- 摘法：整个提交 `6238229b6` 直接摘（三个游戏文件＋专项三件），不用改。补丁由总装出，和 T563 马保国同一个补丁。
+- 验证：在 scratchpad 克隆里把本单三个代码提交 `6238229b6`、`da25a380f`、`2a83455dd` 依次 `cherry-pick -n` 到 `patch/v0.04` 上，自动合并、无冲突；补丁线上跑 `xiyou_t572_lag` 15/15、`xiyou_alien_formula_window` 72/72、`xiyou_battle_enter_exit_lag` 30/30、`xiyou_battle_state_batch` 54/54、`xiyou_skills_xcall` 97/97、`xiyou_tianqi_weak_affix` 101/101、`xiyou_side_status_order` 15/15、`xiyou_guyu_ui` 791/791 全过（只摘第一个提交时另跑过 `xiyou_tianqi_weak_b1` 31/31、`xiyou_ui_skin_hud` 112/112、`xiyou_battle_speed` 34/34）；量数见第 1 节（补丁线修后帧耗均值 5.28 ms，回到旧版 5.83 ms 的水平；量数时只摘了第一个提交，返修只改全程比对时比什么，不影响平时的耗时）。
+- 摘法：三个代码提交 `6238229b6`、`da25a380f`、`2a83455dd` 按顺序摘（三个游戏文件＋专项三件），不用改。补丁由总装出，和 T563 马保国同一个补丁。
 
 ## 6. 验证
 
 - 新专项 `xiyou_t572_lag`（15 项）：①西游档两态技能表相同、开着不建投影号表；天启篇档（玛莎戴「御风术」）两态投影相同且照旧生效；②只读窗口里同一角色 id 表只现算 1 次（关着多次）、跨步保留也更少，两态被动值与能力值相同，窗口之间学了新被动照样重算；③侧栏两态读数相同、开着现算更少，有快照时照旧读快照；整场两回合自动战斗西游档、天启篇各一场，开关两态日志摘要相同（固定战斗随机流），开着带全程比对 `READ_VERIFY` 零不一致。
-- 本地并行测试（main＋本单）：`xiyou_t572_lag` 15/15、`xiyou_skills_xcall` 109/109、`xiyou_tianqi_weak_affix` 101/101、`xiyou_tianqi_weak_b1` 31/31、`b2` 60/60、`b2b` 70/70、`xiyou_tianqi_weak_clear` 46/46、`xiyou_side_status_order` 15/15、`xiyou_guyu_ui` 791/791、`xiyou_ui_skin_hud` 112/112、`xiyou_battle_speed` 34/34。
+- 本地并行测试（main＋本单，返修后另跑 `xiyou_alien_formula_window` 72/72、`xiyou_battle_enter_exit_lag` 30/30、`xiyou_battle_state_batch` 54/54；返修后逻辑基准每次行动 176～194 ms，与返修前同一水平）：`xiyou_t572_lag` 15/15、`xiyou_skills_xcall` 109/109、`xiyou_tianqi_weak_affix` 101/101、`xiyou_tianqi_weak_b1` 31/31、`b2` 60/60、`b2b` 70/70、`xiyou_tianqi_weak_clear` 46/46、`xiyou_side_status_order` 15/15、`xiyou_guyu_ui` 791/791、`xiyou_ui_skin_hud` 112/112、`xiyou_battle_speed` 34/34。
 - `语法检查.py` 1258 个 .gd 0 个问题；`发行空壳.py check` 退出 0（88 个脚本、867 个函数都有；`tianqi_weak_affix.gd` 在空壳名单里，加的是开关和计数，空壳照规则生成）。
-- 云端选测：（待写）
+- 云端选测：第一轮（提交 6238229b6，https://github.com/luiluu/PlayAgain-xiyou-godot/actions/runs/45976181882）476 个场景 3 个失败：`xiyou_alien_formula_window`、`xiyou_battle_enter_exit_lag`、`xiyou_battle_state_batch`，都是全程比对报「carry ske0」不一致（原因与返修见第 3 节第 2 条）；`xiyou_tianqi_deck_phys_amp` 偶发（单跑通过）。返修后第二轮（提交 2a83455dd，https://github.com/luiluu/PlayAgain-xiyou-godot/actions/runs/45981128820，`gh run watch` 前台等完）476 个场景、16 片全部通过。之后的提交只改交付单。
 - 没改战斗结算公式和先后顺序，没跑 `--oracle`（三处都是只读缓存／判断换序，两态逐项比对过）。
 - 实机没验：Windows、安卓上没量；建议补丁出来后请玩家再录一段。
 
@@ -143,4 +144,7 @@ OFF 档（`--speed=4`）同样：补丁线修前 7.03／544 → 修后 4.95／32
 ## 本分支提交
 
 - 6238229b6 三处修复＋专项 xiyou_t572_lag
-- （交付单、量数提交见 `git log main..luiluu/t572`）
+- d5b494755 交付单（进行中）＋量数脚本与原始数据
+- da25a380f 专项回退支改字面量赋值
+- 2a83455dd 返修：跨步保留命中时只比 id 表与记录（云端第一轮 3 场景）
+- （之后的交付单提交见 `git log main..luiluu/t572`）
