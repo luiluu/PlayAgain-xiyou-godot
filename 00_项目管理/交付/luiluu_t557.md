@@ -1,7 +1,7 @@
 # 交付：luiluu/t557
 
 - 车道／工作者：cc（claude-sonnet-5-5＋medium，P6）T557 测试模式开启全图鉴
-- 状态：进行中
+- 状态：可合并
 
 ## 变更记录草稿
 
@@ -35,5 +35,9 @@
 
 - 本机（并行测试）：test_mode 83/83、enemy_book 96/96、actor_book 28/28、determinism 372/372、tianqi_ending 24/24、rift_alien 150/150、ui_skin_card_p 106/106、list_pager 151/151、six_dim_book_boss 66/66、lobby_debug_npc 通过
 - 语法检查：1250 个 .gd，0 个问题
+- 工具回归全部通过；发行空壳.py check 退出 0
+- 云端选测通过（ca8e1fa545，整轮 828 个场景、16 片）：https://github.com/luiluu/PlayAgain-xiyou-godot/actions/runs/45916052668
 
 ## 本分支提交
+
+- ca8e1fa54 T557 测试模式开启全图鉴
