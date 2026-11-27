@@ -34,7 +34,7 @@
 
 | 函数／开关 | 调用方 N 处（附 grep 命令） | 逐处结论 |
 | --- | --- | --- |
-| `XTianqiSkills.attack1_applies`（加 `item.has("stypeId")`） | 产品 2 处（`git grep -nE 'attack1_applies\(' -- 'modes/*.gd'`：formula_execution.gd:43 `_run_item`、damage.gd:27 `eval_formula` 快路径） | 两处只多挡掉道具记录（不带 stypeId），技能 1 照旧进分流；道具回原公式，与西游档、ATTACK1＝false 一致（专项 item1_not_attack1 两态断言） |
+| `XTianqiSkills.attack1_applies`（加 `item.has("stypeId")`） | 4 处＝产品 2 处＋专项 xiyou_tianqi_attack1 里 2 处断言（产品：`git grep -nE 'attack1_applies\(' -- 'modes/*.gd'`：formula_execution.gd:43 `_run_item`、damage.gd:27 `eval_formula` 快路径） | 两处只多挡掉道具记录（不带 stypeId），技能 1 照旧进分流；道具回原公式，与西游档、ATTACK1＝false 一致（专项 item1_not_attack1 两态断言） |
 
 ## 数值报告：逐种子分布
 
