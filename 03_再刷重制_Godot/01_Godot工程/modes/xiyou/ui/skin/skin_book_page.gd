@@ -16,7 +16,7 @@ extends Control
 ## 卡 P 开关：false＝三本图鉴都回旧页
 static var ENABLED := true
 ## T554 人物图鉴牌头（Kyo 11-27 事项 84：只改天启篇，西游档不动；回退开关）：
-## - FIT_SPRITE：立绘的可见范围超出法阵外接方框时按比例缩小、居中放进圈里（小铃兰帧 256、奈叶 128 原来 1.5 倍画出圈）；false＝照旧 1.5 倍
+## - FIT_SPRITE：立绘的不透明像素超出法阵外圈时按比例缩小、居中放进圈里（小铃兰帧 256、奈叶 128 原来 1.5 倍画出圈）；false＝照旧 1.5 倍
 ## - HEAD_ROWS：天启篇牌头改成「角色属性 / 武器 / 防具」三行，标签同宽对齐，类型名整个换行不拆字、续行对齐到值列，
 ##   掌握类型重复的去重（小铃兰两个「法杖」），一类全会的写「全部」；角色属性按元素上色；
 ##   原版的「属性」（人物属性，旧克制用）在天启篇不再画：天启篇元素重做 v0.7「旧克制停用，我方挨打也不看克制」，
@@ -1203,7 +1203,7 @@ func _draw_actor(a: Rect2) -> void:
 	if h._sprite_tex != null:
 		var id := h.actor_id()
 		var pattern: int = [0, 1, 2, 1][floori(h._frame / 12.0) % 4]
-		var pl := sprite_place(id, h._sprite_spec, Vector2(h._sprite_tex.get_size()), pattern, cc, CIRCLE_R, opaque_rect(h._sprite_tex, h._sprite_spec))
+		var pl := sprite_place(id, h._sprite_spec, Vector2(h._sprite_tex.get_size()), pattern, cc, CIRCLE_R, opaque_rect(h._sprite_tex, h._sprite_spec), opaque_rows(h._sprite_tex, h._sprite_spec))
 		ci.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 		ci.draw_texture_rect_region(h._sprite_tex, pl.draw, pl.src)
 	var tx := x + CIRCLE_R * 2 + 32.0
@@ -1341,8 +1341,13 @@ static func token_lines(toks: Array, f: Font, fs: int, w: float) -> Array:
 
 ## 立绘画在法阵里的位置：{draw: 目标矩形, src: 取图范围, vis: 看得见的部分, fit: 缩过没有}。看得见的部分：有档案的新角色用档案外接框；
 ## 原生图用 used（取图范围里不透明像素的外接框，站立三格合起来，见 opaque_rect），读不到图（无头）时用整格。
-## 照旧 1.5 倍、锚在旧状态窗的中心；T554 FIT_SPRITE：看得见的部分超出法阵外接方框就按比例缩到方框 0.86 以内（方框四角在圈外，留点余量）、居中（稍偏下）
-static func sprite_place(id: int, spec: Dictionary, tex_size: Vector2, pattern: int, cc: Vector2, r: float, used := Rect2()) -> Dictionary:
+## 照旧 1.5 倍、锚在旧状态窗的中心；T554 FIT_SPRITE：按圆判定——不透明像素（rows，见 opaque_rows_of；读不到像素时退回 vis 四角）
+## 离圆心最远处超出法阵外圈 r 才缩：以 vis 中心为原点按比例缩到最远像素落在 r×FIT_R 以内、挪到法阵中心（稍偏下）
+## （R2 小o 核：原来按外接方框判定、缩到方框 0.86，方框四角在圈外，奈叶三帧仍越圈 9.42 像素、十三娘 4.91）
+const FIT_R := 0.94
+
+
+static func sprite_place(id: int, spec: Dictionary, tex_size: Vector2, pattern: int, cc: Vector2, r: float, used := Rect2(), rows := PackedVector3Array()) -> Dictionary:
 	var rr: Array = XActorBook.sprite_rect(id, spec, tex_size, pattern)
 	var dst: Rect2 = rr[0]
 	var src: Rect2 = rr[1]
@@ -1357,22 +1362,55 @@ static func sprite_place(id: int, spec: Dictionary, tex_size: Vector2, pattern: 
 	elif used.has_area() and src.size.x > 0.0:
 		var s3 := draw.size.x / src.size.x
 		vis = Rect2(draw.position + used.position * s3, used.size * s3)
-	var box := Rect2(cc - Vector2(r, r), Vector2(r, r) * 2.0)
-	if not FIT_SPRITE or not head_rows_tianqi() or box.grow(0.5).encloses(vis) or vis.size.x <= 0.0 or vis.size.y <= 0.0:
+	var pts := sprite_points(draw, src, vis, rows)
+	if not FIT_SPRITE or not head_rows_tianqi() or vis.size.x <= 0.0 or vis.size.y <= 0.0 or max_dist(pts, cc) <= r + 0.5:
 		return {"draw": draw, "src": src, "vis": vis, "fit": false}
-	var f := minf(box.size.x * 0.86 / vis.size.x, box.size.y * 0.86 / vis.size.y)
-	f = minf(f, 1.0)
 	var want_c := cc + Vector2(0, 4)
 	var vc := vis.get_center()
-	# 以看得见部分的中心为原点缩，再挪到法阵中心
+	# 以看得见部分的中心为原点缩 f、再挪到 want_c：每个点 q → want_c + (q - vc)·f，要 |q' - cc| ≤ R；
+	# 记 d = want_c - cc、v = q - vc，解 |d + v·f| = R 的正根，所有点取最小
+	var big_r := r * FIT_R
+	var d := want_c - cc
+	var f := 1.0
+	for q in pts:
+		var v: Vector2 = q - vc
+		var vv := v.dot(v)
+		if vv <= 0.0:
+			continue
+		var dv := d.dot(v)
+		var disc := dv * dv - vv * (d.dot(d) - big_r * big_r)
+		f = minf(f, (-dv + sqrt(maxf(disc, 0.0))) / vv)
 	var nd := Rect2(want_c + (draw.position - vc) * f, draw.size * f)
 	var nv := Rect2(want_c + (vis.position - vc) * f, vis.size * f)
 	return {"draw": nd, "src": src, "vis": nv, "fit": true}
 
 
+## 立绘在画面上的轮廓点：有像素行（rows：每行 [y, 最左 x, 最右 x+1]，取图范围内坐标）就取每行两端的像素角；
+## 没有就用 vis 四角（保守）。圆心到一行像素的最远距离一定落在这一行的两端，所以两端四角就够
+static func sprite_points(draw: Rect2, src: Rect2, vis: Rect2, rows: PackedVector3Array) -> PackedVector2Array:
+	var out := PackedVector2Array()
+	if rows.is_empty() or src.size.x <= 0.0:
+		out.append_array([vis.position, Vector2(vis.end.x, vis.position.y), Vector2(vis.position.x, vis.end.y), vis.end])
+		return out
+	var s := draw.size.x / src.size.x
+	for row in rows:
+		for xx in [row.y, row.z]:
+			out.append(draw.position + Vector2(xx, row.x) * s)
+			out.append(draw.position + Vector2(xx, row.x + 1.0) * s)
+	return out
+
+
+static func max_dist(pts: PackedVector2Array, c: Vector2) -> float:
+	var m := 0.0
+	for q in pts:
+		m = maxf(m, q.distance_to(c))
+	return m
+
+
 ## 原生图取图范围里不透明像素的外接框（取图范围内的坐标；侧视图取站立三格的并集，免得走动时忽大忽小）；按图路径记一次。
 ## 无头（读不到像素）返回空，sprite_place 退回整格
 static var _opaque_cache := {}
+static var _rows_cache := {}
 
 
 static func opaque_rect(tex: Texture2D, spec: Dictionary) -> Rect2:
@@ -1386,13 +1424,32 @@ static func opaque_rect(tex: Texture2D, spec: Dictionary) -> Rect2:
 	return out
 
 
-static func opaque_rect_of(img: Image, spec: Dictionary) -> Rect2:
+## 同上，取每行不透明像素的两端（见 opaque_rows_of）；按图路径记一次
+static func opaque_rows(tex: Texture2D, spec: Dictionary) -> PackedVector3Array:
+	var key := str(spec.get("path", ""))
+	if key != "" and _rows_cache.has(key):
+		return _rows_cache[key]
+	var img := tex.get_image() if tex != null else null
+	var out := opaque_rows_of(img, spec)
+	if key != "" and img != null:
+		_rows_cache[key] = out
+	return out
+
+
+static func _plain(img: Image) -> Image:
 	if img == null or img.is_empty():
-		return Rect2()
+		return null
 	if img.is_compressed():
 		img = img.duplicate()
 		if img.decompress() != OK:
-			return Rect2()
+			return null
+	return img
+
+
+static func opaque_rect_of(img: Image, spec: Dictionary) -> Rect2:
+	img = _plain(img)
+	if img == null:
+		return Rect2()
 	if bool(spec.get("multi", false)):
 		return Rect2(img.get_used_rect())
 	var fw := img.get_width() / 9
@@ -1403,6 +1460,40 @@ static func opaque_rect_of(img: Image, spec: Dictionary) -> Rect2:
 		if r.has_area():
 			u = r if not u.has_area() else u.merge(r)
 	return u
+
+
+## 不透明像素逐行两端：[y, 最左 x, 最右 x+1]（取图范围内坐标；侧视图站立三格叠在一起取并集）。alpha>0 算不透明，与 get_used_rect 同
+static func opaque_rows_of(img: Image, spec: Dictionary) -> PackedVector3Array:
+	img = _plain(img)
+	var out := PackedVector3Array()
+	if img == null:
+		return out
+	var multi := bool(spec.get("multi", false))
+	var fw := img.get_width() if multi else img.get_width() / 9
+	var fh := img.get_height() if multi else img.get_height() / 6
+	var nf := 1 if multi else 3
+	var ur := []   # 每格的不透明外接框（先框住再逐行扫，省得扫空白）
+	for p in nf:
+		ur.append(img.get_region(Rect2i(p * fw, 0, fw, fh)).get_used_rect())
+	for y in fh:
+		var lo := fw
+		var hi := -1
+		for p in nf:
+			var u: Rect2i = ur[p]
+			if not u.has_area() or y < u.position.y or y >= u.end.y:
+				continue
+			var ox := p * fw
+			for x in range(u.position.x, u.end.x):
+				if img.get_pixel(ox + x, y).a > 0.0:
+					lo = mini(lo, x)
+					break
+			for x in range(u.end.x - 1, u.position.x - 1, -1):
+				if img.get_pixel(ox + x, y).a > 0.0:
+					hi = maxi(hi, x)
+					break
+		if hi >= 0:
+			out.append(Vector3(y, lo, hi + 1))
+	return out
 
 
 ## T554 立绘缩放只在天启篇做（西游档 XUiSkin 强开时照旧）

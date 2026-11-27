@@ -1,11 +1,11 @@
 extends Node
 ## 【cc·T554·未经审查】天启篇人物图鉴牌头（Kyo 11-27：小铃兰立绘出圈、「矢」、属性与角色属性混淆、武器防具排版；事项 84 只改天启篇）。
-## - 全员扫：天启篇目录里每位有名角色、侧视图三格，立绘看得见的部分都在法阵外接方框里（XSkinBookPage.sprite_place）；
+## - 全员扫：天启篇目录里每位有名角色、侧视图三格，每帧不透明像素逐个量都在法阵外圈里（圆判定，R2；XSkinBookPage.sprite_place）；
 ##   本来就放得下的（64 格原生图、有档案的新角色）位置大小一点不变，只有放不下的才缩。
 ## - 牌头三行：角色属性（元素色）／武器／防具，掌握去重（小铃兰两个法杖）、一类全会写「全部」、类型名不拆字；
 ##   原版「属性」（人物属性）天启篇不画。
 ## - 西游档不变：actor_info 与改前一致（开关全关时的结果），立绘不缩；开关关＝天启篇也回改前。
-## 带 -- --out=<目录> 且有窗口时截图：小铃兰、宿傩、1 号、奈叶 改前／改后，1280×720。
+## 带 -- --out=<目录> 且有窗口时截图：小铃兰、宿傩、1 号、奈叶、十三娘 改前／改后，1280×720。
 const TestEnv = preload("res://tests/xiyou_test_env.gd")
 
 var results: Array = []
@@ -88,18 +88,20 @@ func _run() -> void:
 	get_tree().quit.call_deferred(0 if passed == results.size() else 1)
 
 
-## 全员扫：放得下的不动，放不下的缩进来
+## 全员扫：放得下的不动，放不下的缩进来。R2（小o 核）：按圆判定——每一帧自己的不透明像素（专项自己逐像素量，
+## 不借用 opaque_rows_of）画到法阵上，离圆心最远处都不超过外圈 r（+0.5 容差）；读不到像素时的退路（vis 四角）也在圈里
 func _scan() -> void:
 	_state(true)
 	_switches(true)
 	var cc := Vector2(200, 200)
 	var r := XSkinBookPage.CIRCLE_R
-	var box := Rect2(cc - Vector2(r, r), Vector2(r, r) * 2.0).grow(0.5)
 	var bad := []
 	var moved_fit_ok := []
 	var fitted := []
 	var no_pixels := []
+	var before := {}   # 改前（开关关）各位三帧最远越圈多少像素
 	var n := 0
+	var worst := -INF
 	for id in XActorBook.index_ids():
 		if int(id) <= 0:
 			continue
@@ -111,37 +113,83 @@ func _scan() -> void:
 		if tex == null:
 			continue
 		n += 1
-		# 正式跑读得到像素（不透明外接框）；无头读不到时退回整格。两种都要在圈里
-		var used := XSkinBookPage.opaque_rect_of(Image.load_from_file(ProjectSettings.globalize_path(p)), spec)
-		if not used.has_area():
+		var img := Image.load_from_file(ProjectSettings.globalize_path(p))
+		var used := XSkinBookPage.opaque_rect_of(img, spec)
+		var rows := XSkinBookPage.opaque_rows_of(img, spec)
+		if not used.has_area() or rows.is_empty():
 			no_pixels.append(id)
 		for pattern in 3:
 			XSkinBookPage.FIT_SPRITE = true
-			var pl := XSkinBookPage.sprite_place(int(id), spec, Vector2(tex.get_size()), pattern, cc, r, used)
+			var pl := XSkinBookPage.sprite_place(int(id), spec, Vector2(tex.get_size()), pattern, cc, r, used, rows)
 			var pl_frame := XSkinBookPage.sprite_place(int(id), spec, Vector2(tex.get_size()), pattern, cc, r)
 			XSkinBookPage.FIT_SPRITE = false
-			var old := XSkinBookPage.sprite_place(int(id), spec, Vector2(tex.get_size()), pattern, cc, r, used)
-			if not box.encloses(pl.vis) or not box.encloses(pl_frame.vis):
-				bad.append([id, XActorBook.actor_name(int(id)), pattern, pl.vis, pl_frame.vis])
+			var old := XSkinBookPage.sprite_place(int(id), spec, Vector2(tex.get_size()), pattern, cc, r, used, rows)
+			var over := _frame_far(img, pl.draw, pl.src, cc) - r
+			worst = maxf(worst, over)
+			var over_old := _frame_far(img, old.draw, old.src, cc) - r
+			if over_old > 0.5:
+				before[id] = maxf(float(before.get(id, 0.0)), over_old)
+			var fv: Rect2 = pl_frame.vis
+			var corners_far := 0.0
+			for q in [fv.position, Vector2(fv.end.x, fv.position.y), Vector2(fv.position.x, fv.end.y), fv.end]:
+				corners_far = maxf(corners_far, q.distance_to(cc))
+			if over > 0.5 or corners_far > r + 0.5:
+				bad.append([id, XActorBook.actor_name(int(id)), pattern, snappedf(over, 0.01), snappedf(corners_far - r, 0.01)])
 			if bool(pl.fit):
 				if pattern == 0:
 					fitted.append([id, XActorBook.actor_name(int(id))])
 			elif pl.draw != old.draw:
 				moved_fit_ok.append([id, pattern])
 	XSkinBookPage.FIT_SPRITE = true
-	print("T554 立绘扫描：%d 位，缩过的 %s" % [n, JSON.stringify(fitted)])
+	var bk := before.keys()
+	bk.sort()
+	print("T554 立绘扫描：%d 位×3 帧，缩后离外圈最近还差 %.2f 像素（负＝圈内）；缩过的 %s；改前越圈 %s" % [n, worst, JSON.stringify(fitted),
+		JSON.stringify(bk.map(func(k): return [k, XActorBook.actor_name(int(k)), snappedf(before[k], 0.01)]))])
 	check("scan.count", n >= 150, n)
 	check("scan.pixels_read", no_pixels.is_empty(), no_pixels)
 	check("scan.all_inside_circle", bad.is_empty(), bad)
 	check("scan.fit_untouched_unchanged", moved_fit_ok.is_empty(), moved_fit_ok)
 	check("scan.suzuran_fitted", fitted.any(func(f): return int(f[0]) == 127), fitted)
 	check("scan.actor1_not_fitted", not fitted.any(func(f): return int(f[0]) == 1), fitted)
-	# 小铃兰缩完不至于太小（按不透明外接框缩，不按整格）：看得见的高至少占法阵直径一半
+	# 小o 点名的两位：改前确实越圈，现在缩过
+	for id in [108, 78]:
+		check("scan.was_out.%d" % id, float(before.get(id, 0.0)) > 0.5, before.get(id))
+		check("scan.fitted.%d" % id, fitted.any(func(f): return int(f[0]) == id), fitted)
+	# 小铃兰缩完不至于太小（按不透明像素缩，不按整格）：看得见的高至少占法阵半径
 	var sp := XActorBook.sprite_spec(127)
 	var t127: Texture2D = load(str(sp.path))
-	var u127 := XSkinBookPage.opaque_rect_of(Image.load_from_file(ProjectSettings.globalize_path(str(sp.path))), sp)
-	var pl127 := XSkinBookPage.sprite_place(127, sp, Vector2(t127.get_size()), 0, cc, r, u127)
+	var i127 := Image.load_from_file(ProjectSettings.globalize_path(str(sp.path)))
+	var pl127 := XSkinBookPage.sprite_place(127, sp, Vector2(t127.get_size()), 0, cc, r, XSkinBookPage.opaque_rect_of(i127, sp), XSkinBookPage.opaque_rows_of(i127, sp))
 	check("scan.suzuran_size", pl127.vis.size.y >= r and pl127.vis.size.y <= r * 2.0, pl127.vis)
+
+
+## 这一帧（取图范围 src）的不透明像素画到 draw 上，离 cc 最远多少（不走被测函数；每行只量两端的像素四角——
+## 到一点的距离沿一行是凸的，最远必在两端）
+func _frame_far(img: Image, draw: Rect2, src: Rect2, cc: Vector2) -> float:
+	if img.is_compressed():
+		img = img.duplicate()
+		img.decompress()
+	var s := draw.size.x / src.size.x
+	var sx := int(src.position.x)
+	var sy := int(src.position.y)
+	var w := mini(int(src.size.x), img.get_width() - sx)
+	var h := mini(int(src.size.y), img.get_height() - sy)
+	var u := img.get_region(Rect2i(sx, sy, w, h)).get_used_rect()
+	var m := 0.0
+	for y in range(u.position.y, u.end.y):
+		var ends := []
+		for x in range(u.position.x, u.end.x):
+			if img.get_pixel(sx + x, sy + y).a > 0.0:
+				ends.append(x)
+				break
+		for x in range(u.end.x - 1, u.position.x - 1, -1):
+			if img.get_pixel(sx + x, sy + y).a > 0.0:
+				ends.append(x + 1)
+				break
+		for x in ends:
+			for yy in [y, y + 1]:
+				m = maxf(m, (draw.position + Vector2(x, yy) * s).distance_to(cc))
+	return m
 
 
 ## 牌头三行的数据
@@ -231,7 +279,7 @@ func _shots() -> void:
 		var a := XActorBook.new()
 		add_child(a)
 		await frames(3)
-		for id in [127, 172, 1, 108]:
+		for id in [127, 172, 1, 108, 78]:
 			var slot := XActorBook.index_ids().find(id)
 			if slot < 0:
 				continue
