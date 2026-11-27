@@ -123,12 +123,45 @@ func _run() -> void:
 	for id in [2562, 2560, 2554]:
 		_check("tq.%d_no_dead_note_sub" % id, not XTianqiSkills.data().states[str(id)].has("note_sub"), id)
 
+	# 首领状态窗：表里显式标「异常」的 39 个都进 Debuff 页签（T566 复核遗留：原来按 kind_of 有 22 个进了 Buff）
+	var abnormal: Array = XTianqiSkills.data().states.keys().filter(func(k): return str(XTianqiSkills.data().states[k].get("state_kind", "")) == "异常").map(func(k): return int(k))
+	_check("boss.abnormal_count_39", abnormal.size() == 39, abnormal.size())
+	var was_buff := abnormal.filter(func(id): return XBossStatus.kind_of(XDB.rec("States", id)) == "Buff")
+	print("T570_BOSS_WAS_BUFF ", was_buff.size(), " ", JSON.stringify(was_buff))
+	var not_debuff := []
+	for id in abnormal:
+		var b := _dummy(MHP)
+		b.state_ids.append(id)
+		var hit := XBossStatus.entries(b).filter(func(r): return r.id is int and r.id == id)
+		if hit.is_empty() or str(hit[0].kind) != "Debuff":
+			not_debuff.append([id, hit.map(func(r): return r.kind)])
+	_check("boss.abnormal_in_debuff_tab", not_debuff.is_empty(), not_debuff)
+	XBossStatus.PANEL_TIANQI_KIND = false
+	var back := abnormal.filter(func(id): return XBossStatus.panel_kind(XDB.rec("States", id)) == "Buff")
+	_check("rollback.boss_kind_rule", back == was_buff, [back.size(), was_buff.size()])
+	XBossStatus.PANEL_TIANQI_KIND = true
+	# 结算读的 kind_of 不改（驱散、异化等）
+	_check("boss.kind_of_unchanged", was_buff.size() > 0, was_buff.size())
+
+	# 回退开关：关掉回到 T570 之前（9.9%、三次、回满、两次掷骰约 51%）
+	XTianqiSkills.REVIVE_SINGLE_ROLL = false
+	XTianqiSkills.EFFECT_NUMS = false
+	XTianqiSkills._state_recs = {}
+	var off := _measure("tianqi_rollback")
+	_check("rollback.old_values", off["2562"] == [901.0, 99.0] and off["2560"] == 3 and off["2554"] == [MHP, false]
+		and absf(float(off["1099"][0]) - (1.0 - 0.7 * 0.7)) < 0.015, off)
+	XTianqiSkills.REVIVE_SINGLE_ROLL = true
+	XTianqiSkills.EFFECT_NUMS = true
+	XTianqiSkills._state_recs = {}
+
 	# ---- 西游档：照旧 ----
 	var xy := XState.new_game(3, 1, [8])
 	XState.current = xy
 	var table: Array = XDB.table("States")
 	var same := [2562, 2560, 2554, 2561, 1099, 1178].filter(func(id): return XDB.rec("States", id) == table[id])
 	_check("xy.records_untouched", same.size() == 6, same)
+	var xy_diff := abnormal.filter(func(id): return id < table.size() and XBossStatus.panel_kind(XDB.rec("States", id)) != XBossStatus.kind_of(table[id]))
+	_check("xy.boss_kind_rule_unchanged", xy_diff.is_empty(), xy_diff)
 	var x := _measure("xiyou")
 	_check("xy.2562_9.9pct", x["2562"] == [901.0, 99.0], x["2562"])
 	_check("xy.2560_three", x["2560"] == 3, x["2560"])

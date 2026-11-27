@@ -977,7 +977,8 @@ func _fill_charge() -> void:
 	_check("fill_revive_rate", qx_hp.size() == 1 and is_equal_approx(float(qx_hp[0].rate), 0.3), qx.effects)
 	var yg := XDB.rec("States", 1099)
 	var ye: Dictionary = yg.effects[0]
-	_check("fill_revive_once", is_equal_approx(float(ye.cond.above), 0.7) and str(ye.steps[0].do) == "remove_self" and not (ye.steps as Array).any(func(x): return str(x.get("resource", "")) == "mp"), ye)
+	# T570：每次倒下只掷一次（原版 hp≤0、isDead 各掷一次，30% 实为约 51%）
+	_check("fill_revive_once", str(ye.cond.kind) == "down" and is_equal_approx(float(ye.cond.below), 0.3) and str(ye.steps[0].do) == "remove_self" and not (ye.steps as Array).any(func(x): return str(x.get("resource", "")) == "mp"), ye)
 	# 诸葛：命星给战斗中的五行移位（不占行动）；逆天改命把七星续命再给生命最低的队友
 	var zg: XActor = s.actor(71)
 	var wx := XDB.rec("Skills", 10755)

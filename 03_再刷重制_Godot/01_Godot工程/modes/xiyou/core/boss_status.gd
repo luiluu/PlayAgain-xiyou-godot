@@ -138,6 +138,18 @@ static func kind_of(state: Dictionary) -> String:
 	return "Debuff" if _regex(DEBUFF_NAMES).search(str(state.get("name", ""))) else "Buff"
 
 
+
+## T570：首领状态窗的页签。天启篇改写表显式标了「异常」的（记录带 tianqiKind，见 XTianqiSkills.rec_state）进 Debuff，
+## 其余照 kind_of。只改状态窗显示；kind_of 本身还被驱散、异化等结算读，不动。西游档记录没有 tianqiKind，照旧。
+static var PANEL_TIANQI_KIND := true
+
+
+static func panel_kind(state: Dictionary) -> String:
+	if PANEL_TIANQI_KIND and str(state.get("tianqiKind", "")) == "异常":
+		return "Debuff"
+	return kind_of(state)
+
+
 ## duration：turns 为空表示没有回合数（NaN）
 static func duration(turns, state: Dictionary) -> String:
 	var has_turns: bool = turns != null and is_finite(float(turns))
@@ -182,7 +194,7 @@ static func entries(b) -> Array:
 			desc = note_block(note, "ステートヘルプ")
 		if desc == "":
 			desc = trait_text(state)
-		rows.append({"id": id, "kind": kind_of(state), "name": clean(state.name), "icon": int(state.get("iconIndex", 0)),
+		rows.append({"id": id, "kind": panel_kind(state), "name": clean(state.name), "icon": int(state.get("iconIndex", 0)),
 			"stack": " · ".join(meta), "turns": duration(turns, state),
 			"remaining": float(turns) if counted and finite else INF,
 			"description": desc if desc != "" else "此状态没有文字说明。"})
