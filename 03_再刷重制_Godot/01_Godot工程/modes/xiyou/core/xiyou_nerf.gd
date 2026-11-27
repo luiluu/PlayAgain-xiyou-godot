@@ -37,12 +37,12 @@ const FEITIAN_ST_2739 := 2739          # 极光剑一*破：原代码 *2.5 → �
 const FEITIAN_ST_2739_PCT := 150
 
 # ---- 马宝国「混元大成」（60，技能 5115／状态 908）D293 调整（全部整数）----
-# 西游档反伤 = 10 ×(受到伤害 + 物攻 + 最大生命)× min(1 + 积分/100, 300)；原版 90 ×(…)×(1 + 积分/100) 无上限。
+# 西游档反伤 = 10 ×(受到伤害 + 物攻 + 最大生命)× min(1 + 积分/100, 30)；原版 90 ×(…)×(1 + 积分/100) 无上限。
 # 触发规则（每段、伤害值≥0 即反）与最大生命 +10000 不变。
 const HUNYUAN_SKILL := 5115
 const HUNYUAN_STATE := 908
 const HUNYUAN_COEF := 10               # 原 90
-const HUNYUAN_POINTS_CAP := 300        # 积分倍率 (1 + 积分/100) 封顶 ×300
+const HUNYUAN_POINTS_CAP := 30         # 积分倍率 (1 + 积分/100) 封顶 ×30（Kyo 11-27 返修 R2，原定 ×300）
 const HUNYUAN_OLD_TEXT := "马老师受到任何伤害，反弹(受到伤害*90+物攻*90+自身最大生命*90)*(1+肝帝积分/100)的伤害"
 const HUNYUAN_NEW_TEXT := "马老师每段受到伤害都会反弹，反伤随受到的伤害、物攻、最大生命和肝帝积分提高（积分加成有上限）"
 
@@ -225,7 +225,7 @@ static func _patch_hunyuan_skill(sk: Dictionary) -> void:
 
 
 static func _patch_hunyuan_state(st: Dictionary) -> void:
-	# 只换 gainHp 的数值表达式：((-D-H-A) * 90) * (1 + v[206]*0.01) → ((-D-H-A) * 10) * min(1 + v[206]/100, 300)。
+	# 只换 gainHp 的数值表达式：((-D-H-A) * 90) * (1 + v[206]*0.01) → ((-D-H-A) * 10) * min(1 + v[206]/100, 30)。
 	# 「value >= 0」门槛、React 顺序与扣血结算仍走原状态脚本。
 	for effect in st.get("effects", []):
 		if not effect is Dictionary or effect.get("phase") != "react" or effect.get("op") != "effect_program":

@@ -1,14 +1,14 @@
 extends Node
 ## T563 西游档马宝国「混元大成」调整专项（Kyo 11-27 D293，事项 86）。
-## 西游档反伤 = 10 ×(受到伤害 D + 物攻 + 最大生命)× min(1 + 积分/100, 300)，每段触发；
-## 断言积分 0／300／29900／35000 四档、三段各反一次、零伤照反、最大生命 +10000 不变；
+## 西游档反伤 = 10 ×(受到伤害 D + 物攻 + 最大生命)× min(1 + 积分/100, 30)，每段触发；
+## 断言积分 0／300／2900／35000 四档、三段各反一次、零伤照反、最大生命 +10000 不变；
 ## 天启篇同名被动（技能 5115、状态 908 的记录）零改动；关开关回原版 90 倍无上限。
 
 var passed := 0
 var total := 0
 
 const MA := 60
-const POINTS := [0, 300, 29900, 35000]
+const POINTS := [0, 300, 2900, 35000]
 
 
 func _ready() -> void:
@@ -84,7 +84,7 @@ func _bout(points: int, base: int, hits := 1) -> Dictionary:
 func _expect(coef: float, d: float, atk: float, mhp: float, points: int, cap: bool) -> float:
 	var mul := 1.0 + float(points) / 100.0
 	if cap:
-		mul = minf(mul, 300.0)
+		mul = minf(mul, float(XXiyouNerf.HUNYUAN_POINTS_CAP))
 	return coef * (ceilf(d) + atk + mhp) * mul
 
 
@@ -120,10 +120,10 @@ func _check_tables() -> void:
 		str(base_st.note).contains(" * 90) * (1 + v[206]*0.01)") and str(base_sk.note).contains(XXiyouNerf.HUNYUAN_OLD_TEXT),
 		[base_st.note])
 	check("t563.state_note_new_formula",
-		str(st.note).contains(" * 10) * Math.min(1 + v[206] / 100, 300)") and not str(st.note).contains("* 90)"), st.note)
+		str(st.note).contains(" * 10) * Math.min(1 + v[206] / 100, 30)") and not str(st.note).contains("* 90)"), st.note)
 	check("t563.skill_card_player_text",
 		str(sk.note).contains(XXiyouNerf.HUNYUAN_NEW_TEXT) and not str(sk.note).contains("*90")
-		and not str(sk.note).contains("300") and str(sk.note).contains("最大生命+10000")
+		and not str(sk.note).contains("×30") and not str(sk.note).contains(", 30)") and str(sk.note).contains("最大生命+10000")
 		and str(sk.get("meta", {}).get("passivePBST0", "")).strip_edges() == "10000"
 		and sk.description == base_sk.description, [sk.note, sk.description])
 
@@ -134,12 +134,12 @@ func _check_formula_four_points() -> void:
 		var want := _expect(10.0, r.taken[0], r.atk, r.mhp, p, true)
 		check("t563.formula_p%d" % p, r.state and r.taken[0] > 0.0 and _close(r.reflect[0], want),
 			{"points": p, "taken": r.taken, "reflect": r.reflect, "want": want, "atk": r.atk, "mhp": r.mhp})
-	# 封顶：29900 与 35000 反伤相同；300 档倍率 4
-	var r29 := _bout(29900, 1000)
+	# 封顶：2900（1+29＝30，正好到顶）与 35000 反伤相同、都是 0 分的 30 倍；300 档倍率 4
+	var r29 := _bout(2900, 1000)
 	var r35 := _bout(35000, 1000)
 	var r3 := _bout(300, 1000)
 	var r0 := _bout(0, 1000)
-	check("t563.points_cap_300x", _close(r29.reflect[0], r35.reflect[0]) and _close(r29.reflect[0], r0.reflect[0] * 300.0),
+	check("t563.points_cap_30x", XXiyouNerf.HUNYUAN_POINTS_CAP == 30 and _close(r29.reflect[0], r35.reflect[0]) and _close(r29.reflect[0], r0.reflect[0] * 30.0),
 		[r0.reflect, r29.reflect, r35.reflect])
 	check("t563.points_300_is_4x", _close(r3.reflect[0], r0.reflect[0] * 4.0), [r0.reflect, r3.reflect])
 
