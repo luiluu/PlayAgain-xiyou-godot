@@ -52,6 +52,7 @@ func _run() -> void:
 	_states()
 	_follow()
 	_gear()
+	_owns_kind()
 	_xinfa()
 	_buzhao()
 	_p3()
@@ -424,6 +425,26 @@ func _gear() -> void:
 	_state(false)
 	var legacy := XActor.make_equip("armor", 3672)
 	_check("gear_legacy", is_same(XTianqiSkills.gear_view(legacy), legacy))
+
+
+## T579：条件「要有」的 "e底号" 分武器、防具：一把斩月＋四件同底号防具（鞋、布袋、护手、盾）不再让黑崎一护五条斩月条件全成立
+func _owns_kind() -> void:
+	var s := _state()
+	var a: XActor = s.actor(XIAOYAO)
+	var keep: Array = a.equips.duplicate()
+	a.equips = [XActor.make_equip("weapon", 67)]
+	for base in [68, 69, 70, 72]:
+		a.equips.append(XActor.make_equip("armor", base))
+	var kinds := a.equip_list().map(func(e): return XTianqiSkills.gear_key(e))
+	var conds: Array = XTianqiSkills.data().actors["148"].conds.filter(func(c): return str(c.get("need", "")).begins_with("e"))
+	var hit := conds.filter(func(c): return XTianqiSkills.owns(a, c.need)).map(func(c): return c.need)
+	_check("owns_kind_zangetsu", conds.size() == 5 and hit == ["e67"], [kinds, hit])
+	_check("owns_kind_explicit", XTianqiSkills.owns(a, "armor:68") and not XTianqiSkills.owns(a, "weapon:68") and XTianqiSkills.owns(a, "weapon:67") and not XTianqiSkills.owns(a, "armor:67"))
+	a.equips = [XActor.make_equip("weapon", 77)]  # 贽殿遮那（武器 77）不顶替逐暗者法宝（防具 77，表里写明 armor:77）
+	_check("owns_kind_both", not XTianqiSkills.owns(a, "armor:77") and XTianqiSkills.owns(a, "weapon:77"))
+	a.equips = [{}, XActor.make_equip("armor", 77)]
+	_check("owns_kind_both_armor", XTianqiSkills.owns(a, "armor:77") and not XTianqiSkills.owns(a, "weapon:77"))
+	a.equips = keep
 
 
 ## 心法：变体技能有行、诛心无视双防、坐忘痔霄①对减速目标必暴

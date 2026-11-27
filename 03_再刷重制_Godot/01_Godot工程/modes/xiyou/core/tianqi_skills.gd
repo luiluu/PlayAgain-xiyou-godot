@@ -41,6 +41,7 @@ static var _state_recs: Dictionary = {}
 static var _tier: Dictionary = {}  # int 角色号 → 名单档位（含「不开放」）
 static var _gear: Dictionary = {}  # "armor:底号"／"weapon:底号" → 专属装备改写规格
 static var _gear_cache: Dictionary = {}
+static var _need_gear: Dictionary = {}  # T579：条件「要有」的 "e底号" → "weapon:底号"／"armor:底号"（gear 表里只有一种时）；两种都有或都没有为 ""
 static var _actor_trait_cache: Dictionary = {}  # int 角色号 → [原 data 引用, 过滤 traits_remove 后的副本]
 ## T411：天启篇状态命中追加伤害（hit_extra_pct，徐凤年剑一～剑八）与角色本体 traits_remove 开关；false＝回退
 static var HIT_EXTRA_ON := true
@@ -110,6 +111,10 @@ static func data() -> Dictionary:
 		for k in _data.get("gear", {}):
 			if str(k).contains(":"):
 				_gear[str(k)] = _data.gear[k]
+		_need_gear = {}
+		for k in _gear:
+			var e := "e" + str(k).get_slice(":", 1)
+			_need_gear[e] = k if not _need_gear.has(e) else ""  # 同底号武器、法宝都在表里：要写明 "weapon:底号"／"armor:底号"
 		_tier = {}
 		for t in _data.get("tiers", {}):
 			if _data.tiers[t] is Array:
@@ -142,6 +147,7 @@ static func reload_table() -> void:
 	_tier = {}
 	_gear = {}
 	_gear_cache = {}
+	_need_gear = {}
 	_actor_trait_cache = {}
 	_again = {}
 	_passive_elup = {}
@@ -647,13 +653,22 @@ static func gear_view(item):
 	return v
 
 
-## 条件里的「要有」：数字是学会的技能号，"e底号" 是身上装着这件（法宝、武器）
+## 条件里的「要有」：数字是学会的技能号，"e底号" 是身上装着这件（法宝、武器），"weapon:底号"／"armor:底号" 写明类别。
+## T579：武器、防具各是一张表，底号会撞（斩月 67 与同底号的鞋、布袋、护手、盾）："e底号" 按 gear 表里这个底号登记的类别比，
+## 只认那一类；表里两类都有或都没有（发行包没表）时退回只比底号（数据校验要求两类都有的写明类别）
 static func owns(u, key) -> bool:
 	if not (u is XActor):
 		return false
 	if key is String and key.begins_with("e"):
+		if _need_gear.is_empty():
+			data()
+		var gk := str(_need_gear.get(key, ""))
+		if gk != "":
+			return u.equip_list().any(func(e): return gear_key(e) == gk)
 		var base := int(key.substr(1))
 		return u.equip_list().any(func(e): return int(e.get("base", e.get("id", 0))) == base)
+	if key is String and (key.begins_with("weapon:") or key.begins_with("armor:")):
+		return u.equip_list().any(func(e): return gear_key(e) == key)
 	return u.skill_ids.has(int(key))
 
 
