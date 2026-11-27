@@ -36,15 +36,18 @@ const FEITIAN_CRI_CAP := 5             # 暴击率进公式封顶 500%
 const FEITIAN_ST_2739 := 2739          # 极光剑一*破：原代码 *2.5 → 按卡面修回 *1.5
 const FEITIAN_ST_2739_PCT := 150
 
-# ---- 马宝国「混元大成」（60，技能 5115／状态 908）D293 调整（全部整数）----
-# 西游档反伤 = 10 ×(受到伤害 + 物攻 + 最大生命)× min(1 + 积分/100, 30)；原版 90 ×(…)×(1 + 积分/100) 无上限。
-# 触发规则（每段、伤害值≥0 即反）与最大生命 +10000 不变。
+# ---- 马宝国「混元大成」（60，技能 5115／状态 908）D293 V6（Kyo 11-27 事项 86 改口「留物攻和生命」）----
+# 原版：(受到伤害*90+物攻*90+自身最大生命*90)*(1+肝帝积分/100)
+# V6：  (受到伤害+90+物攻*90+自身最大生命*90)*(1+肝帝积分/100)
+# 数字全照原版（90、积分/100、不封顶），只把「受到伤害」后的 *90 换成 +90，物攻、最大生命仍 *90，
+# 外层乘法不动；触发规则（每段、伤害值≥0 即反）与最大生命 +10000 不变。
 const HUNYUAN_SKILL := 5115
 const HUNYUAN_STATE := 908
-const HUNYUAN_COEF := 10               # 原 90
-const HUNYUAN_POINTS_CAP := 30         # 积分倍率 (1 + 积分/100) 封顶 ×30（Kyo 11-27 返修 R2，原定 ×300）
-const HUNYUAN_OLD_TEXT := "马老师受到任何伤害，反弹(受到伤害*90+物攻*90+自身最大生命*90)*(1+肝帝积分/100)的伤害"
-const HUNYUAN_NEW_TEXT := "马老师每段受到伤害都会反弹，反伤随受到的伤害、物攻、最大生命和肝帝积分提高（积分加成有上限）"
+const HUNYUAN_K := 90                  # 原版数字，不改
+const HUNYUAN_OLD_TEXT := "反弹(受到伤害*90+物攻*90+自身最大生命*90)*(1+肝帝积分/100)"
+const HUNYUAN_NEW_TEXT := "反弹(受到伤害+90+物攻*90+自身最大生命*90)*(1+肝帝积分/100)"
+const HUNYUAN_OLD_JS := "user.gainHp(((-1 * damage1-damage2-damage3) * 90) * (1 + v[206]*0.01));"
+const HUNYUAN_NEW_JS := "user.gainHp(-1 * ((damage1 + 90 + damage3 * 90) + damage2 * 90) * (1 + v[206] / 100));"
 
 static var _rec_cache := {}            # "Table:id" -> [base_ref, copy_dict]
 static var _gear_tpl_cache := {}       # "weapon:87" -> [orig_ref, nerfed_copy]
@@ -220,12 +223,25 @@ static func _patch_feitian_st2739(st: Dictionary) -> void:
 
 
 static func _patch_hunyuan_skill(sk: Dictionary) -> void:
-	# 只换卡面效果行（玩家说法，不写内部系数）；描述「我再让你500招」与最大生命 +10000 行不动。
+	# 卡面效果行照原文只换一个符号；描述「我再让你500招」与最大生命 +10000 行不动。
 	_replace_note_meta(sk, HUNYUAN_OLD_TEXT, HUNYUAN_NEW_TEXT)
 
 
+static func _hy_lit(v: float) -> Dictionary:
+	return {"op": "literal", "pos": 0, "value": v}
+
+
+static func _hy_bin(o: String, l: Dictionary, r: Dictionary) -> Dictionary:
+	return {"op": "binary", "pos": 0, "operator": o, "left": l, "right": r}
+
+
+static func _hy_local(n: String) -> Dictionary:
+	return {"op": "local", "pos": 0, "name": n}
+
+
 static func _patch_hunyuan_state(st: Dictionary) -> void:
-	# 只换 gainHp 的数值表达式：((-D-H-A) * 90) * (1 + v[206]*0.01) → ((-D-H-A) * 10) * min(1 + v[206]/100, 30)。
+	# 只换 gainHp 的数值表达式（damage1＝ceil(受到伤害)、damage2＝最大生命、damage3＝物攻）：
+	# ((-1*D - H - A) * 90) * (1 + v[206]*0.01) → -1 * ((D + 90 + A * 90) + H * 90) * (1 + v[206] / 100)。
 	# 「value >= 0」门槛、React 顺序与扣血结算仍走原状态脚本。
 	for effect in st.get("effects", []):
 		if not effect is Dictionary or effect.get("phase") != "react" or effect.get("op") != "effect_program":
@@ -238,18 +254,21 @@ static func _patch_hunyuan_state(st: Dictionary) -> void:
 				if v.get("op") != "gain" or v.get("resource") != "hp":
 					continue
 				var amount: Dictionary = v.amount
-				var coef: Dictionary = amount.left.right
-				var points: Dictionary = amount.right.right
-				if not (is_equal_approx(float(coef.get("value", 0.0)), 90.0) and points.get("operator") == "*"
-						and is_equal_approx(float(points.right.get("value", 0.0)), 0.01)):
+				var coef: Dictionary = amount.get("left", {}).get("right", {})
+				var points: Dictionary = amount.get("right", {}).get("right", {})
+				var pool: Dictionary = points.get("left", {})
+				if not (is_equal_approx(float(coef.get("value", 0.0)), float(HUNYUAN_K)) and points.get("operator") == "*"
+						and is_equal_approx(float(points.get("right", {}).get("value", 0.0)), 0.01)
+						and pool.get("op") == "lookup" and pool.get("pool") == "v"):
 					push_error("T563 混元状态 908 的反伤表达式与预期不符，未改动")
 					continue
-				coef.value = float(HUNYUAN_COEF)
-				points.operator = "/"
-				points.right.value = 100.0
-				amount.right = {"op": "math", "pos": int(amount.right.get("pos", 0)), "name": "min",
-					"args": [amount.right, {"op": "literal", "pos": 0, "value": float(HUNYUAN_POINTS_CAP)}]}
-	st.note = str(st.get("note", "")).replace(" * 90) * (1 + v[206]*0.01)", " * %d) * Math.min(1 + v[206] / 100, %d)" % [HUNYUAN_COEF, HUNYUAN_POINTS_CAP])
+				var k := float(HUNYUAN_K)
+				var inner := _hy_bin("+",
+					_hy_bin("+", _hy_bin("+", _hy_local("damage1"), _hy_lit(k)), _hy_bin("*", _hy_local("damage3"), _hy_lit(k))),
+					_hy_bin("*", _hy_local("damage2"), _hy_lit(k)))
+				var mul := _hy_bin("+", _hy_lit(1.0), _hy_bin("/", pool, _hy_lit(100.0)))
+				v.amount = _hy_bin("*", _hy_lit(-1.0), _hy_bin("*", inner, mul))
+	st.note = str(st.get("note", "")).replace(HUNYUAN_OLD_JS, HUNYUAN_NEW_JS)
 
 
 # ---- 既有 Weapon 87 实例双向同步（读档／星级仓库存取）----
