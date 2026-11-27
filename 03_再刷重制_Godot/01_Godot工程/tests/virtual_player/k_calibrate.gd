@@ -560,19 +560,19 @@ static func _per_own(c: Dictionary, own: Dictionary) -> float:
 	return per
 
 
-## 共享量上一组条件的乘积，在该量的候选取值里取最大（比例量取 0.0001～1 每 0.01 一格，加各条件的门槛与门槛下一点）
+## 共享量上一组条件的乘积，在该量的候选取值里取最大（比例量取 0～1 每 0.01 一格（取到 0 是极限，同旧 cond_max 的上限），加各条件的门槛与门槛下一点）
 static func _dim_best(dk: String, conds: Array, own: Dictionary) -> float:
 	var vals := []
 	if dk == "g":
 		vals = [-1.0, 1.0]
 	else:
 		for i in 101:
-			vals.append(maxf(0.0001, i / 100.0))
+			vals.append(i / 100.0)
 		for c in conds:
 			if c.has("rate") or c.has("rate_with") or c.has("rate_add_with"):
 				var r := _rate_own(c, own)
 				vals.append(r)
-				vals.append(maxf(0.0001, r - 0.000001))
+				vals.append(maxf(0.0, r - 0.000001))
 	var best := -1.0
 	for v in vals:
 		var p := 1.0
