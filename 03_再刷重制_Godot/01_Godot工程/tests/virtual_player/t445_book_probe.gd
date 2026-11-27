@@ -212,8 +212,8 @@ func _secrets(a: XActor) -> void:
 		super._secrets(a)
 		return
 	var loadout := _secret_loadout(a.actor_id)
-	if _is_d271_build() and not LIANYU_SECRETS.has(int(a.actor_id)):
-		loadout = _auto_loadout(a)
+	if _is_d271_build() and (not LIANYU_SECRETS.has(int(a.actor_id)) or (force_all and loadout.size() < XTianqiSecrets.limit(a))):
+		loadout = _auto_loadout(a)  # T558：没列的；或六维全库量（--force-all-tiers）时表里书数少于现在的格数（11 里德已降弱者，表里还是超强者 5 本）
 	for sid in loadout:
 		a.learn_skill(int(sid))
 	var slots := XTianqiSecrets.active_ids(a)

@@ -201,7 +201,8 @@ def ingest_lianyu(logs):
     """T558 R2：只替换输出一维。炼狱探针 K_ROW 里 lianyu.cast_peaks（自然出招）＋lianyu.forced_main（强制量）每行取 peak_base（没有取 peak），全部取最大。"""
     md = load(MEAS)
     acts = md['actors']
-    rows, skip, dis = {}, set(), set()
+    rw = load(DATA / 'skill_rework.json')['skills']
+    rows, skip, dis, excl = {}, set(), set(), collections.defaultdict(list)
     for fn in logs:
         for l in open(fn, errors='ignore'):
             if l.startswith('K_ROW '):
@@ -211,6 +212,15 @@ def ingest_lianyu(logs):
                 cands = list(L.get('cast_peaks', [])) + list(L.get('forced_main', []))
                 if not cands:
                     cands = [r]
+                # 落地招不在改写表（没翻译的原版变体，如魔雷老人 533 随机落成 5157／5158，按原版公式 ×35 打出 29 亿）又不是被量的那招：不计入，记名单报 Kyo
+                keep = []
+                for c in cands:
+                    land = str(c.get('skill'))
+                    if land not in rw and land != str(c.get('input_skill', land)):
+                        excl[a].append({'input_skill': int(c.get('input_skill', 0)), 'skill': int(land), 'peak': int(c['peak'])})
+                    else:
+                        keep.append(c)
+                cands = keep or cands
                 best = max(cands, key=lambda c: (int(c.get('peak_base', c['peak'])), int(c['peak'])))
                 rows[a] = {'peak': int(best.get('peak_base', best['peak'])), 'peak_rand': int(best['peak']), 'skill': int(best.get('skill', 0)), 'input_skill': int(best.get('input_skill', best.get('skill', 0))),
                            'segs': len(best.get('segments', [])) or None, 'forced': bool(best.get('forced', False))}
@@ -220,10 +230,12 @@ def ingest_lianyu(logs):
     for i, e in acts.items():
         if 'peak' in e and 'peak_k' not in e:
             e['peak_k'], e['skill_k'] = e['peak'], e.get('skill')   # T558 k_calibrate 旧口径，只作对照
-        for k in ('peak', 'skill', 'segs', 'peak_first', 'peak_rand', 'input_skill', 'forced', 'no_damage_row'):
+        for k in ('peak', 'skill', 'segs', 'peak_first', 'peak_rand', 'input_skill', 'forced', 'no_damage_row', 'excluded_landings'):
             e.pop(k, None)
         if i in rows:
             e.update(rows[i])
+        if i in excl:
+            e['excluded_landings'] = excl[i]
         elif i in skip:
             e['no_damage_row'] = True
     md['_note'] = ('六维打分.py 的实测输入：peak＝T558 R2 炼狱口径（t445_book_probe --book-build=lianyu --noisy --seed=1 --force-all-tiers）整次施放合计、三档强制量条件全中、取 peak_base；'
@@ -474,6 +486,9 @@ def report(ids, base, tier, raw, meas, notes, res, mode_w, old_sample, prev, txt
     w('## T558 R2：输出换炼狱口径（Kyo 11-27 事项 83）\n')
     w('- **口径**：输出一维改用 `t445_book_probe --book-build=lianyu --noisy --seed=1 --force-all-tiers`：炼狱 C 模板养成，整次施放（`logic.execute`）各段直接相加，记落地招号；三档都把本角色全部改写伤害招强制量一遍（条件全中，原来只给超强者）；每招取 `peak_base`（段数最少的那几次里最大，不含随机再放／随机变身），全部招取最大。T558 前的 k_calibrate 旧数（「apply 单下×段数比」，T569 查出绿司机 4759→4760 等拼错）留在实测数据 `peak_k`，不参与打分。')
     w('- **谷雨输出手改 S 已去掉**，按实测给档（现 %s，全库第 %d）；辅助 A（Kyo 11-21）照留。' % (let['175']['output'], rk('output', '175')))
+    ex = [(i, x) for i in ids for x in meas.get(i, {}).get('excluded_landings', [])]
+    if ex:
+        w('- **剔除的样本（落地招不在改写表、按原版公式结算，疑似游戏数据问题，没核能不能在实战里出现，报 Kyo）**：' + '；'.join('%s（%s）%d→%d 量到 %.1f 万' % (base[i]['name'], i, x['input_skill'], x['skill'], x['peak'] / 1e4) for i, x in ex) + '。')
     w('- 面板（`--stats`）、生存（`--survive` 3 种子）没重跑，沿用 T558 在 main 8a807d7cf 上量的数（之后 main 只合进了状态名字／说明进运行时，不影响数值）。\n')
     w('## 0. 先说结论（名额口径算出来明显怪的地方）\n')
     fin = ts[mode_w]

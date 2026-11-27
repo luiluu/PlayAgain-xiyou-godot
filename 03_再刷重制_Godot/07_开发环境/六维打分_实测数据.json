@@ -1,10 +1,7 @@
 {
- "_note": "六维打分.py 的实测输入（由 --ingest 生成）：peak＝k_calibrate 含烙印整次施放峰值；stat＝--stats 标准养成面板；no_damage_row＝探针量不出伤害",
+ "_note": "六维打分.py 的实测输入：peak＝T558 R2 炼狱口径（t445_book_probe --book-build=lianyu --noisy --seed=1 --force-all-tiers）整次施放合计、三档强制量条件全中、取 peak_base；peak_rand＝同一招含随机再放的最大；peak_k＝T558 前 k_calibrate 旧口径（对照用，不参与打分）；stat＝--stats 标准养成面板；surv＝--survive 3 种子；no_damage_row＝探针量不出伤害",
  "actors": {
   "1": {
-   "peak": 8301246.0,
-   "skill": 4752,
-   "segs": 6,
    "mhp": 266739.0,
    "stat": {
     "mhp": 266739,
@@ -50,12 +47,17 @@
     "died": 3,
     "healed": 0,
     "atk": 8000.0
-   }
+   },
+   "peak_k": 8301246.0,
+   "skill_k": 4752,
+   "peak": 650148,
+   "peak_rand": 650148,
+   "skill": 3632,
+   "input_skill": 3632,
+   "segs": 3,
+   "forced": false
   },
   "2": {
-   "peak": 10627844.0,
-   "skill": 4759,
-   "segs": 8,
    "mhp": 287936.0,
    "stat": {
     "mhp": 287936,
@@ -101,12 +103,17 @@
     "died": 3,
     "healed": 0,
     "atk": 8000.0
-   }
+   },
+   "peak_k": 10627844.0,
+   "skill_k": 4759,
+   "peak": 406993,
+   "peak_rand": 406993,
+   "skill": 504,
+   "input_skill": 504,
+   "segs": 1,
+   "forced": false
   },
   "3": {
-   "peak": 1291083.0,
-   "skill": 506,
-   "segs": 3,
    "mhp": 291244.0,
    "stat": {
     "mhp": 291244,
@@ -152,12 +159,17 @@
     "died": 3,
     "healed": 0,
     "atk": 8000.0
-   }
+   },
+   "peak_k": 1291083.0,
+   "skill_k": 506,
+   "peak": 373698,
+   "peak_rand": 373698,
+   "skill": 506,
+   "input_skill": 506,
+   "segs": 3,
+   "forced": false
   },
   "4": {
-   "peak": 5194895.0,
-   "skill": 3517,
-   "segs": 5,
    "mhp": 304960.0,
    "stat": {
     "mhp": 304960,
@@ -203,12 +215,17 @@
     "died": 3,
     "healed": 0,
     "atk": 8000.0
-   }
+   },
+   "peak_k": 5194895.0,
+   "skill_k": 3517,
+   "peak": 1230153,
+   "peak_rand": 1230153,
+   "skill": 3517,
+   "input_skill": 3517,
+   "segs": 5,
+   "forced": true
   },
   "5": {
-   "peak": 969536.0,
-   "skill": 2770,
-   "segs": 4,
    "mhp": 281687.0,
    "stat": {
     "mhp": 281687,
@@ -254,12 +271,17 @@
     "died": 3,
     "healed": 0,
     "atk": 8000.0
-   }
+   },
+   "peak_k": 969536.0,
+   "skill_k": 2770,
+   "peak": 307036,
+   "peak_rand": 307036,
+   "skill": 2770,
+   "input_skill": 2770,
+   "segs": 4,
+   "forced": false
   },
   "6": {
-   "peak": 882072.0,
-   "skill": 164,
-   "segs": 3,
    "mhp": 266732.0,
    "stat": {
     "mhp": 266732,
@@ -305,12 +327,17 @@
     "died": 3,
     "healed": 0,
     "atk": 8000.0
-   }
+   },
+   "peak_k": 882072.0,
+   "skill_k": 164,
+   "peak": 278697,
+   "peak_rand": 278697,
+   "skill": 164,
+   "input_skill": 164,
+   "segs": 3,
+   "forced": false
   },
   "7": {
-   "peak": 1234680.0,
-   "skill": 3518,
-   "segs": 6,
    "mhp": 288723.0,
    "stat": {
     "mhp": 288723,
@@ -356,12 +383,17 @@
     "died": 3,
     "healed": 112851,
     "atk": 8000.0
-   }
+   },
+   "peak_k": 1234680.0,
+   "skill_k": 3518,
+   "peak": 356151,
+   "peak_rand": 356151,
+   "skill": 3518,
+   "input_skill": 3518,
+   "segs": 6,
+   "forced": false
   },
   "8": {
-   "peak": 1055470.0,
-   "skill": 4792,
-   "segs": 5,
    "mhp": 288723.0,
    "stat": {
     "mhp": 288723,
@@ -407,12 +439,17 @@
     "died": 3,
     "healed": 97071,
     "atk": 8000.0
-   }
+   },
+   "peak_k": 1055470.0,
+   "skill_k": 4792,
+   "peak": 232830,
+   "peak_rand": 232830,
+   "skill": 4787,
+   "input_skill": 4787,
+   "segs": 5,
+   "forced": true
   },
   "9": {
-   "peak": 921697.0,
-   "skill": 10702,
-   "segs": 1,
    "mhp": 273768.0,
    "stat": {
     "mhp": 273768,
@@ -458,12 +495,17 @@
     "died": 3,
     "healed": 0,
     "atk": 8000.0
-   }
+   },
+   "peak_k": 921697.0,
+   "skill_k": 10702,
+   "peak": 237855,
+   "peak_rand": 237855,
+   "skill": 10702,
+   "input_skill": 10702,
+   "segs": 1,
+   "forced": true
   },
   "10": {
-   "peak": 1292424.0,
-   "skill": 3645,
-   "segs": 6,
    "mhp": 296107.0,
    "stat": {
     "mhp": 296107,
@@ -509,12 +551,17 @@
     "died": 3,
     "healed": 0,
     "atk": 8000.0
-   }
+   },
+   "peak_k": 1292424.0,
+   "skill_k": 3645,
+   "peak": 234396,
+   "peak_rand": 234396,
+   "skill": 3645,
+   "input_skill": 3644,
+   "segs": 6,
+   "forced": true
   },
   "11": {
-   "peak": 1117860.0,
-   "skill": 4411,
-   "segs": 6,
    "mhp": 287456.0,
    "stat": {
     "mhp": 287456,
@@ -560,12 +607,17 @@
     "died": 3,
     "healed": 0,
     "atk": 8000.0
-   }
+   },
+   "peak_k": 1117860.0,
+   "skill_k": 4411,
+   "peak": 248622,
+   "peak_rand": 248622,
+   "skill": 4815,
+   "input_skill": 4814,
+   "segs": 6,
+   "forced": true
   },
   "12": {
-   "peak": 1018264.0,
-   "skill": 318,
-   "segs": 4,
    "mhp": 266732.0,
    "stat": {
     "mhp": 266732,
@@ -611,12 +663,17 @@
     "died": 3,
     "healed": 0,
     "atk": 8000.0
-   }
+   },
+   "peak_k": 1018264.0,
+   "skill_k": 318,
+   "peak": 251084,
+   "peak_rand": 251084,
+   "skill": 318,
+   "input_skill": 318,
+   "segs": 4,
+   "forced": false
   },
   "13": {
-   "peak": 391262.0,
-   "skill": 72,
-   "segs": 1,
    "mhp": 273768.0,
    "stat": {
     "mhp": 273768,
@@ -662,12 +719,17 @@
     "died": 3,
     "healed": 952098,
     "atk": 8000.0
-   }
+   },
+   "peak_k": 391262.0,
+   "skill_k": 72,
+   "peak": 128888,
+   "peak_rand": 128888,
+   "skill": 72,
+   "input_skill": 72,
+   "segs": 1,
+   "forced": true
   },
   "14": {
-   "peak": 1044980.0,
-   "skill": 322,
-   "segs": 2,
    "mhp": 266732.0,
    "stat": {
     "mhp": 266732,
@@ -713,12 +775,17 @@
     "died": 3,
     "healed": 0,
     "atk": 8000.0
-   }
+   },
+   "peak_k": 1044980.0,
+   "skill_k": 322,
+   "peak": 245172,
+   "peak_rand": 245172,
+   "skill": 521,
+   "input_skill": 521,
+   "segs": 6,
+   "forced": true
   },
   "15": {
-   "peak": 2155256.0,
-   "skill": 523,
-   "segs": 4,
    "mhp": 341261.0,
    "stat": {
     "mhp": 341261,
@@ -764,12 +831,17 @@
     "died": 3,
     "healed": 0,
     "atk": 8000.0
-   }
+   },
+   "peak_k": 2155256.0,
+   "skill_k": 523,
+   "peak": 324320,
+   "peak_rand": 324320,
+   "skill": 523,
+   "input_skill": 523,
+   "segs": 4,
+   "forced": true
   },
   "16": {
-   "peak": 10081.0,
-   "skill": 4552,
-   "segs": 1,
    "mhp": 274165.0,
    "stat": {
     "mhp": 274165,
@@ -815,12 +887,17 @@
     "died": 3,
     "healed": 992612,
     "atk": 8000.0
-   }
+   },
+   "peak_k": 10081.0,
+   "skill_k": 4552,
+   "peak": 1253,
+   "peak_rand": 1253,
+   "skill": 4552,
+   "input_skill": 4552,
+   "segs": 1,
+   "forced": true
   },
   "17": {
-   "peak": 99558.0,
-   "skill": 190,
-   "segs": 6,
    "mhp": 281491.0,
    "stat": {
     "mhp": 281491,
@@ -866,12 +943,17 @@
     "died": 3,
     "healed": 0,
     "atk": 8000.0
-   }
+   },
+   "peak_k": 99558.0,
+   "skill_k": 190,
+   "peak": 28074,
+   "peak_rand": 28074,
+   "skill": 190,
+   "input_skill": 190,
+   "segs": 6,
+   "forced": false
   },
   "18": {
-   "peak": 720174.0,
-   "skill": 814,
-   "segs": 6,
    "mhp": 260164.0,
    "stat": {
     "mhp": 289072,
@@ -917,12 +999,17 @@
     "died": 3,
     "healed": 0,
     "atk": 8000.0
-   }
+   },
+   "peak_k": 720174.0,
+   "skill_k": 814,
+   "peak": 178050,
+   "peak_rand": 356100,
+   "skill": 814,
+   "input_skill": 814,
+   "segs": 12,
+   "forced": false
   },
   "19": {
-   "peak": 902776.0,
-   "skill": 731,
-   "segs": 4,
    "mhp": 281687.0,
    "stat": {
     "mhp": 281687,
@@ -968,12 +1055,17 @@
     "died": 3,
     "healed": 0,
     "atk": 8000.0
-   }
+   },
+   "peak_k": 902776.0,
+   "skill_k": 731,
+   "peak": 274444,
+   "peak_rand": 274444,
+   "skill": 731,
+   "input_skill": 731,
+   "segs": 4,
+   "forced": false
   },
   "20": {
-   "peak": 1215174.0,
-   "skill": 530,
-   "segs": 6,
    "mhp": 266732.0,
    "stat": {
     "mhp": 266732,
@@ -1019,12 +1111,17 @@
     "died": 3,
     "healed": 0,
     "atk": 8000.0
-   }
+   },
+   "peak_k": 1215174.0,
+   "skill_k": 530,
+   "peak": 353298,
+   "peak_rand": 353298,
+   "skill": 530,
+   "input_skill": 530,
+   "segs": 6,
+   "forced": false
   },
   "21": {
-   "peak": 333683.0,
-   "skill": 4507,
-   "segs": 3,
    "mhp": 281687.0,
    "stat": {
     "mhp": 281687,
@@ -1070,12 +1167,17 @@
     "died": 3,
     "healed": 0,
     "atk": 8000.0
-   }
+   },
+   "peak_k": 333683.0,
+   "skill_k": 4507,
+   "peak": 69862,
+   "peak_rand": 69862,
+   "skill": 4507,
+   "input_skill": 4507,
+   "segs": 3,
+   "forced": false
   },
   "22": {
-   "peak": 2110524.0,
-   "skill": 3768,
-   "segs": 2,
    "mhp": 272009.0,
    "stat": {
     "mhp": 272009,
@@ -1121,12 +1223,17 @@
     "died": 3,
     "healed": 0,
     "atk": 8000.0
-   }
+   },
+   "peak_k": 2110524.0,
+   "skill_k": 3768,
+   "peak": 573708,
+   "peak_rand": 573708,
+   "skill": 3768,
+   "input_skill": 3768,
+   "segs": 2,
+   "forced": false
   },
   "23": {
-   "peak": 859259.0,
-   "skill": 217,
-   "segs": 1,
    "mhp": 281687.0,
    "stat": {
     "mhp": 281687,
@@ -1172,12 +1279,29 @@
     "died": 3,
     "healed": 0,
     "atk": 8000.0
-   }
+   },
+   "peak_k": 859259.0,
+   "skill_k": 217,
+   "peak": 244540,
+   "peak_rand": 244540,
+   "skill": 217,
+   "input_skill": 217,
+   "segs": 1,
+   "forced": false,
+   "excluded_landings": [
+    {
+     "input_skill": 533,
+     "skill": 5158,
+     "peak": 2924397490
+    },
+    {
+     "input_skill": 533,
+     "skill": 5157,
+     "peak": 2291483830
+    }
+   ]
   },
   "24": {
-   "peak": 644799.0,
-   "skill": 5088,
-   "segs": 1,
    "mhp": 266732.0,
    "stat": {
     "mhp": 266732,
@@ -1223,12 +1347,17 @@
     "died": 3,
     "healed": 0,
     "atk": 8000.0
-   }
+   },
+   "peak_k": 644799.0,
+   "skill_k": 5088,
+   "peak": 212326,
+   "peak_rand": 212326,
+   "skill": 5088,
+   "input_skill": 223,
+   "segs": 1,
+   "forced": false
   },
   "25": {
-   "peak": 391866.0,
-   "skill": 228,
-   "segs": 2,
    "mhp": 311996.0,
    "stat": {
     "mhp": 311996,
@@ -1274,12 +1403,17 @@
     "died": 3,
     "healed": 0,
     "atk": 8000.0
-   }
+   },
+   "peak_k": 391866.0,
+   "skill_k": 228,
+   "peak": 48602,
+   "peak_rand": 48602,
+   "skill": 228,
+   "input_skill": 228,
+   "segs": 2,
+   "forced": false
   },
   "26": {
-   "peak": 1673736.0,
-   "skill": 379,
-   "segs": 6,
    "mhp": 267125.0,
    "stat": {
     "mhp": 267125,
@@ -1325,12 +1459,17 @@
     "died": 3,
     "healed": 0,
     "atk": 8000.0
-   }
+   },
+   "peak_k": 1673736.0,
+   "skill_k": 379,
+   "peak": 587388,
+   "peak_rand": 587388,
+   "skill": 379,
+   "input_skill": 379,
+   "segs": 6,
+   "forced": false
   },
   "27": {
-   "peak": 1604416.0,
-   "skill": 386,
-   "segs": 2,
    "mhp": 592523.0,
    "stat": {
     "mhp": 302308,
@@ -1376,12 +1515,17 @@
     "died": 3,
     "healed": 0,
     "atk": 8000.0
-   }
+   },
+   "peak_k": 1604416.0,
+   "skill_k": 386,
+   "peak": 253810,
+   "peak_rand": 253810,
+   "skill": 386,
+   "input_skill": 386,
+   "segs": 2,
+   "forced": false
   },
   "28": {
-   "peak": 3089292.0,
-   "skill": 5421,
-   "segs": 12,
    "mhp": 266732.0,
    "stat": {
     "mhp": 266732,
@@ -1427,12 +1571,17 @@
     "died": 3,
     "healed": 0,
     "atk": 8000.0
-   }
+   },
+   "peak_k": 3089292.0,
+   "skill_k": 5421,
+   "peak": 713640,
+   "peak_rand": 713640,
+   "skill": 5421,
+   "input_skill": 5421,
+   "segs": 12,
+   "forced": false
   },
   "29": {
-   "peak": 898698.0,
-   "skill": 821,
-   "segs": 6,
    "mhp": 288723.0,
    "stat": {
     "mhp": 288723,
@@ -1478,12 +1627,17 @@
     "died": 3,
     "healed": 160548,
     "atk": 8000.0
-   }
+   },
+   "peak_k": 898698.0,
+   "skill_k": 821,
+   "peak": 236018,
+   "peak_rand": 472036,
+   "skill": 562,
+   "input_skill": 562,
+   "segs": 2,
+   "forced": false
   },
   "30": {
-   "peak": 1062288.0,
-   "skill": 597,
-   "segs": 1,
    "mhp": 267130.0,
    "stat": {
     "mhp": 267130,
@@ -1529,12 +1683,17 @@
     "died": 3,
     "healed": 0,
     "atk": 8000.0
-   }
+   },
+   "peak_k": 1062288.0,
+   "skill_k": 597,
+   "peak": 248501,
+   "peak_rand": 414937,
+   "skill": 597,
+   "input_skill": 597,
+   "segs": 2,
+   "forced": false
   },
   "31": {
-   "peak": 169964.0,
-   "skill": 625,
-   "segs": 2,
    "mhp": 288723.0,
    "stat": {
     "mhp": 288723,
@@ -1580,12 +1739,17 @@
     "died": 3,
     "healed": 168526,
     "atk": 8000.0
-   }
+   },
+   "peak_k": 169964.0,
+   "skill_k": 625,
+   "peak": 53538,
+   "peak_rand": 53538,
+   "skill": 625,
+   "input_skill": 625,
+   "segs": 2,
+   "forced": false
   },
   "32": {
-   "peak": 3798252.0,
-   "skill": 6913,
-   "segs": 6,
    "mhp": 306871.0,
    "stat": {
     "mhp": 306871,
@@ -1631,12 +1795,17 @@
     "died": 3,
     "healed": 0,
     "atk": 8000.0
-   }
+   },
+   "peak_k": 3798252.0,
+   "skill_k": 6913,
+   "peak": 631644,
+   "peak_rand": 631644,
+   "skill": 6913,
+   "input_skill": 6913,
+   "segs": 6,
+   "forced": true
   },
   "33": {
-   "peak": 773333.0,
-   "skill": 743,
-   "segs": 1,
    "mhp": 288723.0,
    "stat": {
     "mhp": 288723,
@@ -1682,12 +1851,17 @@
     "died": 3,
     "healed": 0,
     "atk": 8000.0
-   }
+   },
+   "peak_k": 773333.0,
+   "skill_k": 743,
+   "peak": 233820,
+   "peak_rand": 233820,
+   "skill": 743,
+   "input_skill": 743,
+   "segs": 1,
+   "forced": false
   },
   "34": {
-   "peak": 557154.0,
-   "skill": 1017,
-   "segs": 6,
    "mhp": 288723.0,
    "stat": {
     "mhp": 288723,
@@ -1733,12 +1907,17 @@
     "died": 3,
     "healed": 71951,
     "atk": 8000.0
-   }
+   },
+   "peak_k": 557154.0,
+   "skill_k": 1017,
+   "peak": 94392,
+   "peak_rand": 188784,
+   "skill": 1017,
+   "input_skill": 1017,
+   "segs": 12,
+   "forced": false
   },
   "35": {
-   "peak": 1097964.0,
-   "skill": 1060,
-   "segs": 3,
    "mhp": 266732.0,
    "stat": {
     "mhp": 266732,
@@ -1784,12 +1963,17 @@
     "died": 3,
     "healed": 0,
     "atk": 8000.0
-   }
+   },
+   "peak_k": 1097964.0,
+   "skill_k": 1060,
+   "peak": 357390,
+   "peak_rand": 357390,
+   "skill": 1060,
+   "input_skill": 1060,
+   "segs": 3,
+   "forced": false
   },
   "36": {
-   "peak": 2324178.0,
-   "skill": 3589,
-   "segs": 6,
    "mhp": 266732.0,
    "stat": {
     "mhp": 266732,
@@ -1835,12 +2019,17 @@
     "died": 3,
     "healed": 0,
     "atk": 8000.0
-   }
+   },
+   "peak_k": 2324178.0,
+   "skill_k": 3589,
+   "peak": 592275,
+   "peak_rand": 592275,
+   "skill": 3589,
+   "input_skill": 3589,
+   "segs": 6,
+   "forced": true
   },
   "37": {
-   "peak": 947700.0,
-   "skill": 1098,
-   "segs": 6,
    "mhp": 315757.0,
    "stat": {
     "mhp": 315757,
@@ -1886,12 +2075,17 @@
     "died": 3,
     "healed": 0,
     "atk": 8000.0
-   }
+   },
+   "peak_k": 947700.0,
+   "skill_k": 1098,
+   "peak": 185346,
+   "peak_rand": 185346,
+   "skill": 1098,
+   "input_skill": 1098,
+   "segs": 6,
+   "forced": false
   },
   "38": {
-   "peak": 1086164.0,
-   "skill": 1070,
-   "segs": 2,
    "mhp": 266732.0,
    "stat": {
     "mhp": 266732,
@@ -1937,12 +2131,17 @@
     "died": 3,
     "healed": 0,
     "atk": 8000.0
-   }
+   },
+   "peak_k": 1086164.0,
+   "skill_k": 1070,
+   "peak": 345408,
+   "peak_rand": 345408,
+   "skill": 1070,
+   "input_skill": 1070,
+   "segs": 2,
+   "forced": false
   },
   "39": {
-   "peak": 1118304.0,
-   "skill": 1111,
-   "segs": 6,
    "mhp": 495083.0,
    "stat": {
     "mhp": 287839,
@@ -1988,12 +2187,17 @@
     "died": 3,
     "healed": 0,
     "atk": 8000.0
-   }
+   },
+   "peak_k": 1118304.0,
+   "skill_k": 1111,
+   "peak": 203346,
+   "peak_rand": 203346,
+   "skill": 1111,
+   "input_skill": 1111,
+   "segs": 6,
+   "forced": false
   },
   "40": {
-   "peak": 73972.0,
-   "skill": 1117,
-   "segs": 4,
    "mhp": 279631.0,
    "stat": {
     "mhp": 279631,
@@ -2039,12 +2243,17 @@
     "died": 3,
     "healed": 850273,
     "atk": 8000.0
-   }
+   },
+   "peak_k": 73972.0,
+   "skill_k": 1117,
+   "peak": 11704,
+   "peak_rand": 11704,
+   "skill": 1117,
+   "input_skill": 1117,
+   "segs": 4,
+   "forced": false
   },
   "41": {
-   "peak": 1681014.0,
-   "skill": 1155,
-   "segs": 3,
    "mhp": 304960.0,
    "stat": {
     "mhp": 304960,
@@ -2090,12 +2299,17 @@
     "died": 3,
     "healed": 0,
     "atk": 8000.0
-   }
+   },
+   "peak_k": 1681014.0,
+   "skill_k": 1155,
+   "peak": 293922,
+   "peak_rand": 293922,
+   "skill": 1155,
+   "input_skill": 1155,
+   "segs": 3,
+   "forced": true
   },
   "42": {
-   "peak": 1469496.0,
-   "skill": 1158,
-   "segs": 6,
    "mhp": 311996.0,
    "stat": {
     "mhp": 311996,
@@ -2141,12 +2355,17 @@
     "died": 3,
     "healed": 0,
     "atk": 8000.0
-   }
+   },
+   "peak_k": 1469496.0,
+   "skill_k": 1158,
+   "peak": 236118,
+   "peak_rand": 236118,
+   "skill": 1158,
+   "input_skill": 1158,
+   "segs": 6,
+   "forced": true
   },
   "43": {
-   "peak": 1663844.0,
-   "skill": 1180,
-   "segs": 7,
    "mhp": 304960.0,
    "stat": {
     "mhp": 304960,
@@ -2192,12 +2411,17 @@
     "died": 3,
     "healed": 0,
     "atk": 8000.0
-   }
+   },
+   "peak_k": 1663844.0,
+   "skill_k": 1180,
+   "peak": 298622,
+   "peak_rand": 298622,
+   "skill": 1180,
+   "input_skill": 1180,
+   "segs": 7,
+   "forced": false
   },
   "44": {
-   "peak": 78568.0,
-   "skill": 1167,
-   "segs": 1,
    "mhp": 288723.0,
    "stat": {
     "mhp": 288723,
@@ -2243,12 +2467,17 @@
     "died": 3,
     "healed": 850888,
     "atk": 8000.0
-   }
+   },
+   "peak_k": 78568.0,
+   "skill_k": 1167,
+   "peak": 19076,
+   "peak_rand": 19076,
+   "skill": 1167,
+   "input_skill": 1167,
+   "segs": 1,
+   "forced": false
   },
   "45": {
-   "peak": 375928.0,
-   "skill": 6161,
-   "segs": 8,
    "mhp": 259152.0,
    "stat": {
     "mhp": 259152,
@@ -2294,12 +2523,17 @@
     "died": 3,
     "healed": 0,
     "atk": 8000.0
-   }
+   },
+   "peak_k": 375928.0,
+   "skill_k": 6161,
+   "peak": 349088,
+   "peak_rand": 349088,
+   "skill": 6161,
+   "input_skill": 6161,
+   "segs": 8,
+   "forced": true
   },
   "46": {
-   "peak": 1325714.0,
-   "skill": 2034,
-   "segs": 2,
    "mhp": 288723.0,
    "stat": {
     "mhp": 288723,
@@ -2345,12 +2579,17 @@
     "died": 3,
     "healed": 0,
     "atk": 8000.0
-   }
+   },
+   "peak_k": 1325714.0,
+   "skill_k": 2034,
+   "peak": 156389,
+   "peak_rand": 312778,
+   "skill": 2034,
+   "input_skill": 2034,
+   "segs": 2,
+   "forced": false
   },
   "47": {
-   "peak": 381996.0,
-   "skill": 1199,
-   "segs": 3,
    "mhp": 266732.0,
    "stat": {
     "mhp": 266732,
@@ -2396,12 +2635,17 @@
     "died": 3,
     "healed": 0,
     "atk": 8000.0
-   }
+   },
+   "peak_k": 381996.0,
+   "skill_k": 1199,
+   "peak": 119103,
+   "peak_rand": 119103,
+   "skill": 1199,
+   "input_skill": 1199,
+   "segs": 3,
+   "forced": false
   },
   "48": {
-   "peak": 1360970.0,
-   "skill": 1212,
-   "segs": 2,
    "mhp": 281687.0,
    "stat": {
     "mhp": 281687,
@@ -2447,12 +2691,17 @@
     "died": 3,
     "healed": 0,
     "atk": 8000.0
-   }
+   },
+   "peak_k": 1360970.0,
+   "skill_k": 1212,
+   "peak": 379264,
+   "peak_rand": 379264,
+   "skill": 1212,
+   "input_skill": 1212,
+   "segs": 2,
+   "forced": false
   },
   "49": {
-   "peak": 620610.0,
-   "skill": 1232,
-   "segs": 6,
    "mhp": 266732.0,
    "stat": {
     "mhp": 266732,
@@ -2498,12 +2747,17 @@
     "died": 3,
     "healed": 0,
     "atk": 8000.0
-   }
+   },
+   "peak_k": 620610.0,
+   "skill_k": 1232,
+   "peak": 232062,
+   "peak_rand": 232062,
+   "skill": 1232,
+   "input_skill": 1232,
+   "segs": 6,
+   "forced": false
   },
   "50": {
-   "peak": 2238785.0,
-   "skill": 1340,
-   "segs": 9,
    "mhp": 266732.0,
    "stat": {
     "mhp": 266732,
@@ -2549,12 +2803,17 @@
     "died": 3,
     "healed": 0,
     "atk": 8000.0
-   }
+   },
+   "peak_k": 2238785.0,
+   "skill_k": 1340,
+   "peak": 378506,
+   "peak_rand": 378506,
+   "skill": 1340,
+   "input_skill": 1340,
+   "segs": 9,
+   "forced": false
   },
   "51": {
-   "peak": 442521.0,
-   "skill": 2004,
-   "segs": 9,
    "mhp": 281687.0,
    "stat": {
     "mhp": 281687,
@@ -2600,12 +2859,17 @@
     "died": 3,
     "healed": 0,
     "atk": 8000.0
-   }
+   },
+   "peak_k": 442521.0,
+   "skill_k": 2004,
+   "peak": 149859,
+   "peak_rand": 299718,
+   "skill": 2004,
+   "input_skill": 2004,
+   "segs": 18,
+   "forced": false
   },
   "52": {
-   "peak": 1866861.0,
-   "skill": 6013,
-   "segs": 3,
    "mhp": 315757.0,
    "stat": {
     "mhp": 315757,
@@ -2651,12 +2915,17 @@
     "died": 3,
     "healed": 0,
     "atk": 8000.0
-   }
+   },
+   "peak_k": 1866861.0,
+   "skill_k": 6013,
+   "peak": 357481,
+   "peak_rand": 657220,
+   "skill": 6013,
+   "input_skill": 6013,
+   "segs": 6,
+   "forced": false
   },
   "53": {
-   "peak": 651902.0,
-   "skill": 2058,
-   "segs": 2,
    "mhp": 281687.0,
    "stat": {
     "mhp": 281687,
@@ -2702,12 +2971,17 @@
     "died": 3,
     "healed": 0,
     "atk": 8000.0
-   }
+   },
+   "peak_k": 651902.0,
+   "skill_k": 2058,
+   "peak": 132046,
+   "peak_rand": 132046,
+   "skill": 2058,
+   "input_skill": 2058,
+   "segs": 2,
+   "forced": false
   },
   "54": {
-   "peak": 970580.0,
-   "skill": 2067,
-   "segs": 5,
    "mhp": 266732.0,
    "stat": {
     "mhp": 266732,
@@ -2753,12 +3027,17 @@
     "died": 3,
     "healed": 0,
     "atk": 8000.0
-   }
+   },
+   "peak_k": 970580.0,
+   "skill_k": 2067,
+   "peak": 255730,
+   "peak_rand": 511460,
+   "skill": 2067,
+   "input_skill": 2067,
+   "segs": 10,
+   "forced": false
   },
   "55": {
-   "peak": 524429.0,
-   "skill": 2082,
-   "segs": 1,
    "mhp": 273768.0,
    "stat": {
     "mhp": 273768,
@@ -2804,12 +3083,17 @@
     "died": 3,
     "healed": 0,
     "atk": 8000.0
-   }
+   },
+   "peak_k": 524429.0,
+   "skill_k": 2082,
+   "peak": 308059,
+   "peak_rand": 308059,
+   "skill": 2082,
+   "input_skill": 2082,
+   "segs": 1,
+   "forced": false
   },
   "56": {
-   "peak": 584303.0,
-   "skill": 2092,
-   "segs": 1,
    "mhp": 295321.0,
    "stat": {
     "mhp": 295321,
@@ -2855,12 +3139,17 @@
     "died": 3,
     "healed": 146144,
     "atk": 8000.0
-   }
+   },
+   "peak_k": 584303.0,
+   "skill_k": 2092,
+   "peak": 178935,
+   "peak_rand": 178935,
+   "skill": 5494,
+   "input_skill": 5494,
+   "segs": 5,
+   "forced": true
   },
   "57": {
-   "peak": 1079260.0,
-   "skill": 2125,
-   "segs": 4,
    "mhp": 266732.0,
    "stat": {
     "mhp": 266732,
@@ -2906,12 +3195,17 @@
     "died": 3,
     "healed": 0,
     "atk": 8000.0
-   }
+   },
+   "peak_k": 1079260.0,
+   "skill_k": 2125,
+   "peak": 391012,
+   "peak_rand": 391012,
+   "skill": 2125,
+   "input_skill": 2125,
+   "segs": 4,
+   "forced": false
   },
   "58": {
-   "peak": 618201.0,
-   "skill": 10711,
-   "segs": 1,
    "mhp": 266732.0,
    "stat": {
     "mhp": 266732,
@@ -2957,12 +3251,17 @@
     "died": 3,
     "healed": 0,
     "atk": 8000.0
-   }
+   },
+   "peak_k": 618201.0,
+   "skill_k": 10711,
+   "peak": 221096,
+   "peak_rand": 221096,
+   "skill": 10711,
+   "input_skill": 10711,
+   "segs": 1,
+   "forced": false
   },
   "59": {
-   "peak": 1527955.0,
-   "skill": 6905,
-   "segs": 11,
    "mhp": 289072.0,
    "stat": {
     "mhp": 289072,
@@ -3008,12 +3307,17 @@
     "died": 3,
     "healed": 0,
     "atk": 8000.0
-   }
+   },
+   "peak_k": 1527955.0,
+   "skill_k": 6905,
+   "peak": 412016,
+   "peak_rand": 412016,
+   "skill": 6905,
+   "input_skill": 6905,
+   "segs": 11,
+   "forced": true
   },
   "60": {
-   "peak": 1458111.0,
-   "skill": 2226,
-   "segs": 3,
    "mhp": 335624.0,
    "stat": {
     "mhp": 335624,
@@ -3059,12 +3363,17 @@
     "died": 3,
     "healed": 0,
     "atk": 8000.0
-   }
+   },
+   "peak_k": 1458111.0,
+   "skill_k": 2226,
+   "peak": 231756,
+   "peak_rand": 231756,
+   "skill": 2226,
+   "input_skill": 2226,
+   "segs": 3,
+   "forced": false
   },
   "61": {
-   "peak": 1590318.0,
-   "skill": 5526,
-   "segs": 6,
    "mhp": 276137.0,
    "stat": {
     "mhp": 276137,
@@ -3110,12 +3419,17 @@
     "died": 3,
     "healed": 0,
     "atk": 8000.0
-   }
+   },
+   "peak_k": 1590318.0,
+   "skill_k": 5526,
+   "peak": 143220,
+   "peak_rand": 286440,
+   "skill": 5526,
+   "input_skill": 5526,
+   "segs": 12,
+   "forced": false
   },
   "62": {
-   "peak": 1061637.0,
-   "skill": 10715,
-   "segs": 3,
    "mhp": 281687.0,
    "stat": {
     "mhp": 281687,
@@ -3161,12 +3475,17 @@
     "died": 3,
     "healed": 0,
     "atk": 8000.0
-   }
+   },
+   "peak_k": 1061637.0,
+   "skill_k": 10715,
+   "peak": 206242,
+   "peak_rand": 206242,
+   "skill": 10715,
+   "input_skill": 10715,
+   "segs": 3,
+   "forced": false
   },
   "63": {
-   "peak": 378112.0,
-   "skill": 5455,
-   "segs": 8,
    "mhp": 284564.0,
    "stat": {
     "mhp": 284564,
@@ -3212,12 +3531,17 @@
     "died": 3,
     "healed": 105340,
     "atk": 8000.0
-   }
+   },
+   "peak_k": 378112.0,
+   "skill_k": 5455,
+   "peak": 156211,
+   "peak_rand": 156211,
+   "skill": 5455,
+   "input_skill": 5455,
+   "segs": 8,
+   "forced": false
   },
   "64": {
-   "peak": 701139.0,
-   "skill": 2358,
-   "segs": 3,
    "mhp": 266732.0,
    "stat": {
     "mhp": 266732,
@@ -3263,12 +3587,17 @@
     "died": 3,
     "healed": 0,
     "atk": 8000.0
-   }
+   },
+   "peak_k": 701139.0,
+   "skill_k": 2358,
+   "peak": 207888,
+   "peak_rand": 412569,
+   "skill": 2358,
+   "input_skill": 2358,
+   "segs": 6,
+   "forced": false
   },
   "65": {
-   "peak": 620031.0,
-   "skill": 2586,
-   "segs": 3,
    "mhp": 273768.0,
    "stat": {
     "mhp": 273768,
@@ -3314,12 +3643,17 @@
     "died": 3,
     "healed": 0,
     "atk": 8000.0
-   }
+   },
+   "peak_k": 620031.0,
+   "skill_k": 2586,
+   "peak": 189087,
+   "peak_rand": 189087,
+   "skill": 2586,
+   "input_skill": 2586,
+   "segs": 3,
+   "forced": false
   },
   "66": {
-   "peak": 1079631.0,
-   "skill": 10717,
-   "segs": 3,
    "mhp": 281687.0,
    "stat": {
     "mhp": 281687,
@@ -3365,12 +3699,17 @@
     "died": 3,
     "healed": 0,
     "atk": 8000.0
-   }
+   },
+   "peak_k": 1079631.0,
+   "skill_k": 10717,
+   "peak": 184773,
+   "peak_rand": 184773,
+   "skill": 10717,
+   "input_skill": 10717,
+   "segs": 3,
+   "forced": false
   },
   "67": {
-   "peak": 1483347.0,
-   "skill": 2386,
-   "segs": 3,
    "mhp": 273768.0,
    "stat": {
     "mhp": 273768,
@@ -3416,12 +3755,17 @@
     "died": 3,
     "healed": 0,
     "atk": 8000.0
-   }
+   },
+   "peak_k": 1483347.0,
+   "skill_k": 2386,
+   "peak": 491770,
+   "peak_rand": 491770,
+   "skill": 2386,
+   "input_skill": 2386,
+   "segs": 3,
+   "forced": false
   },
   "68": {
-   "peak": 903105.0,
-   "skill": 2342,
-   "segs": 3,
    "mhp": 289072.0,
    "stat": {
     "mhp": 289072,
@@ -3467,12 +3811,17 @@
     "died": 3,
     "healed": 0,
     "atk": 8000.0
-   }
+   },
+   "peak_k": 903105.0,
+   "skill_k": 2342,
+   "peak": 239079,
+   "peak_rand": 239079,
+   "skill": 2342,
+   "input_skill": 2342,
+   "segs": 3,
+   "forced": false
   },
   "69": {
-   "peak": 736548.0,
-   "skill": 2415,
-   "segs": 3,
    "mhp": 273768.0,
    "stat": {
     "mhp": 273768,
@@ -3518,12 +3867,17 @@
     "died": 3,
     "healed": 89277,
     "atk": 8000.0
-   }
+   },
+   "peak_k": 736548.0,
+   "skill_k": 2415,
+   "peak": 215616,
+   "peak_rand": 215616,
+   "skill": 2415,
+   "input_skill": 2415,
+   "segs": 3,
+   "forced": false
   },
   "70": {
-   "peak": 1645824.0,
-   "skill": 2396,
-   "segs": 3,
    "mhp": 267125.0,
    "stat": {
     "mhp": 267125,
@@ -3569,12 +3923,17 @@
     "died": 3,
     "healed": 0,
     "atk": 8000.0
-   }
+   },
+   "peak_k": 1645824.0,
+   "skill_k": 2396,
+   "peak": 197637,
+   "peak_rand": 197637,
+   "skill": 2396,
+   "input_skill": 2396,
+   "segs": 3,
+   "forced": false
   },
   "71": {
-   "peak": 342403.0,
-   "skill": 2528,
-   "segs": 1,
    "mhp": 266732.0,
    "stat": {
     "mhp": 266732,
@@ -3620,12 +3979,17 @@
     "died": 3,
     "healed": 126768,
     "atk": 8000.0
-   }
+   },
+   "peak_k": 342403.0,
+   "skill_k": 2528,
+   "peak": 61001,
+   "peak_rand": 122002,
+   "skill": 2528,
+   "input_skill": 2528,
+   "segs": 2,
+   "forced": true
   },
   "72": {
-   "peak": 837228.0,
-   "skill": 2704,
-   "segs": 6,
    "mhp": 288723.0,
    "stat": {
     "mhp": 288723,
@@ -3671,12 +4035,17 @@
     "died": 3,
     "healed": 94577,
     "atk": 8000.0
-   }
+   },
+   "peak_k": 837228.0,
+   "skill_k": 2704,
+   "peak": 108606,
+   "peak_rand": 217212,
+   "skill": 2704,
+   "input_skill": 2704,
+   "segs": 12,
+   "forced": false
   },
   "73": {
-   "peak": 2456080.0,
-   "skill": 2735,
-   "segs": 10,
    "mhp": 281687.0,
    "stat": {
     "mhp": 281687,
@@ -3722,12 +4091,17 @@
     "died": 3,
     "healed": 0,
     "atk": 8000.0
-   }
+   },
+   "peak_k": 2456080.0,
+   "skill_k": 2735,
+   "peak": 257800,
+   "peak_rand": 515600,
+   "skill": 2735,
+   "input_skill": 2735,
+   "segs": 10,
+   "forced": false
   },
   "74": {
-   "peak": 2289018.0,
-   "skill": 2613,
-   "segs": 3,
    "mhp": 326067.0,
    "stat": {
     "mhp": 326067,
@@ -3773,12 +4147,17 @@
     "died": 3,
     "healed": 0,
     "atk": 8000.0
-   }
+   },
+   "peak_k": 2289018.0,
+   "skill_k": 2613,
+   "peak": 251104,
+   "peak_rand": 251104,
+   "skill": 2612,
+   "input_skill": 2612,
+   "segs": 16,
+   "forced": false
   },
   "75": {
-   "peak": 2112936.0,
-   "skill": 5128,
-   "segs": 12,
    "mhp": 304960.0,
    "stat": {
     "mhp": 304960,
@@ -3824,12 +4203,17 @@
     "died": 3,
     "healed": 0,
     "atk": 8000.0
-   }
+   },
+   "peak_k": 2112936.0,
+   "skill_k": 5128,
+   "peak": 316932,
+   "peak_rand": 316932,
+   "skill": 5128,
+   "input_skill": 5128,
+   "segs": 12,
+   "forced": true
   },
   "76": {
-   "peak": 1440404.0,
-   "skill": 3502,
-   "segs": 4,
    "mhp": 319719.0,
    "stat": {
     "mhp": 319719,
@@ -3875,12 +4259,17 @@
     "died": 3,
     "healed": 0,
     "atk": 8000.0
-   }
+   },
+   "peak_k": 1440404.0,
+   "skill_k": 3502,
+   "peak": 114688,
+   "peak_rand": 114688,
+   "skill": 3502,
+   "input_skill": 3502,
+   "segs": 4,
+   "forced": false
   },
   "77": {
-   "peak": 425942.0,
-   "skill": 3761,
-   "segs": 1,
    "mhp": 288723.0,
    "stat": {
     "mhp": 288723,
@@ -3926,12 +4315,17 @@
     "died": 3,
     "healed": 116044,
     "atk": 8000.0
-   }
+   },
+   "peak_k": 425942.0,
+   "skill_k": 3761,
+   "peak": 108431,
+   "peak_rand": 216862,
+   "skill": 3761,
+   "input_skill": 3761,
+   "segs": 2,
+   "forced": true
   },
   "78": {
-   "peak": 733626.0,
-   "skill": 10721,
-   "segs": 2,
    "mhp": 281687.0,
    "stat": {
     "mhp": 281687,
@@ -3977,12 +4371,17 @@
     "died": 3,
     "healed": 0,
     "atk": 8000.0
-   }
+   },
+   "peak_k": 733626.0,
+   "skill_k": 10721,
+   "peak": 227702,
+   "peak_rand": 455404,
+   "skill": 10721,
+   "input_skill": 10721,
+   "segs": 4,
+   "forced": false
   },
   "79": {
-   "peak": 1549385.0,
-   "skill": 10722,
-   "segs": 5,
    "mhp": 458779.0,
    "stat": {
     "mhp": 266732,
@@ -4028,12 +4427,17 @@
     "died": 3,
     "healed": 0,
     "atk": 8000.0
-   }
+   },
+   "peak_k": 1549385.0,
+   "skill_k": 10722,
+   "peak": 233565,
+   "peak_rand": 233565,
+   "skill": 10722,
+   "input_skill": 10722,
+   "segs": 5,
+   "forced": true
   },
   "80": {
-   "peak": 1394937.0,
-   "skill": 4450,
-   "segs": 3,
    "mhp": 497203.0,
    "stat": {
     "mhp": 289072,
@@ -4079,12 +4483,17 @@
     "died": 3,
     "healed": 0,
     "atk": 8000.0
-   }
+   },
+   "peak_k": 1394937.0,
+   "skill_k": 4450,
+   "peak": 188433,
+   "peak_rand": 188433,
+   "skill": 4450,
+   "input_skill": 4450,
+   "segs": 3,
+   "forced": true
   },
   "81": {
-   "peak": 175742.0,
-   "skill": 4833,
-   "segs": 1,
    "mhp": 311209.0,
    "stat": {
     "mhp": 311209,
@@ -4130,12 +4539,17 @@
     "died": 3,
     "healed": 0,
     "atk": 8000.0
-   }
+   },
+   "peak_k": 175742.0,
+   "skill_k": 4833,
+   "peak": 16844,
+   "peak_rand": 16844,
+   "skill": 4833,
+   "input_skill": 4833,
+   "segs": 1,
+   "forced": true
   },
   "82": {
-   "peak": 310205.0,
-   "skill": 4939,
-   "segs": 1,
    "mhp": 304174.0,
    "stat": {
     "mhp": 304174,
@@ -4181,12 +4595,17 @@
     "died": 3,
     "healed": 0,
     "atk": 8000.0
-   }
+   },
+   "peak_k": 310205.0,
+   "skill_k": 4939,
+   "peak": 48123,
+   "peak_rand": 96246,
+   "skill": 4938,
+   "input_skill": 4938,
+   "segs": 2,
+   "forced": false
   },
   "83": {
-   "peak": 1777782.0,
-   "skill": 5999,
-   "segs": 6,
    "mhp": 671196.0,
    "stat": {
     "mhp": 347770,
@@ -4232,12 +4651,17 @@
     "died": 3,
     "healed": 0,
     "atk": 8000.0
-   }
+   },
+   "peak_k": 1777782.0,
+   "skill_k": 5999,
+   "peak": 356616,
+   "peak_rand": 356616,
+   "skill": 5999,
+   "input_skill": 5999,
+   "segs": 6,
+   "forced": true
   },
   "84": {
-   "peak": 284709.0,
-   "skill": 5540,
-   "segs": 3,
    "mhp": 307838.0,
    "stat": {
     "mhp": 307838,
@@ -4283,12 +4707,17 @@
     "died": 3,
     "healed": 48873,
     "atk": 8000.0
-   }
+   },
+   "peak_k": 284709.0,
+   "skill_k": 5540,
+   "peak": 119253,
+   "peak_rand": 119253,
+   "skill": 5540,
+   "input_skill": 5540,
+   "segs": 3,
+   "forced": false
   },
   "85": {
-   "peak": 1859706.0,
-   "skill": 7327,
-   "segs": 1,
    "mhp": 351913.0,
    "stat": {
     "mhp": 314208,
@@ -4334,12 +4763,17 @@
     "died": 3,
     "healed": 0,
     "atk": 8000.0
-   }
+   },
+   "peak_k": 1859706.0,
+   "skill_k": 7327,
+   "peak": 570956,
+   "peak_rand": 570956,
+   "skill": 7327,
+   "input_skill": 7327,
+   "segs": 1,
+   "forced": false
   },
   "86": {
-   "peak": 299092.0,
-   "skill": 5860,
-   "segs": 4,
    "mhp": 273768.0,
    "stat": {
     "mhp": 273768,
@@ -4385,12 +4819,17 @@
     "died": 3,
     "healed": 7842,
     "atk": 8000.0
-   }
+   },
+   "peak_k": 299092.0,
+   "skill_k": 5860,
+   "peak": 65832,
+   "peak_rand": 65832,
+   "skill": 5860,
+   "input_skill": 5860,
+   "segs": 4,
+   "forced": true
   },
   "87": {
-   "peak": 766740.0,
-   "skill": 5852,
-   "segs": 6,
    "mhp": 285794.0,
    "stat": {
     "mhp": 285794,
@@ -4436,12 +4875,17 @@
     "died": 3,
     "healed": 0,
     "atk": 8000.0
-   }
+   },
+   "peak_k": 766740.0,
+   "skill_k": 5852,
+   "peak": 160986,
+   "peak_rand": 160986,
+   "skill": 5852,
+   "input_skill": 5852,
+   "segs": 6,
+   "forced": false
   },
   "88": {
-   "peak": 989676.0,
-   "skill": 5912,
-   "segs": 12,
    "mhp": 293405.0,
    "stat": {
     "mhp": 266732,
@@ -4487,12 +4931,17 @@
     "died": 3,
     "healed": 0,
     "atk": 8000.0
-   }
+   },
+   "peak_k": 989676.0,
+   "skill_k": 5912,
+   "peak": 663960,
+   "peak_rand": 663960,
+   "skill": 5912,
+   "input_skill": 5912,
+   "segs": 12,
+   "forced": true
   },
   "89": {
-   "peak": 618785.0,
-   "skill": 5935,
-   "segs": 1,
    "mhp": 310178.0,
    "stat": {
     "mhp": 310178,
@@ -4538,12 +4987,17 @@
     "died": 3,
     "healed": 0,
     "atk": 8000.0
-   }
+   },
+   "peak_k": 618785.0,
+   "skill_k": 5935,
+   "peak": 122642,
+   "peak_rand": 122642,
+   "skill": 5935,
+   "input_skill": 5935,
+   "segs": 1,
+   "forced": false
   },
   "90": {
-   "peak": 1586942.0,
-   "skill": 10726,
-   "segs": 2,
    "mhp": 562627.0,
    "stat": {
     "mhp": 291517,
@@ -4589,12 +5043,17 @@
     "died": 3,
     "healed": 0,
     "atk": 8000.0
-   }
+   },
+   "peak_k": 1586942.0,
+   "skill_k": 10726,
+   "peak": 182234,
+   "peak_rand": 182234,
+   "skill": 10726,
+   "input_skill": 10726,
+   "segs": 2,
+   "forced": false
   },
   "91": {
-   "peak": 1141744.0,
-   "skill": 7467,
-   "segs": 8,
    "mhp": 300802.0,
    "stat": {
     "mhp": 300802,
@@ -4640,12 +5099,17 @@
     "died": 3,
     "healed": 0,
     "atk": 8000.0
-   }
+   },
+   "peak_k": 1141744.0,
+   "skill_k": 7467,
+   "peak": 535784,
+   "peak_rand": 535784,
+   "skill": 7467,
+   "input_skill": 7467,
+   "segs": 8,
+   "forced": false
   },
   "92": {
-   "peak": 1350148.0,
-   "skill": 7007,
-   "segs": 4,
    "mhp": 303407.0,
    "stat": {
     "mhp": 303407,
@@ -4691,7 +5155,15 @@
     "died": 3,
     "healed": 0,
     "atk": 8000.0
-   }
+   },
+   "peak_k": 1350148.0,
+   "skill_k": 7007,
+   "peak": 229392,
+   "peak_rand": 229392,
+   "skill": 7007,
+   "input_skill": 7007,
+   "segs": 4,
+   "forced": false
   },
   "93": {
    "stat": {
@@ -4742,9 +5214,6 @@
    "no_damage_row": true
   },
   "94": {
-   "peak": 635422.0,
-   "skill": 6867,
-   "segs": 3,
    "mhp": 334872.0,
    "stat": {
     "mhp": 334872,
@@ -4790,12 +5259,17 @@
     "died": 3,
     "healed": 0,
     "atk": 8000.0
-   }
+   },
+   "peak_k": 635422.0,
+   "skill_k": 6867,
+   "peak": 213837,
+   "peak_rand": 213837,
+   "skill": 6867,
+   "input_skill": 6867,
+   "segs": 3,
+   "forced": true
   },
   "95": {
-   "peak": 5781244.0,
-   "skill": 10729,
-   "segs": 4,
    "mhp": 285060.0,
    "stat": {
     "mhp": 285060,
@@ -4841,12 +5315,17 @@
     "died": 3,
     "healed": 0,
     "atk": 8000.0
-   }
+   },
+   "peak_k": 5781244.0,
+   "skill_k": 10729,
+   "peak": 824214,
+   "peak_rand": 824214,
+   "skill": 10731,
+   "input_skill": 10731,
+   "segs": 4,
+   "forced": false
   },
   "96": {
-   "peak": 286884.0,
-   "skill": 8150,
-   "segs": 4,
    "mhp": 299043.0,
    "stat": {
     "mhp": 299043,
@@ -4892,12 +5371,17 @@
     "died": 3,
     "healed": 35250,
     "atk": 8000.0
-   }
+   },
+   "peak_k": 286884.0,
+   "skill_k": 8150,
+   "peak": 61484,
+   "peak_rand": 61484,
+   "skill": 8150,
+   "input_skill": 8150,
+   "segs": 4,
+   "forced": false
   },
   "97": {
-   "peak": 1772960.0,
-   "skill": 7057,
-   "segs": 2,
    "mhp": 459456.0,
    "stat": {
     "mhp": 267125,
@@ -4943,12 +5427,17 @@
     "died": 3,
     "healed": 0,
     "atk": 8000.0
-   }
+   },
+   "peak_k": 1772960.0,
+   "skill_k": 7057,
+   "peak": 171522,
+   "peak_rand": 343044,
+   "skill": 7057,
+   "input_skill": 7057,
+   "segs": 4,
+   "forced": false
   },
   "98": {
-   "peak": 213144.0,
-   "skill": 7074,
-   "segs": 2,
    "mhp": 288723.0,
    "stat": {
     "mhp": 288723,
@@ -4994,12 +5483,17 @@
     "died": 3,
     "healed": 227676,
     "atk": 8000.0
-   }
+   },
+   "peak_k": 213144.0,
+   "skill_k": 7074,
+   "peak": 59484,
+   "peak_rand": 118968,
+   "skill": 10732,
+   "input_skill": 10732,
+   "segs": 2,
+   "forced": false
   },
   "99": {
-   "peak": 85359.0,
-   "skill": 8087,
-   "segs": 3,
    "mhp": 292883.0,
    "stat": {
     "mhp": 292883,
@@ -5045,12 +5539,17 @@
     "died": 3,
     "healed": 0,
     "atk": 8000.0
-   }
+   },
+   "peak_k": 85359.0,
+   "skill_k": 8087,
+   "peak": 16581,
+   "peak_rand": 16581,
+   "skill": 8087,
+   "input_skill": 8087,
+   "segs": 3,
+   "forced": true
   },
   "100": {
-   "peak": 102534.0,
-   "skill": 5572,
-   "segs": 2,
    "mhp": 299043.0,
    "stat": {
     "mhp": 299043,
@@ -5096,12 +5595,17 @@
     "died": 3,
     "healed": 225745,
     "atk": 8000.0
-   }
+   },
+   "peak_k": 102534.0,
+   "skill_k": 5572,
+   "peak": 46298,
+   "peak_rand": 46298,
+   "skill": 5572,
+   "input_skill": 5572,
+   "segs": 2,
+   "forced": false
   },
   "101": {
-   "peak": 2062970.0,
-   "skill": 10733,
-   "segs": 2,
    "mhp": 277932.0,
    "stat": {
     "mhp": 277932,
@@ -5147,12 +5651,17 @@
     "died": 3,
     "healed": 0,
     "atk": 8000.0
-   }
+   },
+   "peak_k": 2062970.0,
+   "skill_k": 10733,
+   "peak": 636814,
+   "peak_rand": 636814,
+   "skill": 10733,
+   "input_skill": 10733,
+   "segs": 2,
+   "forced": false
   },
   "102": {
-   "peak": 1942128.0,
-   "skill": 5592,
-   "segs": 1,
    "mhp": 345425.0,
    "stat": {
     "mhp": 345425,
@@ -5198,12 +5707,17 @@
     "died": 3,
     "healed": 96416,
     "atk": 8000.0
-   }
+   },
+   "peak_k": 1942128.0,
+   "skill_k": 5592,
+   "peak": 264137,
+   "peak_rand": 264137,
+   "skill": 5592,
+   "input_skill": 5592,
+   "segs": 1,
+   "forced": false
   },
   "103": {
-   "peak": 806884.0,
-   "skill": 7090,
-   "segs": 2,
    "mhp": 266732.0,
    "stat": {
     "mhp": 266732,
@@ -5249,12 +5763,17 @@
     "died": 3,
     "healed": 0,
     "atk": 8000.0
-   }
+   },
+   "peak_k": 806884.0,
+   "skill_k": 7090,
+   "peak": 194485,
+   "peak_rand": 194485,
+   "skill": 7090,
+   "input_skill": 7090,
+   "segs": 2,
+   "forced": false
   },
   "104": {
-   "peak": 4656305.0,
-   "skill": 7485,
-   "segs": 5,
    "mhp": 527966.0,
    "stat": {
     "mhp": 269371,
@@ -5300,12 +5819,17 @@
     "died": 3,
     "healed": 0,
     "atk": 8000.0
-   }
+   },
+   "peak_k": 4656305.0,
+   "skill_k": 7485,
+   "peak": 497795,
+   "peak_rand": 497795,
+   "skill": 7485,
+   "input_skill": 7485,
+   "segs": 5,
+   "forced": false
   },
   "105": {
-   "peak": 974495.0,
-   "skill": 7030,
-   "segs": 5,
    "mhp": 309935.0,
    "stat": {
     "mhp": 309935,
@@ -5351,12 +5875,17 @@
     "died": 3,
     "healed": 0,
     "atk": 8000.0
-   }
+   },
+   "peak_k": 974495.0,
+   "skill_k": 7030,
+   "peak": 131224,
+   "peak_rand": 247321,
+   "skill": 7030,
+   "input_skill": 7030,
+   "segs": 10,
+   "forced": false
   },
   "106": {
-   "peak": 1090682.0,
-   "skill": 7226,
-   "segs": 1,
    "mhp": 288728.0,
    "stat": {
     "mhp": 288728,
@@ -5402,12 +5931,17 @@
     "died": 3,
     "healed": 0,
     "atk": 8000.0
-   }
+   },
+   "peak_k": 1090682.0,
+   "skill_k": 7226,
+   "peak": 239606,
+   "peak_rand": 239606,
+   "skill": 7226,
+   "input_skill": 7226,
+   "segs": 1,
+   "forced": false
   },
   "107": {
-   "peak": 3838658.0,
-   "skill": 5673,
-   "segs": 2,
    "mhp": 633813.0,
    "stat": {
     "mhp": 328061,
@@ -5453,12 +5987,17 @@
     "died": 3,
     "healed": 0,
     "atk": 8000.0
-   }
+   },
+   "peak_k": 3838658.0,
+   "skill_k": 5673,
+   "peak": 854478,
+   "peak_rand": 854478,
+   "skill": 5673,
+   "input_skill": 5673,
+   "segs": 2,
+   "forced": true
   },
   "108": {
-   "peak": 7214312.0,
-   "skill": 5706,
-   "segs": 4,
    "mhp": 329402.0,
    "stat": {
     "mhp": 329402,
@@ -5504,12 +6043,17 @@
     "died": 3,
     "healed": 0,
     "atk": 8000.0
-   }
+   },
+   "peak_k": 7214312.0,
+   "skill_k": 5706,
+   "peak": 964846,
+   "peak_rand": 964846,
+   "skill": 5706,
+   "input_skill": 5706,
+   "segs": 4,
+   "forced": false
   },
   "109": {
-   "peak": 3436984.0,
-   "skill": 5761,
-   "segs": 4,
    "mhp": 349053.0,
    "stat": {
     "mhp": 349053,
@@ -5555,12 +6099,17 @@
     "died": 3,
     "healed": 0,
     "atk": 8000.0
-   }
+   },
+   "peak_k": 3436984.0,
+   "skill_k": 5761,
+   "peak": 364875,
+   "peak_rand": 364875,
+   "skill": 5761,
+   "input_skill": 5761,
+   "segs": 4,
+   "forced": false
   },
   "115": {
-   "peak": 3141785.0,
-   "skill": 5759,
-   "segs": 5,
    "mhp": 640835.0,
    "stat": {
     "mhp": 326957,
@@ -5606,7 +6155,15 @@
     "died": 3,
     "healed": 0,
     "atk": 8000.0
-   }
+   },
+   "peak_k": 3141785.0,
+   "skill_k": 5759,
+   "peak": 327800,
+   "peak_rand": 327800,
+   "skill": 5759,
+   "input_skill": 5759,
+   "segs": 5,
+   "forced": false
   },
   "117": {
    "stat": {
@@ -5657,9 +6214,6 @@
    "no_damage_row": true
   },
   "118": {
-   "peak": 2658672.0,
-   "skill": 5601,
-   "segs": 6,
    "mhp": 303440.0,
    "stat": {
     "mhp": 303440,
@@ -5705,12 +6259,17 @@
     "died": 3,
     "healed": 139443,
     "atk": 8000.0
-   }
+   },
+   "peak_k": 2658672.0,
+   "skill_k": 5601,
+   "peak": 361213,
+   "peak_rand": 361213,
+   "skill": 5601,
+   "input_skill": 5601,
+   "segs": 6,
+   "forced": false
   },
   "119": {
-   "peak": 472272.0,
-   "skill": 5609,
-   "segs": 3,
    "mhp": 310472.0,
    "stat": {
     "mhp": 310472,
@@ -5756,12 +6315,17 @@
     "died": 3,
     "healed": 40014,
     "atk": 8000.0
-   }
+   },
+   "peak_k": 472272.0,
+   "skill_k": 5609,
+   "peak": 142401,
+   "peak_rand": 142401,
+   "skill": 5609,
+   "input_skill": 5609,
+   "segs": 3,
+   "forced": false
   },
   "120": {
-   "peak": 5957486.0,
-   "skill": 5625,
-   "segs": 2,
    "mhp": 738225.0,
    "stat": {
     "mhp": 358710,
@@ -5807,12 +6371,17 @@
     "died": 3,
     "healed": 0,
     "atk": 8000.0
-   }
+   },
+   "peak_k": 5957486.0,
+   "skill_k": 5625,
+   "peak": 668652,
+   "peak_rand": 668652,
+   "skill": 5625,
+   "input_skill": 5625,
+   "segs": 2,
+   "forced": false
   },
   "122": {
-   "peak": 7705492.0,
-   "skill": 6039,
-   "segs": 4,
    "mhp": 288485.0,
    "stat": {
     "mhp": 288485,
@@ -5858,12 +6427,17 @@
     "died": 3,
     "healed": 0,
     "atk": 8000.0
-   }
+   },
+   "peak_k": 7705492.0,
+   "skill_k": 6039,
+   "peak": 765946,
+   "peak_rand": 765946,
+   "skill": 6026,
+   "input_skill": 6026,
+   "segs": 2,
+   "forced": false
   },
   "123": {
-   "peak": 5613616.0,
-   "skill": 6039,
-   "segs": 4,
    "mhp": 295814.0,
    "stat": {
     "mhp": 295814,
@@ -5909,12 +6483,17 @@
     "died": 3,
     "healed": 0,
     "atk": 8000.0
-   }
+   },
+   "peak_k": 5613616.0,
+   "skill_k": 6039,
+   "peak": 1106081,
+   "peak_rand": 1106081,
+   "skill": 6039,
+   "input_skill": 6039,
+   "segs": 4,
+   "forced": true
   },
   "124": {
-   "peak": 1880496.0,
-   "skill": 6277,
-   "segs": 4,
    "mhp": 292887.0,
    "stat": {
     "mhp": 292887,
@@ -5960,12 +6539,17 @@
     "died": 3,
     "healed": 306592,
     "atk": 8000.0
-   }
+   },
+   "peak_k": 1880496.0,
+   "skill_k": 6277,
+   "peak": 349428,
+   "peak_rand": 349428,
+   "skill": 6277,
+   "input_skill": 6277,
+   "segs": 4,
+   "forced": false
   },
   "127": {
-   "peak": 630639.0,
-   "skill": 5735,
-   "segs": 4,
    "mhp": 306428.0,
    "stat": {
     "mhp": 306428,
@@ -6011,12 +6595,17 @@
     "died": 3,
     "healed": 85426,
     "atk": 8000.0
-   }
+   },
+   "peak_k": 630639.0,
+   "skill_k": 5735,
+   "peak": 104973,
+   "peak_rand": 104973,
+   "skill": 5735,
+   "input_skill": 5735,
+   "segs": 4,
+   "forced": false
   },
   "128": {
-   "peak": 1224237.0,
-   "skill": 5746,
-   "segs": 3,
    "mhp": 311355.0,
    "stat": {
     "mhp": 311355,
@@ -6062,12 +6651,17 @@
     "died": 3,
     "healed": 0,
     "atk": 8000.0
-   }
+   },
+   "peak_k": 1224237.0,
+   "skill_k": 5746,
+   "peak": 252244,
+   "peak_rand": 252244,
+   "skill": 5746,
+   "input_skill": 5746,
+   "segs": 3,
+   "forced": false
   },
   "129": {
-   "peak": 2472426.0,
-   "skill": 5636,
-   "segs": 6,
    "mhp": 288485.0,
    "stat": {
     "mhp": 288485,
@@ -6113,12 +6707,17 @@
     "died": 3,
     "healed": 6989,
     "atk": 8000.0
-   }
+   },
+   "peak_k": 2472426.0,
+   "skill_k": 5636,
+   "peak": 402783,
+   "peak_rand": 402783,
+   "skill": 5636,
+   "input_skill": 5636,
+   "segs": 6,
+   "forced": false
   },
   "130": {
-   "peak": 720809.0,
-   "skill": 5662,
-   "segs": 1,
    "mhp": 310769.0,
    "stat": {
     "mhp": 310769,
@@ -6164,12 +6763,17 @@
     "died": 3,
     "healed": 67597,
     "atk": 8000.0
-   }
+   },
+   "peak_k": 720809.0,
+   "skill_k": 5662,
+   "peak": 189954,
+   "peak_rand": 189954,
+   "skill": 5662,
+   "input_skill": 5662,
+   "segs": 1,
+   "forced": false
   },
   "131": {
-   "peak": 1207020.0,
-   "skill": 5650,
-   "segs": 6,
    "mhp": 310472.0,
    "stat": {
     "mhp": 310472,
@@ -6215,17 +6819,21 @@
     "died": 3,
     "healed": 0,
     "atk": 8000.0
-   }
+   },
+   "peak_k": 1207020.0,
+   "skill_k": 5650,
+   "peak": 257562,
+   "peak_rand": 257562,
+   "skill": 5650,
+   "input_skill": 5650,
+   "segs": 6,
+   "forced": false
   },
   "141": {
    "state_resist_n": 0,
-   "no_damage_row": true,
    "disabled": true
   },
   "142": {
-   "peak": 2528511.0,
-   "skill": 10100,
-   "segs": 3,
    "mhp": 319564.0,
    "stat": {
     "mhp": 319564,
@@ -6271,7 +6879,15 @@
     "died": 0,
     "healed": 295286,
     "atk": 8000.0
-   }
+   },
+   "peak_k": 2528511.0,
+   "skill_k": 10100,
+   "peak": 592560,
+   "peak_rand": 592560,
+   "skill": 10100,
+   "input_skill": 10100,
+   "segs": 3,
+   "forced": false
   },
   "146": {
    "stat": {
@@ -6311,13 +6927,10 @@
     ]
    },
    "state_resist_n": 0,
-   "no_damage_row": true,
-   "disabled": true
+   "disabled": true,
+   "no_damage_row": true
   },
   "147": {
-   "peak": 2958606.0,
-   "skill": 10737,
-   "segs": 2,
    "mhp": 335015.0,
    "stat": {
     "mhp": 335015,
@@ -6363,12 +6976,17 @@
     "died": 3,
     "healed": 0,
     "atk": 8000.0
-   }
+   },
+   "peak_k": 2958606.0,
+   "skill_k": 10737,
+   "peak": 483252,
+   "peak_rand": 483252,
+   "skill": 10737,
+   "input_skill": 10737,
+   "segs": 2,
+   "forced": false
   },
   "148": {
-   "peak": 1589709.0,
-   "skill": 10540,
-   "segs": 3,
    "mhp": 307197.0,
    "stat": {
     "mhp": 307197,
@@ -6414,12 +7032,17 @@
     "died": 3,
     "healed": 0,
     "atk": 8000.0
-   }
+   },
+   "peak_k": 1589709.0,
+   "skill_k": 10540,
+   "peak": 176625,
+   "peak_rand": 176625,
+   "skill": 10540,
+   "input_skill": 10540,
+   "segs": 3,
+   "forced": false
   },
   "149": {
-   "peak": 2300854.0,
-   "skill": 9960,
-   "segs": 1,
    "mhp": 334872.0,
    "stat": {
     "mhp": 334872,
@@ -6465,12 +7088,17 @@
     "died": 3,
     "healed": 0,
     "atk": 8000.0
-   }
+   },
+   "peak_k": 2300854.0,
+   "skill_k": 9960,
+   "peak": 521521,
+   "peak_rand": 521521,
+   "skill": 9960,
+   "input_skill": 9960,
+   "segs": 1,
+   "forced": false
   },
   "150": {
-   "peak": 2900220.0,
-   "skill": 9973,
-   "segs": 10,
    "mhp": 298026.0,
    "stat": {
     "mhp": 298026,
@@ -6516,12 +7144,17 @@
     "died": 3,
     "healed": 0,
     "atk": 8000.0
-   }
+   },
+   "peak_k": 2900220.0,
+   "skill_k": 9973,
+   "peak": 259526,
+   "peak_rand": 259526,
+   "skill": 9973,
+   "input_skill": 9973,
+   "segs": 10,
+   "forced": false
   },
   "151": {
-   "peak": 3487896.0,
-   "skill": 10738,
-   "segs": 1,
    "mhp": 297633.0,
    "stat": {
     "mhp": 297633,
@@ -6567,12 +7200,17 @@
     "died": 3,
     "healed": 0,
     "atk": 8000.0
-   }
+   },
+   "peak_k": 3487896.0,
+   "skill_k": 10738,
+   "peak": 762552,
+   "peak_rand": 762552,
+   "skill": 10738,
+   "input_skill": 10738,
+   "segs": 1,
+   "forced": false
   },
   "152": {
-   "peak": 3611656.0,
-   "skill": 9995,
-   "segs": 8,
    "mhp": 275294.0,
    "stat": {
     "mhp": 275294,
@@ -6611,12 +7249,17 @@
     ]
    },
    "state_resist_n": 0,
-   "disabled": true
+   "disabled": true,
+   "peak_k": 3611656.0,
+   "skill_k": 9995,
+   "peak": 971480,
+   "peak_rand": 971480,
+   "skill": 9995,
+   "input_skill": 9995,
+   "segs": 8,
+   "forced": false
   },
   "153": {
-   "peak": 5169096.0,
-   "skill": 10008,
-   "segs": 3,
    "mhp": 290249.0,
    "stat": {
     "mhp": 290249,
@@ -6662,12 +7305,17 @@
     "died": 3,
     "healed": 0,
     "atk": 8000.0
-   }
+   },
+   "peak_k": 5169096.0,
+   "skill_k": 10008,
+   "peak": 971073,
+   "peak_rand": 971073,
+   "skill": 10008,
+   "input_skill": 10008,
+   "segs": 3,
+   "forced": false
   },
   "154": {
-   "peak": 2024120.0,
-   "skill": 10015,
-   "segs": 10,
    "mhp": 275294.0,
    "stat": {
     "mhp": 275294,
@@ -6713,12 +7361,17 @@
     "died": 3,
     "healed": 0,
     "atk": 8000.0
-   }
+   },
+   "peak_k": 2024120.0,
+   "skill_k": 10015,
+   "peak": 428707,
+   "peak_rand": 428707,
+   "skill": 10015,
+   "input_skill": 10015,
+   "segs": 10,
+   "forced": false
   },
   "155": {
-   "peak": 1332194.0,
-   "skill": 10023,
-   "segs": 1,
    "mhp": 277480.0,
    "stat": {
     "mhp": 277480,
@@ -6764,12 +7417,17 @@
     "died": 3,
     "healed": 0,
     "atk": 8000.0
-   }
+   },
+   "peak_k": 1332194.0,
+   "skill_k": 10023,
+   "peak": 79829,
+   "peak_rand": 79829,
+   "skill": 10023,
+   "input_skill": 10023,
+   "segs": 1,
+   "forced": false
   },
   "156": {
-   "peak": 1133988.0,
-   "skill": 10739,
-   "segs": 2,
    "mhp": 353633.0,
    "stat": {
     "mhp": 353633,
@@ -6815,12 +7473,17 @@
     "died": 3,
     "healed": 0,
     "atk": 8000.0
-   }
+   },
+   "peak_k": 1133988.0,
+   "skill_k": 10739,
+   "peak": 271556,
+   "peak_rand": 271556,
+   "skill": 10739,
+   "input_skill": 10739,
+   "segs": 2,
+   "forced": false
   },
   "158": {
-   "peak": 2016504.0,
-   "skill": 10048,
-   "segs": 12,
    "mhp": 286483.0,
    "stat": {
     "mhp": 286483,
@@ -6866,12 +7529,17 @@
     "died": 3,
     "healed": 0,
     "atk": 8000.0
-   }
+   },
+   "peak_k": 2016504.0,
+   "skill_k": 10048,
+   "peak": 243365,
+   "peak_rand": 243365,
+   "skill": 10048,
+   "input_skill": 10048,
+   "segs": 12,
+   "forced": false
   },
   "159": {
-   "peak": 2741769.0,
-   "skill": 10057,
-   "segs": 1,
    "mhp": 293276.0,
    "stat": {
     "mhp": 293276,
@@ -6917,17 +7585,21 @@
     "died": 3,
     "healed": 0,
     "atk": 8000.0
-   }
+   },
+   "peak_k": 2741769.0,
+   "skill_k": 10057,
+   "peak": 329263,
+   "peak_rand": 329263,
+   "skill": 10057,
+   "input_skill": 10057,
+   "segs": 1,
+   "forced": true
   },
   "161": {
    "state_resist_n": 0,
-   "no_damage_row": true,
    "disabled": true
   },
   "162": {
-   "peak": 8607472.0,
-   "skill": 10462,
-   "segs": 4,
    "mhp": 296400.0,
    "stat": {
     "mhp": 296400,
@@ -6973,12 +7645,17 @@
     "died": 3,
     "healed": 0,
     "atk": 8000.0
-   }
+   },
+   "peak_k": 8607472.0,
+   "skill_k": 10462,
+   "peak": 2117026,
+   "peak_rand": 2117026,
+   "skill": 10462,
+   "input_skill": 10462,
+   "segs": 4,
+   "forced": true
   },
   "163": {
-   "peak": 4863675.0,
-   "skill": 9938,
-   "segs": 3,
    "mhp": 491657.0,
    "stat": {
     "mhp": 285847,
@@ -7024,12 +7701,17 @@
     "died": 3,
     "healed": 0,
     "atk": 8000.0
-   }
+   },
+   "peak_k": 4863675.0,
+   "skill_k": 9938,
+   "peak": 1175771,
+   "peak_rand": 1175771,
+   "skill": 9938,
+   "input_skill": 9938,
+   "segs": 3,
+   "forced": false
   },
   "164": {
-   "peak": 1658920.0,
-   "skill": 9944,
-   "segs": 4,
    "mhp": 285847.0,
    "stat": {
     "mhp": 285847,
@@ -7075,12 +7757,17 @@
     "died": 3,
     "healed": 0,
     "atk": 8000.0
-   }
+   },
+   "peak_k": 1658920.0,
+   "skill_k": 9944,
+   "peak": 496840,
+   "peak_rand": 496840,
+   "skill": 9944,
+   "input_skill": 9944,
+   "segs": 4,
+   "forced": true
   },
   "165": {
-   "peak": 2506572.0,
-   "skill": 10752,
-   "segs": 3,
    "mhp": 308186.0,
    "stat": {
     "mhp": 308186,
@@ -7126,12 +7813,17 @@
     "died": 3,
     "healed": 0,
     "atk": 8000.0
-   }
+   },
+   "peak_k": 2506572.0,
+   "skill_k": 10752,
+   "peak": 636426,
+   "peak_rand": 636426,
+   "skill": 10752,
+   "input_skill": 10752,
+   "segs": 3,
+   "forced": false
   },
   "167": {
-   "peak": 3707752.0,
-   "skill": 10125,
-   "segs": 4,
    "mhp": 290249.0,
    "stat": {
     "mhp": 290249,
@@ -7177,12 +7869,17 @@
     "died": 3,
     "healed": 0,
     "atk": 8000.0
-   }
+   },
+   "peak_k": 3707752.0,
+   "skill_k": 10125,
+   "peak": 629232,
+   "peak_rand": 1249383,
+   "skill": 10125,
+   "input_skill": 10125,
+   "segs": 8,
+   "forced": false
   },
   "168": {
-   "peak": 4160364.0,
-   "skill": 10151,
-   "segs": 3,
    "mhp": 292883.0,
    "stat": {
     "mhp": 292883,
@@ -7228,12 +7925,17 @@
     "died": 3,
     "healed": 0,
     "atk": 8000.0
-   }
+   },
+   "peak_k": 4160364.0,
+   "skill_k": 10151,
+   "peak": 1046118,
+   "peak_rand": 1046118,
+   "skill": 10151,
+   "input_skill": 10151,
+   "segs": 3,
+   "forced": true
   },
   "169": {
-   "peak": 5156382.0,
-   "skill": 10174,
-   "segs": 6,
    "mhp": 275687.0,
    "stat": {
     "mhp": 275687,
@@ -7279,12 +7981,17 @@
     "died": 3,
     "healed": 0,
     "atk": 8000.0
-   }
+   },
+   "peak_k": 5156382.0,
+   "skill_k": 10174,
+   "peak": 770566,
+   "peak_rand": 770566,
+   "skill": 10173,
+   "input_skill": 10173,
+   "segs": 2,
+   "forced": false
   },
   "170": {
-   "peak": 3453121.0,
-   "skill": 10192,
-   "segs": 7,
    "mhp": 655023.0,
    "stat": {
     "mhp": 380828,
@@ -7330,12 +8037,17 @@
     "died": 3,
     "healed": 0,
     "atk": 8000.0
-   }
+   },
+   "peak_k": 3453121.0,
+   "skill_k": 10192,
+   "peak": 600271,
+   "peak_rand": 600271,
+   "skill": 10192,
+   "input_skill": 10192,
+   "segs": 7,
+   "forced": true
   },
   "171": {
-   "peak": 3575235.0,
-   "skill": 10218,
-   "segs": 1,
    "mhp": 613621.0,
    "stat": {
     "mhp": 318344,
@@ -7381,12 +8093,17 @@
     "died": 3,
     "healed": 0,
     "atk": 8000.0
-   }
+   },
+   "peak_k": 3575235.0,
+   "skill_k": 10218,
+   "peak": 757422,
+   "peak_rand": 966129,
+   "skill": 10218,
+   "input_skill": 10218,
+   "segs": 2,
+   "forced": true
   },
   "172": {
-   "peak": 3175124.0,
-   "skill": 10230,
-   "segs": 3,
    "mhp": 275294.0,
    "stat": {
     "mhp": 275294,
@@ -7432,12 +8149,17 @@
     "died": 3,
     "healed": 0,
     "atk": 8000.0
-   }
+   },
+   "peak_k": 3175124.0,
+   "skill_k": 10230,
+   "peak": 1050252,
+   "peak_rand": 1050252,
+   "skill": 10231,
+   "input_skill": 10231,
+   "segs": 3,
+   "forced": true
   },
   "173": {
-   "peak": 3912828.0,
-   "skill": 10263,
-   "segs": 3,
    "mhp": 275294.0,
    "stat": {
     "mhp": 275294,
@@ -7483,12 +8205,17 @@
     "died": 3,
     "healed": 0,
     "atk": 8000.0
-   }
+   },
+   "peak_k": 3912828.0,
+   "skill_k": 10263,
+   "peak": 1103769,
+   "peak_rand": 1103769,
+   "skill": 10263,
+   "input_skill": 10263,
+   "segs": 3,
+   "forced": true
   },
   "174": {
-   "peak": 278606.0,
-   "skill": 10274,
-   "segs": 2,
    "mhp": 296112.0,
    "stat": {
     "mhp": 296112,
@@ -7534,12 +8261,17 @@
     "died": 3,
     "healed": 0,
     "atk": 8000.0
-   }
+   },
+   "peak_k": 278606.0,
+   "skill_k": 10274,
+   "peak": 232788,
+   "peak_rand": 232788,
+   "skill": 10274,
+   "input_skill": 10274,
+   "segs": 2,
+   "forced": true
   },
   "175": {
-   "peak": 680160.0,
-   "skill": 10292,
-   "segs": 1,
    "mhp": 841110.0,
    "stat": {
     "mhp": 280370,
@@ -7585,12 +8317,17 @@
     "died": 0,
     "healed": 6235596,
     "atk": 8000.0
-   }
+   },
+   "peak_k": 680160.0,
+   "skill_k": 10292,
+   "peak": 1053134,
+   "peak_rand": 1053134,
+   "skill": 10292,
+   "input_skill": 10292,
+   "segs": 1,
+   "forced": true
   },
   "176": {
-   "peak": 7360185.0,
-   "skill": 10315,
-   "segs": 3,
    "mhp": 281157.0,
    "stat": {
     "mhp": 281157,
@@ -7636,12 +8373,17 @@
     "died": 3,
     "healed": 0,
     "atk": 8000.0
-   }
+   },
+   "peak_k": 7360185.0,
+   "skill_k": 10315,
+   "peak": 858623,
+   "peak_rand": 858623,
+   "skill": 10315,
+   "input_skill": 10315,
+   "segs": 3,
+   "forced": true
   },
   "177": {
-   "peak": 3218735.0,
-   "skill": 10337,
-   "segs": 2,
    "mhp": 509312.0,
    "stat": {
     "mhp": 296112,
@@ -7687,12 +8429,17 @@
     "died": 3,
     "healed": 1352649,
     "atk": 8000.0
-   }
+   },
+   "peak_k": 3218735.0,
+   "skill_k": 10337,
+   "peak": 879379,
+   "peak_rand": 879379,
+   "skill": 10337,
+   "input_skill": 10337,
+   "segs": 6,
+   "forced": true
   },
   "178": {
-   "peak": 1802682.0,
-   "skill": 10439,
-   "segs": 6,
    "mhp": 298420.0,
    "stat": {
     "mhp": 298420,
@@ -7738,12 +8485,17 @@
     "died": 3,
     "healed": 0,
     "atk": 8000.0
-   }
+   },
+   "peak_k": 1802682.0,
+   "skill_k": 10439,
+   "peak": 241026,
+   "peak_rand": 241026,
+   "skill": 10440,
+   "input_skill": 10440,
+   "segs": 1,
+   "forced": false
   },
   "179": {
-   "peak": 2165270.0,
-   "skill": 10622,
-   "segs": 6,
    "mhp": 335500.0,
    "stat": {
     "mhp": 335500,
@@ -7789,12 +8541,17 @@
     "died": 3,
     "healed": 0,
     "atk": 8000.0
-   }
+   },
+   "peak_k": 2165270.0,
+   "skill_k": 10622,
+   "peak": 737623,
+   "peak_rand": 1482076,
+   "skill": 10623,
+   "input_skill": 10623,
+   "segs": 18,
+   "forced": false
   },
   "180": {
-   "peak": 4796544.0,
-   "skill": 10641,
-   "segs": 4,
    "mhp": 281687.0,
    "stat": {
     "mhp": 281687,
@@ -7839,7 +8596,15 @@
     "died": 3,
     "healed": 126148,
     "atk": 8000.0
-   }
+   },
+   "peak_k": 4796544.0,
+   "skill_k": 10641,
+   "peak": 971176,
+   "peak_rand": 971176,
+   "skill": 10641,
+   "input_skill": 10641,
+   "segs": 4,
+   "forced": true
   }
  }
 }
