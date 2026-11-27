@@ -582,6 +582,8 @@ func _add_state(id: int, random: XRandomStream = null) -> void:
 	var source := XImportedBalance.acting_battler()
 	if source != null:
 		state_origins[id] = weakref(source)
+	elif fresh:
+		state_origins.erase(id)  # T530 R3（小o P2-7）：无施加者新挂上的状态不沿用清除前的旧来源
 	XTianqiTrumpet.state_added(self, id, source)  # 天启篇号卷三号：自己上的减益回合数 ×1.33
 	# Game_Battler.addState：新附加的状态 refresh 后由 krz 标 dirty；已有状态（_Fix_StackOverflow 分支）只续回合
 	if fresh:
@@ -1185,6 +1187,7 @@ func clear_states() -> void:
 		if not XResourceContext.permanent(sid) and not XAlienBattle.keeps_state(self, sid):
 			state_ids.erase(sid)
 			state_turns.erase(sid)
+			state_origins.erase(sid)  # T530 R3（小o P2-7）：清状态时来源一并清
 			XRaceBattle.on_state_removed(self, sid)
 
 

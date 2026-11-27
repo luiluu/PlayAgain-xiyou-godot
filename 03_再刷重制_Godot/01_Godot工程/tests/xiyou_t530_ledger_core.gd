@@ -1053,5 +1053,19 @@ func _test_13_self_cap_ally_state() -> void:
 	var p_off := _elem1_pool(a, e, sk)
 	XTianqiLedger.SELF_CAP = true
 	_check("t13_switch_off_rollback", _near(p_off.element, 1.35) and _near(float(p_off.by.get("state", 0.0)), 0.05), p_off)
+	# T530 R3（小o P2-7）：队友施加 → recover_all 清状态 → 无施加者重挂同一状态：不沿用旧来源，算自带、封到 1.30
+	a.remove_state(113)
+	XImportedBalance.set_acting(ally)
+	a.add_state(113)
+	XImportedBalance.set_acting(null)
+	a.recover_all()
+	var cleared_origin := not a.state_origins.has(113)
+	XImportedBalance.set_acting(null)
+	a.add_state(113)
+	var p_re := _elem1_pool(a, e, sk)
+	_check("t13_recover_all_then_sourceless_reapply_capped_130",
+		cleared_origin and not XTianqiLedger.state_by_other(a, 113) and _near(p_re.element, 1.30)
+			and _near(float(p_re.by.get("state", 0.0)), 0.05) and absf(float(p_re.by.get("ally_state", 0.0))) < 1e-9,
+		{"cleared_origin": cleared_origin, "p": p_re})
 	a.looks = {}
 	a.clear_states()

@@ -3,6 +3,11 @@
 - 车道／工作者：T530 总账改造核心（v0.16 N07）／小A（Antigravity，前半）→ cc（Opus＋medium，P8，续做收尾）
 - 状态：可合并（R2 返修后，云端结果见「测试」）
 
+## R3 局部热修（cc，Opus＋medium，按小o R3 核查报告，只修两条）
+
+- **P2-7**：队友施加水之祝福 → `recover_all()` 清状态 → 无施加者（经 `XResourceContext`）重挂同一状态时，旧施加者还留在 `state_origins`，新状态被误归 `ally_state`，本体 +30% 时物理池 1.35。修：`XBattler.clear_states` 清状态时一并清来源；`_add_state` 新挂上且这次没有施加者时清掉旧来源（两处都改，任一条都能单独挡住）。已有状态无施加者续回合的路径不动。专项第 13 组加「清除后无来源重挂」断言：来源已清、算自带、封到 1.30；撤掉修复时该断言失败（实测 1.35、仍归 ally_state）。
+- **P3-1**：「动了的共用函数和开关」表里签名一行改了措辞：状态 ID 串原样，O-396 的 `_pm_meta` 多一项固定的空串哈希（长度 +1，如 4→5）。
+
 ## R2 返修（cc，Opus＋medium，按甲档换家核查报告）
 
 合了最新 main（含 T528 R2 贝吉特重标）再改。逐条：
@@ -124,6 +129,10 @@
 
 ## 测试
 
+**R3 P2-7（cc）**
+- 专项 `xiyou_t530_ledger_core`：59/59 过（第 13 组新增 1 条）。本机单跑（并行测试.py，headless，不出声）。
+- 云端选测：待补
+
 **R2 P2-6（cc）**
 - 专项 `xiyou_t530_ledger_core`：58/58 过（新增第 13 组 4 条）；`xiyou_tianqi_ledger` 83/83、`xiyou_tianqi_ledger_p3` 44/44。本机单跑，`--audio-driver Dummy`。
 - 云端选测：选测 478 个场景、16 片全过（提交 c39e997d49；偶发 1 个 xiyou_floor_reach080，并行失败、单跑通过，算通过）：https://github.com/luiluu/PlayAgain-xiyou-godot/actions/runs/45954107728
@@ -164,7 +173,7 @@
 | `XTianqiAffixBattle.xparam` | 1 处（`actor.gd:1544`） | 回复（i＝7）在天启篇且 `SPLIT_CAPS` 开时改走 `cap_actor_hrg`；其他 xparam 照旧 |
 | `XTianqiAffixBattle.personal`／`_taken_mult` | 1／1 处 | `CAPS_V16`／`RESIST_PER_ELEMENT` 关或不在天启篇时回到旧算法 |
 | `XTianqiLedger.passive_buckets`（R2：`SELF_CAP` 开时超越极限 I～IV 记 `advance` 桶） | 1 处（`actor.gd` 被动缓存） | 旧合用顶和分池都不读 `actor`／`advance` 桶，只有 `_self_cap` 读 actor＋state；各桶合计不变 |
-| `XActor._passive_states_signature`＋O-396 备注签名（R2 P2-6：补「别人施加的状态」一段） | 3 处（`git grep -n "_passive_states_signature" -- '*.gd'`，全在 `actor.gd` 被动缓存读写） | 西游档、`SELF_CAP` 关或身上没有记来源的状态时补的那段为空，签名和原来一样；天启篇只在「本人／别人施加」变了时多重建一次 |
+| `XActor._passive_states_signature`＋O-396 备注签名（R2 P2-6：补「别人施加的状态」一段） | 3 处（`git grep -n "_passive_states_signature" -- '*.gd'`，全在 `actor.gd` 被动缓存读写） | 状态签名 `_passive_states_signature`：西游档、`SELF_CAP` 关或身上没有记来源的状态时补的那段为空，状态 ID 串和原来一样。O-396 的 `_pm_meta` 不是原样：末尾总多追加一项来源段哈希（那段为空时是固定的空串哈希），数组比原来长一项（如 4→5）；这一项每次都是同一个固定值，所以西游档等情况下缓存命中与否和原来一样（`_pm_meta` 只在运行时，不进存档）。天启篇只在「本人／别人施加」变了时多重建一次 |
 | `XTianqiLedger.passive_buckets`（R2 P2-6：别人施加的状态记 `ally_state`） | 1 处 | 只有 `_self_cap` 读 state 桶，`ally_state` 没有任何顶读；各桶合计不变 |
 | 新开关 `XTianqiLedger.SPLIT_CAPS`、`REBUILD_SOURCES`、`ELEM_RESIST_CAP`、`NO_ENEMY_FLAT_MIT`、`SELF_CAP`（R2），`XTianqiAffixBattle.CAPS_V16`、`RESIST_PER_ELEMENT` | — | 默认开，关＝回退；专项第 7 组验西游档零改动 |
 
