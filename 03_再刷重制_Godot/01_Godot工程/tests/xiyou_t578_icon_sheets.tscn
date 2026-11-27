@@ -1,0 +1,6 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://tests/xiyou_t578_icon_sheets.gd" id="1"]
+
+[node name="XiyouT578IconSheets" type="Node"]
+script = ExtResource("1")
