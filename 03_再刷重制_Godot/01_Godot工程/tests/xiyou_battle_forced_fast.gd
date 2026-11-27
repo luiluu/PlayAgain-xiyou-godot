@@ -75,11 +75,19 @@ func _battle(speed: int, anim: bool) -> Dictionary:
 	while not scene.done and Engine.get_physics_frames() - scene.t0 < 3000:
 		await get_tree().physics_frame
 	var out := {"span": -1, "acts": 0, "sig": scene.sig, "log": scene.log}
+	# 敌群事件里接连的强制行动：T574 起（XBattleLogic.FORCE_YIELD）一次强制行动一批记录，前一批演完（end）当帧接着下一批（start），
+	# 这里把首尾相接的几批算作一段（关着时三招同一批）
 	for k in scene.log.size():
 		var r: Array = scene.log[k]
 		if r[1] == "start" and k + 1 < scene.log.size() and scene.log[k + 1][1] == "end":
-			out.span = int(scene.log[k + 1][0]) - int(r[0])
-			out.acts = int(r[2])
+			var j := k
+			out.acts = 0
+			while j + 1 < scene.log.size() and scene.log[j][1] == "start" and scene.log[j + 1][1] == "end":
+				out.acts += int(scene.log[j][2])
+				out.span = int(scene.log[j + 1][0]) - int(r[0])
+				if j + 2 >= scene.log.size() or scene.log[j + 2][1] != "start" or int(scene.log[j + 2][0]) != int(scene.log[j + 1][0]):
+					break
+				j += 2
 			break
 	scene.queue_free()
 	await get_tree().physics_frame
@@ -99,6 +107,13 @@ func _run() -> void:
 		check("slow_like_original_%d" % speed, slow.span >= 140, slow.span)
 		check("fast_under_half_%d" % speed, fast.span > 0 and fast.span * 2 < slow.span, [slow.span, fast.span])
 		check("same_result_%d" % speed, not slow.sig.is_empty() and slow.sig == fast.sig, [slow.sig, fast.sig])
+		# T574：强制行动之后停顿（FORCE_YIELD）只把计算分到几帧，演出的总帧数、结算结果与一帧算完相同
+		XBattleLogic.FORCE_YIELD = false
+		var whole: Dictionary = await _battle(speed, false)
+		XBattleLogic.FORCE_YIELD = true
+		print("FORCE_YIELD speed=%d on=%d off=%d" % [speed, fast.span, whole.span])
+		check("yield_same_span_%d" % speed, whole.acts == 3 and whole.span == fast.span, [fast.log, whole.log])
+		check("yield_same_result_%d" % speed, whole.sig == fast.sig, [fast.sig, whole.sig])
 	XBattleScene.FORCED_FAST = false
 	var anim_slow: Dictionary = await _battle(4, true)
 	XBattleScene.FORCED_FAST = true

@@ -1706,10 +1706,21 @@ func troop_events(first_subject: XBattler = null, turn_end := false) -> Array:
 	return _drive_events()
 
 
+## T574（O-待定）：敌群事件／预约公共事件里每做完一次 339 强制行动，解释器先停住（同 MV command339 的 setWaitMode('action')：
+## 原版等这次行动演完才往下执行），画面演完这一次再续上。原来一次检查里的几次强制行动（如朵莉亚「逐浪」预约的公共事件 1222
+## 接连强制放 8151、8153）都在同一帧整段算完，四倍速下一帧三四百毫秒。停住时没有新记录、不选页、不碰战斗状态，续上就从下一条指令
+## 接着执行，所以结算的次序、记录与原来一条不差，只是分到了几帧里。只有开了 yield_forced 的宿主（战斗画面 XBattleScene）会停；
+## 无界面的 run_events 与直接调 troop_events 的测试、虚拟玩家照旧一次跑完。回退：FORCE_YIELD = false（同原来，一帧算完）
+static var FORCE_YIELD := true
+var yield_forced := false
+
 ## 画面确认消息后续上游标；token 不对（重复确认、上一场战斗的消息）时什么也不做
 func resume_event(token: int, response = null) -> Array:
 	if _waiting.is_empty() or int(_waiting.token) != token:
 		return []
+	if bool(_waiting.get("yield", false)):
+		_waiting = {}  # 强制行动之后的停顿（FORCE_YIELD）：原来这里不停，直接接着跑；不走下面 340 之后的分支（那是文字确认后的规矩）
+		return _drive_events()
 	if aborted:
 		# 340 之后显示的文字：确认后敌群解释器不再更新（BattleManager 只走 checkAbort），本页后面与上层公共事件都不执行
 		_clear_event_cursor()
@@ -1724,9 +1735,13 @@ func is_event_waiting() -> bool:
 	return not _waiting.is_empty()
 
 
-## 等待中的消息 {token, msg}；不在等待时为空
+## 等待中的消息 {token, msg}；不在等待时为空。强制行动之后的停顿（FORCE_YIELD）是 {token, msg: {}, yield: true}，不显示文字，直接 resume_event
 func event_waiting() -> Dictionary:
-	return {} if _waiting.is_empty() else {"token": _waiting.token, "msg": _waiting.msg}
+	if _waiting.is_empty():
+		return {}
+	if bool(_waiting.get("yield", false)):
+		return {"token": _waiting.token, "msg": {}, "yield": true}
+	return {"token": _waiting.token, "msg": _waiting.msg}
 
 
 ## 无界面宿主：检查一次敌群事件，消息由 message_responder 应答（未设置时确认），一直执行到这次检查结束
@@ -1734,6 +1749,9 @@ func run_events(first_subject: XBattler = null, turn_end := false) -> Array:
 	var logs := troop_events(first_subject, turn_end)
 	while is_event_waiting():
 		var w := event_waiting()
+		if bool(w.get("yield", false)):
+			logs.append_array(resume_event(int(w.token)))
+			continue
 		var response = message_responder.call(w.msg) if message_responder.is_valid() else w.msg.get("default", null)
 		logs.append_array(resume_event(int(w.token), response))
 	return logs
@@ -1785,7 +1803,10 @@ func _drive_events() -> Array:
 				logs.append({"type": "message", "msg": r.msg, "token": _event_token})
 				return logs
 			"forced_action":
-				pass
+				if FORCE_YIELD and yield_forced:
+					_event_token += 1
+					_waiting = {"token": _event_token, "yield": true}
+					return logs
 			_:
 				for sk in _runner.skipped:
 					if _runner.has_meta("common_event"): common_event_skipped.append("%d %s 公共事件%d" % [int(sk.code), str(sk.text), int(_runner.get_meta("common_event"))])
