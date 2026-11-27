@@ -87,7 +87,7 @@ static func is_absorb_actor(id: int) -> bool:
 	return _absorb_ids.has(id)
 
 ## CodexBalance41.hasWeapon：背包武器或任一角色身上的武器里有这个角色的开放专武
-## T574（O-待定）：先看有没有哪把开放专武写了本人（没有就一定是假），再逐处找、不把背包和各人身上的装备拼成一张新表。
+## T574（O-682）：先看有没有哪把开放专武写了本人（没有就一定是假），再逐处找、不把背包和各人身上的装备拼成一张新表。
 ## 结果同下面的整段找法（只读、不分先后）；技能 id 表每建一次都要问一遍，背包装备多时一次 0.2～0.4 ms。回退：ABSORB_SCAN_FAST = false
 static var ABSORB_SCAN_FAST := true
 func has_absorb_weapon() -> bool:

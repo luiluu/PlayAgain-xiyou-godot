@@ -252,7 +252,7 @@ static func rec(name: String, id: int) -> Dictionary:
 	return out
 
 
-## T574（O-待定）：西游档（含没有存档）取表内记录的快路。下面 rec 的二十几层改写里，西游档会改的只有三层：
+## T574（O-683）：西游档（含没有存档）取表内记录的快路。下面 rec 的二十几层改写里，西游档会改的只有三层：
 ## 五条悟这类 _tq_always 的天启篇专属招（XTianqiSkills.rec）、西游档徐凤年重做（XXufeng）、西游档离群削弱（XXiyouNerf）；
 ## 其余各层的判断都含天启篇档（XTianqi.active）、西游档一律原样返回。表内号段（0 < id < 表长）的表外分派也都不走。
 ## 道具、公共事件另有西游档才改名的乌鸦配方（CROW_BLUEPRINT_*），不走快路。一次行动几千次取记录，每次省掉约 8 µs 的层层判档。

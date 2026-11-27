@@ -1,8 +1,8 @@
 extends Node
 ## 【cc·未经审查】T574 西游档战斗卡顿续（T572 余项＋小o 核 T572 的发行口径长帧）：
-## - XBattleLogic.FORCE_YIELD（O-待定-4）：敌群事件／预约公共事件里每次 339 强制行动之后解释器停住，战斗画面演完这一次再续（一帧最多算一次）；
-## - XActor.ABSORB_SCAN_FAST（O-待定-5）：技能 id 表里「本人开放专武在不在」先查有没有专武写了本人，再逐处找、不拼表；
-## - XDB.XIYOU_REC_FAST（O-待定-6）：西游档取表内记录跳过只管天启篇档的改写层。
+## - XBattleLogic.FORCE_YIELD（O-681）：敌群事件／预约公共事件里每次 339 强制行动之后解释器停住，战斗画面演完这一次再续（一帧最多算一次）；
+## - XActor.ABSORB_SCAN_FAST（O-682）：技能 id 表里「本人开放专武在不在」先查有没有专武写了本人，再逐处找、不拼表；
+## - XDB.XIYOU_REC_FAST（O-683）：西游档取表内记录跳过只管天启篇档的改写层。
 ## 断言：开关两态结果逐项相同——取记录全表逐号同一个对象（西游档、没有存档、天启篇档）；专武判断各种摆法相同；
 ## 强制行动：无界面逐条续上与一次跑完、run_events 三种走法日志与战斗状态相同（连续两次／三次 339、第一次强制行动就打完战斗）；
 ## 带场景：同种子四倍速、一倍速各一遍，开关两态演出的记录次序、战斗结果相同。
@@ -64,7 +64,7 @@ func _run() -> void:
 	get_tree().quit.call_deferred(0 if passed == results.size() else 1)
 
 
-# ---- O-待定-6：XDB.rec 西游档快路，全表逐号比对 ----
+# ---- O-683：XDB.rec 西游档快路，全表逐号比对 ----
 const REC_TABLES := ["Actors", "Classes", "Skills", "Items", "Weapons", "Armors", "Enemies", "Troops", "States", "Animations", "CommonEvents"]
 
 func _rec_all(tag: String) -> void:
@@ -115,7 +115,7 @@ func _rec_fast() -> void:
 	check("rec.faster", fast < slow, [fast, slow])
 
 
-# ---- O-待定-5：本人开放专武在不在 ----
+# ---- O-682：本人开放专武在不在 ----
 func _absorb() -> void:
 	XActor.absorb_owners(0)
 	var wid := -1
@@ -163,7 +163,7 @@ func _absorb() -> void:
 	XState.current = null
 
 
-# ---- O-待定-4：强制行动之后停顿（无界面）----
+# ---- O-681：强制行动之后停顿（无界面）----
 func _doria_state() -> XState:
 	var s := XState.new_game(3, 1, [8, 9])
 	XState.current = s
@@ -286,7 +286,7 @@ func _force_headless() -> void:
 	check("rollback.no_yield", int(off.yields) == 0, off)
 
 
-# ---- O-待定-4：带场景（同种子；四倍速、一倍速各一遍；开关两态）----
+# ---- O-681：带场景（同种子；四倍速、一倍速各一遍；开关两态）----
 class P extends XBattleScene:
 	var rec := []
 	var result := -1

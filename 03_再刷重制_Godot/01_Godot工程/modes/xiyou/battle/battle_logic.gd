@@ -1709,7 +1709,7 @@ func troop_events(first_subject: XBattler = null, turn_end := false) -> Array:
 	return _drive_events()
 
 
-## T574（O-待定）：敌群事件／预约公共事件里每做完一次 339 强制行动，解释器先停住（同 MV command339 的 setWaitMode('action')：
+## T574（O-681）：敌群事件／预约公共事件里每做完一次 339 强制行动，解释器先停住（同 MV command339 的 setWaitMode('action')：
 ## 原版等这次行动演完才往下执行），画面演完这一次再续上。原来一次检查里的几次强制行动（如朵莉亚「逐浪」预约的公共事件 1222
 ## 接连强制放 8151、8153）都在同一帧整段算完，四倍速下一帧三四百毫秒。停住时没有新记录、不选页、不碰战斗状态，续上就从下一条指令
 ## 接着执行，所以结算的次序、记录与原来一条不差，只是分到了几帧里。只有开了 yield_forced 的宿主（战斗画面 XBattleScene）会停；
