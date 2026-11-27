@@ -135,6 +135,11 @@
 
 ## 测试
 
+**R5 P2-9 测试种子（cc，claude-sonnet-5-5＋medium，P6）**
+- 只改 `tests/xiyou_caocao_tianhu_states.gd` 一处：`_p2_8_run` 的 `logic.setup` 传 `XBattleRandom.create(XRandomStream.hex64(0))` 固定战斗种子（连带场景注释补一句）。原来沿用随机种子，第二击暴击时主伤 79→119、总扣血 354→394 假红（小o 复现种子 15）。断言数值、游戏代码没动。
+- 本机：同一场景原样重复跑 20 次（`godot --headless --audio-driver Dummy`，占槽、每次独立临时 HOME），20 次全 39/39；每次气伤 275、总扣血 354（抹施加者 3763／3842）。种子 0 下分叉点返修版 39/39、R3 38/39 是小o 的验证，本轮没复跑。
+- 云端选测：结果见下一提交。
+
 **R4 P2-8（cc）**
 - 本机（并行测试.py，headless 不出声）：`xiyou_t530_ledger_core` 59/59、`xiyou_caocao_tianhu_states` 39/39（新增 3 条）、`xiyou_state_effects` 32816/32816、`xiyou_dot` 2259/2259、`xiyou_boss_react` 9074/9074。
 - 云端选测：选测 223 个场景、12 片全过（提交 4bbb9b50a9；偶发 1 个 xiyou_gojo，并行失败、单跑通过，算通过）：https://github.com/luiluu/PlayAgain-xiyou-godot/actions/runs/45987934859

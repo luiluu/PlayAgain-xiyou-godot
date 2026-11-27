@@ -447,7 +447,7 @@ func _test_tianhu_1341_battle_apply() -> void:
 
 
 # T530 R4（小o P2-8）回归：西游档敌人挂天虎令气伤 → 普攻一下让 React 缓存变热 → 战斗事件 334 enemy_recover_all 清状态 → 再普攻。
-# 场景：_make_xiyou(30)、Troops 2 首敌（elite_roll 100）、天虎 s.actor(104) 不带法宝、熟练度 7485＝0、Skills 1 普攻。
+# 场景：_make_xiyou(30)、Troops 2 首敌（elite_roll 100）、战斗随机种子 0、天虎 s.actor(104) 不带法宝、熟练度 7485＝0、Skills 1 普攻。
 # 热缓存仍跑 1341 React，施加者必须还在（西游档 clear_states 不清 state_origins）；
 # 期望值取 T530 改动前（分叉点 main）同场景实跑：第二击气伤 PRE_QISHANG、总扣血 PRE_TOTAL；
 # 同场景强制抹掉施加者（回退持有者）数值必须不同，证明本断言抓得到 P2-8 这类回归。
@@ -466,7 +466,7 @@ func _p2_8_run(drop_origin: bool) -> Dictionary:
 	tianhu.recover_all()
 	var logic := XBattleLogic.new()
 	logic.elite_roll = 100.0
-	logic.setup(2, s)
+	logic.setup(2, s, XBattleRandom.create(XRandomStream.hex64(0)))  # 固定战斗种子：沿用随机种子时第二击暴击会让总扣血假红
 	var foe: XEnemy = logic.enemies[0]
 	foe.hp = foe.mhp
 	XImportedBalance.set_acting(tianhu)
