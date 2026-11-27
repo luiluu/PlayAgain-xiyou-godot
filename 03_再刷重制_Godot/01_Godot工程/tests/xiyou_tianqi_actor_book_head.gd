@@ -4,6 +4,7 @@ extends Node
 ##   本来就放得下的（64 格原生图、有档案的新角色）位置大小一点不变，只有放不下的才缩。
 ## - 牌头三行：角色属性（元素色）／武器／防具，掌握去重（小铃兰两个法杖）、一类全会写「全部」、类型名不拆字；
 ##   原版「属性」（人物属性）天启篇不画。
+## - T571：天启篇新旧两种图鉴页不列防具「矢」（HIDE_ARMOR_TYPES=[13]，数据不动），西游档照列。
 ## - 西游档不变：actor_info 与改前一致（开关全关时的结果），立绘不缩；开关关＝天启篇也回改前。
 ## 带 -- --out=<目录> 且有窗口时截图：小铃兰、宿傩、1 号、奈叶、十三娘 改前／改后，1280×720。
 const TestEnv = preload("res://tests/xiyou_test_env.gd")
@@ -75,6 +76,7 @@ func _run() -> void:
 	_head()
 	_xiyou_same()
 	await _shots()
+	await _arrow_shots()
 	_switches(true)
 	XUiSkin.motion_override = -1
 	XState.current = null
@@ -219,15 +221,13 @@ func _head() -> void:
 	if XTianqiNature.natures_of_actor_id(172).is_empty():
 		check("head.sukuna_nature_none", r172[0][1].size() == 1 and str(r172[0][1][0][0]) == "无" and r172[0][1][0][1] == XUiSkin.TEXT_3, r172[0])
 	check("head.sukuna_weapons_listed", not bool(i172.weapons_all) and r172[1][1].size() == (i172.weapons as Array).size(), r172[1])
-	# 「矢」：类型表 13 号，只有 4541 一件；HIDE_ARMOR_TYPES 默认不藏
-	var sys_at: Array = XDB.system().get("armorTypes", [])
-	check("head.arrow_type_13", sys_at.size() > 13 and str(sys_at[13]) == "矢", sys_at)
-	XSkinBookPage.HIDE_ARMOR_TYPES = [13]
-	var hid := XSkinBookPage.actor_info(172)
-	check("head.arrow_hidden_when_set", not (hid.armors as Array).has("矢") and bool(hid.armors_all), hid.armors)
-	XSkinBookPage.HIDE_ARMOR_TYPES = []
+	_arrow()
+	_state(true)
+	_switches(true)
 	# 不拆字：每一段都是整个类型名（＋顿号），排行时段不跨行
 	var f := XUiSkin.font("body")
+	XSkinBookPage.HIDE_ARMOR_TYPES = []   # T571：藏「矢」后小铃兰是「全部」，量长名单折行要把「矢」放回来
+	i127 = XSkinBookPage.actor_info(127)
 	var r127 := XSkinBookPage.head_rows(i127)   # 小铃兰防具 12 种（不会矢）照列
 	check("head.suzuran_armors_listed", not bool(i127.armors_all) and not (i127.armors as Array).has("矢"), i127.armors)
 	var lines := XSkinBookPage.token_lines(r127[2][1], f, XUiSkin.FS_AUX, 220.0)
@@ -240,11 +240,84 @@ func _head() -> void:
 		check("head.line_fits.%d" % flat.size(), lw <= 220.5 or ln.size() == 1, [lw, ln])
 	check("head.tokens_whole", "".join(flat) == "、".join(i127.armors), ["".join(flat)])
 	check("head.multi_lines", lines.size() >= 2, lines.size())
+	XSkinBookPage.HIDE_ARMOR_TYPES = [13]
 	# 开关关＝天启篇回改前
 	_switches(false)
 	var off := XSkinBookPage.actor_info(127)
 	check("head.switch_off_old", not bool(off.head_rows) and (off.weapons as Array).count("法杖") == 2, off.weapons)
 	_switches(true)
+
+
+## 旧版图鉴页（界面风格选「原版」时）画的全部字
+func _old_texts(id: int) -> Array:
+	var a := XActorBook.new()
+	add_child(a)
+	var ops := XActorBook.status_ops(id, a._measure)
+	a.queue_free()
+	return ops.map(func(op): return str(op[1]) if str(op[0]) == "t" else "").filter(func(t): return t != "")
+
+
+func _has_arrow(texts: Array) -> bool:
+	return texts.any(func(t): return str(t).split("、").has("矢"))
+
+
+## T571「矢」：类型表 13 号，只有 4541 一件。天启篇新旧图鉴页都不列（只藏显示），宿傩因此其余全会＝「全部」
+func _arrow() -> void:
+	_state(true)
+	_switches(true)
+	var sys_at: Array = XDB.system().get("armorTypes", [])
+	check("arrow.type_13", sys_at.size() > 13 and str(sys_at[13]) == "矢", sys_at)
+	check("arrow.default_hidden", XSkinBookPage.HIDE_ARMOR_TYPES == [13], XSkinBookPage.HIDE_ARMOR_TYPES)
+	var cls := XDB.rec("Classes", XActorBook.class_id(172))
+	check("arrow.data_kept", int(XDB.rec("Armors", 4541).get("atypeId", 0)) == 13
+		and (cls.get("traits", []) as Array).any(func(t): return int(t.code) == 52 and int(t.dataId) == 13))
+	var hid := XSkinBookPage.actor_info(172)
+	check("arrow.sukuna_hidden", not (hid.armors as Array).has("矢") and (hid.armors as Array).size() == 12 and bool(hid.armors_all), hid.armors)
+	check("arrow.sukuna_row_all", str(XSkinBookPage.head_rows(hid)[2][1][0][0]) == XSkinBookPage.T_ALL, XSkinBookPage.head_rows(hid)[2])
+	var i127 := XSkinBookPage.actor_info(127)   # 本来就不会矢的：其余 12 类全会，藏了矢以后也是「全部」
+	check("arrow.suzuran_all", bool(i127.armors_all) and (i127.armors as Array).size() == 12, i127.armors)
+	# 牌头三行关掉也照样不列
+	XSkinBookPage.HEAD_ROWS = false
+	check("arrow.hidden_without_head_rows", not (XSkinBookPage.actor_info(172).armors as Array).has("矢"))
+	XSkinBookPage.HEAD_ROWS = true
+	var old := _old_texts(172)
+	check("arrow.old_page_hidden", not _has_arrow(old) and old.any(func(t): return str(t).contains("神武")), old)
+	XSkinBookPage.HIDE_ARMOR_TYPES = []   # 回退
+	check("arrow.rollback_new", (XSkinBookPage.actor_info(172).armors as Array).has("矢"))
+	check("arrow.rollback_old", _has_arrow(_old_texts(172)))
+	XSkinBookPage.HIDE_ARMOR_TYPES = [13]
+	# 西游档：新旧两页照列，旧页画的字跟开关设回 [] 时一样
+	_state(false)
+	check("arrow.xiyou_new_listed", (XSkinBookPage.actor_info(172).armors as Array).has("矢"))
+	var xy := _old_texts(172)
+	XSkinBookPage.HIDE_ARMOR_TYPES = []
+	var xy_off := _old_texts(172)
+	XSkinBookPage.HIDE_ARMOR_TYPES = [13]
+	check("arrow.xiyou_old_same", _has_arrow(xy) and xy == xy_off, xy)
+
+
+## T571 截图：天启篇 宿傩／小铃兰 图鉴 改前（开关设回 []）／改后，新旧两种页。宿傩 13 类全会，新页改前改后都写「全部」
+func _arrow_shots() -> void:
+	if not windowed():
+		return
+	_state(true)
+	_switches(true)
+	var skin_was := XSkinBookPage.ENABLED
+	for page in ["", "_oldpage"]:
+		XSkinBookPage.ENABLED = skin_was and page == ""
+		for phase in ["before", "after"]:
+			XSkinBookPage.HIDE_ARMOR_TYPES = [13] if phase == "after" else []
+			var a := XActorBook.new()
+			add_child(a)
+			await frames(3)
+			for id in [172, 127]:
+				a.select(XActorBook.index_ids().find(id))
+				await frames(2)
+				await shot("t571_%s_%d%s_16x9" % [phase, id, page])
+			a.queue_free()
+			await frames(2)
+	XSkinBookPage.HIDE_ARMOR_TYPES = [13]
+	XSkinBookPage.ENABLED = skin_was
 
 
 ## 西游档：actor_info 与开关全关时逐项相等；立绘不缩

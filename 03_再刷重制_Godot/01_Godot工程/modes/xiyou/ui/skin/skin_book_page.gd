@@ -23,8 +23,9 @@ static var ENABLED := true
 ##   跟「角色属性」并列只会让人以为是一回事。false＝照旧「属性 … 武器 … 防具 …」一段折行＋「角色属性」白字一行
 static var FIT_SPRITE := true
 static var HEAD_ROWS := true
-## T554：天启篇人物图鉴可装备列表里不列的防具类型号（13「矢」只有一件 4541 花与鸟之矢，见交付单；默认不藏，等协调定）
-static var HIDE_ARMOR_TYPES: Array = []
+## T554／T571：天启篇人物图鉴可装备列表里不列的防具类型号（13「矢」只有一件 4541 花与鸟之矢）。
+## Kyo 11-27 定天启篇不列「矢」，只藏图鉴显示、装备数据与能不能装不动；西游档照列。回退＝设回 []
+static var HIDE_ARMOR_TYPES: Array = [13]
 
 ## ---- 玩家可见文字（待小A 审）----
 const T_ACTOR := "人物图鉴"
@@ -594,14 +595,14 @@ static func actor_info(id: int) -> Dictionary:
 		ids.sort()
 		var names: Array = sys.get("weaponTypes" if kk == 0 else "armorTypes", [])
 		for i in ids:
-			if tq_head and kk == 1 and HIDE_ARMOR_TYPES.has(i):
+			if kk == 1 and armor_hidden(i):
 				continue
 			if i < names.size() and str(names[i]) != "":
 				masteries[kk].append(str(names[i]))
 		if tq_head:   # 类型表里有名字（且没藏）的每一类都会＝「全部」
 			var every := 0
 			for i in names.size():
-				if str(names[i]) != "" and not (kk == 1 and HIDE_ARMOR_TYPES.has(i)):
+				if str(names[i]) != "" and not (kk == 1 and armor_hidden(i)):
 					every += 1
 			all_types[kk] = every > 0 and masteries[kk].size() == every
 	var skills := XActorBook.book_skills(id, true)
@@ -643,6 +644,11 @@ static func actor_info(id: int) -> Dictionary:
 		"nature": XTianqiNature.line_of_actor_id(id),
 		"head_rows": tq_head, "weapons_all": all_types[0], "armors_all": all_types[1],
 		"nature_parts": nature_parts(XTianqiNature.natures_of_actor_id(id)) if tq_head else []}
+
+
+## T571：图鉴里这一类防具藏不藏。只看是不是天启篇存档（跟牌头三行、元素效果的开关无关）；新旧两种图鉴页都问这里
+static func armor_hidden(type_id: int) -> bool:
+	return HIDE_ARMOR_TYPES.has(type_id) and XTianqi.active(XState.current)
 
 
 ## T554：天启篇人物图鉴牌头走新三行（开关开、天启篇存档、元素效果开着才有「角色属性」可列）；西游档恒 false
