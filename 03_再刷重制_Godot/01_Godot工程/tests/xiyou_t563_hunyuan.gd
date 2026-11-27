@@ -1,15 +1,15 @@
 extends Node
 ## T563 西游档马宝国「混元大成」调整专项（Kyo 11-27 D293，事项 86）。
-## 西游档 V6：反伤 =(受到伤害 D + 90 + 物攻 × 90 + 最大生命 × 90)×(1 + 积分/100)，不封顶，每段触发；
-## 原版 (D×90 + 物攻×90 + 最大生命×90)×(1 + 积分/100)，V6 只把 D 后的 ×90 换成 +90。
-## 断言积分 0／300／2900／35000 四档、三段各反一次、零伤照反、最大生命 +10000 不变；
+## 西游档丙：反伤 =(受到伤害 D × 300 + 物攻 × 300 + 最大生命 × 300)+ 积分 × 5000，线性不封顶，每段触发；
+## 原版 (D×90 + 物攻×90 + 最大生命×90)×(1 + 积分/100)。
+## 断言积分 0／300／2900／35000／434951（玩家存档实际值）／5000000 六档、三段各反一次、零伤照反、最大生命 +10000 不变；
 ## 天启篇同名被动（技能 5115、状态 908 的记录）零改动；关开关回原版。
 
 var passed := 0
 var total := 0
 
 const MA := 60
-const POINTS := [0, 300, 2900, 35000]
+const POINTS := [0, 300, 2900, 35000, 434951, 5000000]
 
 
 func _ready() -> void:
@@ -82,9 +82,9 @@ func _bout(points: int, base: int, hits := 1) -> Dictionary:
 	return out
 
 
-## V6：(D+90 + 物攻×90 + 最大生命×90)×(1+P/100)
-func _expect_v6(d: float, atk: float, mhp: float, points: int) -> float:
-	return (ceilf(d) + 90.0 + atk * 90.0 + mhp * 90.0) * (1.0 + float(points) / 100.0)
+## 丙：(D×300 + 物攻×300 + 最大生命×300) + P×5000
+func _expect_c(d: float, atk: float, mhp: float, points: int) -> float:
+	return 300.0 * (ceilf(d) + atk + mhp) + 5000.0 * float(points)
 
 
 ## 原版：(D×90 + 物攻×90 + 最大生命×90)×(1+P/100)
@@ -126,20 +126,16 @@ func _check_tables() -> void:
 	check("t563.state_note_new_formula",
 		str(st.note).contains(XXiyouNerf.HUNYUAN_NEW_JS) and not str(st.note).contains(XXiyouNerf.HUNYUAN_OLD_JS)
 		and not str(st.note).contains("Math.min"), st.note)
-	# 卡面：与原文只差一处「受到伤害*90」→「受到伤害+90」
-	check("t563.skill_card_v6_text",
-		str(sk.note).contains("效果:马老师受到任何伤害，反弹(受到伤害+90+物攻*90+自身最大生命*90)*(1+肝帝积分/100)的伤害")
+	check("t563.skill_card_c_text",
+		str(sk.note).contains("效果:马老师受到任何伤害，反弹(受到伤害*300+物攻*300+自身最大生命*300+肝帝积分*5000)的伤害")
+		and not str(sk.note).contains("*90") and not str(sk.note).contains("/100")
 		and str(sk.note).contains("最大生命+10000")
 		and str(sk.get("meta", {}).get("passivePBST0", "")).strip_edges() == "10000"
 		and sk.description == base_sk.description, [sk.note, sk.description])
-	var diffs := []
-	var o := str(base_sk.note)
-	var n := str(sk.note)
-	if o.length() == n.length():
-		for i in o.length():
-			if o[i] != n[i]:
-				diffs.append([i, o[i], n[i]])
-	check("t563.card_diff_only_one_op", diffs.size() == 1 and diffs.all(func(d): return d[1] == "*" and d[2] == "+"), diffs)
+	# 卡面与原文只差这一段式子（其余字一字不差）
+	check("t563.card_only_formula_changed",
+		str(sk.note) == str(base_sk.note).replace(XXiyouNerf.HUNYUAN_OLD_TEXT, XXiyouNerf.HUNYUAN_NEW_TEXT)
+		and str(sk.note) != str(base_sk.note), sk.note)
 
 
 func _check_formula_four_points() -> void:
@@ -147,27 +143,30 @@ func _check_formula_four_points() -> void:
 	for p in POINTS:
 		var r := _bout(p, 1000)
 		rs[p] = r
-		var want := _expect_v6(r.taken[0], r.atk, r.mhp, p)
-		check("t563.formula_v6_p%d" % p, r.state and r.taken[0] > 0.0 and _close(r.reflect[0], want),
+		var want := _expect_c(r.taken[0], r.atk, r.mhp, p)
+		check("t563.formula_c_p%d" % p, r.state and r.taken[0] > 0.0 and _close(r.reflect[0], want),
 			{"points": p, "taken": r.taken, "reflect": r.reflect, "want": want, "atk": r.atk, "mhp": r.mhp})
-	# 不封顶：倍率严格按 1+P/100（300→4、2900→30、35000→351 倍于 0 分）
-	check("t563.points_uncapped", _close(rs[300].reflect[0], rs[0].reflect[0] * 4.0)
-		and _close(rs[2900].reflect[0], rs[0].reflect[0] * 30.0) and _close(rs[35000].reflect[0], rs[0].reflect[0] * 351.0),
-		[rs[0].reflect, rs[300].reflect, rs[2900].reflect, rs[35000].reflect])
-	# 与原版之比：只有受到伤害不再 ×90；物攻、最大生命两项仍 ×90
+	# 积分线性相加、不封顶：每档比 0 分多出的恰好是 积分×5000（受伤、物攻、生命各档相同）
+	var ok := true
+	for p in POINTS:
+		ok = ok and _close(rs[p].reflect[0] - rs[0].reflect[0], 5000.0 * float(p))
+	check("t563.points_additive_linear", ok, POINTS.map(func(p): return rs[p].reflect))
+	# 积分 0 时比原版强（300 对 90）；玩家实际 43.5 万分时低于原版（本夹具 B 小，约 0.28 倍）
 	var r0: Dictionary = rs[0]
-	check("t563.weaker_than_original", r0.reflect[0] < _expect_orig(r0.taken[0], r0.atk, r0.mhp, 0) and r0.reflect[0] > (r0.atk + r0.mhp) * 90.0,
-		[r0.reflect, r0.atk, r0.mhp])
+	var rp: Dictionary = rs[434951]
+	check("t563.vs_original", r0.reflect[0] > _expect_orig(r0.taken[0], r0.atk, r0.mhp, 0) * 3.0
+		and rp.reflect[0] < _expect_orig(rp.taken[0], rp.atk, rp.mhp, 434951) * 0.5,
+		[r0.reflect, rp.reflect])
 
 
 func _check_per_segment_and_zero() -> void:
 	var r := _bout(300, 1000, 3)
 	var ok: bool = r.reflect.size() == 3
 	for i in r.reflect.size():
-		ok = ok and _close(r.reflect[i], _expect_v6(r.taken[i], r.atk, r.mhp, 300))
+		ok = ok and _close(r.reflect[i], _expect_c(r.taken[i], r.atk, r.mhp, 300))
 	check("t563.three_segments_three_triggers", ok, r)
 	var z := _bout(300, 0)
-	check("t563.zero_damage_still_reflects", z.taken[0] == 0.0 and _close(z.reflect[0], _expect_v6(0.0, z.atk, z.mhp, 300)), z)
+	check("t563.zero_damage_still_reflects", z.taken[0] == 0.0 and _close(z.reflect[0], _expect_c(0.0, z.atk, z.mhp, 300)), z)
 
 
 func _check_original_and_rollback() -> void:
