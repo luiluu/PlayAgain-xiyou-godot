@@ -247,7 +247,7 @@ static func face_texture(face_name: String, index: int) -> AtlasTexture:
 	return a
 
 
-## 图标分图常驻（O-待定，T578 技能页仍卡）：XMVCanvas 每次重画先清 _keep，攥着分图的最后一个引用跟着放掉，
+## 图标分图常驻（O-685，T578 技能页仍卡）：XMVCanvas 每次重画先清 _keep，攥着分图的最后一个引用跟着放掉，
 ## 接着 load() 又从磁盘把整张 512×3200 无损图解一遍（桌面约 12.5 ms／次，手机更慢）；技能列表、战斗技能窗每移一格都重画，
 ## 每格都要重新解图。改成分图第一次载入后由这里攥着（最多 IconSet_1..4 四张，约 26 MB 内存），之后 load 直接命中缓存。
 ## 只影响取图快慢，画出来的图块、区域与原来相同。回退：KEEP_ICON_SHEETS = false（每次 load，同原来）。
