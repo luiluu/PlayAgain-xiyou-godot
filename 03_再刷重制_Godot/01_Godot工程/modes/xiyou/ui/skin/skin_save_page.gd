@@ -202,7 +202,7 @@ func card_info() -> Dictionary:
 		var id := int(p[i])
 		var rec := XDB.rec("Actors", id)
 		var row: Dictionary = d.actors.get(str(id), {})
-		party.append({"name": str(rec.get("name", "")), "lv": "%s %s" % [lv_word, XMenu._group(int(row.get("level", 1)))],
+		party.append({"name": party_name(d, id), "lv": "%s %s" % [lv_word, XMenu._group(int(row.get("level", 1)))],
 			"face": XUiSkin.face(str(rec.get("faceName", "")), int(rec.get("faceIndex", 0)))})
 	out.party = party
 	var data := []
@@ -218,6 +218,11 @@ func card_info() -> Dictionary:
 		var l := XTianqi.line_info(line)
 		out.line = [T_LINE, "%s·%s%s" % [str(l.get("name", "")), str(l.get("knight", "")), XSaveScene.clear_mark(d, line) + XTianqiWeakClear.save_mark(d)], XTianqiLook.main_color(line)]
 	return out
+
+
+## 右牌队伍名：按存档自己的档位取名（T562 R3 P2-1）——天启档里看西游档、西游档或标题冷启动看天启档都不随当前档
+static func party_name(d: Dictionary, id: int) -> String:
+	return XTextFix.actor_name_in(id, XSave._is_tianqi_data(d), str(XDB.rec("Actors", id).get("name", "")))
 
 
 ## 系统变量名（去掉 <<…>> 备注和转义码，同旧页）

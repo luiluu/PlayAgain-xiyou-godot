@@ -8,6 +8,8 @@ var class_id := 0
 var _lv := 1
 var exp_total := 0
 var nickname := ""
+## 读档时存档里本来就有 nickname 键（T562 R3）：再存时照写，哪怕等于当前档默认，做到存什么写回什么
+var nickname_saved := false
 var skill_ids: Array[int] = []
 var equips: Array = []      # 每个装备槽一个实例或 null
 var last_command := ""

@@ -319,21 +319,71 @@ func _t562_r2() -> void:
 	var sum_tq := XSave.summary_dict(2)
 	_check("t562_preview_tq_in_plain", not XTextFix.tq_on() and sum_tq.leader_name == "粉红妖精" and XSave.summary(2).contains("粉红妖精")
 		and XTextFix.actor_rec_name(85, true) == "粉红妖精" and XTextFix.actor_nickname_in(85, true, str(raw_actors[85].nickname)) == "粉红妖精", [sum_tq.leader_name, XSave.summary(2)])
-	# 已被写坏的西游档（显式称号＝天启新称号）读回还原；自订称号照旧
+	# R3：读档不改存值（存什么读什么、再存原样写回），按档位换名只在显示层
+	# 西游档显式称号＝天启默认（区分不了是刻意自订还是旧版写坏，保守保留）：热读、再存、换档冷读都原样
 	kit.edit_raw(func(d): d.actors["79"]["nickname"] = tq_nick, 1)
 	XState._become_current(tq)
 	back = kit.reload(1)
-	_check("t562_repair_written_nick", back.actor(79).nickname == orig_nick, back.actor(79).nickname)
+	_check("t562r3_plain_other_default_read", back.actor(79).nickname == tq_nick and back.actor(79).display_nickname() == tq_nick, [back.actor(79).nickname, back.actor(79).display_nickname()])
 	kit.save(1)
-	_check("t562_repair_saved_clean", not kit.raw(1).actors["79"].has("nickname"))
+	_check("t562r3_plain_other_default_resave", str(kit.raw(1).actors["79"].get("nickname")) == tq_nick, kit.raw(1).actors["79"].get("nickname"))
+	_t562_cold()
+	back = kit.reload(1)
+	_check("t562r3_plain_other_default_cold", not XTextFix.tq_on() and back.actor(79).nickname == tq_nick and back.actor(79).display_nickname() == tq_nick, back.actor(79).nickname)
 	kit.edit_raw(func(d): d.actors["79"]["nickname"] = "自订称号", 1)
 	back = kit.reload(1)
-	_check("t562_custom_nick_kept", back.actor(79).nickname == "自订称号")
-	# 反向：西游档里读天启档 → 天启默认称号
+	kit.save(1)
+	_check("t562_custom_nick_kept", back.actor(79).nickname == "自订称号" and str(kit.raw(1).actors["79"].get("nickname")) == "自订称号")
+	# 反向：西游档里读没存称号的天启档 → 天启默认称号，再存也不写显式称号
 	back = kit.reload(2)
 	_check("t562_load_tq_from_plain", XTextFix.tq_on() and back.actor(79).nickname == tq_nick, back.actor(79).nickname)
+	var tq_back := back
+	# 天启档显式称号＝西游默认：存值照旧，天启篇显示整串换成新称号（事件 324 按原文设的与刻意自订区分不了，只换显示）
+	XState._become_current(plain)
+	kit.edit_raw(func(d): d.actors["79"]["nickname"] = orig_nick, 2)
+	back = kit.reload(2)
+	_check("t562r3_tq_other_default_read", back.actor(79).nickname == orig_nick and back.actor(79).display_nickname() == tq_nick, [back.actor(79).nickname, back.actor(79).display_nickname()])
+	kit.save(2)
+	_check("t562r3_tq_other_default_resave", str(kit.raw(2).actors["79"].get("nickname")) == orig_nick, kit.raw(2).actors["79"].get("nickname"))
+	_t562_cold()
+	back = kit.reload(2)
+	_check("t562r3_tq_other_default_cold", XTextFix.tq_on() and back.actor(79).nickname == orig_nick and back.actor(79).display_nickname() == tq_nick, back.actor(79).nickname)
+	# 天启档含原名的自订长称号：存值、显示都不替换
+	var long_nick := orig_nick + "的旧友"
+	kit.edit_raw(func(d): d.actors["79"]["nickname"] = long_nick, 2)
+	_t562_cold()
+	back = kit.reload(2)
+	kit.save(2)
+	_check("t562r3_tq_long_custom", back.actor(79).nickname == long_nick and back.actor(79).display_nickname() == long_nick
+		and str(kit.raw(2).actors["79"].get("nickname")) == long_nick, [back.actor(79).nickname, back.actor(79).display_nickname()])
+	# 存档里显式写了「等于本档默认」的称号：再存照写，不丢键
+	kit.edit_raw(func(d): d.actors["79"]["nickname"] = tq_nick, 2)
+	back = kit.reload(2)
+	kit.save(2)
+	_check("t562r3_explicit_default_key_kept", str(kit.raw(2).actors["79"].get("nickname")) == tq_nick, kit.raw(2).actors["79"].get("nickname"))
+	kit.edit_raw(func(d): d.actors["79"].erase("nickname"), 2)
+	back = kit.reload(2)
+	kit.save(2)
+	_check("t562_tq_save_no_explicit_nick", back.actor(79).nickname == tq_nick and not kit.raw(2).actors["79"].has("nickname"), kit.raw(2).actors["79"].get("nickname"))
+	# P2-1 新版读档右牌：存档自己的档位取名，天启档里看西游档、西游档里看天启档、标题冷启动（没有当前档）都对
+	var d_plain := kit.raw(1)
+	var d_tq := kit.raw(2)
+	var name85 := str(raw_actors[85].name)
+	XState._become_current(back)
+	var in_tq := [XSkinSavePage.party_name(d_plain, 85), XSkinSavePage.party_name(d_tq, 85)]
+	XState._become_current(plain)
+	var in_plain := [XSkinSavePage.party_name(d_plain, 85), XSkinSavePage.party_name(d_tq, 85)]
+	var keep_cur := XState.current
+	XState.current = null  # 标题冷启动：表可能还是上一档口径
+	var at_title := [XSkinSavePage.party_name(d_plain, 85), XSkinSavePage.party_name(d_tq, 85)]
+	XTextFix.clear_cache()
+	var at_title_fresh := [XSkinSavePage.party_name(d_plain, 85), XSkinSavePage.party_name(d_tq, 85)]
+	XState._become_current(keep_cur)
+	var want := [name85, "粉红妖精"]
+	_check("t562r3_skin_card_party_names", in_tq == want and in_plain == want and at_title == want and at_title_fresh == want, [in_tq, in_plain, at_title, at_title_fresh])
+	back = tq_back
 	# P2-2：先西游后天启、先天启后西游，2003 的唯一标签都跟着当前档
-	var ryoma_tq := XTextFix.actor_name(57, "龙马") + "复活术"
+	var ryoma_tq := XTextFix.actor_name_in(57, true, "龙马") + "复活术"
 	XState._become_current(plain)
 	var p1 := _unique_line(XDB.rec("Weapons", 2003))
 	XState._become_current(back)
@@ -363,6 +413,14 @@ func _t562_r2() -> void:
 	_check("t562_plain_gear_card_original", _card_text(found).contains("龙马复活术"))
 	kit.teardown()
 	XState._become_current(legacy)
+
+
+## 模拟换进程冷读：清 XTextFix 缓存与当前档，下一次读档全部按目标存档重读表
+func _t562_cold() -> void:
+	XState.current = null
+	XTextFix.end_load()
+	XTextFix.clear_cache()
+	XTextFix.sync_mode()
 
 
 func _card_text(obj: Dictionary) -> String:

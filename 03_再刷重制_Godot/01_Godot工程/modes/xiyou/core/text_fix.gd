@@ -88,19 +88,6 @@ static func end_load() -> void:
 	_loading_tq = null
 
 
-## 读档时修正存档里的显式称号：等于「另一档位」的默认称号时，视为没自订（被跨档写坏的旧档），换回目标档位的默认称号。
-## 只认 actor_names.json 登记过的称号改名；自订称号照旧保留。调用时表已按目标档位读（begin_load）。
-static func repair_saved_nickname(id: int, saved: String, default_now: String) -> String:
-	var pairs: Array = actor_names().get("tables", {}).get("Actors", {}).get("%d/nickname" % id, [])
-	if pairs.is_empty() or saved == default_now:
-		return saved
-	if tq_on():
-		# 天启档：显式写的是西游原称号（改名映射后正好是现在的默认）→ 用天启默认
-		return default_now if rename_actor_reference(saved, pairs) == default_now else saved
-	# 西游档：显式写的是天启新称号 → 用西游原文
-	return default_now if rename_actor_reference(default_now, pairs) == saved else saved
-
-
 ## 存档模式（西游档／天启篇）变了就清缓存让表与地图按新口径重读。
 ## 换档（XState._become_current）、天启篇开局建档（XTianqi.start_new_game）时调；磁盘缓存的键里也编了模式位。
 static func sync_mode() -> void:
@@ -133,20 +120,20 @@ static func actor_name(id: int, original: String) -> String:
 
 
 ## 按指定档位取角色名（T562 P2-1）：标题态的天启篇阵容、存档格预览等不在目标档里时用。
-## current_text 是现在 Actors 表里的名字（按当前档位口径）。
+## current_text 是现在 Actors 表里的名字；表可能按任一档位口径读过（标题态、刚换档），所以不看 tq_on()，
+## 两个方向都按 actor_names.json 直接换：要天启篇取 names，要西游档且现在是天启名就换回 saved_names 的原名。
 static func actor_name_in(id: int, tq: bool, current_text: String) -> String:
-	if tq == tq_on():
+	var nm = actor_names().get("names", {}).get(str(id))
+	if nm == null:
 		return current_text
 	if tq:
-		return str(actor_names().get("names", {}).get(str(id), current_text))
+		return str(nm)
 	var orig: Array = actor_names().get("saved_names", {}).get(str(id), [])
-	return str(orig[0]) if not orig.is_empty() and current_text == str(actor_names().get("names", {}).get(str(id), "")) else current_text
+	return str(orig[0]) if not orig.is_empty() and current_text == str(nm) else current_text
 
 
-## 按指定档位取默认称号（同 actor_name_in）
+## 按指定档位取默认称号（同 actor_name_in，两向都幂等，不看 tq_on()）
 static func actor_nickname_in(id: int, tq: bool, current_text: String) -> String:
-	if tq == tq_on():
-		return current_text
 	var pairs: Array = actor_names().get("tables", {}).get("Actors", {}).get("%d/nickname" % id, [])
 	if tq:
 		return rename_actor_reference(current_text, pairs)
@@ -220,11 +207,16 @@ static func saved_actor_name(id: int, text: String) -> String:
 	return text
 
 
+## 称号显示（T562 R3）：只在天启篇、且整串正好是登记过的西游原称号时换成天启篇称号（事件 324 按原文设的、旧天启档存的）；
+## 含原名的自订长称号（如「裴钱的旧友」）是玩家／事件写的，原样显示。只换显示，不改存值。
 static func actor_nickname(id: int, text: String) -> String:
 	if not tq_on():
 		return text
 	var fields: Dictionary = actor_names().get("tables", {}).get("Actors", {})
-	return saved_actor_name(id, rename_actor_reference(text, fields.get("%d/nickname" % id, [])))
+	for pair in fields.get("%d/nickname" % id, []):
+		if text == str(pair[0]):
+			return tianqi_actor_text(pair[1])
+	return saved_actor_name(id, text)
 
 
 static func rename_actor_reference(text: String, pairs: Array) -> String:
