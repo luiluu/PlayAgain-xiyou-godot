@@ -466,6 +466,8 @@ static func _loadouts(keys: Array, a = null) -> Array:
 	for et in groups:
 		var n := int(slots.get(et, 1)) if a is XActor else 1
 		var picks := _subsets(groups[et], n)
+		if a is XActor and n >= 2:
+			picks = picks.filter(func(p): return _legal_pick(a, int(et), p))  # T558 R4 热修（小o R4 复核 P1）：双持栏照实机换装规则判专武互斥
 		var nxt := []
 		for o in out:
 			for p in picks:
@@ -475,6 +477,37 @@ static func _loadouts(keys: Array, a = null) -> Array:
 				nxt.append(m)
 		out = nxt
 	return out
+
+
+## 一栏多格（双持武器栏）时，这几件能不能同时穿：照实机换装 XEquipment.change 的双持专武判定（dual_blocked：另一武器栏已有专武就不让换，
+## 白晶晶等 DUAL_EXCLUSIVE_EXEMPT 例外），在角色的克隆上按栏逐件放，两种换装顺序都试，有一种能全放下就算合法。
+## 只判专武互斥这一条；能不能穿（fits／can_equip）不在这里拦，原来各件单穿都按能穿算，口径不变。
+static func _legal_pick(a: XActor, et: int, pick: Array) -> bool:
+	if pick.size() < 2:
+		return true
+	var idx := []
+	var slots := a.equip_slots()
+	for i in slots.size():
+		if int(slots[i]) == et:
+			idx.append(i)
+	if idx.size() < pick.size():
+		return false
+	var rev := pick.duplicate()
+	rev.reverse()
+	for order in [pick, rev]:
+		var b := XEquipment.clone(a)
+		for i in idx:
+			b.equips[i] = null
+		var ok := true
+		for j in order.size():
+			var item := XActor.make_equip("weapon" if et == 1 else "armor", int(str(order[j]).substr(1)))
+			if item.is_empty() or XEquipment.dual_blocked(b, int(idx[j]), item):
+				ok = false
+				break
+			b.equips[int(idx[j])] = item
+		if ok:
+			return true
+	return false
 
 
 ## 至多 n 个元素的全部子集（含空集）
