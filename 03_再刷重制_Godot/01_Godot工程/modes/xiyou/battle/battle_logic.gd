@@ -1028,7 +1028,7 @@ func _random_target(list: Array, user: XBattler = null, skill: Dictionary = {}) 
 # ---- 敌人 AI（MV Game_Enemy.selectAllActions）----
 ## 没有可用行动（行动列表空，如木桩；或条件、canUse 全不满足）返回 {}：Game_Enemy.makeActions 不设行动，这一轮不行动（参照 attack_query_probe skip 组）。
 func enemy_action(e: XEnemy) -> Dictionary:
-	var list: Array = e.data().get("actions", []).filter(func(act): return _meets(e, act) and can_use(e, XDB.rec("Skills", int(act.skillId))))
+	var list: Array = e.data().get("actions", []).filter(func(act): return _meets(e, act) and can_use(e, XDB.foe_skill(int(act.skillId))))
 	if list.is_empty():
 		return {}
 	var rmax := 0
@@ -1043,8 +1043,8 @@ func enemy_action(e: XEnemy) -> Dictionary:
 	for act in list:
 		r -= int(act.rating) - zero
 		if r < 0:
-			return XDB.rec("Skills", int(act.skillId))
-	return XDB.rec("Skills", int(list[0].skillId))
+			return XDB.foe_skill(int(act.skillId))
+	return XDB.foe_skill(int(list[0].skillId))
 
 func _meets(e: XEnemy, act: Dictionary) -> bool:
 	var p1 := float(act.conditionParam1)
@@ -1982,6 +1982,8 @@ func _force_action(p: Array, first_subject: XBattler) -> Array:
 			users = [a]
 	var logs := []
 	var skill := XDB.rec("Skills", int(p[2]))
+	if int(p[0]) == 0 and not users.is_empty():
+		skill = XDB.foe_skill(int(p[2]))  # 敌人强制行动按敌方视角（T549 R1 P1-1）
 	if int(p[0]) == 1 and TQ_COPY_IDS.has(int(p[2])) and XTianqi.active(state):
 		var used := int(tq_copy_uses.get(int(p[2]), 0))
 		if used >= TQ_COPY_MAX:
@@ -2002,7 +2004,7 @@ func _take_pending_force() -> Array:
 	var f := pending_force
 	pending_force = {}
 	var u: XBattler = f.user
-	var skill := XDB.rec("Skills", int(f.skill))
+	var skill := XDB.skill_for(u, int(f.skill))  # 敌人按敌方视角（T549 R1 P1-1）
 	if u.is_dead() or skill.is_empty() or is_over():
 		return []
 	return _forced_run(u, skill, null, null)
@@ -3216,6 +3218,7 @@ func _apply(u: XBattler, skill: Dictionary, t: XBattler) -> Dictionary:
 		_damage_record = r
 		var value := _damage_value(XGuyu.owner(u), skill, dt, r.critical, true)  # 谷雨 makeDamageValue 包装：绽放按谷雨算（calcOwner）
 		value = XZhenhuo.scale(u, skill, value)  # 至尊宝真火印记 makeDamageValue 包装（最外层）：追击 1090 ×(0.6＋1%×等级)
+		value = XTianqiSkills.flat_final(skill, value)  # T549 R2 P2-6：天启篇固定伤害行（凌厉长鞭打队友 100 点真实伤害）不吃结算倍率
 		if XBlackFlash.boosted(dt):
 			r.critical = true  # 黑闪 modifyCritical：结果记为暴击
 			_action_resources.result(dt).critical = true

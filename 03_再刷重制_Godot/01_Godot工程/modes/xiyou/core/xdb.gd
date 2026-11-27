@@ -162,6 +162,20 @@ static func source_size(name: String) -> int:
 	return int(_source_sizes[name])
 
 
+## 敌方视角取技能（T549 R1 P1-1）：天启篇装备招改写（XTianqiSkills actor_only 行）不套，敌人共用的同号技能照原记录；其余改写照常
+static func foe_skill(id: int) -> Dictionary:
+	var was := XTianqiSkills.foe_view
+	XTianqiSkills.foe_view = true
+	var out := rec("Skills", id)
+	XTianqiSkills.foe_view = was
+	return out
+
+
+## 按施放者取技能：敌人走 foe_skill，其余照 rec
+static func skill_for(u, id: int) -> Dictionary:
+	return foe_skill(id) if u is XEnemy else rec("Skills", id)
+
+
 ## 取一条记录；不存在或为空时返回 {}。
 static func rec(name: String, id: int) -> Dictionary:
 	var t: Array = table(name)

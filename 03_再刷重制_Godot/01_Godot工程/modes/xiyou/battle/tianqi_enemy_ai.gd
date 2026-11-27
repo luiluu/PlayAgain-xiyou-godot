@@ -225,7 +225,7 @@ static func enemy_action(logic, e: XEnemy) -> Dictionary:
 	var t := tier(logic, e)
 	if t <= 1:
 		return logic.enemy_action(e)
-	var list: Array = e.data().get("actions", []).filter(func(act): return logic._meets(e, act) and logic.can_use(e, XDB.rec("Skills", int(act.skillId))))
+	var list: Array = e.data().get("actions", []).filter(func(act): return logic._meets(e, act) and logic.can_use(e, XDB.foe_skill(int(act.skillId))))
 	if list.is_empty():
 		return {}
 	var rmax := 0
@@ -244,7 +244,7 @@ static func enemy_action(logic, e: XEnemy) -> Dictionary:
 		if r < 0:
 			pick = list[i]
 			break
-	var rec := XDB.rec("Skills", int(pick.skillId))
+	var rec := XDB.foe_skill(int(pick.skillId))
 	e.set_meta(META_LAST, int(rec.get("id", 0)))
 	return rec
 
@@ -259,7 +259,7 @@ static func action_weights(logic, e: XEnemy, list: Array, zero: int, t: int, giv
 	if recs.size() != list.size():
 		recs = []
 		for act in list:
-			recs.append(XDB.rec("Skills", int(act.skillId)))
+			recs.append(XDB.foe_skill(int(act.skillId)))
 	var last := int(e.get_meta(META_LAST, -1))
 	var distinct := {}
 	for rec in recs:

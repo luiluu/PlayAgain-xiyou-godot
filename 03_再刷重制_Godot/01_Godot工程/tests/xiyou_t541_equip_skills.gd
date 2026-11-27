@@ -4,7 +4,7 @@ extends Node
 ##    - 3624 三眼神光*极（Armor 3774 天眼之冠 <ShareLearnSkill:3624>）：3 段 mat×1（合计 3），耗魔 10%、冷却 3
 ##    - 1968 极寒之触（Weapon 1371 蒂阿兹之石 <Replace Attack: 1968>）：1 段 mat×1，0 蓝耗可用，保留冰冷V(26)与冰封血脉(72)
 ##    - 3549 白夜叉（Weapon 1539 洞爷湖 特性 43）：6 段 atk/agi 各×25%（合计 3），清末段全体，耗 TP 35、冷却 3
-##    - 995 汲血斩（Weapon 1105 尸山血海 <Replace Attack: 995>）：2 段 atk×50%（合计 1），去血月条件段与固定回 500 血
+##    - 995 汲血斩（Weapon 1105 尸山血海 <Replace Attack: 995>）：2 段 atk×50%（合计 1）；T549 按 Kyo 11-26 事项 80 恢复血月三件套额外释放（4 段）、每段回血 500 → 7% 最大生命
 ## 2) baseline_dps._clone 深拷贝夹具：克隆后对副本执行 _relineup（卸装＋重配）不得串改原状态或其他副本的 equips/gear/flags。
 ## 3) 西游档零改动回归：四招在西游档保留原版公式、原版消耗、原版段数与无额外冷却。
 
@@ -317,14 +317,14 @@ func _test_skill_995() -> void:
 		var a: XActor = s.actor(3)
 		a.change_level(70)
 		_equip_weapon(a, 1105)  # 尸山血海 <Replace Attack: 995>
-		# 同时穿上原版条件段依赖的血月三件套 1568/1569/1570，证实 drop_if 已去掉额外两段
+		# 同时穿上原版条件段依赖的血月三件套 1568/1569/1570（T549：事项 80 恢复额外释放，穿齐 4 段）
 		_equip_armor(a, 1568)
 		_equip_armor(a, 1569)
 		_equip_armor(a, 1570)
 		a.mastery_levels[995] = 10
 		a.refresh_passive()
 		a.recover_all()
-		a.hp = floorf(a.mhp * 0.5)  # 留出回血空间，验证 Hp +500 已被移除
+		a.hp = floorf(a.mhp * 0.5)  # 留出回血空间（T549：每段回 7% 最大生命）
 		return a
 
 	var cmp := _cast_compare_3seeds(995, setup)
@@ -333,15 +333,14 @@ func _test_skill_995() -> void:
 
 	check("t541.995.in_skill_rework", XTianqiSkills.has(995), sk_new.get("damage"))
 	check("t541.995.replaces_attack", a_new.attack_skill_id() == 995, a_new.attack_skill_id())
-	check("t541.995.module_two_hits_no_fixed_heal",
+	check("t541.995.module_blood_moon_4_hits_pct_heal",
 		str(sk_new.get("damage", {}).get("formulaProgram", {}).get("module", "")) == "tianqi_skill"
-		and int(sk_new.get("yepEffects", -1)) == 2
-		and int(cmp.new.hits) == 2
-		and float(cmp.hp_delta) <= 0.0,
+		and int(cmp.new.hits) == 4
+		and float(cmp.hp_delta) > 0.0,
 		{"yepEffects": sk_new.get("yepEffects"), "hits": cmp.new.hits, "hp_delta": cmp.hp_delta})
 	check("t541.995.old_had_conditional_4_hits", int(cmp.old.hits) == 4, {"old_hits": cmp.old.hits})
 	check("t541.995.all_3seeds_reworked_far_below_old",
-		(cmp.per_seed as Array).all(func(r): return int(r.new_hits) == 2 and float(r.hp_delta) <= 0.0 and float(r.new_dmg) > 0.0 and float(r.old_dmg) > float(r.new_dmg) * 20.0),
+		(cmp.per_seed as Array).all(func(r): return int(r.new_hits) == 4 and float(r.hp_delta) > 0.0 and float(r.new_dmg) > 0.0 and float(r.old_dmg) > float(r.new_dmg) * 20.0),
 		cmp.per_seed)
 
 

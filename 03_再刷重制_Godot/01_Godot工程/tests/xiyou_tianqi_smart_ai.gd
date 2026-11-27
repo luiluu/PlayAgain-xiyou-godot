@@ -415,7 +415,8 @@ func _ce_safety() -> void:
 	var ai := XSmartAI.new(logic, _actor(logic, 1))
 	var ai2 := XSmartAI.new(logic, _actor(logic, 88))
 	var gold := XDB.rec("Skills", 345)
-	_check("ce_345_exists_not_in_rework", not gold.is_empty() and not XTianqiSkills.has(345))
+	# T549 起 345 进了重构表（装备招爆发档），但 KEEP_EVENTS 留着公共事件 46（扣 1500 金币、不够钱自损）：照样要拦
+	_check("ce_345_keeps_ce46", not gold.is_empty() and gold.get("effects", []).any(func(e): return int(e.code) == 44 and int(e.dataId) == 46))
 	_check("ce_345_blocked", not ai.legal(gold, false))
 	_check("ce_46_dangerous", XSmartAI._ce_dangerous(46, {}))
 	_check("ce_5888_ok", ai2.legal(XDB.rec("Skills", 5888), false))

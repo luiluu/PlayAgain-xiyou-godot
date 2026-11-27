@@ -1356,7 +1356,7 @@ static func rec_view(table: String, id: int, base: Dictionary) -> Dictionary:
 	if not gongfa_on() or base.is_empty():
 		return base
 	_ensure_index()
-	var ckey := "view:%s:%d" % [table, id]
+	var ckey := "view:%s:%d%s" % [table, id, ":foe" if XTianqiSkills.foe_view else ""]  # 敌方视角底记录不同，分开缓存（T549 R1 P1-1）
 	if _view_cache.has(ckey):
 		return _view_cache[ckey]
 	var out: Dictionary = base

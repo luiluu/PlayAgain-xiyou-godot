@@ -207,10 +207,22 @@ static func cards_flag() -> bool:
 	return CARDS or XTianqiBase.PHASE4
 
 
+## T549 R1 P1-1：敌方视角（XDB.foe_skill／skill_for 设）。开着时 actor_only 的改写行（装备招，T549）不套，返回原记录；
+## 敌方选招、可用性、强制行动都走敌方视角。false＝回退到敌我同读改写记录（ACTOR_ONLY 关掉同效）
+static var foe_view := false
+static var ACTOR_ONLY := true
+
+
+static func actor_only(id: int) -> bool:
+	return ACTOR_ONLY and bool(spec(id).get("actor_only", false))
+
+
 ## base._tq_always（五条悟这类天启篇专属、底表只放底子的招）：卡总开关关着也套卡；整条链只在这里 build 一次（T209 R1 P1-1：原来 gojo.gd 底表先 build 一次、这里再 build 一次，split_effects 叠乘）
 static func rec(id: int, base: Dictionary) -> Dictionary:
 	if base.is_empty() or not has(id) or not (cards_on() or bool(base.get("_tq_always", false))):
 		return base
+	if foe_view and actor_only(id):
+		return base  # T549 R1 P1-1：装备招改写只给我方装备来源，敌方共用招（捕猎冲锋、炎鬼等 42 个敌人）照原记录
 	var hit = _recs.get(id)
 	if hit is Array and is_same(hit[0], base):
 		return hit[1]
@@ -352,6 +364,10 @@ static func _seq_edit(cmds: Array, ops: Array) -> Array:
 				for c in out:
 					if str(c[0]) == str(op.get("match", "")):
 						c[0] = str(op.get("to", ""))
+			"hit_only":  # 命令参数末尾加 hit：上一段 ACTION EFFECT 命中了才执行（T549 R1：汲血斩 Hp +7% 只在命中时回，XActionSequence 认）
+				for c in out:
+					if str(c[0]) == str(op.get("match", "")) and c.size() > 1 and c[1] is Array and not (c[1] as Array).has("hit"):
+						(c[1] as Array).append("hit")
 			"drop_area_effects":  # 删掉带参数（action effect: enemies 这类打全体）的段（莉娜炎帝：全体那段改成另放一招）
 				out = out.filter(func(c): return not (str(c[0]) == "action effect" and not (c[1] as Array).is_empty()))
 			"drop_cmd":  # 删掉某条命令（劲夫乱打开头的 Add State 942：印记要先挂上才引爆）
@@ -1004,6 +1020,20 @@ static func level_scale(a) -> float:
 	return lo + (1.0 - lo) * t
 
 
+## T549 R2 P2-6：改写行 damage.flat（固定真实伤害）——结算出口直接定成这个数，不吃属性、防御、暴击、状态与词条倍率。
+## 只认天启篇改写后的记录（公式是本模块的）；敌人拿的原记录（XDB.foe_skill）、西游档都不动。FLAT_FINAL 关掉回到只在公式里给固定值。
+static var FLAT_FINAL := true
+
+
+static func flat_final(skill: Dictionary, value: float) -> float:
+	if not FLAT_FINAL or not str(skill.get("damage", {}).get("formula", "")).begins_with("XTianqiSkills.formula("):
+		return value
+	var d: Dictionary = spec(int(skill.get("id", 0))).get("damage", {})
+	if not d.has("flat"):
+		return value
+	return -float(d.flat) if value < 0.0 else float(d.flat)
+
+
 ## 模块公式（XFormulaExecution 分派）：伤害为正，回复为负
 static func formula(a, b, item: Dictionary) -> float:
 	var prev := _cur_skill  # 求完复原（T281 核查 P3-2）：AI 选招试算几百招，不能把「正在算的技能号」留给后面的条件判断
@@ -1040,6 +1070,8 @@ static func _formula(a, b, item: Dictionary, sp_override: Dictionary = {}) -> fl
 		return -v if kind in [3, 4] else v
 	var d: Dictionary = sp.get("damage", {})
 	_cur_skill = int(item.get("id", 0))
+	if d.has("flat"):  # T549 R2 P2-6：固定伤害（凌厉长鞭打队友 100 点），不吃属性、等级、条件倍率；行上另写不暴击、无波动、无属性、必中
+		return -float(d.flat) if kind in [3, 4] else float(d.flat)
 	var base := 0.0
 	var stats: Dictionary = d.get("stats", {"atk": 1})
 	var wp := XTianqiWeakAffix.proj_of(a, _cur_skill)  # 天启篇弱者专属词条批 1：本人投影（玛莎换属性、克洛什单体 ×2）

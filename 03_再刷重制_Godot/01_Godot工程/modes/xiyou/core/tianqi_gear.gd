@@ -1159,7 +1159,9 @@ static func elem_amp_table() -> Dictionary:
 static func _rewrite_elem_amp_note(src_note: String, sp: Dictionary) -> String:
 	var note := src_note
 	for pair in sp.get("subs", []):
-		if pair is Array and pair.size() >= 2:
+		if pair is Array and pair.size() >= 3 and str(pair[2]) == "re":  # T549 R1：第三项 re 按正则替换（装备卡面行按锚点换，XTextFix 改过的字逐字对不上）
+			note = RegEx.create_from_string("(?s)" + str(pair[0])).sub(note, str(pair[1]), true)
+		elif pair is Array and pair.size() >= 2:
 			note = note.replace(str(pair[0]), str(pair[1]))
 	note = _elem_amp_tag_re.sub(note, "", true).strip_edges()
 	var add_lines: PackedStringArray = []

@@ -1240,7 +1240,10 @@ def skill_rework_rules(table: dict) -> list:
         if not str(sid).isdigit():
             continue
         d = row.get('damage')
-        if d is not None and not float(d.get('coef', 0)) > 0:
+        if d is not None and 'flat' in d:  # T549 R2 P2-6：固定伤害行（凌厉长鞭打队友 100）不带系数，只要求固定值是正整数
+            if not (isinstance(d['flat'], int) and d['flat'] > 0 and float(d.get('coef', 0)) == 0 and not d.get('stats')):
+                bad.append('skills/%s 固定伤害 flat 要正整数、不带系数和属性' % sid)
+        elif d is not None and not float(d.get('coef', 0)) > 0:
             bad.append('skills/%s 伤害系数要大于 0' % sid)
         if 'tags' in row:  # T519（T013 2J）：招式类别补标，符文之语认；只给主动招打
             tags = row['tags']
@@ -4431,8 +4434,8 @@ def gear_elem_amp_rules(table: dict, rework: dict = None, gear_table: dict = Non
                     bad.append('%s[%s].amp[%s]＝%r：要是 %d～%d 的避 4 整数' % (sec, k, ek, val, min_v, cap))
             if 'subs' in v:
                 subs = v['subs']
-                if not isinstance(subs, list) or not all(isinstance(p, list) and len(p) == 2 and all(isinstance(s, str) for s in p) for p in subs):
-                    bad.append('%s[%s].subs：要是 [旧, 新] 字符串对列表' % (sec, k))
+                if not isinstance(subs, list) or not all(isinstance(p, list) and (len(p) == 2 or (len(p) == 3 and p[2] == 're')) and all(isinstance(s, str) for s in p) for p in subs):
+                    bad.append('%s[%s].subs：要是 [旧, 新] 字符串对或 [正则, 换成, "re"] 列表' % (sec, k))
             gkey = '%s:%s' % (kind, k)
             if gkey in rw_gear:
                 bad.append('%s 与 skill_rework.gear 重叠' % gkey)
@@ -4472,6 +4475,8 @@ def gear_elem_amp_rules(table: dict, rework: dict = None, gear_table: dict = Non
                     for pair in v['subs']:
                         if isinstance(pair, list) and len(pair) == 2 and isinstance(pair[0], str) and pair[0] not in note:
                             bad.append('%s.subs 旧串未命中原版 note：%r' % (gkey, pair[0]))
+                        elif isinstance(pair, list) and len(pair) == 3 and isinstance(pair[0], str) and re.search('(?s)' + pair[0], note) is None:
+                            bad.append('%s.subs 正则未命中原版 note：%r' % (gkey, pair[0]))
     return bad
 
 

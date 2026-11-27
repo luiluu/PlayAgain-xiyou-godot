@@ -281,7 +281,9 @@ func _table() -> void:
 			if str(r.damage.formulaProgram.get("module", "")) != XTianqiSkills.MODULE:
 				bad.append([id, "module"])
 			var v := XTianqiSkills.formula(a, b if sp.has("damage") else a, r)
-			if is_nan(v) or is_inf(v) or (sp.has("damage") and v <= 0.0):
+			# 只吃施放者为 0 的属性（狗逍遥敏捷 0；T549 装备招保留原属性，2816 破杀只吃敏捷）公式值本来就是 0，不算坏行
+			var zero_stats: bool = sp.has("damage") and (sp.damage.get("stats", {"atk": 1}) as Dictionary).keys().all(func(k): return float(a.param(XTianqiSkills.STATS.find(str(k)))) <= 0.0)
+			if is_nan(v) or is_inf(v) or (sp.has("damage") and v <= 0.0 and not zero_stats):
 				bad.append([id, "value", v])
 		if sp.has("cooldown") and str(r.meta.get("Cooldown", "")).strip_edges() != str(int(sp.cooldown)):
 			bad.append([id, "cooldown", r.meta.get("Cooldown")])
