@@ -761,6 +761,9 @@ def plan(root, task, branch=None):
     own = Path('00_项目管理/交付') / (branch.replace('/', '_') + '.md')
     names = dict.fromkeys([own] + [Path('00_项目管理/交付') / ('%s_%s.md' % (p, task)) for p in ('cc', 'gpt', 'xa', 'claude', 'codex')])
     found = {d: s for d, s in ((d, read(d)) for d in names) if s is not None}
+    # macOS core.ignorecase 下 ls-tree 路径匹配不分大小写：分支 cc/t571 的 cc_t571.md 会被 cc_T571.md 再认一次（T571，11-27）
+    seen = set()
+    found = {d: s for d, s in found.items() if not (str(d).lower() in seen or seen.add(str(d).lower()))}
     if not found:
         raise RuntimeError('车道分支缺少交付单：' + '、'.join(map(str, names)) + ' 都没有')
     if len(found) > 1:
