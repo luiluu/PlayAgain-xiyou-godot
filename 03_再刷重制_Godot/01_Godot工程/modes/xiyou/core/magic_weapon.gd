@@ -280,6 +280,7 @@ static func level_up(item: Dictionary, user: XActor = null, refresh := true) -> 
 	var need := next_level_exp(item)
 	if level_of(item) < max_level(item):
 		item.level = level_of(item) + 1.0
+		XActor.hold_touch()  # T576：按等级学的技能变了，技能 id 表的保留作废
 		item.exp = maxf(0.0, cur - need)
 		XTianqiAffixRoll.refresh_growth(item)  # 天启篇：通用法宝的光环随养成升阶
 		_level_up_effect(item, user if refresh else null)
