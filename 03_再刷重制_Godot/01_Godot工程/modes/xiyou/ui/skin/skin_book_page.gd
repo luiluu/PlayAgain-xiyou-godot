@@ -599,15 +599,16 @@ static func actor_info(id: int) -> Dictionary:
 	if aura:
 		cols.append({"title": "光环", "skills": groups[2]})
 	cols.append({"title": "其他", "skills": groups[3]})
-	var note := []
-	var showing := false
-	for line in RegEx.create_from_string("[\\r\\n]+").sub(str(d.get("note", "")), "\n", true).split("\n"):
-		if line == "<ActorNote>":
-			showing = true
-		elif line == "</ActorNote>":
-			showing = false
-		elif showing and line != "":
-			note.append(line)
+	var note := XTianqiActorNotes.lines_of(id)   # T556：天启篇优先读全员统一备注；西游档或开关关返回空，退回原版 <ActorNote>
+	if note.is_empty():
+		var showing := false
+		for line in RegEx.create_from_string("[\\r\\n]+").sub(str(d.get("note", "")), "\n", true).split("\n"):
+			if line == "<ActorNote>":
+				showing = true
+			elif line == "</ActorNote>":
+				showing = false
+			elif showing and line != "":
+				note.append(line)
 	var head := []
 	if str(cls.get("name", "")) != "":
 		head.append(str(cls.get("name", "")))

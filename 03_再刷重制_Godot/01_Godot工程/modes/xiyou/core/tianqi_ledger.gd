@@ -960,6 +960,8 @@ static func passive_buckets(a, objs: Array) -> Dictionary:
 
 ## 装备孔里宝珠加的元素增幅（XOrbs.effect 的 ELEMENT AMPLIFY 行，按孔的类型取镶嵌行）
 static func orb_amplify(eq: Dictionary) -> Dictionary:
+	if eq.get("_tq_orb_amp") is Dictionary:
+		return eq._tq_orb_amp  # T518 宝珠新表视图：新表算进来的那份（含同族 3 颗上限）
 	var out := {}
 	var held: Array = eq.get("augmentSlotItems", [])
 	for i in held.size():

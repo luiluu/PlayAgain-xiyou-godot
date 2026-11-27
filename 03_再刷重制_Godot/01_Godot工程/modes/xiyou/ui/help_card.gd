@@ -121,6 +121,7 @@ static func content(obj: Dictionary, kind := "", skill_copy := false, width := -
 static func detail_rows(obj: Dictionary, width: float) -> Array:
 	obj = XTianqiGear.element_fabao_view(obj)  # 天启篇系别法宝（T442）：老档实例名字与说明按新视图显示
 	obj = XTianqiGear.elem_amp_view(obj)  # T451：通用武器与普通防具元素/物理增幅分档重调视图
+	obj = XTianqiOrbs.card_view(obj)  # T518：宝珠新表（元素增伤行、战力按新表读）
 	var rows := _content(obj, "", false, false, false)
 	if rows.is_empty():
 		return rows
@@ -139,6 +140,7 @@ static func _content(obj: Dictionary, kind := "", skill_copy := false, power := 
 	obj = XTianqiSkills.gear_view(obj)  # 天启篇技能重构：专属法宝、武器的说明按改写后的备注
 	obj = XTianqiGear.element_fabao_view(obj)  # 天启篇系别法宝（T442）：老档实例说明卡按改写视图显示
 	obj = XTianqiGear.elem_amp_view(obj)  # T451：通用武器与普通防具元素/物理增幅分档重调视图
+	obj = XTianqiOrbs.card_view(obj)  # T518：宝珠新表（元素增伤行、战力按新表读）
 	obj = XThreeGrowth.view(obj)  # 三法宝成长 R.syncItem：法宝说明条目（relicLines）、名字、说明
 	obj = XLiuyingHelp.view(obj)  # 流萤 Sprite_ItemHelp.setItem 包装：10622／10623 说明按流萤当前进阶重写（L.refreshText）
 	if kind == "":

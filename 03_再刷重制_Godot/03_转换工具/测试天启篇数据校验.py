@@ -1468,5 +1468,33 @@ class SuitTemplateT515(unittest.TestCase):
             self.assertTrue(any(word in b for b in bad), (word, bad))
 
 
+class ActorNotesT556(unittest.TestCase):
+    """人物图鉴全员备注表（T556）：现表通过；缺人、夹数字或禁词要报。"""
+    def setUp(self):
+        self.t = json.loads((chk.DATA_DIR / 'actor_notes.json').read_text(encoding='utf-8'))
+        actors_path = chk.PROJECT / 'modes' / 'xiyou' / 'generated' / 'db' / 'Actors.json'
+        self.actors_db = json.loads(actors_path.read_text(encoding='utf-8')) if actors_path.is_file() else None
+
+    def test_current_passes(self):
+        self.assertEqual(chk.actor_notes_rules(self.t, self.actors_db), [])
+
+    def test_broken(self):
+        cases = [
+            (lambda t: t['actors']['127'].__setitem__('trait', '全能辅助，伤害+20%。'), '不含内部数值编号与禁用词'),
+            (lambda t: t['actors']['172'].__setitem__('story', '病友世界来的测试角色，横行千年前的诅咒之王。'), '不含内部数值编号与禁用词'),
+            (lambda t: t['actors']['175'].__setitem__('trait', '自然治疗神明，花期消耗MP追加自然伤害。'), '不含内部数值编号与禁用词'),
+            (lambda t: t['actors']['143'].__setitem__('trait', '传说中的魔法少女，暂未编入天启篇候选池，仍是图鉴收藏模板玩法。'), '不含内部数值编号与禁用词'),
+            (lambda t: t['actors']['72'].__setitem__('trait', '神暗双仪式辅助，交替施展神光与恶魇可触发双倍伤害。'), '不含倍率词「倍」'),
+            (lambda t: t['actors']['107'].__setitem__('trait', '前排护盾坦克，以雄厚生命撑起玉璋护盾'), '中文句号'),
+            (lambda t: t['actors']['167'].__setitem__('story', '太短。'), '长度'),
+            (lambda t: t['actors'].pop('180'), '163 人'),
+        ]
+        for mut, word in cases:
+            t = copy.deepcopy(self.t)
+            mut(t)
+            bad = chk.actor_notes_rules(t, self.actors_db)
+            self.assertTrue(any(word in str(b) for b in bad), (word, bad))
+
+
 if __name__ == '__main__':
     unittest.main()

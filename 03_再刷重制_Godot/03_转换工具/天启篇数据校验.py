@@ -4314,6 +4314,74 @@ def check_suit_template(_args) -> bool:
     return _run_table('suit_template.json', lambda t: suit_template_rules(t, _load_opt('affix_table.json'), suits_db))
 
 
+ACTOR_NOTES_FORBIDDEN = re.compile(
+    r'[0-9%×*]|测试角色|定制角色|特殊角色|图像已接入|繁星版|纳西妲版本|高爆版|隐藏加成'
+    r'|候选池|暂未|编入|图鉴|收藏|模板|玩法'
+    r'|(?<![A-Za-z])(?:TP|MP|HP)(?![A-Za-z])'
+)
+# 特点行额外禁「倍」（防倍伤／倍增／双倍等倍率说法）；故事行保留 Kyo 审定样稿 127 小铃兰「九倍的温柔与坚强」
+ACTOR_NOTES_TRAIT_FORBIDDEN = re.compile(r'倍')
+ACTOR_NOTES_HIDDEN = {141, 157, 160, 161, 166}  # 同 core/imported_balance.gd（146 苍龙、152 徐凤年已解放）
+
+
+def actor_notes_rules(table: dict, actors_db=None) -> list:
+    """actor_notes.json（T556，天启篇人物图鉴全员备注，Kyo 11-27 事项 84 定稿）：
+    两行无前缀（story 一两句故事＋trait 角色定位与特点），禁止内部数值、编号与出戏元词；
+    转换产物 Actors.json 在时核对全部 163 位天启篇图鉴可见角色齐全且名字一致。"""
+    bad = []
+    def check(label, ok, val=None):
+        if not ok:
+            bad.append((label, val))
+    check('version 是 1', table.get('version') == 1, table.get('version'))
+    actors = table.get('actors')
+    check('actors 是非空字典', isinstance(actors, dict) and len(actors) > 0, type(actors).__name__)
+    if not isinstance(actors, dict):
+        return bad
+    check('天启篇可见角色共 163 人', len(actors) == 163, len(actors))
+    for k, row in actors.items():
+        check('键 %s 是正整数字符串' % k, isinstance(k, str) and k.isdigit() and int(k) > 0, k)
+        if not isinstance(row, dict):
+            check('actors.%s 是字典' % k, False, type(row).__name__)
+            continue
+        nm = row.get('name')
+        check('actors.%s.name 非空字符串' % k, isinstance(nm, str) and nm.strip() != '', nm)
+        for fld in ('story', 'trait'):
+            txt = row.get(fld)
+            ok_str = isinstance(txt, str) and txt.strip() != '' and txt == txt.strip()
+            check('actors.%s.%s 非空无首尾空白' % (k, fld), ok_str, txt)
+            if not ok_str:
+                continue
+            check('actors.%s.%s 不含换行' % (k, fld), '\n' not in txt and '\r' not in txt, txt)
+            check('actors.%s.%s 长度在 15～65 字内' % (k, fld), 15 <= len(txt) <= 65, len(txt))
+            check('actors.%s.%s 以中文句号结尾' % (k, fld), txt.endswith('。'), txt[-4:])
+            m = ACTOR_NOTES_FORBIDDEN.search(txt)
+            check('actors.%s.%s 不含内部数值编号与禁用词' % (k, fld), m is None, m.group(0) if m else None)
+            if fld == 'trait':
+                m2 = ACTOR_NOTES_TRAIT_FORBIDDEN.search(txt)
+                check('actors.%s.trait 不含倍率词「倍」' % k, m2 is None, m2.group(0) if m2 else None)
+    if isinstance(actors_db, list):
+        want = {}
+        for rec in actors_db:
+            if isinstance(rec, dict) and rec.get('name') and int(rec.get('id', 0)) not in ACTOR_NOTES_HIDDEN:
+                want[str(int(rec['id']))] = str(rec['name'])
+        want['180'] = '五条悟'  # 天启篇动态注册（core/gojo.gd）
+        missing = sorted(set(want) - set(actors), key=int)
+        extra = sorted(set(actors) - set(want), key=lambda x: int(x) if x.isdigit() else 999999)
+        check('覆盖全部天启篇图鉴可见角色', not missing, missing[:10])
+        check('无多余未知角色号', not extra, extra[:10])
+        for sid, wname in want.items():
+            if sid in actors and isinstance(actors[sid], dict):
+                check('actors.%s 名字与数据库一致' % sid, actors[sid].get('name') == wname,
+                      (actors[sid].get('name'), wname))
+    return bad
+
+
+def check_actor_notes(_args) -> bool:
+    actors_path = PROJECT / 'modes' / 'xiyou' / 'generated' / 'db' / 'Actors.json'
+    actors_db = json.loads(actors_path.read_text(encoding='utf-8')) if actors_path.is_file() else None
+    return _run_table('actor_notes.json', lambda t: actor_notes_rules(t, actors_db))
+
+
 # 每张表一个检查函数：(名字, 函数(args) -> 是否通过)。词条表那张单加 affix_table 时往这里登记。
 CHECKS = [
     ('balance_table', lambda args: check_balance_table(args.params)),
@@ -4364,6 +4432,7 @@ CHECKS = [
     ('general_books', check_general_books),
     ('gear_elem_amp', check_gear_elem_amp),
     ('suit_template', check_suit_template),
+    ('actor_notes', check_actor_notes),
 ]
 
 
