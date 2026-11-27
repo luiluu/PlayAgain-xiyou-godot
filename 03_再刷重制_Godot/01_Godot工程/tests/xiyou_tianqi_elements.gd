@@ -347,6 +347,24 @@ func _test_rates_and_popup() -> void:
 	# 旧克制网与吸收失效
 	_check("old_matchup_neutralized", _near(XDamage.matchup(w_elem, [r_elem]), 1.0))
 	_check("old_absorb_disabled", not boss.is_absorb_element(2) and not boss.is_absorb_element(3))
+	# T567：敌打我（目标是角色、tq_elem 为假那一支）也不吃旧克制；角色自带元素率（抗性）照旧算。
+	# 挑一个旧克制网下对这名角色不是 1 的系，DECK 两态各算一次
+	var a_body := XDamage.affinity(a)
+	var m_elem := 0
+	var m_raw := 1.0
+	XTianqiElements.DECK = false
+	for e in XTianqiElements.BASE_ELEMENTS:
+		var m := XDamage.matchup(int(e), a_body)
+		if not _near(m, 1.0):
+			m_elem = int(e)
+			m_raw = m
+			break
+	var off_calc := XDamage.calculate(_skill_stub(98567, m_elem, 2), boss, a, {"preview": true, "variance": false})
+	XTianqiElements.DECK = true
+	var on_calc := XDamage.calculate(_skill_stub(98567, m_elem, 2), boss, a, {"preview": true, "variance": false, "tianqi_logic": lg})
+	_check("t567_enemy_hits_actor_picked_matchup_elem", m_elem != 0, [a.actor_id, a_body])
+	_check("t567_enemy_hits_actor_old_matchup_off", _near(float(on_calc.breakdown.row.matchup), 1.0) and _near(float(on_calc.breakdown.row.resistance), a.element_rate(m_elem)), on_calc.breakdown.row)
+	_check("t567_enemy_hits_actor_deck_off_keeps_matchup", _near(float(off_calc.breakdown.row.matchup), m_raw), [m_raw, off_calc.breakdown.row.matchup])
 	# 物理 1 → 无属性 0（仍保留 hitType=1）
 	var phys_sk := _skill_stub(98001, 1, 1, "1000")
 	var phys_calc := XDamage.calculate(phys_sk, a, boss, {"preview": true, "tianqi_logic": lg})

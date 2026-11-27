@@ -567,6 +567,38 @@ class SkillReworkGrowth(unittest.TestCase):
         t['skills']['6862']['damage']['conds'][0]['to'] = 3.5
         self.assertTrue(any('stat_floor' in b for b in chk.skill_rework_rules(t)))
 
+    def test_state_effects_remove_phases(self):
+        t = self._table()
+        self.assertFalse([b for b in chk.skill_rework_rules(t) if 'effects_remove（状态脚本' in b])
+        t['states']['2774']['effects_remove'] = ['confirm', 'confirm']
+        self.assertTrue(any('effects_remove（状态脚本' in b for b in chk.skill_rework_rules(t)))
+        t['states']['2774']['effects_remove'] = ['bogus']
+        self.assertTrue(any('effects_remove（状态脚本' in b for b in chk.skill_rework_rules(t)))
+        t['states']['2774']['effects_remove'] = True
+        self.assertFalse([b for b in chk.skill_rework_rules(t) if 'effects_remove（状态脚本' in b])
+
+    def test_actor_innate_cap_rules(self):
+        t = self._table()
+        self.assertEqual(chk.actor_innate_cap_rules(t), [])
+        t['skills']['41']['note_add'] = '<passiveELUP01:35%>'
+        self.assertTrue(any('角色自带入池上限' in b for b in chk.actor_innate_cap_rules(t)))
+        t = self._table()
+        t['states']['2774']['note_add'] = '<passiveHarmRi:35>'
+        self.assertTrue(any('角色自带入池上限' in b for b in chk.actor_innate_cap_rules(t)))
+        t = self._table()
+        t['states']['850']['note_add'] = '<passiveCrHarmRi:60>'
+        self.assertTrue(any('角色自带入池上限' in b for b in chk.actor_innate_cap_rules(t)))
+
+    def test_vegeta_form_mutex_enforced(self):
+        # T528 R2（核查 P1-1）：贝吉特形态招少一条「移除旧形态」就不再按互斥算，要报错
+        t = self._table()
+        self.assertFalse([b for b in chk.actor_innate_cap_rules(t) if '形态' in b])
+        t['skills']['10566']['effects_add'] = [e for e in t['skills']['10566']['effects_add'] if e['dataId'] != 2773]
+        self.assertTrue(any('没移除其余形态' in b for b in chk.actor_innate_cap_rules(t)))
+        t = self._table()
+        del t['skills']['10563']['effects_add']
+        self.assertTrue(any('没移除其余形态' in b for b in chk.actor_innate_cap_rules(t)))
+
     def test_battle_end_bool(self):
         t = self._table()
         self.assertFalse([b for b in chk.skill_rework_rules(t) if 'battle_end' in b])
@@ -1518,6 +1550,16 @@ class ActorNotesT556(unittest.TestCase):
         self.assertIn(('Actors/85/name 引用了不存在的角色', ['爱莉', '{99999}']),
                       chk.actor_names_rules(catalog))
 
+
+    def test_skill_rework_leftover_old_names(self):
+        catalog = chk._load_opt('actor_names.json')
+        rework = chk._load_opt('skill_rework.json')
+        self.assertEqual(chk.actor_names_leftover_rules(catalog, rework), [])
+        rework = copy.deepcopy(rework)
+        rework['skills']['10563']['name'] = '超级贝吉特'
+        rework['skills']['10563']['_note'] = '注释里写贝吉特不算'
+        bad = chk.actor_names_leftover_rules(catalog, rework)
+        self.assertEqual([b[0] for b in bad], ['skill_rework/skills/10563/name 仍写原名「贝吉特」（天启篇改名 D294，改成 actor_names.json 的新名）'])
 
 if __name__ == '__main__':
     unittest.main()
