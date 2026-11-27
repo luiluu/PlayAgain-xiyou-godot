@@ -1,7 +1,7 @@
 # 交付：luiluu/t528
 
 - 车道／工作者：天启篇数值实现／小A（Gemini 4 Neon＋high，P8）做主体；小A 周额度用完后由 cc（Opus＋medium，P8）续做收尾（协调 11-27 改派）
-- 状态：已完成，待核查
+- 状态：可合并
 
 ## 变更记录草稿
 
@@ -113,8 +113,8 @@
 - 虚拟玩家 `explore`（种子 1，默认，`--audio-driver Dummy`）：**16/16** 通过（`aborted=""`、`stuck=[]`、`violations=[]`、零脚本错／零负值）。
 - 虚拟玩家短帧 `climb`（种子 1，200 步，`--vp-free`，`--audio-driver Dummy`）：**11/11** 通过（`aborted=""`、`stuck=[]`、`violations=[]`、零脚本错／零负值）。
 - 云端选测：
-  - `45909915397`（检查点 `6fd2f1c2b`）：**失败**，片 3／片 9 两片红——旧专项 `xiyou_tianqi_skills`（谷雨 finish_pct 断言仍是 9%）、`xiyou_tianqi_deck_phys_amp`（技能 41 压数后旧断言）、`xiyou_tianqi_phase4`（D189/D200 未隔离 D287）。小A 已在 `6db0a6e4a`、`c8e312c03` 同步断言。
-  - `45913895091`（分支 HEAD `b97f5f373`，已合最新 main）：**success**，19 个作业全绿，日志里 829 个场景结果行 0 失败；本卡相关：`xiyou_tianqi_t528` 14/14、`xiyou_tianqi_t524_leaks` 22/22、`xiyou_tianqi_skills` 248/248、`xiyou_tianqi_deck_phys_amp` 25/25、`xiyou_tianqi_phase4` 178/178、`xiyou_tianqi_phase4_modules` 85/85、`xiyou_tianqi_pool_text` 28/28、`xiyou_tianqi_live_sample` 32/32。cc 用 `gh run view` 核过结论（该 run 已结束，无须再 watch）。
+  - https://github.com/luiluu/PlayAgain-xiyou-godot/actions/runs/45909915397（检查点 `6fd2f1c2b`）：**失败**，片 3／片 9 两片红——旧专项 `xiyou_tianqi_skills`（谷雨 finish_pct 断言仍是 9%）、`xiyou_tianqi_deck_phys_amp`（技能 41 压数后旧断言）、`xiyou_tianqi_phase4`（D189/D200 未隔离 D287）。小A 已在 `6db0a6e4a`、`c8e312c03` 同步断言。
+  - https://github.com/luiluu/PlayAgain-xiyou-godot/actions/runs/45913895091（分支 HEAD `b97f5f373`，已合最新 main）：**success**，19 个作业全绿，日志里 829 个场景结果行 0 失败；本卡相关：`xiyou_tianqi_t528` 14/14、`xiyou_tianqi_t524_leaks` 22/22、`xiyou_tianqi_skills` 248/248、`xiyou_tianqi_deck_phys_amp` 25/25、`xiyou_tianqi_phase4` 178/178、`xiyou_tianqi_phase4_modules` 85/85、`xiyou_tianqi_pool_text` 28/28、`xiyou_tianqi_live_sample` 32/32。cc 用 `gh run view` 核过结论（该 run 已结束，无须再 watch）。
 
 ## 谁做了什么（小A／cc 分工）
 
