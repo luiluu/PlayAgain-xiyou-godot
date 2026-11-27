@@ -94,7 +94,7 @@
 - `发行空壳.py check`：退出码 0（登记两条后无本卡新警告）。
 - `天启篇数据校验.py`：本卡没改数据表格式，没跑。
 - 云端选测：通过，整轮 837 个场景、16 片（提交 54d14bb1b，`gh run watch` 等完 success）：https://github.com/luiluu/PlayAgain-xiyou-godot/actions/runs/46028772291 。偶发 1 个（并行失败、单跑通过，工具判通过）：`xiyou_ui_detail_d3.tscn`。之后的提交 4237e700c 只加交付单、量数结果和 `tests/virtual_player/` 下两个非专项工具，没改游戏代码，没重跑。R2 云端选测见下一行。
-- R2 云端选测：待写
+- R2 云端选测：通过，整轮 837 个场景、16 片（提交 1d0877017，`gh run watch` 等完 success）：https://github.com/luiluu/PlayAgain-xiyou-godot/actions/runs/46043883229 。偶发 1 个（并行失败、单跑通过，工具判通过）：`xiyou_star_warehouse.tscn`。
 
 ## 没核、没量的（cc）
 
@@ -121,3 +121,6 @@
 - 7b7c2f5aa T533 防御通过率按招式主属性算（天启篇卡公式招，开关 XDamage.MAIN_STAT_PASS）＋专项＋全名单工具
 - 54d14bb1b T533 发行空壳：line_data、swap_stats 登记已确认空值安全
 - 4237e700c T533 量数：T438 开关对照 36 场、真实配装与全角色通过率对照表、交付单
+- ad425d215 T533 交付单：云端选测通过、状态可合并
+- ccf0fac66 T533 补新增脚本的 .gd.uid
+- 1d0877017 T533 R2：全名单按天启篇候选池＋实际普攻（T553）重出、补 9 人，角色 162 存疑开关对照
