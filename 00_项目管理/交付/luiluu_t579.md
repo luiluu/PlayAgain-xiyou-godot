@@ -42,6 +42,7 @@
 | 函数／开关 | 调用方 N 处（附 grep 命令） | 逐处结论 |
 | --- | --- | --- |
 | `XTianqiSkills.owns` | 48 行（`git grep -nE '[^[:alnum:]_]owns[[:space:]]*\(' -- '*.gd'`，含定义与测试） | 调用方都在 `tianqi_skills.gd`、`tianqi_weak_b2.gd`（天启篇）和测试里；传数字技能号的照旧走 `skill_ids`，只有字符串 `"e…"`／`"weapon:…"`／`"armor:…"` 改了判法。表里所有 e 键（约 90 个底号）除 77 外都只登记一类，判法从「底号相等」收紧成「类别＋底号相等」，原本合法的装法（真装着那件）结果不变。 |
+| `XTianqiSkills.data`／`reload_table` | 自检粗数 1303／192 处（同名函数多，按名粗数偏多） | 只在建 `_gear` 后多建一份 `_need_gear`（e 键→类别键）、`reload_table` 多清这一份；返回值、其它缓存不变，调用方不受影响。`gear_view` 自检列出是因为 diff 上下文挨着，函数体没改。 |
 
 ## 本分支提交
 
