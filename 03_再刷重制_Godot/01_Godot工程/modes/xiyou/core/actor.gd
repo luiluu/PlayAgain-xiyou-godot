@@ -740,7 +740,7 @@ func _skills_entry() -> Dictionary:
 		_skc_store[me] = c
 	return c
 
-## T572 西游档卡顿（O-待定-2）：passive_values 走跨调用缓存（O-677）后，每次都要现算一遍 id 表（各 skills 包装）来比对，
+## T572 西游档卡顿（O-679）：passive_values 走跨调用缓存（O-677）后，每次都要现算一遍 id 表（各 skills 包装）来比对，
 ## 绕过了只读窗口与跨步保留（O-348／状态批量）——原来走 skills() 时窗口里同一角色只建一次。玩家存档 40 次行动 id 表现算 5557→36501 次。
 ## 这里把缓存项本身也按 skills() 的规矩记进只读窗口（窗口里没有写入）和跨步保留（同 skills() 的 "sk0"/"sk1" 作废时机）。
 ## 回退：SKILLS_ENTRY_HELD = false（每次 _skills_entry 现算 id 表，同 O-677 原样）

@@ -599,7 +599,7 @@ static func _proj_ids() -> Dictionary:
 	return out
 
 
-## T572 西游档卡顿（O-待定-1）：先判天启篇档（on），不是就不建投影号表。原来先建 _proj_ids 再判档，西游档每建一条技能记录
+## T572 西游档卡顿（O-678）：先判天启篇档（on），不是就不建投影号表。原来先建 _proj_ids 再判档，西游档每建一条技能记录
 ## （XActor._skill_records）都要把全部条目过一遍，技能表重建贵了约 9 倍（玩家存档 40 次行动 0.6→5.4 秒）。几项都是只读判断，换序结果不变。
 ## 回退：XIYOU_SKIP = false（先建投影号表再判档，同原来）
 static var XIYOU_SKIP := true

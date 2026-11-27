@@ -299,7 +299,7 @@ func _paint_now(c: XMVCanvas) -> void:
 	_param(c, ox + 24 + PAD, 72, "TP", v.tp, v.mtp, XUI.GAUGES.tp, XUI.TEXT, false)
 
 
-## T572 西游档卡顿（O-待定-3）：没有画面快照时（行动之间、输入指令中状态格轮换重画）实时读的上限值包进只读窗口（O-348），
+## T572 西游档卡顿（O-680）：没有画面快照时（行动之间、输入指令中状态格轮换重画）实时读的上限值包进只读窗口（O-348），
 ## 一行里最大 HP／MP／TP、护盾各读一次能力值，原来每读一次都重建整张技能表（玩家存档清快照那一帧约 0.4 秒）。只读，不写。
 ## 回退：LIVE_WINDOW = false（不包窗口，同原来）
 static var LIVE_WINDOW := true

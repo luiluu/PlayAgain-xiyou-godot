@@ -1,8 +1,8 @@
 extends Node
 ## 【cc·未经审查】T572 西游档四倍速点技能前卡顿、菜单栏滑动卡（玩家玄及 11-27 反馈＋存档）。读能力值时技能表重建三处：
-## - XTianqiWeakAffix.XIYOU_SKIP（O-待定-1）：西游档先判档，不建弱者词条投影号表；
-## - XActor.SKILLS_ENTRY_HELD（O-待定-2）：passive_values 的技能表缓存项记进只读窗口／跨步保留，不再每次现算 id 表；
-## - XSideStatus.LIVE_WINDOW（O-待定-3）：侧栏没有快照时实时读的上限值包进只读窗口。
+## - XTianqiWeakAffix.XIYOU_SKIP（O-678）：西游档先判档，不建弱者词条投影号表；
+## - XActor.SKILLS_ENTRY_HELD（O-679）：passive_values 的技能表缓存项记进只读窗口／跨步保留，不再每次现算 id 表；
+## - XSideStatus.LIVE_WINDOW（O-680）：侧栏没有快照时实时读的上限值包进只读窗口。
 ## 断言：开关两态结果逐项相同（技能表、被动值、侧栏读数、整场战斗日志摘要），西游档和天启篇各一场；开着时现算次数确实少了；
 ## 天启篇弱者词条投影照旧生效、两态相同；开着时全程比对（XActor.READ_VERIFY）零不一致。
 var results := []
@@ -181,7 +181,7 @@ func _run() -> void:
 	get_tree().quit.call_deferred(0 if passed == results.size() else 1)
 
 
-# ---- O-待定-1：弱者词条投影 ----
+# ---- O-678：弱者词条投影 ----
 func _weak_affix() -> void:
 	# 西游档：开着不建投影号表；两态技能表相同
 	var s := _xiyou_state()
@@ -215,7 +215,7 @@ func _weak_affix() -> void:
 	XTianqiWeakAffix.test_entries.clear()
 
 
-# ---- O-待定-2：技能表缓存项进只读窗口 ----
+# ---- O-679：技能表缓存项进只读窗口 ----
 func _entry_held() -> void:
 	var s := _xiyou_state()
 	var a := s.actor(s.party[0])
@@ -258,7 +258,7 @@ func _entry_held() -> void:
 	check("held.write_invalidates", after[true] == after[false] and bool(after[true][2]), [after[true], after[false]])
 
 
-# ---- O-待定-3：侧栏实时读数 ----
+# ---- O-680：侧栏实时读数 ----
 func _side_status() -> void:
 	var s := _xiyou_state()
 	var a := s.actor(s.party[0])
