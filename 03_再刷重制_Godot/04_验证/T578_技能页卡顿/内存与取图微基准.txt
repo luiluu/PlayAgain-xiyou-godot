@@ -1,0 +1,11 @@
+# 内存（cand 空壳树，玩家存档 12，进技能页前／开页／五人各逛被动页后／关页后；win＝带窗口（有渲染器，tex＝显存纹理），headless＝无头）
+# 命令：t578_mem_probe.gd --release --set=res://modes/xiyou/ui/xui.gd:KEEP_ICON_SHEETS=<false|true>
+win false  before static=942.2 tex=7.6  | open static=943.8 tex=38.4 | in_page static=959.5 peak=966.5 tex=41.2 | closed static=971.7 tex=19.7 sheets=0
+win true   before static=942.2 tex=7.6  | open static=943.8 tex=38.4 sheets=3 | in_page static=959.5 peak=964.7 tex=49.6 sheets=4 | closed static=971.7 tex=44.7 sheets=4
+headless false before 935.7 | open 960.3 | in_page 976.8 peak 983.8 | closed 960.3
+headless true  before 935.7 | open 960.3 | in_page 983.0 peak 983.1 | closed 979.0 sheets=4
+PIXELS_READABLE=true fmt=5(RGBA8)
+
+# 图标取图微基准（t578_icon_micro.gd，--release）
+patch_v0_04 img_path_us=30.3 icon_cold_us=12544.5 icon_held_us=11.9 load_cold_us=12613.4
+cc_t576     img_path_us=29.9 icon_cold_us=12532.4 icon_held_us=11.5 load_cold_us=12288.0

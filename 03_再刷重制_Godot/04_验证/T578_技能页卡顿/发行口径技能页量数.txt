@@ -1,0 +1,223 @@
+# T578 发行口径技能页量数（玩家存档 12，发行空壳＋simulate_release，Mac Apple Silicon 无头，--audio-driver Dummy；每步＝操作＋下一帧，毫秒）
+# patch_v0_04＝146a60a5d（v0.04.07）；cand＝patch/v0.04＋T572 三笔＋T574 两笔＋本单（merge-tree 实摘）；cc_t576＝f625a2025；keepfalse／keeptrue＝XUI.KEEP_ICON_SHEETS 两态；xcalloff＝同时关 O-677（≈v0.04.06）
+## cand_keepfalse_1
+IDLE_FRAME_MS=4.913
+SUMMARY back_type n=5 mean=24.0 max=35.1
+SUMMARY change_actor n=5 mean=14.4 max=27.4
+SUMMARY enter_list n=5 mean=27.7 max=46.9
+SUMMARY list_move n=80 mean=24.4 max=28.0
+SUMMARY list_page n=15 mean=30.7 max=44.7
+SUMMARY list_wheel n=15 mean=26.5 max=38.5
+SUMMARY open n=1 mean=78.5 max=78.5
+SUMMARY type_jump n=5 mean=35.3 max=37.1
+SUMMARY type_move n=20 mean=35.5 max=62.5
+MISMATCH 0
+## cand_keepfalse_2
+IDLE_FRAME_MS=5.019
+SUMMARY back_type n=5 mean=24.1 max=34.9
+SUMMARY change_actor n=5 mean=13.2 max=24.9
+SUMMARY enter_list n=5 mean=27.3 max=44.5
+SUMMARY list_move n=80 mean=24.7 max=34.4
+SUMMARY list_page n=15 mean=31.3 max=55.5
+SUMMARY list_wheel n=15 mean=26.7 max=37.6
+SUMMARY open n=1 mean=72.9 max=72.9
+SUMMARY type_jump n=5 mean=35.4 max=35.7
+SUMMARY type_move n=20 mean=36.5 max=63.6
+MISMATCH 0
+## cand_keeptrue_1
+IDLE_FRAME_MS=5.020
+SUMMARY back_type n=5 mean=7.4 max=7.9
+SUMMARY change_actor n=5 mean=7.6 max=10.5
+SUMMARY enter_list n=5 mean=14.2 max=34.3
+SUMMARY list_move n=80 mean=10.8 max=15.9
+SUMMARY list_page n=15 mean=13.8 max=20.8
+SUMMARY list_wheel n=15 mean=9.9 max=10.9
+SUMMARY open n=1 mean=83.5 max=83.5
+SUMMARY type_jump n=5 mean=7.7 max=7.9
+SUMMARY type_move n=20 mean=8.8 max=31.2
+MISMATCH 0
+## cand_keeptrue_2
+IDLE_FRAME_MS=5.020
+SUMMARY back_type n=5 mean=7.8 max=9.4
+SUMMARY change_actor n=5 mean=7.8 max=10.8
+SUMMARY enter_list n=5 mean=13.7 max=32.0
+SUMMARY list_move n=80 mean=10.8 max=16.6
+SUMMARY list_page n=15 mean=14.6 max=26.5
+SUMMARY list_wheel n=15 mean=10.3 max=12.1
+SUMMARY open n=1 mean=78.3 max=78.3
+SUMMARY type_jump n=5 mean=7.3 max=8.0
+SUMMARY type_move n=20 mean=9.4 max=40.0
+MISMATCH 0
+## cc_t576_keepfalse_1
+IDLE_FRAME_MS=5.019
+SUMMARY back_type n=5 mean=24.0 max=35.0
+SUMMARY change_actor n=5 mean=15.0 max=25.8
+SUMMARY enter_list n=5 mean=27.7 max=47.5
+SUMMARY list_move n=80 mean=24.5 max=27.5
+SUMMARY list_page n=15 mean=30.5 max=50.2
+SUMMARY list_wheel n=15 mean=26.4 max=38.5
+SUMMARY open n=1 mean=80.4 max=80.4
+SUMMARY type_jump n=5 mean=35.1 max=36.2
+SUMMARY type_move n=20 mean=35.9 max=63.0
+MISMATCH 0
+## cc_t576_keepfalse_2
+IDLE_FRAME_MS=4.934
+SUMMARY back_type n=5 mean=24.2 max=35.3
+SUMMARY change_actor n=5 mean=14.2 max=26.1
+SUMMARY enter_list n=5 mean=27.6 max=46.7
+SUMMARY list_move n=80 mean=24.8 max=34.4
+SUMMARY list_page n=15 mean=30.5 max=46.1
+SUMMARY list_wheel n=15 mean=26.5 max=37.3
+SUMMARY open n=1 mean=82.1 max=82.1
+SUMMARY type_jump n=5 mean=35.8 max=36.9
+SUMMARY type_move n=20 mean=35.6 max=62.9
+MISMATCH 0
+## cc_t576_keeptrue_1
+IDLE_FRAME_MS=4.942
+SUMMARY back_type n=5 mean=7.4 max=7.8
+SUMMARY change_actor n=5 mean=7.4 max=10.6
+SUMMARY enter_list n=5 mean=13.5 max=32.2
+SUMMARY list_move n=80 mean=10.2 max=13.0
+SUMMARY list_page n=15 mean=13.2 max=18.8
+SUMMARY list_wheel n=15 mean=9.5 max=10.9
+SUMMARY open n=1 mean=75.5 max=75.5
+SUMMARY type_jump n=5 mean=7.1 max=7.6
+SUMMARY type_move n=20 mean=8.5 max=30.8
+MISMATCH 0
+## cc_t576_keeptrue_2
+IDLE_FRAME_MS=5.048
+SUMMARY back_type n=5 mean=7.4 max=7.8
+SUMMARY change_actor n=5 mean=7.8 max=11.7
+SUMMARY enter_list n=5 mean=14.2 max=32.8
+SUMMARY list_move n=80 mean=11.0 max=28.4
+SUMMARY list_page n=15 mean=14.1 max=19.1
+SUMMARY list_wheel n=15 mean=9.9 max=11.2
+SUMMARY open n=1 mean=74.4 max=74.4
+SUMMARY type_jump n=5 mean=7.4 max=8.4
+SUMMARY type_move n=20 mean=8.5 max=28.2
+MISMATCH 0
+## patch_v0_04_keepfalse_1
+IDLE_FRAME_MS=4.901
+SUMMARY back_type n=5 mean=32.9 max=45.2
+SUMMARY change_actor n=5 mean=23.0 max=36.4
+SUMMARY enter_list n=5 mean=39.3 max=62.8
+SUMMARY list_move n=80 mean=33.5 max=37.1
+SUMMARY list_page n=15 mean=39.5 max=57.9
+SUMMARY list_wheel n=15 mean=35.2 max=47.9
+SUMMARY open n=1 mean=90.2 max=90.2
+SUMMARY type_jump n=5 mean=45.0 max=49.6
+SUMMARY type_move n=20 mean=44.5 max=73.5
+MISMATCH 0
+## patch_v0_04_keepfalse_2
+IDLE_FRAME_MS=5.025
+SUMMARY back_type n=5 mean=33.5 max=44.3
+SUMMARY change_actor n=5 mean=23.1 max=36.2
+SUMMARY enter_list n=5 mean=37.9 max=57.2
+SUMMARY list_move n=80 mean=34.0 max=40.0
+SUMMARY list_page n=15 mean=41.3 max=57.6
+SUMMARY list_wheel n=15 mean=35.9 max=48.7
+SUMMARY open n=1 mean=96.3 max=96.3
+SUMMARY type_jump n=5 mean=43.9 max=45.4
+SUMMARY type_move n=20 mean=45.0 max=75.0
+MISMATCH 0
+## patch_v0_04_keeptrue_1
+IDLE_FRAME_MS=5.005
+SUMMARY back_type n=5 mean=16.6 max=18.9
+SUMMARY change_actor n=5 mean=16.1 max=20.5
+SUMMARY enter_list n=5 mean=23.1 max=44.7
+SUMMARY list_move n=80 mean=19.5 max=23.8
+SUMMARY list_page n=15 mean=22.6 max=30.0
+SUMMARY list_wheel n=15 mean=19.0 max=21.8
+SUMMARY open n=1 mean=91.7 max=91.7
+SUMMARY type_jump n=5 mean=15.8 max=17.4
+SUMMARY type_move n=20 mean=17.2 max=38.6
+MISMATCH 0
+## patch_v0_04_keeptrue_2
+IDLE_FRAME_MS=5.141
+SUMMARY back_type n=5 mean=17.3 max=20.9
+SUMMARY change_actor n=5 mean=17.3 max=23.1
+SUMMARY enter_list n=5 mean=24.5 max=48.5
+SUMMARY list_move n=80 mean=21.3 max=50.2
+SUMMARY list_page n=15 mean=24.8 max=37.1
+SUMMARY list_wheel n=15 mean=19.5 max=23.7
+SUMMARY open n=1 mean=93.0 max=93.0
+SUMMARY type_jump n=5 mean=17.3 max=19.0
+SUMMARY type_move n=20 mean=18.1 max=43.4
+MISMATCH 0
+## patch_xcalloff_keepfalse
+IDLE_FRAME_MS=4.926
+SUMMARY back_type n=5 mean=27.0 max=38.7
+SUMMARY change_actor n=5 mean=16.9 max=27.5
+SUMMARY enter_list n=5 mean=30.6 max=49.4
+SUMMARY list_move n=80 mean=28.3 max=37.9
+SUMMARY list_page n=15 mean=34.3 max=50.6
+SUMMARY list_wheel n=15 mean=30.6 max=41.5
+SUMMARY open n=1 mean=82.5 max=82.5
+SUMMARY type_jump n=5 mean=37.8 max=38.9
+SUMMARY type_move n=20 mean=38.6 max=68.1
+MISMATCH 0
+## patch_xcalloff_keeptrue
+IDLE_FRAME_MS=5.053
+SUMMARY back_type n=5 mean=10.3 max=11.4
+SUMMARY change_actor n=5 mean=10.0 max=14.0
+SUMMARY enter_list n=5 mean=16.4 max=35.5
+SUMMARY list_move n=80 mean=14.0 max=22.0
+SUMMARY list_page n=15 mean=17.1 max=24.5
+SUMMARY list_wheel n=15 mean=13.2 max=14.7
+SUMMARY open n=1 mean=79.6 max=79.6
+SUMMARY type_jump n=5 mean=9.8 max=10.6
+SUMMARY type_move n=20 mean=11.3 max=32.8
+MISMATCH 0
+
+## 首轮（patch_v0_04 原样，机器负载高、空帧 10 ms）
+IDLE_FRAME_MS=10.029
+SUMMARY back_type n=5 mean=33.3 max=44.5
+SUMMARY change_actor n=5 mean=24.0 max=36.2
+SUMMARY enter_list n=5 mean=38.5 max=61.3
+SUMMARY list_move n=80 mean=35.5 max=65.4
+SUMMARY list_page n=15 mean=43.2 max=69.5
+SUMMARY list_wheel n=15 mean=36.5 max=48.9
+SUMMARY open n=1 mean=125.0 max=125.0
+SUMMARY type_jump n=5 mean=44.9 max=47.1
+SUMMARY type_move n=20 mean=48.5 max=78.2
+## 首轮逐步明细（patch_v0_04 原样，前 40 步）
+STEP open r0 op=37.3 frame=87.7 total=125.0
+STEP type_move a152 t2 op=5.0 frame=51.1 total=56.1 idb=-1
+STEP type_move a152 t4 op=3.0 frame=75.2 total=78.2 idb=-1
+STEP type_move a152 t5 op=1.6 frame=43.1 total=44.7 idb=-1
+STEP type_move a152 t6 op=1.3 frame=45.1 total=46.4 idb=-1
+STEP type_jump a152 to4 op=0.8 frame=46.3 total=47.1 idb=-1
+STEP enter_list a152 n=99 op=26.0 frame=35.2 total=61.3 idb=-1
+STEP list_move a152 i0 op=3.2 frame=35.3 total=38.5 idb=-1
+STEP list_move a152 i2 op=3.3 frame=35.6 total=38.9 idb=-1
+STEP list_move a152 i4 op=3.6 frame=37.9 total=41.5 idb=-1
+STEP list_move a152 i6 op=2.9 frame=32.9 total=35.8 idb=-1
+STEP list_move a152 i8 op=3.1 frame=33.7 total=36.7 idb=-1
+STEP list_move a152 i10 op=2.8 frame=31.1 total=33.9 idb=-1
+STEP list_move a152 i12 op=4.2 frame=31.5 total=35.7 idb=-1
+STEP list_move a152 i14 op=3.0 frame=31.1 total=34.1 idb=-1
+STEP list_move a152 i16 op=2.7 frame=31.4 total=34.1 idb=-1
+STEP list_move a152 i18 op=3.0 frame=31.3 total=34.3 idb=-1
+STEP list_move a152 i20 op=4.2 frame=35.9 total=40.0 idb=-1
+STEP list_move a152 i22 op=3.4 frame=32.4 total=35.8 idb=-1
+STEP list_move a152 i24 op=3.6 frame=34.0 total=37.6 idb=-1
+STEP list_move a152 i26 op=3.4 frame=34.7 total=38.0 idb=-1
+STEP list_move a152 i28 op=3.0 frame=33.2 total=36.2 idb=-1
+STEP list_move a152 i30 op=3.1 frame=32.4 total=35.5 idb=-1
+STEP list_page a152 op=7.0 frame=58.2 total=65.3 idb=-1
+STEP list_page a152 op=4.1 frame=48.9 total=53.0 idb=-1
+STEP list_page a152 op=8.1 frame=36.4 total=44.6 idb=-1
+STEP list_wheel a152 op=2.2 frame=46.6 total=48.9 idb=-1
+STEP list_wheel a152 op=2.2 frame=45.5 total=47.8 idb=-1
+STEP list_wheel a152 op=2.4 frame=45.4 total=47.9 idb=-1
+STEP back_type a152 op=0.8 frame=43.7 total=44.5 idb=-1
+STEP change_actor a152 op=1.8 frame=23.1 total=24.8 idb=-1
+STEP type_move a117 t2 op=1.0 frame=55.2 total=56.2 idb=-1
+STEP type_move a117 t4 op=1.1 frame=27.5 total=28.5 idb=-1
+STEP type_move a117 t5 op=1.1 frame=28.1 total=29.2 idb=-1
+STEP type_move a117 t6 op=1.1 frame=46.3 total=47.4 idb=-1
+STEP type_jump a117 to4 op=0.6 frame=42.4 total=43.1 idb=-1
+STEP enter_list a117 n=92 op=1.5 frame=29.3 total=30.8 idb=-1
+STEP list_move a117 i0 op=3.4 frame=30.3 total=33.7 idb=-1
+STEP list_move a117 i2 op=2.6 frame=30.7 total=33.3 idb=-1
+STEP list_move a117 i4 op=2.8 frame=30.9 total=33.7 idb=-1
