@@ -642,7 +642,7 @@ static func whitelisted(module: String, skill: int, field: String) -> bool:
 
 # ---- 来源分桶（第五节第 4 条（3）；T530 补系别法宝 fabao、强化 enhance 拆出单记）----
 const BUCKET_NAMES := {"secret": "秘籍格（功法、通用被动书）", "runeword": "符文之语", "orb": "宝珠", "equip": "原版装备", "race": "种族",
-	"hubris": "成长装备", "tianqi": "天启篇自己的", "actor": "角色自带、技能", "state": "状态", "suit": "原版套装", "zhenqi": "真气",
+	"hubris": "成长装备", "tianqi": "天启篇自己的", "actor": "角色自带、技能", "state": "状态", "suit": "原版套装", "zhenqi": "真气", "ally_state": "别人施加的状态（队友增益等）",
 	"fabao": "系别法宝", "enhance": "强化（符石／晶石／神文）", "advance": "超越极限（共用进阶）"}
 
 
@@ -856,7 +856,7 @@ static func passive_buckets(a, objs: Array) -> Dictionary:
 		if o.has("stypeId") and XTianqiSecrets.is_sealed(a, int(o.get("id", 0))):
 			continue
 		var is_gear: bool = o is Dictionary and o.has("kind") and str(o.kind) in ["weapon", "armor"]
-		var bucket := bucket_of(o, a)
+		var bucket := _self_state_split(a, o, bucket_of(o, a))
 		if SELF_CAP and bucket == "actor" and o.has("stypeId") and SHARED_ADVANCE.has(int(o.get("id", 0))):
 			bucket = "advance"  # T530 R2：共用进阶不进角色自带上限（事项 81）
 		var book := "#%d" % int(o.get("id", 0)) if bucket == "secret" else ""
@@ -921,7 +921,7 @@ static func passive_buckets(a, objs: Array) -> Dictionary:
 			elif tag.begins_with("passiveELUP") and o.has("stypeId"):
 				put.call("passiveELUP", int(tag.substr(11)), XActor._num(meta[k]) / 100.0)
 			elif tag.begins_with("passiveELUP") and XTianqiSkills.is_passive_elup_obj(o):
-				var eb := "state" if bucket == "state" else "tianqi"  # T451：skill_rework 改写装备的 passiveELUP 属天启篇改写数，不计进九线 equip 桶
+				var eb := bucket if bucket in ["state", "ally_state"] else "tianqi"  # T451：skill_rework 改写装备的 passiveELUP 属天启篇改写数，不计进九线 equip 桶
 				_add(out.passiveELUP, int(tag.substr(11)), eb, XActor._num(meta[k]) / 100.0)
 	out["books"] = books
 	# 元素增幅（damage.own_bonus 的 elementAmplify 来源：状态＋装备＋角色＋职业）；老装备按来源重建（宝珠、强化、符文之语、剩余本体各拆各的）
@@ -931,7 +931,7 @@ static func passive_buckets(a, objs: Array) -> Dictionary:
 		if amp.is_empty():
 			continue
 		var is_gear: bool = o is Dictionary and o.has("kind") and str(o.kind) in ["weapon", "armor"]
-		var bucket := bucket_of(o, a) if not (o is Dictionary and (is_same(o, a.data()) or is_same(o, a.class_data()))) else "actor"
+		var bucket := _self_state_split(a, o, bucket_of(o, a)) if not (o is Dictionary and (is_same(o, a.data()) or is_same(o, a.class_data()))) else "actor"
 		var orb := orb_amplify(o)
 		# T530 R2（核查 P2-2）：小猫持剑视图（XCat.sword_view）把元素增幅整体翻倍；按视图倍数折算各来源，
 		# 旧宝珠解析、强化、符文之语模板都乘倍数（T518 新表 _tq_orb_amp 已按视图算过，不再乘）
@@ -1253,6 +1253,35 @@ static var NO_ENEMY_FLAT_MIT := true
 ## 随机进攻词条走 XTianqiAffixBattle 独立通道，不在这两个桶里。关＝回到只靠 T528 数据重标、不兜底
 static var SELF_CAP := true
 const SELF_BUCKETS := ["actor", "state"]
+
+
+## T530 R2（小o 复核 P2-6）：身上状态按施加者分：自己给自己的（或没记来源）留在 state 桶算自带；
+## 队友等别人施加的（stateOrigin 是别的战斗者）改记 ally_state 桶，另记、不进自带上限。SELF_CAP 关＝都回 state 桶
+static func _self_state_split(a, o: Dictionary, bucket: String) -> String:
+	if not SELF_CAP or bucket != "state" or not a is XBattler:
+		return bucket
+	return "ally_state" if state_by_other(a, int(o.get("id", 0))) else "state"
+
+
+## 这个状态是不是别人施加的（state_origins 记的来源存在且不是持有者本人）
+static func state_by_other(a: XBattler, id: int) -> bool:
+	var w = a.state_origins.get(id)
+	if not w is WeakRef:
+		return false
+	var src = w.get_ref()
+	return src != null and not is_same(src, a)
+
+
+## 被动缓存签名补一段：各状态施加者是不是本人（只在天启篇分桶＋SELF_CAP 时有内容）。
+## 同一状态换了施加者（自己↔别人）时被动缓存要按新来源重建
+static func state_origin_sig(a: XBattler) -> String:
+	if not SELF_CAP or not bucketing() or a.state_origins.is_empty():
+		return ""
+	var out := []
+	for id in a.state_ids:
+		if state_by_other(a, int(id)):
+			out.append(str(id))
+	return ",".join(out)
 ## 超越极限 I～IV（所有角色共用的进阶被动，见 skill_rework.json shared）
 const SHARED_ADVANCE := [1240, 1241, 1242, 1244]
 
@@ -1507,7 +1536,7 @@ static func apply_nine_cap(item: Dictionary, a, frame: Dictionary, cache: Dictio
 			if not bc.is_empty():
 				split_cut[b] = bc
 		kept_lines[b] = sh
-	# （2b）T530 R2：角色自带（actor＋state 合计）硬顶，技能／元素每系／终伤 +30%、爆伤 +50%
+	# （2b）T530 R2：角色自带（actor＋自己给自己的 state 合计；别人施加的 ally_state 不算，P2-6）硬顶，技能／元素每系／终伤 +30%、爆伤 +50%
 	if use_split and SELF_CAP:
 		var sc := _self_cap(by, hit, cut)
 		if not sc.is_empty():
@@ -1546,7 +1575,7 @@ static func apply_nine_cap(item: Dictionary, a, frame: Dictionary, cache: Dictio
 	return cut
 
 
-## T530 R2（核查 P1-1）：角色自带 actor＋state 两桶合计按 split_caps.lines.self 封顶，超出加进 cut（就地改），返回各项扣了多少
+## T530 R2（核查 P1-1）：角色自带 actor＋state（自己施加的状态；别人施加的在 ally_state 桶，P2-6）两桶合计按 split_caps.lines.self 封顶，超出加进 cut（就地改），返回各项扣了多少
 static func _self_cap(by: Dictionary, hit: Dictionary, cut: Dictionary) -> Dictionary:
 	var tot := {"skill": 0.0, "bonus": 0.0, "crit": 0.0, "element": {}}
 	for b in SELF_BUCKETS:

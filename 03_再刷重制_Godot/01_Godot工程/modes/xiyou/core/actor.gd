@@ -1614,6 +1614,7 @@ func _refresh_passive_now() -> void:
 		for o in objs:
 			sig_notes.append(str(o.get("note", "")))
 			sig_meta.append((o.get("meta", {}) as Dictionary).hash())
+		sig_meta.append(XTianqiLedger.state_origin_sig(self).hash())  # T530 P2-6：状态施加者变了不能用旧分桶
 		if not _pm_base.is_empty() and _pm_fix == FIX_CRIT_PUSH and _pm_meta == sig_meta and _pm_notes == sig_notes and _pm_base.has("bySource") == XTianqiLedger.bucketing():
 			var memo: Dictionary = _pm_base.duplicate(true)
 			if READ_VERIFY:
@@ -1742,7 +1743,12 @@ var _passive_states_sig := ""
 static var passive_state_rebuild := true
 
 func _passive_states_signature() -> String:
-	return ",".join(state_ids.map(func(x): return str(x)))
+	var sig := ",".join(state_ids.map(func(x): return str(x)))
+	if not state_origins.is_empty():
+		var o := XTianqiLedger.state_origin_sig(self)  # T530 P2-6：状态施加者（本人／别人）分桶，换了施加者要重建
+		if o != "":
+			sig += "|" + o
+	return sig
 
 func passive_cache() -> Dictionary:
 	if _passive_pending:

@@ -108,6 +108,7 @@ func _run() -> void:
 	_test_10_follow_cast_lifesteal()
 	_test_11_all_off_fabao_old_cap()
 	_test_12_cat_sword_rebuild()
+	_test_13_self_cap_ally_state()
 	var passed := 0
 	for r in results:
 		if r.passed:
@@ -988,3 +989,69 @@ func _test_12_cat_sword_rebuild() -> void:
 	_check("t12_cat_sword_runeword_doubled",
 		XCat.enabled_sword(c) and _near(float(by.get("runeword", 0.0)), tpl_amp * 2.0) and absf(float(by.get("equip", 0.0))) < 1e-6,
 		{"by": by, "tpl": tpl_amp, "sword": XCat.enabled_sword(c)})
+
+
+# ---- 13. T530 R2（小o 复核 P2-6）：自带硬顶只算本体＋自己给自己的状态；队友施加的增益另记（ally_state），不进自带 30% ----
+func _elem1_pool(a: XActor, e: XEnemy, sk: Dictionary) -> Dictionary:
+	a._pm_base = {}
+	a.refresh_passive()
+	var r := XDamage.calculate(sk, a, e, {"critical": false, "variance": false, "rawValue": 10000.0})
+	var row: Dictionary = r.breakdown.row
+	return {"element": float(row.pools.element), "self": row.get("splitCap", {}).get("self", {}),
+		"by": a.passive_cache().get("bySource", {}).get("elementAmplify", {}).get(1, {})}
+
+
+func _test_13_self_cap_ally_state() -> void:
+	var s := _state(true)
+	var a := s.actor(int(s.battle_slots[0]))
+	var ally := s.actor(int(s.battle_slots[1]))
+	a.change_level(80)
+	_clear_equips(a)
+	a.clear_states()
+	var e := XEnemy.new().setup(1, 3, 100.0)
+	var sk := _skill(99913, 1, 2, "10000")
+	# 本体 +30% 物理（角色本体 yep.elementAmplify，记 actor 桶）
+	var yep: Dictionary = (a.data().get("yep", {}) as Dictionary).duplicate(true)
+	var amp: Dictionary = (yep.get("elementAmplify", {}) as Dictionary).duplicate()
+	var base_amp := float(amp.get("1", amp.get(1, 0.0)))
+	amp.erase(1)
+	amp["1"] = 0.30
+	yep["elementAmplify"] = amp
+	a.looks = {"yep": yep}
+	var p0 := _elem1_pool(a, e, sk)
+	# 队友施加水之祝福（天启篇 113：全属性 +5%）
+	XImportedBalance.set_acting(ally)
+	a.add_state(113)
+	XImportedBalance.set_acting(null)
+	var p_ally := _elem1_pool(a, e, sk)
+	_check("t13_ally_blessing_outside_self_cap_135",
+		absf(base_amp) < 1e-9 and _near(p0.element, 1.30) and _near(p_ally.element, 1.35) and p_ally.self.is_empty()
+			and _near(float(p_ally.by.get("ally_state", 0.0)), 0.05) and absf(float(p_ally.by.get("state", 0.0))) < 1e-9,
+		{"base_amp": base_amp, "p0": p0, "ally": p_ally})
+	# 同样 +5% 由自己施加：算自带，封到 1.30
+	a.remove_state(113)
+	XImportedBalance.set_acting(a)
+	a.add_state(113)
+	XImportedBalance.set_acting(null)
+	var p_self := _elem1_pool(a, e, sk)
+	_check("t13_self_blessing_capped_130",
+		_near(p_self.element, 1.30) and _near(float(p_self.self.get("element", {}).get(1, 0.0)), 0.05)
+			and _near(float(p_self.by.get("state", 0.0)), 0.05),
+		p_self)
+	# 已挂着的状态换成队友再施加：被动缓存按新施加者重建（不走旧分桶），回到 1.35
+	XImportedBalance.set_acting(ally)
+	a.add_state(113)
+	XImportedBalance.set_acting(null)
+	var r_re := XDamage.calculate(sk, a, e, {"critical": false, "variance": false, "rawValue": 10000.0})
+	_check("t13_reapply_by_ally_rebuilds_cache", _near(float(r_re.breakdown.row.pools.element), 1.35), r_re.breakdown.row.pools)
+	# 开关关＝回到不分施加者、不兜底：1.35
+	a.remove_state(113)
+	XImportedBalance.set_acting(a)
+	a.add_state(113)
+	XImportedBalance.set_acting(null)
+	XTianqiLedger.SELF_CAP = false
+	var p_off := _elem1_pool(a, e, sk)
+	XTianqiLedger.SELF_CAP = true
+	_check("t13_switch_off_rollback", _near(p_off.element, 1.35) and _near(float(p_off.by.get("state", 0.0)), 0.05), p_off)
+	a.looks = {}
+	a.clear_states()
