@@ -15,7 +15,10 @@
 
 ### R1 验证
 
-- 本机专项（`--audio-driver Dummy`）：见下「验证与门禁」R1 行。
+- 本机专项（`--audio-driver Dummy`，并行测试.py）：`xiyou_t549_gear_skills` 1829/1829（含 R1 新断言：42 个敌人敌方视角＝原记录、三个敌人实际选招与出手伤害对基线、ACTOR_ONLY 回退、我方 6 招仍改写、995 落空不回血、技能卡逐行与顶栏、139 件装备面板两路替换都命中、西游档面板原样）、`xiyou_t541_equip_skills` 31/31、`xiyou_tianqi_enemy_ai` 103/103、`xiyou_tianqi_enemy_ai_scene` 16/16、`xiyou_tianqi_skill_debt` 31/31、`xiyou_tianqi_deck_phys_amp` 25/25、`xiyou_battle_common_events` 95/95、`xiyou_tianqi_guardian_growth` 27/27、`xiyou_target_eval` 383/383、`xiyou_tianqi_smart_ai` 95/95、`xiyou_tianqi_skills` 248/248、`xiyou_fabao_rework` 113/113。
+- `测试天启篇漏项扫描.py` 17/17；`天启篇漏项扫描.py --strict` 退出 0（烧火棍终伤 +50% 因 R1 只为卡面进 gear 表，登记为待定口径）；`天启篇数据校验.py` 全过；生成器复跑「已是最新」；`语法检查.py`、`发行空壳.py check`、`探针登记检查.py` 通过。
+- 云端选测：① `gh run watch 45987489300` 提交 ac46bb2230、基准 36692e9ed（本单动了 core／battle，选中 680 场景 16 片）：14 片过，2 个场景失败——`xiyou_tianqi_smart_ai` 的「345 不在重构表」前提断言、`xiyou_tianqi_skills` 的 2816 破杀公式值 0（测试角色狗逍遥敏捷 0，破杀只吃敏捷）。两处都是 T549 原提交就带的（上轮云端只选了 10 个场景没跑到），改测试前提（345 保留 CE46 照样拦；只吃 0 属性的招不判坏行）。② `gh run watch 45995506600 --exit-status` 提交 345b53232e、基准 ac46bb223（覆盖这两处改动）：2 场景 1 片，通过。
+- `xiyou_fabao_rework` 云端并行时偶发失败、单独重跑通过（片 14 日志，与本单无关）。
 
 ## 变更记录草稿
 
