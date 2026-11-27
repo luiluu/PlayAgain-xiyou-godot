@@ -2387,8 +2387,8 @@ def ledger_phase4_rules(table: dict, balance: dict = None) -> list:
             tot = reg.get('total_pct')
             if not all(isinstance(v, int) and not isinstance(v, bool) and v >= 0 for v in parts + [tot]):
                 bad.append('split_caps.regen 各项和 total_pct 要是非负整数')
-            elif sum(parts) != tot or tot != 45:
-                bad.append('split_caps.regen 各线之和要等于 total_pct=45（九.7甲）：%s' % reg)
+            elif sum(parts) != tot or tot != 81:
+                bad.append('split_caps.regen 各线之和要等于 total_pct=81（九.7甲＋Kyo 11-26 事项81 长生宝珠 45）：%s' % reg)
         di = sc.get('def_ignore', {})
         if isinstance(di, dict):
             if di.get('percent_pen_ratio') != 4 or di.get('percent_pen_cap_pct') != 15:

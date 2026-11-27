@@ -1722,15 +1722,15 @@ static func actor_element_rate(a: XActor, e: int) -> float:
 
 
 ## 天启篇我方每回合自动回复分线封顶（XTianqiAffixBattle.xparam(a, 7, value) 调；九.7甲）：
-## 词条 ≤15% ＋ 长生宝珠 ≤9% ＋ 回复套（全身只算一套）≤5% ＋ 恢复光环 ≤6% ＋ 角色自带 ≤10% ＝ 合计 ≤45%；
+## 词条 ≤15% ＋ 长生宝珠 ≤45%（Kyo 11-26 事项81：五阶每颗 15%、三颗封顶 45%；原九.7甲为 9%）＋ 回复套（全身只算一套）≤5% ＋ 恢复光环 ≤6% ＋ 角色自带 ≤10% ＝ 合计 ≤81%；
 ## 负再生（中毒／灼烧／流血等）完整保留、不折。心之钢回合末是另一路，不经这里。
 static func cap_actor_hrg(a: XActor, base_v: float, affix_hrg_pct: float, suit_hrg_pct: float, aura_hrg_pct: float) -> float:
 	var cap_affix := split_cap_regen("affix_pct", 15.0)
-	var cap_orb := split_cap_regen("orb_pct", 9.0)
+	var cap_orb := split_cap_regen("orb_pct", 45.0)
 	var cap_suit := split_cap_regen("suit_pct", 5.0)
 	var cap_aura := split_cap_regen("aura_pct", 6.0)
 	var cap_actor := split_cap_regen("actor_pct", 10.0)
-	var cap_total := split_cap_regen("total_pct", 45.0)
+	var cap_total := split_cap_regen("total_pct", 81.0)
 	var dm := _dropped_orbs_map(a)
 	var neg_sum := 0.0
 	var orb_pos := 0.0

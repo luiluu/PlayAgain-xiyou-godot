@@ -6,7 +6,7 @@ extends Node
 ## 3. 4 件整系免疫武器（94/2021/2022/2023）折 −30%、固定抗性每系 −30%、限时无敌保留、双系抗并各自一系取大
 ## 4. 旧百分比穿透 4:1 转无视防御 ≤15%（仅牌局开打敌）、无视防御合计上限 40%（杰作无我 45%，含狂妄穿透 21②，不截角色技能自带无视防）、
 ##    固定穿透改文案（help_card／guide）、首领机制免伤不吃穿透（附表二 6 情形＋四格＋西游档）
-## 5. 每回合自动回复各线合计 45%（词条 15＋宝珠 9＋回复套 5＋光环 6＋自带 10），负再生不折
+## 5. 每回合自动回复各线合计 81%（词条 15＋长生宝珠 45［Kyo 11-26 事项81］＋回复套 5＋光环 6＋自带 10），负再生不折
 ## 6. 五个搭配中的 1（不死队）／3（单件四步）／4（双动多段斩杀）／5（词条配法）实跑记录
 ## 7. 只改天启篇，西游档零改动（XTianqi.active 守卫）
 ## 8. T529 核 P2-1：suit_mult 记进 breakdown.row.suit、XTianqiLedger.pools residual.suitMultiplier 与 audit
@@ -521,7 +521,7 @@ func _test_4_penetration_def_ignore_and_text() -> void:
 	lg.end_battle(0)
 
 
-# ---- 5. 每回合自动回复各线合计 45%（九.7甲），负再生不折 ----
+# ---- 5. 每回合自动回复各线合计 81%（九.7甲＋Kyo 11-26 事项81 长生宝珠 45%），负再生不折 ----
 func _test_5_regen_45_pct() -> void:
 	var lg := _logic(true)
 	var s := lg.state
@@ -534,7 +534,7 @@ func _test_5_regen_45_pct() -> void:
 	s.battle_slots[0] = 113
 	_clear_equips(cat_actor)
 	_check("t5_actor_innate_hrg_capped_10", _near(cat_actor.hrg, 0.10), cat_actor.hrg)
-	# 满五线超配：词条 8×8%=64%(→15%) + 长生宝珠 3×6%=18%(→9%) + 2 回复套 10%(→5%) + 恢复光环 6%(→6%) + 自带 30%(→10%) = 45%
+	# 满五线超配：词条 8×8%=64%(→15%) + 长生宝珠 3×20%=60%(→45%) + 2 回复套 10%(→5%) + 恢复光环 6%(→6%) + 自带 30%(→10%) = 81%
 	var orig_tpl := XTianqiSuits.template_table().duplicate(true)
 	var test_tpl := orig_tpl.duplicate(true)
 	test_tpl["suits"]["167"] = {"kind": "func_regen", "name": "测试回复套A"}
@@ -547,7 +547,7 @@ func _test_5_regen_45_pct() -> void:
 			"tianqi_affixes": [_x("hrg", 4, "perfect")],
 			"equipment": {"suits": [167 if i < 4 else 168]}}
 		if i < 3:
-			it["traits"] = [{"code": 22, "dataId": 7, "value": 0.06, "_codexOrb": "changsheng:%d" % i}]
+			it["traits"] = [{"code": 22, "dataId": 7, "value": 0.20, "_codexOrb": "changsheng:%d" % i}]
 		full_items.append(it)
 	_put_equips(cat_actor, full_items)
 	# 给队友装 6% 恢复光环
@@ -557,11 +557,11 @@ func _test_5_regen_45_pct() -> void:
 	lg.actors[0] = cat_actor
 	XTianqiAffixBattle.start(lg)
 	cat_actor.read_touch()
-	_check("t5_regen_five_lines_total_45", _near(cat_actor.hrg, 0.45), cat_actor.hrg)
-	# 挂中毒状态 4 (-10% hrg) → 0.45 - 0.10 = 0.35（负再生不折）
+	_check("t5_regen_five_lines_total_81", _near(cat_actor.hrg, 0.81), cat_actor.hrg)
+	# 挂中毒状态 4 (-10% hrg) → 0.81 - 0.10 = 0.71（负再生不折）
 	cat_actor.add_state(4)
 	cat_actor.read_touch()
-	_check("t5_neg_regen_preserved", _near(cat_actor.hrg, 0.35), cat_actor.hrg)
+	_check("t5_neg_regen_preserved", _near(cat_actor.hrg, 0.71), cat_actor.hrg)
 	cat_actor.remove_state(4)
 	XTianqiSuits.reload_template({})
 	lg.end_battle(0)

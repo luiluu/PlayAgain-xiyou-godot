@@ -35,7 +35,7 @@
    "orb": {
     "name": "宝珠",
     "element_pct": 30,
-    "hrg_pct": 9
+    "hrg_pct": 45
    },
    "runeword": {
     "name": "符文之语",
@@ -77,11 +77,11 @@
   },
   "regen": {
    "affix_pct": 15,
-   "orb_pct": 9,
+   "orb_pct": 45,
    "suit_pct": 5,
    "aura_pct": 6,
    "actor_pct": 10,
-   "total_pct": 45
+   "total_pct": 81
   },
   "def_ignore": {
    "percent_pen_ratio": 4,
