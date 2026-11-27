@@ -1,7 +1,7 @@
 # 交付：luiluu/t566
 
 - 车道／工作者：T566 天启篇状态说明接通（cc，Sonnet＋medium，P6）
-- 状态：返修 R2 进行中
+- 状态：可合并
 
 ## 变更记录草稿
 
@@ -42,6 +42,7 @@
 
 ## 可优化（流程／工具／效率）
 
+- `云端选测.py run` 在车道合并 main 之后，默认基准可能选到本车道上一次的交付提交，把 main 的改动算进来（本次变成整轮 832 个场景）。车道合过 main 后用 `--base <合进来的 main 提交>`；脚本可考虑自动取两者里改动更少的。
 - 建议：`天启篇数据校验.py` 或专项以后可直接查「写了 state_note 的状态，运行时记录里要有」（本单专项 `xiyou_tianqi_t566` 已覆盖，无需另做）。
 
 ## 待小A 审（本单没改句子）
@@ -63,15 +64,20 @@
 2. ✓ 西游档零改动（专项比对记录；缓存串档有回归）。
 3. － 文字审：待小A。
 
-截图（`00_项目管理/交付截图/luiluu_t566/`）：state_560、state_706、state_848、state_854、state_902、state_1099、state_1819、state_2554、state_2733、state_10808（.png）。重截命令见 `tests/t566_shots.gd` 文件头。
+截图（`00_项目管理/交付截图/luiluu_t566/`）：state_560、state_706、state_848、state_854、state_902、state_1099、state_1819、state_2499、state_2554、state_2733（.png）。重截命令见 `tests/t566_shots.gd` 文件头。
 
 ## 测试
 
-- 本机：`xiyou_tianqi_t566` 10/10；同批跑过 `xiyou_tianqi_t528`、`xiyou_party_status_panel`、`xiyou_side_status_order`、`xiyou_boss_status`、`xiyou_tianqi_pool_text`、`xiyou_tianqi_qishi_states`、`xiyou_tianqi_skills` 均通过。
-- `测试天启篇数据校验.py` 163/163；`天启篇数据校验.py` 退出码 0；`语法检查.py` 0 问题；`工具回归.py` 全部通过；`发行空壳.py check` 退出码 0。
-- 云端选测：通过，提交 d420f0c842，95 个场景、16 片，`gh run watch` 前台等到完成，https://github.com/luiluu/PlayAgain-xiyou-godot/actions/runs/45931241424
+R2（合并 main 6f562c9d7 之后的 bb865a673）：
+- 本机：`xiyou_tianqi_t566` 19/19。合并前同批跑过 `xiyou_tianqi_t528`、`xiyou_party_status_panel`、`xiyou_side_status_order`、`xiyou_boss_status`、`xiyou_tianqi_pool_text`、`xiyou_tianqi_qishi_states`、`xiyou_tianqi_skills`、`xiyou_tianqi_elements`、`xiyou_vegeta_tune`、`xiyou_state_effects`、`xiyou_determinism`，全过；合并后复跑 t566、状态窗、状态格顺序三项。
+- 反向验证：撤掉 `r.name`、`r.tianqiKind` 两行赋值，t566 得 13/19（人问 2499、封弊 1519 从状态列表消失，页签和名字几项红），还原后全过。
+- `测试天启篇数据校验.py` 164/164；`天启篇数据校验.py` 退出码 0（合并前跑）；`语法检查.py` 0 问题（合并前跑）；`工具回归.py` 全部通过；`发行空壳.py check` 退出码 0。
+- 截图：`t566_shots.tscn` 带窗口、`--audio-driver Dummy`，10/10；抽看了 2499、1819、902。
+- 新说明里的实战数值按代码核对（预编译效果程序、`FIX_*` 开关、`XVegetaTune`、`XExtDot`），2561 的 ×0.5 另有 `xiyou_vegeta_tune`；其余没有逐条开战实打。
+- 云端选测：通过，提交 bb865a673e，基准 6f562c9d7，95 个场景、4 片，`gh run watch` 前台等到完成，https://github.com/luiluu/PlayAgain-xiyou-godot/actions/runs/45947040510 。第一次默认基准落在 17fd2baff，把合进来的 main 改动算成整轮，已取消，改用 `--base 6f562c9d7` 重跑。
 
 ## 本分支提交
 
 - c6b15e662 WIP：专项（先红）＋状态格缓存分模式＋截图工具
 - d420f0c84 默认接通＋三招目标栏＋布尔校验＋截图
+- b0d3063a2 R2：名字进运行时、说明按实战、天启篇异常页签；bb865a673 合并 main
