@@ -1,0 +1,21 @@
+T533_NONCARD|7|茉蕾|2797|强化·嘤嘤嘤|magical|pure/|250 + a.mat * 5 - (0 * 1.2)
+T533_NONCARD|13|刘备|543|三英合击|physical|pure/|0
+T533_NONCARD|72|阿语|5514|仪式:长梦|physical|pure/|1000
+T533_NONCARD|89|虎姐|5933|独立宣言|physical|pure/|
+T533_NONCARD|146|苍龙破晓|10092|雷霆天罚*诛灭|mixed|module/canglong|(a.mmp+a.mhp+a.atk+a.mat+a.def+a.mdf+a.agi+a.luk)*85000*(1+a
+T533_NONCARD|146|苍龙破晓|10093|玉玺禁章【亢龙乘天怒飞潮】|mixed|module/canglong|(a.atk+a.mat)*(1+user.skillMasteryLevel(item.id))*5000*(1+a.
+T533_NONCARD|146|苍龙破晓|10094|天子御龙篇【惊鸿血浪龙腾云】|mixed|module/canglong|(a.atk+a.mat)*(1+user.skillMasteryLevel(item.id))*5000*(1+a.
+T533_NONCARD|146|苍龙破晓|10095|天子御龙篇【惊鸿乘云龙飞霄】|mixed|module/canglong|(a.atk+a.mat+a.luk)*(1+user.skillMasteryLevel(item.id))*3200
+T533_NONCARD|146|苍龙破晓|10096|苍龙御宇【逐道】|mixed|module/canglong|(a.atk+a.mat+a.luk)*a.tp*1000*(1+a.level*a.level*0.02)
+T533_NONCARD|152|北凉柿子|9987|剑一|physical|pure/|5000000
+T533_NONCARD|152|北凉柿子|9988|剑二|physical|pure/|20000000
+T533_NONCARD|152|北凉柿子|9989|剑三|physical|pure/|100000000
+T533_NONCARD|152|北凉柿子|9990|剑四|physical|pure/|1000000000
+T533_NONCARD|152|北凉柿子|9991|剑五|physical|pure/|5000000000
+T533_NONCARD|152|北凉柿子|9992|剑六|physical|pure/|30000000000
+T533_NONCARD|152|北凉柿子|9993|剑七|physical|pure/|150000000000
+T533_NONCARD|152|北凉柿子|9994|剑八|physical|pure/|1000000000000
+T533_NONCARD|156|嫦娥|10034|千倍反伤|physical|pure/|11111111
+T533_NONCARD|175|谷雨|10292|一念花开，万象归春|magical|pure/|0
+T533_NONCARD|180|5t5|10640|虚式「茈」·收|magical|module/gojo|XGojo(a,b,10640)
+T533_NONCARD|180|5t5|10641|虚式「茈」·放|magical|module/gojo|XGojo(a,b,10641)

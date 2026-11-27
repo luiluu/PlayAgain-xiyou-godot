@@ -10,6 +10,9 @@ extends RefCounted
 const ACTIVE := [2, 3, 4, 5, 6, 7, 8, 9, 11, 12, 13, 14, 15]
 ## T449 回退开关：false＝回到 O-433 起 DECK 下物理招读无属性 0 增伤（物理增伤白写）
 static var PHYS_AMP_ON_DECK := true
+## T533（预算稿 v0.16 七.4／九.17，D290）：天启篇走角色卡公式的招，防御通过率按这一招的主属性算（原来一律拿物攻、魔攻算，吃生命／防御的招被压两遍）。
+## 主属性值＝卡上权重加权平均 Σ(权重×属性)÷hit_weight（生命、魔法上限按标准线 ÷25 折，同 XTianqiSkills.hit_weight；协调 11-27 定 A）。回退：false＝照旧拿物攻／魔攻。
+static var MAIN_STAT_PASS := true
 static var _formulas := {}
 
 
@@ -220,14 +223,83 @@ static func defense_rate(attack: float, defense: float) -> float:
 	var d := maxf(0.0, defense)
 	return 1.0 if a + d == 0.0 else maxf(0.05, a / (a + d))
 
-## 防御通过率＋物魔伤害乘区（T530 抽成独立接口，供后续 T533 按主属性算防御通过率直接接）
-static func _calc_defense(a: XBattler, b: XBattler, mode: String, kind: String, weights: Array, frame: Dictionary, phys_rate: float, mag_rate: float) -> float:
+## 防御通过率＋物魔伤害乘区（T530 抽成独立接口）。pass_att＝[物理侧攻击值, 魔法侧攻击值]，空＝照旧 a.atk／a.mat（T533 主属性见 pass_attack）
+static func _calc_defense(a: XBattler, b: XBattler, mode: String, kind: String, weights: Array, frame: Dictionary, phys_rate: float, mag_rate: float, pass_att: Array = []) -> float:
+	var pa: float = float(pass_att[0]) if pass_att.size() == 2 else a.atk
+	var ma: float = float(pass_att[1]) if pass_att.size() == 2 else a.mat
 	var defense := 1.0
 	if not ["true", "fixed", "percent"].has(kind):
-		defense = weights[0] * defense_rate(a.atk, b.def * maxf(0.0, phys_rate)) + weights[1] * defense_rate(a.mat, b.mdf * maxf(0.0, mag_rate))
+		defense = weights[0] * defense_rate(pa, b.def * maxf(0.0, phys_rate)) + weights[1] * defense_rate(ma, b.mdf * maxf(0.0, mag_rate))
 	if mode == "mixed" and kind == "normal":
-		return weights[0] * defense_rate(a.atk, b.def * maxf(0.0, phys_rate)) * float(frame.physicalDamageMultiplier) + weights[1] * defense_rate(a.mat, b.mdf * maxf(0.0, mag_rate)) * float(frame.magicalDamageMultiplier)
+		return weights[0] * defense_rate(pa, b.def * maxf(0.0, phys_rate)) * float(frame.physicalDamageMultiplier) + weights[1] * defense_rate(ma, b.mdf * maxf(0.0, mag_rate)) * float(frame.magicalDamageMultiplier)
 	return defense * (weights[0] * float(frame.physicalDamageMultiplier) + weights[1] * float(frame.magicalDamageMultiplier))
+
+
+## T533：这一招算防御通过率用的攻击值 [物理侧, 魔法侧]；不改的返回 []（照旧 a.atk／a.mat）。
+## 只管走角色卡公式的招（damage.formulaProgram＝XTianqiSkills 模块，或 T553 我方 1 号普攻），天启篇档、MAIN_STAT_PASS 开；原版公式、西游档一律 []。
+## 两侧同一个主属性值：物理招对物防、魔法招对魔防仍由 mode 的权重决定（魔法 mode 只吃物攻的招＝物攻对魔防，协调 11-27 确认）。
+static func pass_attack(item: Dictionary, a: XBattler) -> Array:
+	if not MAIN_STAT_PASS or not XTianqi.active(XState.current):
+		return []
+	var d := card_damage_spec(item, a)
+	if d.is_empty():
+		return []
+	var v := main_stat_value(d, a)
+	return [v, v]
+
+
+## T533：走角色卡公式的招在卡上的 damage 段（玛莎 stat_swap 已换好）；不是卡公式返回 {}。T534 等后续卡要判「卡公式招」可直接用
+static func card_damage_spec(item: Dictionary, a: XBattler) -> Dictionary:
+	var d := {}
+	if XTianqiSkills.attack1_applies(item, a):
+		d = XTianqiSkills.ATTACK1_SPEC.damage
+	else:
+		var program: Dictionary = item.get("damage", {}).get("formulaProgram", {})
+		if str(program.get("status", "")) != "module" or program.get("module") != XTianqiSkills.MODULE:
+			return {}
+		var sp := XTianqiSkills.spec(int(item.get("id", 0)))
+		if sp.has("heal") or not sp.get("damage") is Dictionary:
+			return {}
+		d = sp.damage
+	var wp := XTianqiWeakAffix.proj_of(a, int(item.get("id", 0)))
+	if wp.has("stat_swap"):
+		d = d.duplicate()
+		d.stats = XTianqiWeakAffix.swap_stats(d.get("stats", {"atk": 1}), wp.stat_swap)
+	return d
+
+
+## T533：主属性值。method "A"（产品口径）＝Σ(权重×属性)÷hit_weight；"B"（只给对照表）＝折算后权重最大的那一项 ÷ 折算倍数（并列物攻、魔攻优先）。
+## 生命、魔法上限的折算倍数读标准线 hp_mult／mp_mult（默认 25），max_of（露丝）记成权重 1 的一项，值取几项里最高的。
+static func main_stat_value(d: Dictionary, a: XBattler, method := "A") -> float:
+	var l: Dictionary = XTianqiBase.line_data().get("line", {})
+	var stats: Dictionary = d.get("stats", {"atk": 1})
+	var terms := []  # [名, 原始权重, 折算倍数, 属性值]
+	for k in stats:
+		var m := 1.0
+		if str(k) == "mhp":
+			m = float(l.get("hp_mult", 25))
+		elif str(k) == "mmp":
+			m = float(l.get("mp_mult", 25))
+		terms.append([str(k), float(stats[k]), m, float(a.param(XTianqiSkills.STATS.find(str(k))))])
+	if d.has("max_of"):
+		var hi := 0.0
+		for k in d.max_of:
+			hi = maxf(hi, float(a.param(XTianqiSkills.STATS.find(str(k)))))
+		terms.append(["max_of", 1.0, 1.0, hi])
+	if method == "B":
+		var best: Array = []
+		for t in terms:
+			if t[1] <= 0.0:
+				continue
+			if best.is_empty() or t[1] * t[2] > best[1] * best[2] or (t[1] * t[2] == best[1] * best[2] and t[0] in ["atk", "mat"] and not best[0] in ["atk", "mat"]):
+				best = t
+		return a.atk if best.is_empty() else float(best[3]) / float(best[2])
+	var num := 0.0
+	var den := 0.0
+	for t in terms:
+		num += float(t[1]) * float(t[3])
+		den += float(t[1]) * float(t[2])
+	return a.atk if den <= 0.0 else maxf(0.0, num / den)
 
 
 ## 承伤率（T530 抽成独立接口，供后续 T534 必中招承伤率直接接）
@@ -343,7 +415,8 @@ static func _calculate(item: Dictionary, a: XBattler, b: XBattler, options := {}
 	var weights := [0.0, 1.0] if mode == "magical" else [1.0, 0.0]
 	if mode == "mixed":
 		weights = _mixed_weights(item, a, b, vars)
-	var defense := _calc_defense(a, b, mode, kind, weights, frame, float(frame.physicalDefenseRate), float(frame.magicalDefenseRate))
+	var pass_att := pass_attack(item, a)  # T533：卡公式招按主属性算通过率（空＝照旧物攻／魔攻）
+	var defense := _calc_defense(a, b, mode, kind, weights, frame, float(frame.physicalDefenseRate), float(frame.magicalDefenseRate), pass_att)
 
 	var race := _race_factors(a, b)
 	if race.multiplier != 1.0 and XTianqiLedger.pool_on("POOL_ENEMY_RACE"):  # 伤害加成总账期二：<EnemyRaceBo> 进③
@@ -417,7 +490,7 @@ static func _calculate(item: Dictionary, a: XBattler, b: XBattler, options := {}
 			if no_enemy_flat and a is XActor and not ["true", "fixed", "percent"].has(kind):
 				def_info = XTianqiLedger.def_ignore_summary(a, b, oe if oe > 0 else e, frame, report.trace, facts)
 				if bool(def_info.get("active", false)):
-					cand_defense = _calc_defense(a, b, mode, kind, weights, frame, float(def_info.eff_p_rate), float(def_info.eff_m_rate))
+					cand_defense = _calc_defense(a, b, mode, kind, weights, frame, float(def_info.eff_p_rate), float(def_info.eff_m_rate), pass_att)
 			var match_rate: float = 1.0 if kind == "true" or tq_elem else matchup(e, affinity(b))
 			var bonus: float = 1.0 if frame.noElement or (not originals.is_empty() and oe <= 0) else _module_element_bonus(a, oe, frame)
 			var flat_element := 0.0 if frame.noElement or (not originals.is_empty() and oe <= 0) else _sum_yep(a, "elementAmplifyN", oe, _yep_objects(a))
