@@ -51,7 +51,7 @@ static func _kind_of(logic, e, line: String) -> String:
 
 
 static func seen(line: String, kind: String, tier: String) -> bool:
-	return XConfig.tianqi_aliens().has(key(line, kind, tier))
+	return XTestMode.book_all() or XConfig.tianqi_aliens().has(key(line, kind, tier))
 
 
 ## 种类的名字（各线表 alien.kinds）

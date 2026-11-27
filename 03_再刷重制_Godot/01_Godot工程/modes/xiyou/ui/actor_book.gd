@@ -507,7 +507,7 @@ static func list_row_ops(id: int, s: Dictionary, y: float, measure: Callable) ->
 	var color := XUI.text_color(14) if t == 4 else XUI.text_color(3) if t >= 1 and t <= 3 else XUI.text_color(6)
 	var lw: float = measure.call(label, XUI.FONT_SIZE)
 	ops.append(_t(label, 6, y, lw + 8, color))
-	var preview := id in PREVIEW_ACTORS and not known_skill_ids(id).has(sid)
+	var preview := id in PREVIEW_ACTORS and not XTestMode.book_all() and not known_skill_ids(id).has(sid)
 	var pw: float = measure.call("未解锁", XUI.FONT_SIZE) + 8 if preview else 0.0
 	_item_name(ops, s, 6 + lw + 4, y, w - lw - 4 - pw)
 	if preview:

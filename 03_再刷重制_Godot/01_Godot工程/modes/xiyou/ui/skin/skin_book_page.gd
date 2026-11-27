@@ -443,7 +443,7 @@ static func inlay_row(r: Dictionary, kind: int) -> Dictionary:
 ## 人物技能详情一行：图标＋名字（品质色）、类型小标；没学会的（特殊角色）变灰、行尾「未解锁」
 static func skill_row(id: int, s: Dictionary, known: Array) -> Dictionary:
 	var row := {"text": str(s.get("name", "")), "icon": int(s.get("iconIndex", 0)), "color": XQuality.list_color(s), "tags": [{"text": skill_type(id, s), "color": XUiSkin.TEXT_2}]}
-	if id in XActorBook.PREVIEW_ACTORS and not known.has(int(s.id)):   # 同旧页 list_row_ops 的 preview
+	if id in XActorBook.PREVIEW_ACTORS and not XTestMode.book_all() and not known.has(int(s.id)):   # 同旧页 list_row_ops 的 preview
 		row["disabled"] = true
 		row["right"] = T_LOCKED
 		row["right_color"] = XUiSkin.TEXT_3

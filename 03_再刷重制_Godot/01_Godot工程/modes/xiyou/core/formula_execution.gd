@@ -40,6 +40,8 @@ static func _run_item(item: Dictionary, a: XBattler, b: XBattler, variables, swi
 	var status := str(program.get("status", "unsupported"))
 	if str(item.get("damage", {}).get("formula", "")).begins_with("CodexHeartsteel.damage("):  # 巨人吞噬 10227／10228（XHeartsteel.formula）
 		return {"available": true, "value": XHeartsteel.formula(a, b), "diagnostic": "", "effectJournal": [], "results": {}, "executed": execute}
+	if XTianqiSkills.attack1_applies(item, a):  # T553：天启篇我方 1 号普攻＝物攻 ×1 × 等级缩放（敌人照旧，ATTACK1 回退）
+		return {"available": true, "value": XTianqiSkills.attack1_formula(a, b, item), "diagnostic": "", "effectJournal": [], "results": {}, "executed": execute}
 	if status == "module" and program.get("module") == XTianqiSkills.MODULE:  # 天启篇全角色技能重构（XTianqiSkills.formula）
 		var tq := XTianqiSkills.formula(a, b, item)
 		if execute:
