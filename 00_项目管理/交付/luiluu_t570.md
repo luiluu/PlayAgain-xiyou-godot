@@ -113,3 +113,4 @@
 
 - 测试（本机 `--headless --audio-driver Dummy`）：`xiyou_tianqi_t570` 39/39、`xiyou_tianqi_t566` 19/19、`xiyou_tianqi_skills` 248/248、`xiyou_state_effects` 32816/32816、`xiyou_boss_status` 46/46、`xiyou_vegeta_tune` 41/41、`xiyou_smart_ai_revive` 85/85；`测试天启篇数据校验.py` 全过、`天启篇数据校验.py` 退出 0、`语法检查.py` 0 问题、`发行空壳.py check` 退出 0。
 - 西游档零改动：`battler.gd`／`state_effects.gd` 新分支只认天启篇改写表才有的 `once_per_fall`、`cast_grant`；`xy.records_untouched`、`xy.*` 实测照旧。
+- 云端选测（R1）：通过，提交 4687f7726，基准 3b93fbb34，290 个场景、16 片，`gh run watch` 等到完成，https://github.com/luiluu/PlayAgain-xiyou-godot/actions/runs/45986007374 。
