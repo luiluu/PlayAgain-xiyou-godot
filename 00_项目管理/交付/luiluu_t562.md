@@ -80,6 +80,10 @@
 - R4（小o R3 复核 P1-1）：`text_fix.gd` 的 `actor_nickname` 在天启档多认一种：整串等于完整西游默认称号（按 Actors 表现值经 `actor_nickname_in` 两向换算）时显示天启篇默认称号，修「丢你蕾姆」「狂龙刀法·南宫恨」「独门武学·南宫恨」三条；存值不改，含原称号的长自订照旧原样，西游档 `tq_on()` 为假直接返回、零改动。
 - R4 本机：`xiyou_text_fix` 103/103（新增 t562r4 热读、冷读、长自订三条；撤掉修复时 101/103，两条 t562r4 失败）。
 - R4 云端选测第八轮（9edffc62f，基准 fe7421ae5）：37 个场景、3 片，全部通过。https://github.com/luiluu/PlayAgain-xiyou-godot/actions/runs/45982982439
+- 合并 main（3c8389600，58a64cf16，cc Sonnet＋medium）：只有 `skill_rework.json` 冲突 2 处，按字段取并集——10619 的免疫列表、1539／1157／1158 的 `state_kind` 与 1539 的 `state_note` 取 main；10072、10737 的新名与 10737 描述、1538「不摇碧莲进阶」取本分支。全表按字段三方复核 0 处不符。
+- 合并后本机（Godot 带 `--audio-driver Dummy`）：`天启篇数据校验.py` 退出码 0、单测 169 个 OK、`工具回归.py` 全过、语法检查 1256 个 .gd 0 问题；专项 14 个场景（含 `xiyou_text_fix`）13 过，`xiyou_tianqi_t566` 18/19。
+- 云端选测第九轮（58a64cf16，基准 e736c4121，整轮）：834 个场景、16 片，只有 `xiyou_tianqi_t566` 失败（同一条）。https://github.com/luiluu/PlayAgain-xiyou-godot/actions/runs/45987069920
+- **t566 的红是 main 自带的**：`xiyou_untouched_272 [908]`。T563 让西游档经 `XXiyouNerf` 改写状态 908（混元大成），T566 专项仍断言西游档状态与原表逐条一致。把工程里改过的文件换回 main 版本实跑，同样 18/19。本单按「不改别的」没动。
 - 截图：没截（本单验收不要求；名字由 xiyou_text_fix 两档断言覆盖）。
 
 ## 本分支提交
