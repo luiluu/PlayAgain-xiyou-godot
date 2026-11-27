@@ -1,7 +1,13 @@
 # 交付：luiluu/t530
 
 - 车道／工作者：T530 总账改造核心（v0.16 N07）／小A（Antigravity，前半）→ cc（Opus＋medium，P8，续做收尾）
-- 状态：可合并（R2 返修后，云端结果见「测试」）
+- 状态：可合并（R4 返修后，云端结果见「测试」）
+
+## R4 局部热修（cc，Opus＋medium，按小o R4 核查报告 P2-8，只修这一处）
+
+- **P2-8**：R3 在共用 `battler.gd` 清 `state_origins` 让西游档回归：敌人挂天虎令气伤（1341）、React 缓存变热后被战斗事件 334 `enemy_recover_all` 清状态，热缓存仍跑 1341 React，施加者被抹掉回退成持有者，气伤变大。修：`XBattler.clear_states` 清来源、`_add_state` 无施加者新挂清旧来源，两处都加 `XTianqi.active(XState.current)` 守卫；西游档完全回到 T530 之前语义，天启篇照 R3。
+- 回归专项 `xiyou_caocao_tianhu_states` 加 3 条（小o 原复现场景参数没留下，按协调口径用自搭场景）：**场景**＝`_make_xiyou(30)`、Troops 2 首敌（`elite_roll` 100，mhp 7500）、天虎 `s.actor(104)` 不带法宝、熟练度 7485＝0；天虎施加 1341 → 普攻（Skills 1）第一击（缓存冷，不出气伤）→ `param_refresh` 让 React 缓存变热（snapshot 含 1341、不 dirty）→ `enemy_recover_all(0)` → 回满 HP → 第二击普攻。断言：①缓存冷→热、334 后状态已清但热缓存仍含 1341；②施加者仍是天虎，第二击气伤 275、该击总扣血 354；③同场景强制抹掉施加者时数值不同（实测 3763／3842）。期望值 275／354 取 T530 分叉点 `8a807d7cf` 的 modes 同场景实跑（39/39 过），与修后逐数相同；R3 代码（`7dc7a5da9`）同场景实跑得 3763／3842，断言②失败——断言抓得到这类回归。
+- 天启篇水之祝福重挂封 1.30 的断言（`xiyou_t530_ledger_core` 第 13 组）保留、照过。
 
 ## R3 局部热修（cc，Opus＋medium，按小o R3 核查报告，只修两条）
 
@@ -128,6 +134,10 @@
 读法：胜负在 18 对里全部一致；回合差 −2～+6（C31 种子 3 开着多 6 回合，D31 种子 1 多 3 回合），方向以「开着略慢」为主，和预期一致（敌人固定减伤清掉是加，词条封顶、旧穿透换成 ≤15% 无视防御是减）。每格只有 3 场，不足以下「哪档变难多少」的结论；T536 复量和 N04／N14 定 K 时照正式口径重量。耗时：开着和关着同档相差 ±10%（C 312s／338s，D 239s／235s，B 689s／644s），没看到明显性能退化（没单独测帧时）。
 
 ## 测试
+
+**R4 P2-8（cc）**
+- 本机（并行测试.py，headless 不出声）：`xiyou_t530_ledger_core` 59/59、`xiyou_caocao_tianhu_states` 39/39（新增 3 条）、`xiyou_state_effects` 32816/32816、`xiyou_dot` 2259/2259、`xiyou_boss_react` 9074/9074。
+- 云端选测：选测 223 个场景、12 片全过（提交 4bbb9b50a9；偶发 1 个 xiyou_gojo，并行失败、单跑通过，算通过）：https://github.com/luiluu/PlayAgain-xiyou-godot/actions/runs/45987934859
 
 **R3 P2-7（cc）**
 - 专项 `xiyou_t530_ledger_core`：59/59 过（第 13 组新增 1 条）。本机单跑（并行测试.py，headless，不出声）。
