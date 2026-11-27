@@ -300,6 +300,47 @@ func _run() -> void:
 		and cut_off > cut_on1 + 0.1 and absf(cut_on1 - cut_on2) < 1e-9,
 		[on1, off1, on2, cut_on1, cut_off, cut_on2])
 
+	# 七、小o 核 R2 P1-3：同底板、同镶嵌的两件武器，走装备页的 XEquipment.change 正常换装（不手清缓存），逐孔账指向新实例
+	# 找一个能正常穿上的组合：先试通用武器 1826，不行就用该角色开局武器的底板
+	var c: XActor = null
+	var wbase := 0
+	for aid in s.party:
+		var cand: XActor = s.actor(aid)
+		var cur = cand.equips[0]
+		for bid in [1826, int(cur.get("base", cur.get("id", 0))) if cur is Dictionary else 0]:
+			if bid > 0 and XEquipment.can_change(cand, 0) and XEquipment.fits(cand, 0, XGear.template("weapon", bid)):
+				c = cand
+				wbase = bid
+				break
+		if c != null:
+			break
+	var twins := []
+	var up_all := true
+	for tag in ["t532_wa", "t532_wb"]:
+		var wt := XGear.template("weapon", wbase)
+		wt["instanceId"] = tag
+		wt.upgradeSlots = 6
+		wt.originalUpgradeSlots = 6
+		s.gain_item(1026, 2)
+		s.gain_item(310, 1)
+		s.gear.append(wt)  # 先进背包：XGearUpgrade.apply 只镶自己持有的装备
+		up_all = up_all and XGearUpgrade.apply(s, wt, 1026) and XGearUpgrade.apply(s, wt, 1026) and XGearUpgrade.apply(s, wt, 310)
+		twins.append(wt)
+	var inst_of := func() -> Array:
+		var hs: Array = c.passive_cache().get("bySource", {}).get("enhanceHoles", [])
+		return hs.map(func(r): return str(r.instance))
+	var ch1 := XEquipment.change(s, c, 0, twins[0])
+	var ins_a: Array = inst_of.call()
+	var ch2 := XEquipment.change(s, c, 0, twins[1])
+	var ins_b: Array = inst_of.call()
+	var ch3 := XEquipment.change(s, c, 0, twins[0])
+	var ins_a2: Array = inst_of.call()
+	_check("t532_holes_follow_equip_change",
+		up_all and ch1 and ch2 and ch3 and is_same(c.equips[0], twins[0])
+		and ins_a == ["t532_wa", "t532_wa", "t532_wa"] and ins_b == ["t532_wb", "t532_wb", "t532_wb"]
+		and ins_a2 == ins_a,
+		[wbase, up_all, ch1, ch2, ch3, ins_a, ins_b, ins_a2])
+
 	# 四、西游档零改动
 	XState.current = null
 	var ws := _west_state()
