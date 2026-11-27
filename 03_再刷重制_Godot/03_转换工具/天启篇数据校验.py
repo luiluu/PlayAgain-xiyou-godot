@@ -14,7 +14,7 @@
 - summit.json（31～36 层重做）：只有 B 组，34～36 层齐全、台词齐全。
 - seg_alien.json（按段异化，四线共用）：只有 B 组，1～36 层段表连续不重叠、级名和难度键齐全、几率在 0～100。
 - qiyin_gear.json、qiyin_drop.json、qiyin_dragon.json、qiyin_altar.json（七印祭坛）：只有 B 组，印键只有七个、部位键只有六个、几率在 0～1、权重非负且不全为 0；qiyin_gear 另查类型号在 core/tianqi_gear.gd 的 ORDER 里、七套各 6 件、毕业武器 13 把、神器 5 件；跨表查另三张引用的套装、武器、神器、印、部位都在 qiyin_gear 里。只查表里现有的字段，不认识的键不报错。
-- skill_rework.json（全角色技能重构）：forced_copy_pending（T255 登记：技能号→原因）、forced_copy_unreachable（T261：副本分支天启篇走不到，技能号→原因）；卡里技能的效果 44 调公共事件强制放副本、副本没进卡的，要 effects_remove 或副本进卡或登记；只有 B 组，超强者 17（含五条悟）／强者 54 不重叠、技能行系数大于 0、覆盖层全开后系数和属性权重不得有小数（整数或整数百分比，T191）、治疗比例与追加几率在 0～1；技能行 tags（T519）只能填持续伤害／减益、不重复、只给主动招打；状态行 battle_end 是布尔（T263）；状态行 effects_remove 是布尔或阶段名列表（T528）；技能行 self_states_on_hit 只能是 true 且要带 self_states（T264）；技能行 cast_pick、seg_elements_of、伤害条件 stat_floor 的格式（T268）；角色自带入池上限（T528）：单条技能／状态与全库角色可同时生效合计的技能伤／元素伤每系／终伤 ≤+30%、爆伤 ≤+50%（共用进阶超越极限 1240/1241/1242/1244 单算）。
+- skill_rework.json（全角色技能重构）：forced_copy_pending（T255 登记：技能号→原因）、forced_copy_unreachable（T261：副本分支天启篇走不到，技能号→原因）；卡里技能的效果 44 调公共事件强制放副本、副本没进卡的，要 effects_remove 或副本进卡或登记；只有 B 组，超强者 17（含五条悟）／强者 54 不重叠、技能行系数大于 0、覆盖层全开后系数和属性权重不得有小数（整数或整数百分比，T191）、治疗比例与追加几率在 0～1；技能行 tags（T519）只能填持续伤害／减益、不重复、只给主动招打；状态行 battle_end 是布尔（T263）；状态行 effects_remove 是布尔或阶段名列表（T528）；状态行 state_note_append 是布尔（T566）、state_kind 只能是 异常／增益／常驻（T566）；技能行 self_states_on_hit 只能是 true 且要带 self_states（T264）；技能行 cast_pick、seg_elements_of、伤害条件 stat_floor 的格式（T268）；角色自带入池上限（T528）：单条技能／状态与全库角色可同时生效合计的技能伤／元素伤每系／终伤 ≤+30%、爆伤 ≤+50%（共用进阶超越极限 1240/1241/1242/1244 单算）。
 - reforge.json、alien_gear.json、abyss_shelves.json、qiyin_equip.json、qiyin_show.json、qiyin_dragon_run.json（重铸、异化装备、深渊商人货架、七印装备底子、七印演出、七首之龙流程）：只有 B 组，只查代码读的字段，类型和范围（几率 0～1、百分比 0～100、花费非负、随阶／随级不降、颜色 #RRGGBB、能力值 8 项）；跨表查货架的层和阶在 affix_table、品质在 tianqi_affix_roll.gd 的 QUALITY_KEYS、异化词条在 rewards.json 的 finale.lines、七印装备的部位和武器类型与 qiyin_gear 对得上、演出的印齐七个；参照表不在就跳过那一项。
 - brand.json（烙印，T073-a）：只有 B 组，节点递增且末项 100、配满加成不超过 0.5、不刻印封顶是节点之一且正好是 uncarved_max_realm 那境、换伤支四条且伤害＝承伤、常驻六条发作六种齐且 over 照节点、熟的花样名单是六种的子集且不含抽自己／六亲不认／换人、灼痕各级递增、首通加起来不超过 100 且每 5 层末等于节点、折法＝满了才算、带 _range 的数落在范围里。稿定的数带 4。realm 段（T514 境底＋境支）：七行境底、19 支、换伤支对 trade、别的支两项属性不带攻。
 - balance_table.json 的 guardian_phase4（守层者三表，T239）：hp_base／atk_scale／resist 层号 1～34、值为正；focus 层号 5～33、{skill: 正整数, scale: 正数[, single: 1]}（T363）。lifesteal_cap {skills: 正整数列表, pct: {五档难度键齐全: 正整数}}（T392）。dot_pct {层号 1～34: {状态号: 1～100 整数}}（T402）。hp_pct {层号 1～34: 1～100 整数}（T406）。
@@ -1280,6 +1280,10 @@ def skill_rework_rules(table: dict) -> list:
     for sid, row in table.get('states', {}).items():
         if isinstance(row, dict) and 'battle_end' in row and not isinstance(row['battle_end'], bool):
             bad.append('states/%s battle_end（战斗结束移除，T263）要是 true／false' % sid)
+        if isinstance(row, dict) and 'state_note_append' in row and not isinstance(row['state_note_append'], bool):
+            bad.append('states/%s state_note_append（原记录没有 <StateNote> 时补一段，默认补，T566）要是 true／false' % sid)
+        if isinstance(row, dict) and 'state_kind' in row and row['state_kind'] not in ('异常', '增益', '常驻'):
+            bad.append('states/%s state_kind（状态窗页签显式指定，T566）要是 异常／增益／常驻：%r' % (sid, row['state_kind']))
         if isinstance(row, dict) and 'effects_remove' in row:
             er = row['effects_remove']
             if not (isinstance(er, bool) or (isinstance(er, list) and er and len(set(er)) == len(er)

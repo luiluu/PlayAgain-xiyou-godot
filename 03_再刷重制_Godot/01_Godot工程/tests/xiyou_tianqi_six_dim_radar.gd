@@ -116,9 +116,12 @@ func _run() -> void:
 	var notes_prev := XTianqiActorNotes.ENABLED
 	XTianqiElements.ENABLED = false  # T482：元素效果开着时旧窗口多一行「角色属性」，这条只比六维开关，所以关着元素效果比
 	XTianqiActorNotes.ENABLED = false  # T556：天启篇全员备注开着时旧窗口多出统一备注，这条只比六维开关，所以关着备注比
+	var hide_prev: Array = XSkinBookPage.HIDE_ARMOR_TYPES
+	XSkinBookPage.HIDE_ARMOR_TYPES = []  # T571：天启篇不列防具「矢」，同上理由关着比
 	var off := XActorBook.status_ops(180, func(s, size): return XActorBook.js_width(s, size))
 	XTianqiElements.ENABLED = fx_prev
 	XTianqiActorNotes.ENABLED = notes_prev
+	XSkinBookPage.HIDE_ARMOR_TYPES = hide_prev
 	_check("book_disabled_equals_legacy", off == legacy)
 	XTianqiSixDim.ENABLED = true
 	# 四、状态页（新界面）

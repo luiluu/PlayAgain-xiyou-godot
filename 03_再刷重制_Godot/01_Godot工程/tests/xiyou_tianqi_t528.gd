@@ -196,7 +196,7 @@ func _test_1_r2_folds() -> void:
 	var c5635: Array = XTianqiSkills.spec(5635).damage.get("conds", [])
 	var c5636: Array = XTianqiSkills.spec(5636).damage.get("conds", [])
 	_check("t1_r2_folds",
-		int(r1181.get("scope", 0)) == 6 and str(r1181.get("note", "")).contains("对象:随机4个敌人")
+		int(r1181.get("scope", 0)) == 6 and str(r1181.get("note", "")).contains("对象:随机攻击四次，可重复命中同一敌人")
 		and c5635.size() == 1 and is_equal_approx(float(c5635[0].per), 0.004) and is_equal_approx(float(c5635[0].cap), 0.4)
 		and c5636.size() == 1 and is_equal_approx(float(c5636[0].per), 0.6) and is_equal_approx(float(c5636[0].cap), 0.4),
 		[r1181.get("scope"), c5635, c5636])

@@ -409,7 +409,7 @@ static func status_ops(id: int, measure: Callable) -> Array:
 		y += LH
 		var ids := []
 		for t in traits:
-			if int(t.code) == kind[0]:
+			if int(t.code) == kind[0] and not (kind[0] == 52 and XSkinBookPage.armor_hidden(int(t.dataId))):   # T571：天启篇不列「矢」
 				ids.append(int(t.dataId))
 		ids.sort()
 		# 类型表里没有的 ID（174 的武器类型 13 起）原版 drawText(undefined) 不画，但仍占位
