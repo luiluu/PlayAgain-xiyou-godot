@@ -4381,6 +4381,20 @@ def gear_elem_amp_rules(table: dict, rework: dict = None, gear_table: dict = Non
 
     check('表头 version', _is_int(table.get('version')) and table['version'] >= 1, table.get('version'))
     check('表头 source', _text(table.get('source')), table.get('source'))
+    # T532（v0.16 九.2＋D290）：防具本体元素伤全身合计上限；终态单件重排（final，ARMOR_FINAL 开关默认关）
+    final_tiers = {}
+    if table.get('version', 1) >= 2:
+        ac = table.get('armor_cap')
+        check('armor_cap', isinstance(ac, dict) and _is_int(ac.get('pct')) and 1 <= ac['pct'] <= 100 and '4' not in str(ac['pct']) and _text(ac.get('source')), ac)
+        fr = table.get('armor_final_rule')
+        ok_fr = isinstance(fr, dict) and _text(fr.get('source')) and isinstance(fr.get('tiers'), dict)
+        check('armor_final_rule', ok_fr, fr)
+        if ok_fr:
+            for tk, rng in fr['tiers'].items():
+                if not (str(tk).isdigit() and isinstance(rng, list) and len(rng) == 2 and all(_is_int(x) and x >= 1 and '4' not in str(x) for x in rng) and rng[0] <= rng[1]):
+                    bad.append('armor_final_rule.tiers[%s]＝%r：要 [下, 上] 避 4 正整数' % (tk, rng))
+                else:
+                    final_tiers[int(tk)] = rng
     w_caps = {1: 10, 2: 15, 3: 25, 4: 35, 5: 50}
     a_caps = {1: 7, 2: 10, 3: 13, 4: 18, 5: 20}
     w_floors = {1: 5, 2: 10, 3: 15, 4: 20, 5: 35}
@@ -4436,6 +4450,24 @@ def gear_elem_amp_rules(table: dict, rework: dict = None, gear_table: dict = Non
                 subs = v['subs']
                 if not isinstance(subs, list) or not all(isinstance(p, list) and (len(p) == 2 or (len(p) == 3 and p[2] == 're')) and all(isinstance(s, str) for s in p) for p in subs):
                     bad.append('%s[%s].subs：要是 [旧, 新] 字符串对或 [正则, 换成, "re"] 列表' % (sec, k))
+            if 'final' in v:
+                fv = v['final']
+                if kind != 'armor' or not isinstance(fv, dict) or not isinstance(fv.get('amp'), dict):
+                    bad.append('%s[%s].final：只给防具，要 {amp, subs?}' % (sec, k))
+                else:
+                    if set(map(str, fv['amp'].keys())) != set(map(str, amp.keys())):
+                        bad.append('%s[%s].final.amp 元素键要和 amp 一致' % (sec, k))
+                    rng = final_tiers.get(t)
+                    for ek, val in fv['amp'].items():
+                        if not (_is_int(val) and val >= 1 and '4' not in str(val) and (not _is_int(amp.get(ek)) or val <= amp[ek])
+                                and (rng is None or rng[0] <= val <= rng[1] or val == amp.get(ek))):
+                            bad.append('%s[%s].final.amp[%s]＝%r：要避 4 正整数、不高于 T451 值、在本档 %r 内' % (sec, k, ek, val, rng))
+                    fs = fv.get('subs')
+                    if fs is not None and not (isinstance(fs, list) and isinstance(v.get('subs'), list) and len(fs) == len(v['subs'])
+                                               and all(isinstance(p, list) and len(p) == len(q) and p[0] == q[0] and all(isinstance(x, str) for x in p) for p, q in zip(fs, v['subs']))):
+                        bad.append('%s[%s].final.subs：要与 subs 逐对同旧串、同形' % (sec, k))
+            elif table.get('version', 1) >= 2 and kind == 'armor':
+                bad.append('%s[%s]：version 2 起防具要有 final' % (sec, k))
             gkey = '%s:%s' % (kind, k)
             if gkey in rw_gear:
                 bad.append('%s 与 skill_rework.gear 重叠' % gkey)

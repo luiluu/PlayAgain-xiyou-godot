@@ -643,7 +643,8 @@ static func whitelisted(module: String, skill: int, field: String) -> bool:
 # ---- 来源分桶（第五节第 4 条（3）；T530 补系别法宝 fabao、强化 enhance 拆出单记）----
 const BUCKET_NAMES := {"secret": "秘籍格（功法、通用被动书）", "runeword": "符文之语", "orb": "宝珠", "equip": "原版装备", "race": "种族",
 	"hubris": "成长装备", "tianqi": "天启篇自己的", "actor": "角色自带、技能", "state": "状态", "suit": "原版套装", "zhenqi": "真气", "ally_state": "别人施加的状态（队友增益等）",
-	"fabao": "系别法宝", "enhance": "强化（符石／晶石／神文）", "advance": "超越极限（共用进阶）"}
+	"fabao": "系别法宝", "enhance": "强化（符石／晶石／神文）", "advance": "超越极限（共用进阶）",
+	"crystal": "强化·晶石（每孔元素伤 +5%，T532 拆单记，额度仍随强化桶）", "rune": "强化·神文（每孔元素伤 +1%，T532 拆单记，额度仍随强化桶）"}
 
 
 ## T530（v0.16 六.3）：这件装备是不是系别法宝（4543～4552＋8101／8102），从 equip 桶拆出单记
@@ -828,28 +829,48 @@ static func _scan_passive_obj(o: Dictionary) -> Dictionary:
 
 
 ## 装备镶嵌历史（upgrades）加的元素增幅（符石／晶石／神文等 op=="element" 项），用于老装备按来源重建
-static func upgrade_amplify(eq: Dictionary) -> Dictionary:
+## src：""＝全部（enhance 桶照旧合计，额度不变）；"crystal"／"rune"／"other"＝只取晶石／神文／其它材料那份（T532 按孔拆单记）
+static func upgrade_amplify(eq: Dictionary, src := "") -> Dictionary:
 	var out := {}
+	for h in upgrade_holes(eq):
+		if src != "" and str(h.src) != src:
+			continue
+		var k := str(h.element)
+		out[k] = float(out.get(k, 0.0)) + float(h.value)
+	return out
+
+
+## T532（预算稿 v0.16 附表四：晶石每孔 5、神文每孔 1）：镶嵌历史逐孔拆开，每一孔一行 {hole, item, src, element, value, cost}
+## src 按材料号段认：晶石 1025～1034、神文 306～314，其余记 other
+const CRYSTAL_ITEMS := [1025, 1034]
+const RUNE_ITEMS := [306, 314]
+static func upgrade_holes(eq: Dictionary) -> Array:
+	var out := []
 	if not (eq.has("kind") and str(eq.kind) in ["weapon", "armor"]):
 		return out
 	var kind := str(eq.kind)
+	var hole := 0
 	for u in eq.get("upgrades", []):
 		if not u is Dictionary:
 			continue
-		var item := XDB.rec("Items", int(u.get("item", 0)))
+		var iid := int(u.get("item", 0))
+		var item := XDB.rec("Items", iid)
+		var cost := int(u.get("cost", 1))
 		if item.is_empty():
+			hole += cost
 			continue
+		var src := "crystal" if iid >= CRYSTAL_ITEMS[0] and iid <= CRYSTAL_ITEMS[1] else ("rune" if iid >= RUNE_ITEMS[0] and iid <= RUNE_ITEMS[1] else "other")
 		for eff in XGearUpgrade.rule(item).get(kind, []):
 			if eff is Dictionary and str(eff.get("op", "")) == "element":
-				var k := str(int(eff.get("element", 0)))
-				out[k] = float(out.get(k, 0.0)) + float(eff.get("value", 0.0))
+				out.append({"hole": hole, "item": iid, "src": src, "element": int(eff.get("element", 0)), "value": float(eff.get("value", 0.0)), "cost": cost})
+		hole += cost
 	return out
 
 
 ## 被动缓存的按来源分桶：和 _refresh_passive_now 同一批对象、同样的扫描，求和前按对象的桶分开记。
 ## 返回 {globalHarmRi: {桶: 值}, critHarmRi, skillTypeDvup: {类型: {桶: 值}}, SkETypeHarmRi, skillPass: {技能: {桶: rate}}, passiveELUP: {元素: {桶}}, elementAmplify: {元素: {桶}}}
 static func passive_buckets(a, objs: Array) -> Dictionary:
-	var out := {"globalHarmRi": {}, "critHarmRi": {}, "skillTypeDvup": {}, "SkETypeHarmRi": {}, "skillPass": {}, "passiveELUP": {}, "elementAmplify": {}}
+	var out := {"globalHarmRi": {}, "critHarmRi": {}, "skillTypeDvup": {}, "SkETypeHarmRi": {}, "skillPass": {}, "passiveELUP": {}, "elementAmplify": {}, "enhanceSplit": {}}
 	# 期三九线封顶：秘籍格按本数封，所以秘籍桶再并排按本记一份（同样的形状，桶名 "#技能号"）
 	var books := {"globalHarmRi": {}, "critHarmRi": {}, "skillTypeDvup": {}, "SkETypeHarmRi": {}, "skillPass": {}, "passiveELUP": {}, "elementAmplify": {}}
 	for o in objs:
@@ -943,6 +964,7 @@ static func passive_buckets(a, objs: Array) -> Dictionary:
 			orb = orb2
 		if REBUILD_SOURCES and is_gear:
 			var enh := upgrade_amplify(o)
+			var enh_src := {} if enh.is_empty() else {"crystal": upgrade_amplify(o, "crystal"), "rune": upgrade_amplify(o, "rune"), "other": upgrade_amplify(o, "other")}
 			var rw_tpl := _runeword_template(o)
 			var rw_amp: Dictionary = rw_tpl.get("yep", {}).get("elementAmplify", {})
 			var base_b := _base_gear_bucket(o)
@@ -958,6 +980,10 @@ static func passive_buckets(a, objs: Array) -> Dictionary:
 					_add(out.elementAmplify, int(e), "orb", v_orb)
 				if absf(v_enh) > 1e-9:
 					_add(out.elementAmplify, int(e), "enhance", v_enh)
+					for src in enh_src:  # T532：enhance 桶的明细（晶石／神文按孔拆单记；额度照旧只看 enhance 合计）
+						var v_src := float(enh_src[src].get(ek, 0.0)) * sm
+						if absf(v_src) > 1e-9:
+							_add(out.enhanceSplit, int(e), src, v_src)
 				if absf(v_rw) > 1e-9:
 					_add(out.elementAmplify, int(e), "runeword", v_rw)
 		else:
