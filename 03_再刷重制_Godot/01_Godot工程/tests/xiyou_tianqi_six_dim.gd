@@ -1,6 +1,6 @@
 extends Node
 ## 天启篇六维只读模块（XTianqiSixDim，T275）专项：
-## 一、14 份读取准确（四骑士＋10 角色，含谷雨 175；T280 起角色六维是全员实测重算值）（字母、总分、韧性抗控、战商档）；全员表 156 人都在且字母合法。
+## 一、14 份读取准确（四骑士＋10 角色，含谷雨 175；T280 起角色六维是全员实测重算值；T558 重量后跟表；T558 R2 输出换炼狱口径后再跟表；T558 R3 含随机再放＋乘卡面条件倍率后再跟表，吕布输出 C→D；T558 R4 条件全中按合法配装、收行动收尾再放、三种子取中位后再跟表，吕布输出 D→C、马宝国 D→E）（字母、总分、韧性抗控、战商档）；全员表 156 人都在且字母合法。
 ## 二、没录的角色／敌人回中性；敌人模板继承与单只覆盖。
 ## 三、西游档、ENABLED＝false 全返回中性；权重表读取。
 
@@ -8,10 +8,10 @@ var results: Array = []
 
 const SIX := {
 	"knights": {"death": "S SS E B A E", "war": "S C SS D D B", "famine": "A C B SS A E", "plague": "D C D S B SS"},
-	"actors": {180: "S A B SS C E", 107: "A S C A S A", 168: "S A A A C B", 45: "D D S D E E", 174: "D B S A B A",
-		71: "E A B SS A C", 6: "D B C D E E", 31: "E A B C C SS", 60: "C E C E E E", 175: "S S C B B A"},
+	"actors": {180: "S A C SS C E", 107: "S A C A S A", 168: "S B B A C B", 45: "B D S D E E", 174: "C B A A B A",
+		71: "D A B SS A C", 6: "C C C D E E", 31: "E B B C C SS", 60: "E D C E E E", 175: "S S C B B A"},
 }
-const TOTALS := {"death": 24, "war": 24, "famine": 25, "plague": 24, 180: 26, 107: 30, 168: 28, 45: 14, 174: 26, 71: 25, 6: 13, 31: 23, 60: 10, 175: 28}
+const TOTALS := {"death": 24, "war": 24, "famine": 25, "plague": 24, 180: 25, 107: 30, 168: 26, 45: 16, 174: 26, 71: 26, 6: 13, 31: 22, 60: 9, 175: 28}
 const RESIST := {"death": 5, "war": -5, "famine": 5, "plague": 2, 180: 0, 107: 7, 168: 0, 45: -10, 174: 2, 71: 5, 6: -10, 31: 0, 60: -10, 175: 2}
 
 
@@ -65,9 +65,8 @@ func _run() -> void:
 		return a is Array and a.size() == 2 and int(a[0]) == lo and int(a[1]) == hi
 	_check("budgets_t531", band.call("super", 24, 30) and band.call("weak", 11, 20) and band.call("strong", 18, 25) and band.call("minion", 10, 18) and band.call("elite", 18, 25) and band.call("knight", 20, 26), bd)
 	_check("guyu_recorded", XTianqiSixDim.of_actor(175) != XTianqiSixDim.neutral())
-	# T278（Kyo 11-19）：谷雨输出 S、生存至少 S（辅助降档待定，现仍 S）
+	# T278（Kyo 11-19）：谷雨生存至少 S；输出手改 S 已按 Kyo 11-27 事项 83 去掉，照实测（字母由上面 SIX 表钉住）
 	var guyu := XTianqiSixDim.of_actor(175)
-	_check("guyu_output_s", guyu.output == "S")
 	_check("guyu_survive_at_least_s", XTianqiSixDim.score(guyu.survive) >= XTianqiSixDim.score("S"), guyu.survive)
 	var gojo := XTianqiSixDim.of_actor(180)
 	_check("tier_gojo_5", XTianqiSixDim.ai_tier_of(gojo) == 5)
