@@ -247,6 +247,25 @@ static func face_texture(face_name: String, index: int) -> AtlasTexture:
 	return a
 
 
+## 图标分图常驻（O-待定，T578 技能页仍卡）：XMVCanvas 每次重画先清 _keep，攥着分图的最后一个引用跟着放掉，
+## 接着 load() 又从磁盘把整张 512×3200 无损图解一遍（桌面约 12.5 ms／次，手机更慢）；技能列表、战斗技能窗每移一格都重画，
+## 每格都要重新解图。改成分图第一次载入后由这里攥着（最多 IconSet_1..4 四张，约 26 MB 内存），之后 load 直接命中缓存。
+## 只影响取图快慢，画出来的图块、区域与原来相同。回退：KEEP_ICON_SHEETS = false（每次 load，同原来）。
+static var KEEP_ICON_SHEETS := true
+static var _icon_sheets: Dictionary = {}
+
+
+static func icon_sheet(p: String) -> Texture2D:
+	if not KEEP_ICON_SHEETS:
+		return load(p)
+	var t = _icon_sheets.get(p)
+	if t == null:
+		t = load(p)
+		if t != null:
+			_icon_sheets[p] = t
+	return t
+
+
 ## 图标：正式版 IconSet 由 krz_iconsetimprove 拆成 IconSet_1..4（每张 512×3200、16 列 32×32，即 1600 个）。
 ## 用分图而不是 512×12800 的整图，避免手机 GPU 纹理尺寸上限。
 static func icon_texture(index: int) -> AtlasTexture:
@@ -276,7 +295,7 @@ static func icon_texture(index: int) -> AtlasTexture:
 		return null
 	var local := index % 1600
 	var a := AtlasTexture.new()
-	a.atlas = load(p)
+	a.atlas = icon_sheet(p)
 	a.region = Rect2((local % 16) * 32, floori(local / 16.0) * 32, 32, 32)
 	return a
 
