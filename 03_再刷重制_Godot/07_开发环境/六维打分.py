@@ -8,7 +8,8 @@
   --mode A|B|C   写哪一版进 six_dim.json（缺省 C；三版的总分分布报告里一直都算）
 
 数据来源（六维打分_实测数据.json，同目录）：
-  输出  ＝ T558 R2 起（Kyo 11-27 事项 83 第 1、2 条）：t445_book_probe 炼狱口径（--book-build=lianyu --noisy --force-all-tiers --cond-full）整次施放各段直接相加；
+  输出  ＝ T558 R2 起（Kyo 11-27 事项 83 第 1、2 条）：t445_book_probe 炼狱口径（--book-build=lianyu --noisy --force-all-tiers --cond-full --act-tail）整次施放各段直接相加；
+          R4 起：整次施放含行动收尾的词条再释放、技能卡追加释放（--act-tail）；条件全中＝同一合法配装、同一时刻能同时成立的最大组合（k_calibrate eff_full）；种子 1、2、3 各量一遍取中位（附则 E）；
           三档都强制量本角色全部改写伤害招（条件全中＝原超强者口径 _prime，R3 起再乘卡面 conds「全中÷当下」条件倍率，自然放得出的招也强制量）；
           R3 起每招取 peak（20 次里最大，含随机再放／随机变身），179 流萤例外取 peak_base（不含 10% 随机再放）——同 T527 平衡报告 峰值汇总.py peak()（Kyo 11-27 事项 83「算，和平衡报告统一」）；全部招里取最大
           （T558 前是 k_calibrate 的「apply 单下×段数比」，T569 查出落地招拼错，旧数留在 peak_k 只作对照）
@@ -26,8 +27,8 @@
   python3 .../六维打分.py --ingest --calib calib.log miss.log --stats stats.log --surv surv.log --write
   输出（T558 R2 起）：分片跑炼狱探针，再只替换输出一维（面板、生存照旧）：
   G2="… -s res://tests/test_main_loop.gd res://tests/virtual_player/t445_book_probe.tscn --"
-  $=G2 --tier=all --actors=<base_line.json 全部号，可分片> --book-build=lianyu --noisy --seed=1 --force-all-tiers --cond-full > lianyu_sN.log   # 4 片并行
-  python3 .../六维打分.py --lianyu lianyu_s*.log --write
+  for sd in 1 2 3; do $=G2 --tier=all --actors=<base_line.json 全部号，可分片> --book-build=lianyu --noisy --seed=$sd --force-all-tiers --cond-full --act-tail | sed "s/^K_ROW /K_ROW seed=$sd /"; done > lianyu_片N.log   # 分片并行
+  python3 .../六维打分.py --lianyu lianyu_片*.log --write
 """
 import argparse
 import collections
@@ -207,15 +208,22 @@ def out_peak(c, actor):
 
 
 def ingest_lianyu(logs):
-    """T558 R2／R3：只替换输出一维。炼狱探针 K_ROW 里 lianyu.cast_peaks（自然出招）＋lianyu.forced_main（强制量）每行取 out_peak()（R3：peak，流萤取 peak_base），全部取最大。"""
+    """T558 R2／R3：只替换输出一维。炼狱探针 K_ROW 里 lianyu.cast_peaks（自然出招）＋lianyu.forced_main（强制量）每行取 out_peak()（R3：peak，流萤取 peak_base），全部取最大。
+    R4（附则 E，修小o 核 P2-1）：日志行可带种子（`K_ROW seed=N {…}`，跑的时候用 sed 加），每个种子内照上面取一人的输出；
+    多个种子时取中位（statistics.median_low：三个种子取中间那个，这一行的招、倍率等字段跟着它走），逐种子结果留在 peak_seeds／peak_base_seeds／skill_seeds。"""
     md = load(MEAS)
     acts = md['actors']
     rw = load(DATA / 'skill_rework.json')['skills']
-    rows, skip, dis, excl = {}, set(), set(), collections.defaultdict(list)
+    per_seed, skip, dis, excl = collections.defaultdict(dict), set(), set(), collections.defaultdict(list)
     for fn in logs:
         for l in open(fn, errors='ignore'):
             if l.startswith('K_ROW '):
-                r = json.loads(l[6:])
+                body = l[6:]
+                sd = 'seed=1'  # R3 及以前的日志只有种子 1
+                m = re.match(r'(seed=\d+) ', body)
+                if m:
+                    sd, body = m.group(1), body[m.end():]
+                r = json.loads(body)
                 a = str(r['actor'])
                 L = r.get('lianyu', {})
                 cands = list(L.get('cast_peaks', [])) + list(L.get('forced_main', []))
@@ -226,23 +234,40 @@ def ingest_lianyu(logs):
                 for c in cands:
                     land = str(c.get('skill'))
                     if land not in rw and land != str(c.get('input_skill', land)):
-                        excl[a].append({'input_skill': int(c.get('input_skill', 0)), 'skill': int(land), 'peak': int(c['peak'])})
+                        excl[a].append({'seed': sd, 'input_skill': int(c.get('input_skill', 0)), 'skill': int(land), 'peak': int(c['peak'])})
                     else:
                         keep.append(c)
+                    for t in c.get('tail_dropped', []):  # R4：行动收尾落成原版变体的段，探针已剔除，这里只记名单
+                        excl[a].append({'seed': sd, 'input_skill': int(c.get('input_skill', 0)), 'skill': int(t), 'tail': True})
                 cands = keep or cands
                 best = max(cands, key=lambda c: (out_peak(c, a), int(c['peak'])))
                 bb = max(cands, key=lambda c: (int(c.get('peak_base', c['peak'])), int(c['peak'])))
-                rows[a] = {'peak': out_peak(best, a), 'peak_rand': int(best['peak']), 'peak_base': int(bb.get('peak_base', bb['peak'])), 'skill_base': int(bb.get('skill', 0)),
+                per_seed[a][sd] = {'peak': out_peak(best, a), 'peak_rand': int(best['peak']), 'peak_base': int(bb.get('peak_base', bb['peak'])), 'skill_base': int(bb.get('skill', 0)),
                            'cond_fac': float(best.get('cond_fac', 1.0)),
                            'skill': int(best.get('skill', 0)), 'input_skill': int(best.get('input_skill', best.get('skill', 0))),
-                           'segs': len(best.get('segments', [])) or None, 'forced': bool(best.get('forced', False))}
+                           'segs': len(best.get('segments', [])) or None, 'forced': bool(best.get('forced', False)),
+                           'tail': [t for t in best.get('tail', [])]}
             elif l.startswith('K_SKIP '):
                 a = l.split()[1]
                 (dis if 'disabled' in l else skip).add(a)
+    rows = {}
+    for a, by in per_seed.items():
+        seeds = sorted(by, key=lambda x: int(x.split('=')[1]))
+        mid = statistics.median_low([by[x]['peak'] for x in seeds])
+        pick = next(x for x in seeds if by[x]['peak'] == mid)
+        row = dict(by[pick])
+        row['seed_pick'] = pick
+        row['peak_seeds'] = {x: by[x]['peak'] for x in seeds}
+        row['peak_base_seeds'] = {x: by[x]['peak_base'] for x in seeds}
+        row['skill_seeds'] = {x: by[x]['skill'] for x in seeds}
+        if not row['tail']:
+            row.pop('tail')
+        rows[a] = row
     for i, e in acts.items():
         if 'peak' in e and 'peak_k' not in e:
             e['peak_k'], e['skill_k'] = e['peak'], e.get('skill')   # T558 k_calibrate 旧口径，只作对照
-        for k in ('peak', 'skill', 'segs', 'peak_first', 'peak_rand', 'peak_base', 'skill_base', 'cond_fac', 'input_skill', 'forced', 'no_damage_row', 'excluded_landings'):
+        for k in ('peak', 'skill', 'segs', 'peak_first', 'peak_rand', 'peak_base', 'skill_base', 'cond_fac', 'input_skill', 'forced', 'no_damage_row', 'excluded_landings',
+                  'seed_pick', 'peak_seeds', 'peak_base_seeds', 'skill_seeds', 'tail'):
             e.pop(k, None)
         if i in rows:
             e.update(rows[i])
@@ -250,8 +275,8 @@ def ingest_lianyu(logs):
             e['excluded_landings'] = excl[i]
         elif i in skip:
             e['no_damage_row'] = True
-    md['_note'] = ('六维打分.py 的实测输入：peak＝T558 R3 炼狱口径（t445_book_probe --book-build=lianyu --noisy --seed=1 --force-all-tiers --cond-full）整次施放合计、三档强制量条件全中且乘卡面条件倍率、'
-                   '取 peak（含随机再放，179 流萤取 peak_base，同 T527 平衡报告）；peak_rand＝打分那招含随机再放的最大；peak_base／skill_base＝全部招不含随机再放取最大（对照）；cond_fac＝打分那招的卡面条件倍率；peak_k＝T558 前 k_calibrate 旧口径（对照用，不参与打分）；stat＝--stats 标准养成面板；surv＝--survive 3 种子；no_damage_row＝探针量不出伤害')
+    md['_note'] = ('六维打分.py 的实测输入：peak＝T558 R4 炼狱口径（t445_book_probe --book-build=lianyu --noisy --seed=1/2/3 --force-all-tiers --cond-full --act-tail）整次施放合计（含行动收尾的词条再释放、技能卡追加释放）、三档强制量条件全中（合法配装、同一时刻能同时成立的最大组合）且乘卡面条件倍率、'
+                   '取 peak（含随机再放，179 流萤取 peak_base，同 T527 平衡报告）；每个种子内取一人最大，三种子取中位（median_low，seed_pick 是取到的种子），逐种子在 peak_seeds／peak_base_seeds／skill_seeds；tail＝打分那次施放里行动收尾段（kind recast＝词条再释放、follow＝技能卡追加）；peak_rand＝打分那招含随机再放的最大；peak_base／skill_base＝全部招不含随机再放取最大（对照）；cond_fac＝打分那招的卡面条件倍率；peak_k＝T558 前 k_calibrate 旧口径（对照用，不参与打分）；stat＝--stats 标准养成面板；surv＝--survive 3 种子；no_damage_row＝探针量不出伤害')
     MEAS.write_text(json.dumps(md, ensure_ascii=False, indent=1) + '\n', encoding='utf-8')
     print('输出已换炼狱口径：%d 人有量数，%d 人量不出伤害，停用 %d 人' % (len(rows), len(skip - set(rows)), len(dis)))
 
@@ -496,11 +521,12 @@ def report(ids, base, tier, raw, meas, notes, res, mode_w, old_sample, prev, txt
     w('# 六维全员重算报告（T280，cc Sonnet＋medium；第二版：速度、生存换实测）\n')
     w('依据：设定稿《天启篇_角色六维_v0.3定稿》；T271 全员名次表；Kyo 11-19 23:5x 原话（「谷雨不对……生存至少也是 S」「SS 给得太容易，或者超强者／强者／弱者的总分给得不合理」「SS 的代价：至少两个 C 及以下，不用 D」「六维难倒不是量完之后重定吗」）。**本表是草稿，`six_dim.json` 只在分支里，等 Kyo 过目改完再合。**四骑士、普怪模板沿用 T275。战商、韧性两维手标分这一版**没动**，交小A 人审。\n')
     w('## T558 R2：输出换炼狱口径（Kyo 11-27 事项 83）\n')
-    w('- **口径**：输出一维改用 `t445_book_probe --book-build=lianyu --noisy --seed=1 --force-all-tiers --cond-full`：炼狱 C 模板养成，整次施放（`logic.execute`）各段直接相加，记落地招号；三档都把本角色全部改写伤害招强制量一遍（条件全中，原来只给超强者；R3 起 `--cond-full` 再乘卡面 conds「全中÷当下」条件倍率、自然放得出的招也强制量）；R3 起每招取 `peak`（20 次里最大，含随机再放／随机变身），179 流萤例外取 `peak_base`，同 T527 平衡报告 `峰值汇总.py`；全部招取最大。T558 前的 k_calibrate 旧数（「apply 单下×段数比」，T569 查出绿司机 4759→4760 等拼错）留在实测数据 `peak_k`，不参与打分。')
+    w('- **口径**：输出一维改用 `t445_book_probe --book-build=lianyu --noisy --seed=1/2/3 --force-all-tiers --cond-full --act-tail`（R4：含行动收尾的词条再释放、技能卡追加释放；条件全中按同一合法配装、同一时刻能同时成立的最大组合；三种子取中位，逐种子见第 12 节）：炼狱 C 模板养成，整次施放（`logic.execute`）各段直接相加，记落地招号；三档都把本角色全部改写伤害招强制量一遍（条件全中，原来只给超强者；R3 起 `--cond-full` 再乘卡面 conds「全中÷当下」条件倍率、自然放得出的招也强制量）；R3 起每招取 `peak`（20 次里最大，含随机再放／随机变身），179 流萤例外取 `peak_base`，同 T527 平衡报告 `峰值汇总.py`；全部招取最大。T558 前的 k_calibrate 旧数（「apply 单下×段数比」，T569 查出绿司机 4759→4760 等拼错）留在实测数据 `peak_k`，不参与打分。')
     w('- **谷雨输出手改 S 已去掉**，按实测给档（现 %s，全库第 %d）；辅助 A（Kyo 11-21）照留。' % (let['175']['output'], rk('output', '175')))
     ex = [(i, x) for i in ids for x in meas.get(i, {}).get('excluded_landings', [])]
     if ex:
-        w('- **剔除的样本（落地招不在改写表、按原版公式结算，疑似游戏数据问题，没核能不能在实战里出现，报 Kyo）**：' + '；'.join('%s（%s）%d→%d 量到 %.1f 万' % (base[i]['name'], i, x['input_skill'], x['skill'], x['peak'] / 1e4) for i, x in ex) + '。')
+        exs = sorted({(i, x['input_skill'], x['skill'], bool(x.get('tail'))) for i, x in ex})
+        w('- **剔除的样本（落地招不在改写表、按原版公式结算，疑似游戏数据问题，没核能不能在实战里出现，报 Kyo）**：' + '；'.join('%s（%s）%d→%d%s' % (base[i]['name'], i, a, b, '（行动收尾段）' if t else '') for i, a, b, t in exs) + '。')
     w('- 面板（`--stats`）、生存（`--survive` 3 种子）没重跑，沿用 T558 在 main 8a807d7cf 上量的数（之后 main 只合进了状态名字／说明进运行时，不影响数值）。\n')
     w('## 0. 先说结论（名额口径算出来明显怪的地方）\n')
     fin = ts[mode_w]
@@ -539,7 +565,7 @@ def report(ids, base, tier, raw, meas, notes, res, mode_w, old_sample, prev, txt
     w('## 3. 每一维怎么算（公式）\n')
     w('所有量都在同一套标准养成下取：81 级、进阶满、每栏挑主属性最高的一件神话装备、本人专属法宝 99 级、技能熟练度拿满（`k_calibrate` 的 `_state`）。')
     w('| 维度 | 公式 | 可信度 |\n|---|---|---|')
-    w('| 输出 | **T558 R2 起**：炼狱口径整次施放合计（`t445_book_probe --book-build=lianyu --noisy --force-all-tiers --cond-full`，三档强制量、条件全中乘卡面条件倍率，取 peak 含随机再放，流萤取 peak_base）。没量到的：纯辅助记 0；其余按同档实测中位数代入（※）。 | 高（※ 除外） |')
+    w('| 输出 | **T558 R2 起**：炼狱口径整次施放合计（`t445_book_probe --book-build=lianyu --noisy --force-all-tiers --cond-full --act-tail`，三档强制量、条件全中乘卡面条件倍率，取 peak 含随机再放和行动收尾再放，流萤取 peak_base；R4 起三种子取中位）。没量到的：纯辅助记 0；其余按同档实测中位数代入（※）。 | 高（※ 除外） |')
     w('| 生存 | **实测挨打**：标准敌人（攻击固定 %d，每回合物理＋魔法各打一下，伤害走游戏自己的防御／魔防／承伤率／档位承伤／护盾／减伤／复活结算）面前，角色**自动战斗**带着自己的护盾、回复、减伤、复活类技能正常放（魔法、TP 照耗），打到倒下（最多 60 回合）；取 3 个种子「撑过的回合数」的中位数排名，同回合再比死前总承伤。角色自动战斗之外加一条「保命技先放」：技能表里不带伤害、类别是护盾／治疗／复活或描述含自盾／减伤／免死／回血的技能，能用就放（护盾减伤类每回合，回复类血量不到 90%% 才放），因为游戏自带自动战斗的默认选招不一定放它们。面板（生命、防御）只给没实测的人兜底。 | 高（自动战斗选招是游戏自己的 AI） |' % ATK_SURV)
     w('| 速度 | **敏捷 × 行动次数**：`agi × (100 ＋ 再动 ＋ 拉条 ＋ 先制 ＋ 敏捷加成)/100`：再动＝max(面板追加行动几率合计×100，技能描述里「N%再动」，没写几率的再动按 30)；技能描述里有「提前行动／拉条」+30、「先制／先手」+10、「敏捷 +x%」取 x/2（封 20）。agi 和追加行动几率取标准养成面板（模块里的条件再动，如五条悟六眼 10%，面板读不到，由描述补）。 | 中高 |')
     w('| 辅助 | 职责底分（辅助5／坦克3／均衡2／输出1）＋友方技能类别（治疗·复活／护盾·代命／增益·光环·驱散／召唤，封顶 2）；同分看治疗类技能种类数＋词条数。**这一版没动。** | 中低 |')
@@ -637,7 +663,23 @@ def report(ids, base, tier, raw, meas, notes, res, mode_w, old_sample, prev, txt
         w('- %s辅助、坦克型：%s。' % (CN[hi], '、'.join(f(i) for i in sup)))
         w('- %s前 5 名输出型：%s。' % (CN[lo], '、'.join(f(i) for i in fr)))
         w('- 不满足：%s。\n' % ('、'.join('%s %s ≤ %s %s' % (base[a]['name'], let[a]['output'], base[b]['name'], let[b]['output']) for a, b in bad) or '无'))
-    w('## 12. 怎么重跑\n')
+    w('## 12. 输出逐种子（附则 E；T558 R4 起）\n')
+    w('取法：每个种子内取本人全部招（自然出招＋强制量）里 out_peak 最大（含随机再放和行动收尾再放，流萤取 peak_base）；三个种子取中位（median_low），打分那招、条件倍率跟着取到的种子走。下表按中位降序；「差」＝（最大−最小）÷中位。\n')
+    sd_rows = [(i, meas[i]) for i in ids if meas.get(i, {}).get('peak_seeds')]
+    if sd_rows:
+        keys = sorted({k for _, m in sd_rows for k in m['peak_seeds']}, key=lambda x: int(x.split('=')[1]))
+        w('| 档 | 号 | 角色 | ' + ' | '.join('种子 %s' % k.split('=')[1] for k in keys) + ' | 中位（取到） | 差 | 打分招（各种子） |')
+        w('|---|---|---|' + '---:|' * len(keys) + '---:|---:|---|')
+        for i, m in sorted(sd_rows, key=lambda x: -int(x[1]['peak'])):
+            ps = m['peak_seeds']
+            vals = [ps.get(k) for k in keys]
+            got = [v for v in vals if v is not None]
+            spread = (max(got) - min(got)) / max(1, int(m['peak'])) if got else 0
+            sk = m.get('skill_seeds', {})
+            w('| %s | %s | %s | %s | %s（%s） | %.1f%% | %s |' % (CN[tier[i]], i, base[i]['name'], ' | '.join('%s' % format(v, ',') if v is not None else '—' for v in vals),
+                                                            format(int(m['peak']), ','), m.get('seed_pick', '').split('=')[-1], spread * 100, '／'.join(str(sk.get(k, '—')) for k in keys)))
+        w('')
+    w('## 13. 怎么重跑\n')
     w('打分脚本：`03_再刷重制_Godot/07_开发环境/六维打分.py`；实测输入：同目录 `六维打分_实测数据.json`。')
     w('- 只改手标分／机制词／名额：改脚本顶部 WIT、RESV、HANDF、CUM 后 `python3 03_再刷重制_Godot/07_开发环境/六维打分.py --write`（几秒，会重写 `six_dim.json` 的 actors 和本报告）。')
     w('- 重新实测：脚本文件头「重跑」一节（面板、生存用 `k_calibrate`；输出 T558 R2 起用 `t445_book_probe --force-all-tiers`＋`--lianyu`）。')

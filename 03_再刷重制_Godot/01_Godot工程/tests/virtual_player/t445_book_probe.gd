@@ -110,6 +110,7 @@ var _prime_forced := false
 var k_scan := false  # T496：--k-scan 炼狱/证道配装不变，改用 K 探针 _measure_in（D209 量法：公式条件全中＋整次施放段数比）对照
 var force_all := false  # T558（Kyo D292 补 11-27 事项 83 第 2 条）：--force-all-tiers 强者、弱者也像超强者一样强制量本角色全部改写伤害招（条件全中），六维输出用；缺省只超强者（平衡探针口径不变）
 var cond_full := false  # T558 R3（Kyo 11-27 事项 83：「条件全中」要乘卡面条件倍率 → 乘）：--cond-full 强制量时整次施放合计再乘落地招卡面 conds「条件全中÷当下条件」（同 k_calibrate eff_full／_coef_now），且自然放得出的招也强制量；缺省关（平衡探针口径不变）
+var act_tail := false  # T558 R4（修小o 核 P1-2）：--act-tail 每次施放 execute 之后再走 XBattleLogic.act 收尾的词条再释放、技能卡追加释放（battle_logic.gd 1457～1461），段数计进这次施放；缺省关（平衡探针口径不变）
 var bind_probe := true  # T502：炼狱/证道下对 176 屠苏（2 人化武）、177 璇（4 人列星＋2 人自律同调监控）启用编组探针；--no-bind-probe 回退单人对照
 
 
@@ -131,6 +132,8 @@ func _ready() -> void:
 			force_all = true
 		elif arg == "--cond-full":
 			cond_full = true
+		elif arg == "--act-tail":
+			act_tail = true
 		elif arg == "--no-bind-probe":
 			bind_probe = false
 		elif arg == "--no-d287":  # T496：关掉 D287 收拢覆盖层（改前对照）；k_calibrate 也会读到同一开关
@@ -332,7 +335,7 @@ func _lianyu_battle(s: XState, a: XActor, sample_seed: int) -> XBattleLogic:
 
 ## T558 R3：落地招 sid 的卡面条件倍率「条件全中÷当下条件」（同 k_calibrate：全中＝eff_full×一直生效的减成，按单段上限封；当下＝_coef_now×hit_weight，已封）。
 ## 五条悟茈（gojo_pairs）印已按满摆好记 1；没有卡面系数的记 1。施放前算（当下条件＝施放前的状态）。
-func _cond_fac(a, e, sid: int) -> float:
+func _cond_fac(a, e, sid: int, fixed_states: Array = []) -> float:
 	var sp: Dictionary = XTianqiSkills.spec(sid)
 	var d: Dictionary = sp.get("damage", {})
 	if sp.has("gojo_pairs") or float(d.get("coef", 0.0)) <= 0.0:
@@ -341,7 +344,7 @@ func _cond_fac(a, e, sid: int) -> float:
 	var id := int(a.actor_id)
 	var sk := XDB.rec("Skills", sid)
 	var cap := XTianqiBase.single_hit_cap(a)
-	var full := eff_full(id, sid) * _always_reduce(a, e, d, id, sid)
+	var full := eff_full(id, sid, a, e, fixed_states) * _always_reduce(a, e, d, id, sid)  # R4：合法配装＋同一状态联合取最大（k_calibrate eff_full）
 	if cap > 0.0:
 		full = minf(full, cap * XTianqiSkills.cap_hits(d, sk))
 	var now := XTianqiSkills.hit_weight(d) * _coef_now(a, e, d, sid)
@@ -381,6 +384,87 @@ func _apply_cond(segs: Array, facs: Dictionary, a, e, landing: int) -> float:
 	return f
 
 
+## T558 R4：一次施放的全部段：execute 主段（乘施放前算好的 facs[落地招]）＋（--act-tail）行动收尾同根的随机再放。
+## 收尾照 XBattleLogic.act（battle_logic.gd 1424、1457～1461）的次序：标原生追加 → 词条再释放（XTianqiAffixBattle.end_action，在技能卡消费印记之前）
+## → 技能卡追加释放（XTianqiSkills.end_action：先 _consume 消费印记、再掷追加，含魔雷蓄雷落雷）。
+## 条件倍率：再释放段按再释放前（主段之后）的状态算「全中÷当下」；追加段按收尾结算后的状态算，且主招 consume 掉的印记上的条件不取全中、按结算时成立与否
+## （劲夫开招前有怒拳，追加的乱打·再释放结算时怒拳已消费，不再乘 ×1.8）。
+## 收尾落地招不在改写表、又不是被量的那招的（原版变体，如魔雷 5157／5158），那几段剔除并记 tail_dropped。
+## 七印武器流派的收尾（放两次、再射等）照 _lianyu_battle 已屏蔽，不跑；击倒结算（followup_settle）木桩不倒，不跑。
+## 各角色模块的收尾追加（渡鸦收割／回响、饿狼追击、宿傩追斩、镜流追加段、屠苏剑气等）不是随机再放，照 T527 不收（交付单没核写明）。
+func _cast_whole(logic, u, sk: Dictionary, e, facs: Dictionary, input_landing := false) -> Dictionary:
+	XStateEffects.force_critical = true
+	var logs: Array = logic.execute(u, sk, e, true)
+	var segs := []
+	_collect_hits(logs, e, segs)
+	var landing_skill: Dictionary = sk
+	if not input_landing:  # 屠苏、璇编组量法照 R3 按被量的招算倍率
+		for log in logs:
+			if log is Dictionary and log.get("type") == "action" and is_same(log.get("user"), u):
+				landing_skill = log.skill
+				break
+	var landing := int(landing_skill.id)
+	var cf := 1.0
+	if not facs.is_empty() and not segs.is_empty():
+		cf = _apply_cond(segs, facs, u, e, landing)
+	var out := {"segs": segs, "landing": landing, "landing_skill": landing_skill, "cf": cf, "tail": [], "tail_dropped": []}
+	if act_tail:
+		var cond := not facs.is_empty()
+		XTianqiWeakAffix.set_kind(logic, XTianqiWeakAffix.FOLLOW)
+		var rfac := _cond_fac(u, e, int(sk.id)) if cond else 1.0
+		XTianqiWeakAffix.push_kind(logic, XTianqiWeakAffix.RECAST)
+		var rlogs: Array = XTianqiAffixBattle.end_action(logic, u, sk)
+		XTianqiWeakAffix.pop_kind(logic)
+		var consumed := []
+		if logic.has_meta("xtqs"):
+			var f: Dictionary = logic.get_meta("xtqs").get("act", {})
+			if not f.is_empty():
+				for x in XTianqiSkills.spec(int(f.skill.get("id", 0))).get("consume", []):
+					consumed.append(int(x))
+		var flogs: Array = XTianqiSkills.end_action(logic, u, sk)
+		_tail_add(out, rlogs, e, u, sk, "recast", {int(sk.id): rfac}, cond, [])
+		_tail_add(out, flogs, e, u, sk, "follow", {}, cond, consumed)
+	XStateEffects.force_critical = false
+	XSukuna.cast = {}
+	return out
+
+
+## 收尾日志里打到木桩的段（按段上的技能号分），乘条件倍率后追加进 out.segs
+## facs：已算好的倍率（再释放＝{被量的招: 再释放前算的}）；cond 为真时没算过的按此刻状态、consumed 上的印记条件按当下补算（追加段）
+func _tail_add(out: Dictionary, logs: Array, e, u, sk: Dictionary, kind: String, facs: Dictionary, cond: bool, consumed: Array) -> void:
+	var rows := []
+	_hits_skill(logs, e, rows)
+	var sums := {}
+	for r in rows:
+		var sid := int(r[0])
+		if sid != int(sk.id) and XTianqiSkills.spec(sid).is_empty():
+			out.tail_dropped.append(sid)
+			continue
+		if not facs.has(sid):
+			facs[sid] = _cond_fac(u, e, sid, consumed) if cond else 1.0
+		var v := float(r[1]) * float(facs[sid])
+		out.segs.append(v)
+		sums[sid] = float(sums.get(sid, 0.0)) + v
+	for sid in sums:
+		out.tail.append({"kind": kind, "skill": sid, "sum": roundi(float(sums[sid])), "fac": snappedf(float(facs[sid]), 0.0001)})
+
+
+## 同 _collect_hits，另记每段的技能号 [[技能号, 数]…]
+static func _hits_skill(logs, e, out: Array, cur := 0) -> int:
+	for x in logs:
+		if x is Array:
+			cur = _hits_skill(x, e, out, cur)
+		elif x is Dictionary:
+			if str(x.get("type", "")) == "action" and x.get("skill") is Dictionary:
+				cur = int(x.skill.get("id", 0))
+			elif str(x.get("type", "")) == "hit" and is_same(x.get("target"), e) and not bool(x.get("reflected", false)):
+				var v := float(x.get("shown", {}).get("hp", 0.0)) + float(x.get("hit_extra", 0.0))
+				if v > 0.0:
+					var hs = x.get("skill", {})
+					out.append([int(hs.get("id", cur)) if hs is Dictionary and not hs.is_empty() else cur, v])
+	return cur
+
+
 func _sample_lianyu(snapshot: Dictionary, id: int, sk: Dictionary, sample_seed: int, forced: bool) -> Dictionary:
 	# 每次采样都从战前快照还原角色，木桩、状态、熟练度、冷却和战斗随机流逐次隔离。
 	var s := XState.from_dict(snapshot.duplicate(true))
@@ -400,19 +484,11 @@ func _sample_lianyu(snapshot: Dictionary, id: int, sk: Dictionary, sample_seed: 
 				XSukuna._layers(logic, e, 3)
 		var facs := _cond_facs(a, e, sk) if forced and _prime_forced and cond_full else {}
 		var stats := {"atk": a.atk, "mat": a.mat, "mhp": a.mhp}
-		XStateEffects.force_critical = true
-		var logs := logic.execute(a, sk, e, true)
-		XStateEffects.force_critical = false
-		XSukuna.cast = {}
-		var segs := []
-		_collect_hits(logs, e, segs)
+		var whole := _cast_whole(logic, a, sk, e, facs)
+		var segs: Array = whole.segs
 		if not segs.is_empty():
-			var action_skill: Dictionary = sk
-			for log in logs:
-				if log is Dictionary and log.get("type") == "action" and is_same(log.get("user"), a):
-					action_skill = log.skill
-					break
-			var cf := _apply_cond(segs, facs, a, e, int(action_skill.id)) if not facs.is_empty() else 1.0
+			var action_skill: Dictionary = whole.landing_skill
+			var cf := float(whole.cf)
 			var total := 0.0
 			for damage in segs:
 				total += float(damage)
@@ -421,6 +497,9 @@ func _sample_lianyu(snapshot: Dictionary, id: int, sk: Dictionary, sample_seed: 
 				"segments": segs, "peak": roundi(total), "peak_single": roundi(float(segs.max())),
 				"variance": int(action_skill.get("damage", {}).get("variance", 0)),
 				"atk": stats.atk, "mat": stats.mat, "mhp": stats.mhp, "cond_fac": snappedf(cf, 0.0001)}
+			if act_tail:
+				row["tail"] = whole.tail
+				row["tail_dropped"] = whole.tail_dropped
 	logic.end_battle()
 	return row
 
@@ -728,13 +807,10 @@ func _sample_tusu_duo(snapshot: Dictionary, sk: Dictionary, sample_seed: int, mo
 		_prime(logic, caster, e, sk)
 	var facs := _cond_facs(caster, e, sk) if cond_full else {}
 	var stats := {"atk": tusu.atk, "mat": tusu.mat, "mhp": tusu.mhp}
-	XStateEffects.force_critical = true
-	var logs := logic.execute(caster, sk, e, true)
-	XStateEffects.force_critical = false
-	var segs := []
-	_collect_hits(logs, e, segs)
+	var whole := _cast_whole(logic, caster, sk, e, facs, true)
+	var segs: Array = whole.segs
 	var row := {}
-	var cf := _apply_cond(segs, facs, caster, e, int(sk.id)) if not facs.is_empty() and not segs.is_empty() else 1.0
+	var cf := float(whole.cf)
 	if not segs.is_empty():
 		var total := 0.0
 		for damage in segs:
@@ -744,7 +820,7 @@ func _sample_tusu_duo(snapshot: Dictionary, sk: Dictionary, sample_seed: int, mo
 			"segments": segs, "peak": roundi(total), "peak_single": roundi(float(segs.max())),
 			"variance": int(sk.get("damage", {}).get("variance", 0)),
 			"atk": stats.atk, "mat": stats.mat, "mhp": stats.mhp, "forced": true,
-			"bind_mode": mode, "weapon_phase": w, "cond_fac": snappedf(cf, 0.0001)}
+			"bind_mode": mode, "weapon_phase": w, "cond_fac": snappedf(cf, 0.0001), "tail": whole.tail, "tail_dropped": whole.tail_dropped}
 	logic.end_battle()
 	return row
 
@@ -853,13 +929,10 @@ func _sample_xuan_liexing(snapshot: Dictionary, sk: Dictionary, sample_seed: int
 	_prime(logic, xuan, e, sk)
 	var facs := _cond_facs(xuan, e, sk) if cond_full else {}
 	var stats := {"atk": xuan.atk, "mat": xuan.mat, "mhp": xuan.mhp}
-	XStateEffects.force_critical = true
-	var logs := logic.execute(xuan, sk, e, true)
-	XStateEffects.force_critical = false
-	var segs := []
-	_collect_hits(logs, e, segs)
+	var whole := _cast_whole(logic, xuan, sk, e, facs, true)
+	var segs: Array = whole.segs
 	var row := {}
-	var cf := _apply_cond(segs, facs, xuan, e, int(sk.id)) if not facs.is_empty() and not segs.is_empty() else 1.0
+	var cf := float(whole.cf)
 	if not segs.is_empty():
 		var total := 0.0
 		for damage in segs:
@@ -869,7 +942,7 @@ func _sample_xuan_liexing(snapshot: Dictionary, sk: Dictionary, sample_seed: int
 			"segments": segs, "peak": roundi(total), "peak_single": roundi(float(segs.max())),
 			"variance": int(sk.get("damage", {}).get("variance", 0)),
 			"atk": stats.atk, "mat": stats.mat, "mhp": stats.mhp, "forced": true,
-			"shadows": shadow_n, "cond_fac": snappedf(cf, 0.0001)}
+			"shadows": shadow_n, "cond_fac": snappedf(cf, 0.0001), "tail": whole.tail, "tail_dropped": whole.tail_dropped}
 	logic.end_battle()
 	return row
 

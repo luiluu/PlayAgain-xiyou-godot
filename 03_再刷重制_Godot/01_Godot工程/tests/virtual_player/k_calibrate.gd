@@ -391,16 +391,231 @@ static func cond_max(c: Dictionary) -> float:
 
 
 ## 条件全中的单段有效系数（不封）
-static func eff_full(actor_id: int, sid: int) -> float:
+## T558 R4（修小o 核 P1-1）：「条件全中」＝实战同一合法配装、同一时刻能同时成立的最大组合，不再逐条取上限相乘：
+## ① 条件里要装着的专属物（need、cap_with、per_with、scale_with、rate_with、rate_add_with 的 "e底号"）按装备栏分组，
+##    一栏只能装一件（双持武器栏两件；a 给了就按 a.equip_slots() 数栏），各栏挑乘积最大的那套（天虎令三把千古啸只取一把、黑崎一护五把斩月只取一把）；
+## ② 同一个量上互斥的条件（自己生命、自己魔法、目标生命各一个比例，敏捷高于／低于目标）按同一取值联合取最大；
+## ③ fixed_states：这些状态号上的目标状态条件不取上限、按当下（a、e 此刻）算——行动收尾的追加段用（主招 consume 已消费的印记，见 t445_book_probe）。
+static func eff_full(actor_id: int, sid: int, a = null, e = null, fixed_states: Array = []) -> float:
 	var d: Dictionary = XTianqiSkills.spec(sid).get("damage", {})
-	var m := 1.0
-	for c in d.get("conds", []):
-		m *= cond_max(c)
+	return float(d.get("coef", 0.0)) * XTianqiSkills.hit_weight(d) * cond_full_mult(actor_id, sid, a, e, fixed_states)
+
+
+## 本招适用的全部条件（卡面 conds＋角色行 conds 里 skills 含本招或不限招的）
+static func conds_of(actor_id: int, sid: int) -> Array:
+	var out: Array = (XTianqiSkills.spec(sid).get("damage", {}).get("conds", []) as Array).duplicate()
 	for c in XTianqiSkills.data().get("actors", {}).get(str(actor_id), {}).get("conds", []):
 		if c.has("skills") and not (c.skills as Array).any(func(x): return int(x) == sid):
 			continue
-		m *= cond_max(c)
-	return float(d.get("coef", 0.0)) * XTianqiSkills.hit_weight(d) * m
+		out.append(c)
+	return out
+
+
+const _EQUIP_KEYS := ["cap_with", "per_with", "scale_with", "rate_with", "rate_add_with"]  # offset_with 只挪起点、条件照样封到 cap，不影响上限
+const _DIM_OF := {"self_hp_lost": "h", "self_hp_below": "h", "self_hp_above": "h",
+	"self_mp_lost": "m", "self_mp_rate": "m", "self_mp_frac": "m",
+	"target_hp_lost": "t", "target_hp_below": "t", "target_hp_above": "t", "target_hp_rate": "t", "target_full_hp": "t",
+	"agi_below_target": "g", "agi_above_target": "g"}
+const _STATE_IFS := ["target_state", "target_state_any", "target_stack", "target_states_in"]
+
+
+## 条件全中的条件部分倍率（见 eff_full）
+static func cond_full_mult(actor_id: int, sid: int, a = null, e = null, fixed_states: Array = []) -> float:
+	var conds := conds_of(actor_id, sid)
+	var keys := {}
+	for c in conds:
+		var need = c.get("need", null)
+		if need is String and need.begins_with("e"):
+			keys[need] = true
+		for f in _EQUIP_KEYS:
+			for k in c.get(f, {}):
+				if str(k).begins_with("e"):
+					keys[str(k)] = true
+	var best := -1.0
+	for own in _loadouts(keys.keys(), a):
+		best = maxf(best, _joint(conds, own, sid, a, e, fixed_states))
+	return best
+
+
+## 专属物 "e底号" 占哪一栏（装备类型号）：防具表里是法宝（13）就是法宝；否则武器表有像样武器（武器类＞0）是武器栏；否则照防具表
+## （底号在武器、防具两表撞号时：13 大罗剑胎、49 般若、77 逐暗者、124 一拳、136 纯阳破军按卡面注释都是法宝）
+static func equip_etype(key: String) -> int:
+	var base := int(key.substr(1))
+	var arm := XDB.rec("Armors", base)
+	if not arm.is_empty() and int(arm.get("etypeId", 0)) == 13:
+		return 13
+	var wp := XDB.rec("Weapons", base)
+	if not wp.is_empty() and int(wp.get("wtypeId", 0)) > 0 and str(wp.get("name", "")) != "":
+		return 1
+	return int(arm.get("etypeId", 1)) if not arm.is_empty() else 1
+
+
+## 合法配装：每栏最多装栏数那么多件（a 给了按 equip_slots 数；没给按每类 1 栏），返回 [{key: true}…]
+static func _loadouts(keys: Array, a = null) -> Array:
+	var groups := {}
+	for k in keys:
+		var et := equip_etype(str(k))
+		if not groups.has(et):
+			groups[et] = []
+		groups[et].append(k)
+	var slots := {}
+	if a is XActor:
+		for et in a.equip_slots():
+			slots[int(et)] = int(slots.get(int(et), 0)) + 1
+	var out := [{}]
+	for et in groups:
+		var n := int(slots.get(et, 1)) if a is XActor else 1
+		var picks := _subsets(groups[et], n)
+		var nxt := []
+		for o in out:
+			for p in picks:
+				var m: Dictionary = o.duplicate()
+				for k in p:
+					m[k] = true
+				nxt.append(m)
+		out = nxt
+	return out
+
+
+## 至多 n 个元素的全部子集（含空集）
+static func _subsets(arr: Array, n: int) -> Array:
+	var out := [[]]
+	for x in arr:
+		var add := []
+		for s in out:
+			if (s as Array).size() < n:
+				add.append((s as Array) + [x])
+		out.append_array(add)
+	return out
+
+
+static func _has_eq(own: Dictionary, k) -> bool:
+	return own.has(str(k))
+
+
+## 一个配装下的条件部分倍率：不依赖共享量的条件各取上限，共享量（h、m、t、g）上的条件按同一取值取乘积最大
+static func _joint(conds: Array, own: Dictionary, sid: int, a, e, fixed_states: Array) -> float:
+	var m := 1.0
+	var dims := {}
+	for c in conds:
+		var need = c.get("need", null)
+		if need is String and need.begins_with("e") and not _has_eq(own, need):
+			continue  # 没装这件：不成立
+		var iff := str(c.get("if", ""))
+		if not fixed_states.is_empty() and iff in _STATE_IFS and _hits_states(c, fixed_states) and a != null and e != null:
+			XTianqiSkills._cur_skill = sid
+			m *= XTianqiSkills._cond(c, a, e)  # 收尾已消费的印记：按此刻成立与否（当下也同样算，比值约掉）
+			continue
+		if _DIM_OF.has(iff):
+			var dk: String = _DIM_OF[iff]
+			if not dims.has(dk):
+				dims[dk] = []
+			dims[dk].append(c)
+			continue
+		m *= _cond_max_own(c, own)
+	for dk in dims:
+		m *= _dim_best(dk, dims[dk], own)
+	return m
+
+
+static func _hits_states(c: Dictionary, fixed_states: Array) -> bool:
+	var ids := []
+	if c.has("state"):
+		ids.append(int(c.state))
+	for x in c.get("states", []):
+		ids.append(int(x))
+	return ids.any(func(x): return fixed_states.has(x))
+
+
+## 单条成立到最大（同 cond_max，但 cap_with／per_with 只认这套配装里有的）
+static func _cond_max_own(c: Dictionary, own: Dictionary) -> float:
+	var m := 1.0
+	if c.has("steps"):
+		for st in c.steps:
+			m = maxf(m, float(st[1]))
+	elif c.has("mult"):
+		m = float(c.mult)
+	elif c.has("cap"):
+		var cap := float(c.cap)
+		for k in c.get("cap_with", {}):
+			if _has_eq(own, k):
+				cap = maxf(cap, float(c.cap_with[k]))
+		m = 1.0 + cap
+	return maxf(1.0, m)
+
+
+static func _cap_own(c: Dictionary, own: Dictionary) -> float:
+	var cap := float(c.get("cap", 0.0))
+	for k in c.get("cap_with", {}):
+		if _has_eq(own, k):
+			cap = maxf(cap, float(c.cap_with[k]))
+	return cap
+
+
+static func _per_own(c: Dictionary, own: Dictionary) -> float:
+	var per := float(c.get("per", 0.0))
+	for k in c.get("per_with", {}):
+		if _has_eq(own, k):
+			per = maxf(per, float(c.per_with[k]))
+	return per
+
+
+## 共享量上一组条件的乘积，在该量的候选取值里取最大（比例量取 0.0001～1 每 0.01 一格，加各条件的门槛与门槛下一点）
+static func _dim_best(dk: String, conds: Array, own: Dictionary) -> float:
+	var vals := []
+	if dk == "g":
+		vals = [-1.0, 1.0]
+	else:
+		for i in 101:
+			vals.append(maxf(0.0001, i / 100.0))
+		for c in conds:
+			if c.has("rate") or c.has("rate_with") or c.has("rate_add_with"):
+				var r := _rate_own(c, own)
+				vals.append(r)
+				vals.append(maxf(0.0001, r - 0.000001))
+	var best := -1.0
+	for v in vals:
+		var p := 1.0
+		for c in conds:
+			p *= _dim_val(c, float(v), own)
+		best = maxf(best, p)
+	return best
+
+
+static func _rate_own(c: Dictionary, own: Dictionary) -> float:
+	var rate := float(c.get("rate", 0.0))
+	for k in c.get("rate_with", {}):
+		if _has_eq(own, k):
+			rate = maxf(rate, float(c.rate_with[k]))
+	for k in c.get("rate_add_with", {}):
+		if _has_eq(own, k):
+			rate += float(c.rate_add_with[k])
+	return rate
+
+
+## 同 XTianqiSkills._cond 对应分支，只是量取 v（h／m／t 是比例，g＜0 为敏捷低于目标）
+static func _dim_val(c: Dictionary, v: float, own: Dictionary) -> float:
+	var cap := _cap_own(c, own)
+	var per := _per_own(c, own)
+	var mult := float(c.get("mult", 1.0))
+	match str(c.get("if", "")):
+		"self_hp_lost", "self_mp_lost", "target_hp_lost":
+			return 1.0 + clampf((1.0 - v) * per, 0.0, cap)
+		"self_mp_rate", "target_hp_rate":
+			return 1.0 + clampf(v * per, 0.0, cap)
+		"self_mp_frac":
+			return clampf(v, 0.0, float(c.get("cap", 1.0)))
+		"self_hp_below", "target_hp_below":
+			return mult if v < _rate_own(c, own) else 1.0
+		"self_hp_above", "target_hp_above":
+			return mult if v >= float(c.get("rate", 1.0)) else 1.0
+		"target_full_hp":
+			return mult if v >= 1.0 else 1.0
+		"agi_below_target":
+			return mult if v < 0.0 else 1.0
+		"agi_above_target":
+			return mult if v > 0.0 else 1.0
+	return 1.0
 
 
 func _state(id: int) -> XState:
@@ -513,7 +728,7 @@ static func main_weights(a: XActor) -> Dictionary:
 		var sp := XTianqiSkills.spec(int(sid))
 		if not sp.has("damage") or sp.has("heal"):
 			continue
-		var v := eff_full(int(a.actor_id), int(sid))
+		var v := eff_full(int(a.actor_id), int(sid), a)
 		if v > best:
 			best = v
 			w = sp.damage.get("stats", {})
@@ -853,7 +1068,7 @@ func _scan(a, e, logic, sids: Array, cap: float) -> Dictionary:
 		var d: Dictionary = sp.get("damage", {})
 		# D195：「一直生效」的减成条件（如 3922 三连击时每段 ×1/3、4848 每段 ×0.6）是拿段数换的，按总伤算时要算进去，
 		# 不然「峰值单段（不含减成）× 段数」会多算 3 倍（T175 v12：9、10、19）。--single 照旧口径不算
-		var full_raw := (float((sp.gojo_pairs as Array).max()) if gojo_pairs else eff_full(id, int(sid)) * (1.0 if single else _always_reduce(a, e, d, id, int(sid))))
+		var full_raw := (float((sp.gojo_pairs as Array).max()) if gojo_pairs else eff_full(id, int(sid), a) * (1.0 if single else _always_reduce(a, e, d, id, int(sid))))
 		var full := minf(full_raw, cap * XTianqiSkills.cap_hits(d, sk)) if cap > 0.0 else full_raw  # T192：cap_hits 按每段封；T502 R2：传 sk 按实际段数封
 		var w := XTianqiSkills.hit_weight(d)
 		var sk_best := {}
@@ -890,7 +1105,7 @@ func _scan(a, e, logic, sids: Array, cap: float) -> Dictionary:
 			XSukuna.term_seg = 0
 			if term != 1.0 and cap > 0.0:
 				# 终式倍数乘在单段上限后面：按「条件全中×终式」再封一次上限折回（报告 term、term_capped 两个数都留）
-				var ef := eff_full(id, int(sid))
+				var ef := eff_full(id, int(sid), a)
 				dealt *= minf(ef * term, cap * XTianqiSkills.cap_hits(d, sk)) / (minf(ef, cap * XTianqiSkills.cap_hits(d, sk)) * term)
 			if v0 <= 0.0 or dealt <= 0.0:
 				if per_skill and n == 0:
@@ -903,9 +1118,9 @@ func _scan(a, e, logic, sids: Array, cap: float) -> Dictionary:
 			if per_skill:
 				print("K_HIT %d %d n=%d dealt=%d v0=%d v_full=%d peak=%d" % [id, int(sid), n, dealt, v0, v_full, peak])
 			if per_skill and n == hits - 1:
-				print("K_SKILL %d %d peak=%d dealt=%d eff=%s" % [id, int(sid), roundf(peak), dealt, eff_full(id, int(sid))])
+				print("K_SKILL %d %d peak=%d dealt=%d eff=%s" % [id, int(sid), roundf(peak), dealt, eff_full(id, int(sid), a)])
 			if sk_best.is_empty() or peak > float(sk_best.peak):
-				sk_best = {"actor": id, "skill": int(sid), "dealt": dealt, "v0": v0, "v_full": v_full, "eff_full": eff_full(id, int(sid)),
+				sk_best = {"actor": id, "skill": int(sid), "dealt": dealt, "v0": v0, "v_full": v_full, "eff_full": eff_full(id, int(sid), a),
 					"cap": cap, "peak": roundf(peak), "terminal": term, "formula": str(sk.get("damage", {}).get("formula", "")).left(60), "repeats": int(sk.get("repeats", 1)), "atk": a.param(2), "mat": a.param(4), "mhp": a.mhp}
 		if sk_best.is_empty():
 			continue
