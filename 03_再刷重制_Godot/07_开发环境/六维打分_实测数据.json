@@ -1,5 +1,5 @@
 {
- "_note": "六维打分.py 的实测输入：peak＝T558 R4 炼狱口径（t445_book_probe --book-build=lianyu --noisy --seed=1/2/3 --force-all-tiers --cond-full --act-tail）整次施放合计（含行动收尾的词条再释放、技能卡追加释放）、三档强制量条件全中（合法配装、同一时刻能同时成立的最大组合）且乘卡面条件倍率、取 peak（含随机再放，179 流萤取 peak_base，同 T527 平衡报告）；每个种子内取一人最大，三种子取中位（median_low，seed_pick 是取到的种子），逐种子在 peak_seeds／peak_base_seeds／skill_seeds；tail＝打分那次施放里行动收尾段（kind recast＝词条再释放、follow＝技能卡追加）；peak_rand＝打分那招含随机再放的最大；peak_base／skill_base＝全部招不含随机再放取最大（对照）；cond_fac＝打分那招的卡面条件倍率；peak_k＝T558 前 k_calibrate 旧口径（对照用，不参与打分）；stat＝--stats 标准养成面板；surv＝--survive 3 种子；no_damage_row＝探针量不出伤害",
+ "_note": "六维打分.py 的实测输入：peak＝T558 R4／T580 炼狱口径（t445_book_probe --book-build=lianyu --noisy --seed=1/2/3 --force-all-tiers --cond-full --act-tail）整次施放合计（含行动收尾的角色模块追加、词条再释放、技能卡追加释放，次序照 XBattleLogic.act）、三档强制量条件全中（合法配装、同一时刻能同时成立的最大组合）且乘卡面条件倍率、取 peak（含随机再放，179 流萤取 peak_base，同 T527 平衡报告）；每个种子内取一人最大，三种子取中位（median_low，seed_pick 是取到的种子），逐种子在 peak_seeds／peak_base_seeds／skill_seeds；tail＝打分那次施放里行动收尾段（kind recast＝词条再释放、follow＝技能卡追加、module＝T580 角色模块收尾追加，强制量摆满渡鸦狩猎／神话、饿狼解析 3 层）；peak_rand＝打分那招含随机再放的最大；peak_base／skill_base＝全部招不含随机再放取最大（对照）；cond_fac＝打分那招的卡面条件倍率；peak_k＝T558 前 k_calibrate 旧口径（对照用，不参与打分）；stat＝--stats 标准养成面板；surv＝--survive 3 种子；no_damage_row＝探针量不出伤害",
  "actors": {
   "1": {
    "mhp": 266739.0,
@@ -50,9 +50,9 @@
    },
    "peak_k": 8301246.0,
    "skill_k": 4752,
-   "peak": 946616,
-   "peak_rand": 946616,
-   "peak_base": 946616,
+   "peak": 858788,
+   "peak_rand": 858788,
+   "peak_base": 858788,
    "skill_base": 3632,
    "cond_fac": 1.3,
    "skill": 3632,
@@ -61,14 +61,14 @@
    "forced": true,
    "seed_pick": "seed=3",
    "peak_seeds": {
-    "seed=1": 845192,
-    "seed=2": 1192815,
-    "seed=3": 946616
+    "seed=1": 766775,
+    "seed=2": 1082141,
+    "seed=3": 858788
    },
    "peak_base_seeds": {
-    "seed=1": 845192,
-    "seed=2": 845192,
-    "seed=3": 946616
+    "seed=1": 766775,
+    "seed=2": 766775,
+    "seed=3": 858788
    },
    "skill_seeds": {
     "seed=1": 3632,
@@ -125,9 +125,9 @@
    },
    "peak_k": 10627844.0,
    "skill_k": 4759,
-   "peak": 976783,
-   "peak_rand": 976783,
-   "peak_base": 488392,
+   "peak": 869959,
+   "peak_rand": 869959,
+   "peak_base": 434980,
    "skill_base": 504,
    "cond_fac": 1.2,
    "skill": 504,
@@ -139,19 +139,19 @@
      "fac": 1.2,
      "kind": "recast",
      "skill": 504,
-     "sum": 488392
+     "sum": 434980
     }
    ],
    "seed_pick": "seed=1",
    "peak_seeds": {
-    "seed=1": 976783,
-    "seed=2": 976783,
-    "seed=3": 488392
+    "seed=1": 869959,
+    "seed=2": 869960,
+    "seed=3": 434980
    },
    "peak_base_seeds": {
-    "seed=1": 488392,
-    "seed=2": 494149,
-    "seed=3": 488392
+    "seed=1": 434980,
+    "seed=2": 440005,
+    "seed=3": 434980
    },
    "skill_seeds": {
     "seed=1": 504,
@@ -208,9 +208,9 @@
    },
    "peak_k": 1291083.0,
    "skill_k": 506,
-   "peak": 512354,
-   "peak_rand": 512354,
-   "peak_base": 512354,
+   "peak": 461014,
+   "peak_rand": 461014,
+   "peak_base": 461014,
    "skill_base": 506,
    "cond_fac": 1.0,
    "skill": 506,
@@ -222,19 +222,19 @@
      "fac": 1.3,
      "kind": "follow",
      "skill": 4370,
-     "sum": 161186
+     "sum": 148135
     }
    ],
    "seed_pick": "seed=2",
    "peak_seeds": {
-    "seed=1": 655139,
-    "seed=2": 512354,
-    "seed=3": 464365
+    "seed=1": 585953,
+    "seed=2": 461014,
+    "seed=3": 411815
    },
    "peak_base_seeds": {
-    "seed=1": 555212,
-    "seed=2": 512354,
-    "seed=3": 464365
+    "seed=1": 484626,
+    "seed=2": 461014,
+    "seed=3": 411815
    },
    "skill_seeds": {
     "seed=1": 506,
@@ -291,9 +291,9 @@
    },
    "peak_k": 5194895.0,
    "skill_k": 3517,
-   "peak": 1476184,
-   "peak_rand": 1476184,
-   "peak_base": 1476184,
+   "peak": 511375,
+   "peak_rand": 511375,
+   "peak_base": 511375,
    "skill_base": 3517,
    "cond_fac": 1.2,
    "skill": 3517,
@@ -302,14 +302,14 @@
    "forced": true,
    "seed_pick": "seed=1",
    "peak_seeds": {
-    "seed=1": 1476184,
-    "seed=2": 1591938,
-    "seed=3": 1469444
+    "seed=1": 511375,
+    "seed=2": 570559,
+    "seed=3": 503393
    },
    "peak_base_seeds": {
-    "seed=1": 1476184,
-    "seed=2": 1591938,
-    "seed=3": 1469444
+    "seed=1": 511375,
+    "seed=2": 570559,
+    "seed=3": 503393
    },
    "skill_seeds": {
     "seed=1": 3517,
@@ -366,9 +366,9 @@
    },
    "peak_k": 969536.0,
    "skill_k": 2770,
-   "peak": 492282,
-   "peak_rand": 492282,
-   "peak_base": 492282,
+   "peak": 437906,
+   "peak_rand": 437906,
+   "peak_base": 437906,
    "skill_base": 4764,
    "cond_fac": 1.0,
    "skill": 4764,
@@ -380,19 +380,19 @@
      "fac": 1.0,
      "kind": "follow",
      "skill": 4765,
-     "sum": 215814
+     "sum": 191814
     }
    ],
    "seed_pick": "seed=2",
    "peak_seeds": {
-    "seed=1": 529080,
-    "seed=2": 492282,
-    "seed=3": 492282
+    "seed=1": 470614,
+    "seed=2": 437906,
+    "seed=3": 437906
    },
    "peak_base_seeds": {
-    "seed=1": 529080,
-    "seed=2": 492282,
-    "seed=3": 492282
+    "seed=1": 470614,
+    "seed=2": 437906,
+    "seed=3": 437906
    },
    "skill_seeds": {
     "seed=1": 4764,
@@ -449,9 +449,9 @@
    },
    "peak_k": 882072.0,
    "skill_k": 164,
-   "peak": 557394,
-   "peak_rand": 557394,
-   "peak_base": 278697,
+   "peak": 508488,
+   "peak_rand": 508488,
+   "peak_base": 254244,
    "skill_base": 164,
    "cond_fac": 1.0,
    "skill": 164,
@@ -463,19 +463,19 @@
      "fac": 1.0,
      "kind": "follow",
      "skill": 164,
-     "sum": 278697
+     "sum": 254244
     }
    ],
    "seed_pick": "seed=1",
    "peak_seeds": {
-    "seed=1": 557394,
-    "seed=2": 598524,
-    "seed=3": 557394
+    "seed=1": 508488,
+    "seed=2": 545988,
+    "seed=3": 508488
    },
    "peak_base_seeds": {
-    "seed=1": 278697,
-    "seed=2": 299262,
-    "seed=3": 278697
+    "seed=1": 254244,
+    "seed=2": 272994,
+    "seed=3": 254244
    },
    "skill_seeds": {
     "seed=1": 164,
@@ -532,9 +532,9 @@
    },
    "peak_k": 1234680.0,
    "skill_k": 3518,
-   "peak": 465433,
-   "peak_rand": 465433,
-   "peak_base": 394559,
+   "peak": 282960,
+   "peak_rand": 282960,
+   "peak_base": 227380,
    "skill_base": 3518,
    "cond_fac": 1.0,
    "skill": 4774,
@@ -546,19 +546,19 @@
      "fac": 1.0,
      "kind": "follow",
      "skill": 4775,
-     "sum": 150162
+     "sum": 96339
     }
    ],
-   "seed_pick": "seed=3",
+   "seed_pick": "seed=2",
    "peak_seeds": {
-    "seed=1": 425324,
-    "seed=2": 470606,
-    "seed=3": 465433
+    "seed=1": 253108,
+    "seed=2": 282960,
+    "seed=3": 288434
    },
    "peak_base_seeds": {
-    "seed=1": 356151,
-    "seed=2": 385177,
-    "seed=3": 394559
+    "seed=1": 211475,
+    "seed=2": 227380,
+    "seed=3": 244072
    },
    "skill_seeds": {
     "seed=1": 4774,
@@ -615,9 +615,9 @@
    },
    "peak_k": 1055470.0,
    "skill_k": 4792,
-   "peak": 321305,
-   "peak_rand": 321305,
-   "peak_base": 321305,
+   "peak": 286598,
+   "peak_rand": 286598,
+   "peak_base": 286598,
    "skill_base": 4787,
    "cond_fac": 1.38,
    "skill": 4787,
@@ -626,14 +626,14 @@
    "forced": true,
    "seed_pick": "seed=1",
    "peak_seeds": {
-    "seed=1": 321305,
-    "seed=2": 346939,
-    "seed=3": 321305
+    "seed=1": 286598,
+    "seed=2": 310748,
+    "seed=3": 286598
    },
    "peak_base_seeds": {
-    "seed=1": 321305,
-    "seed=2": 346939,
-    "seed=3": 321305
+    "seed=1": 286598,
+    "seed=2": 310748,
+    "seed=3": 286598
    },
    "skill_seeds": {
     "seed=1": 4787,
@@ -690,9 +690,9 @@
    },
    "peak_k": 921697.0,
    "skill_k": 10702,
-   "peak": 241336,
-   "peak_rand": 241336,
-   "peak_base": 241336,
+   "peak": 214300,
+   "peak_rand": 214300,
+   "peak_base": 214300,
    "skill_base": 3641,
    "cond_fac": 1.656,
    "skill": 3641,
@@ -701,14 +701,14 @@
    "forced": true,
    "seed_pick": "seed=1",
    "peak_seeds": {
-    "seed=1": 241336,
-    "seed=2": 223063,
-    "seed=3": 297537
+    "seed=1": 214300,
+    "seed=2": 199873,
+    "seed=3": 266656
    },
    "peak_base_seeds": {
-    "seed=1": 241336,
-    "seed=2": 223063,
-    "seed=3": 223153
+    "seed=1": 214300,
+    "seed=2": 199873,
+    "seed=3": 199992
    },
    "skill_seeds": {
     "seed=1": 3641,
@@ -765,9 +765,9 @@
    },
    "peak_k": 1292424.0,
    "skill_k": 3645,
-   "peak": 388160,
-   "peak_rand": 388160,
-   "peak_base": 388160,
+   "peak": 298716,
+   "peak_rand": 298716,
+   "peak_base": 298716,
    "skill_base": 3645,
    "cond_fac": 1.656,
    "skill": 3645,
@@ -776,14 +776,14 @@
    "forced": true,
    "seed_pick": "seed=1",
    "peak_seeds": {
-    "seed=1": 388160,
-    "seed=2": 348952,
-    "seed=3": 421752
+    "seed=1": 298716,
+    "seed=2": 268540,
+    "seed=3": 331554
    },
    "peak_base_seeds": {
-    "seed=1": 388160,
-    "seed=2": 348952,
-    "seed=3": 361501
+    "seed=1": 298716,
+    "seed=2": 268540,
+    "seed=3": 284189
    },
    "skill_seeds": {
     "seed=1": 3645,
@@ -840,9 +840,9 @@
    },
    "peak_k": 1117860.0,
    "skill_k": 4411,
-   "peak": 430586,
-   "peak_rand": 430586,
-   "peak_base": 430586,
+   "peak": 390594,
+   "peak_rand": 390594,
+   "peak_base": 390594,
    "skill_base": 4411,
    "cond_fac": 1.656,
    "skill": 4411,
@@ -851,14 +851,14 @@
    "forced": true,
    "seed_pick": "seed=2",
    "peak_seeds": {
-    "seed=1": 447133,
-    "seed=2": 430586,
-    "seed=3": 416865
+    "seed=1": 405627,
+    "seed=2": 390594,
+    "seed=3": 378184
    },
    "peak_base_seeds": {
-    "seed=1": 370553,
-    "seed=2": 430586,
-    "seed=3": 416865
+    "seed=1": 336155,
+    "seed=2": 390594,
+    "seed=3": 378184
    },
    "skill_seeds": {
     "seed=1": 4411,
@@ -915,9 +915,9 @@
    },
    "peak_k": 1018264.0,
    "skill_k": 318,
-   "peak": 326409,
-   "peak_rand": 326409,
-   "peak_base": 326409,
+   "peak": 297804,
+   "peak_rand": 297804,
+   "peak_base": 297804,
    "skill_base": 318,
    "cond_fac": 1.3,
    "skill": 318,
@@ -926,14 +926,14 @@
    "forced": true,
    "seed_pick": "seed=1",
    "peak_seeds": {
-    "seed=1": 326409,
-    "seed=2": 438926,
-    "seed=3": 326409
+    "seed=1": 297804,
+    "seed=2": 400452,
+    "seed=3": 297804
    },
    "peak_base_seeds": {
-    "seed=1": 326409,
-    "seed=2": 351140,
-    "seed=3": 326409
+    "seed=1": 297804,
+    "seed=2": 320362,
+    "seed=3": 297804
    },
    "skill_seeds": {
     "seed=1": 318,
@@ -990,29 +990,29 @@
    },
    "peak_k": 391262.0,
    "skill_k": 72,
-   "peak": 128888,
-   "peak_rand": 128888,
-   "peak_base": 128888,
-   "skill_base": 72,
+   "peak": 116928,
+   "peak_rand": 116928,
+   "peak_base": 116928,
+   "skill_base": 634,
    "cond_fac": 1.0,
-   "skill": 72,
-   "input_skill": 72,
-   "segs": 1,
+   "skill": 634,
+   "input_skill": 634,
+   "segs": 4,
    "forced": true,
    "seed_pick": "seed=1",
    "peak_seeds": {
-    "seed=1": 128888,
-    "seed=2": 120052,
-    "seed=3": 130689
+    "seed=1": 116928,
+    "seed=2": 108913,
+    "seed=3": 118560
    },
    "peak_base_seeds": {
-    "seed=1": 128888,
-    "seed=2": 120052,
-    "seed=3": 130689
+    "seed=1": 116928,
+    "seed=2": 108913,
+    "seed=3": 118560
    },
    "skill_seeds": {
-    "seed=1": 72,
-    "seed=2": 634,
+    "seed=1": 634,
+    "seed=2": 72,
     "seed=3": 72
    }
   },
@@ -1065,9 +1065,9 @@
    },
    "peak_k": 1044980.0,
    "skill_k": 322,
-   "peak": 363802,
-   "peak_rand": 363802,
-   "peak_base": 326892,
+   "peak": 331859,
+   "peak_rand": 331859,
+   "peak_base": 298192,
    "skill_base": 322,
    "cond_fac": 1.0,
    "skill": 521,
@@ -1079,19 +1079,19 @@
      "fac": 1.0,
      "kind": "follow",
      "skill": 1799,
-     "sum": 118630
+     "sum": 108215
     }
    ],
    "seed_pick": "seed=1",
    "peak_seeds": {
-    "seed=1": 363802,
-    "seed=2": 363802,
-    "seed=3": 363802
+    "seed=1": 331859,
+    "seed=2": 331859,
+    "seed=3": 331859
    },
    "peak_base_seeds": {
-    "seed=1": 326892,
-    "seed=2": 326892,
-    "seed=3": 326892
+    "seed=1": 298192,
+    "seed=2": 298192,
+    "seed=3": 298192
    },
    "skill_seeds": {
     "seed=1": 521,
@@ -1148,9 +1148,9 @@
    },
    "peak_k": 2155256.0,
    "skill_k": 523,
-   "peak": 348248,
-   "peak_rand": 348248,
-   "peak_base": 348248,
+   "peak": 315932,
+   "peak_rand": 315932,
+   "peak_base": 315932,
    "skill_base": 523,
    "cond_fac": 1.0,
    "skill": 523,
@@ -1159,14 +1159,14 @@
    "forced": true,
    "seed_pick": "seed=3",
    "peak_seeds": {
-    "seed=1": 324320,
-    "seed=2": 405400,
-    "seed=3": 348248
+    "seed=1": 294232,
+    "seed=2": 367790,
+    "seed=3": 315932
    },
    "peak_base_seeds": {
-    "seed=1": 324320,
-    "seed=2": 324320,
-    "seed=3": 348248
+    "seed=1": 294232,
+    "seed=2": 294232,
+    "seed=3": 315932
    },
    "skill_seeds": {
     "seed=1": 523,
@@ -1223,9 +1223,9 @@
    },
    "peak_k": 10081.0,
    "skill_k": 4552,
-   "peak": 1385,
-   "peak_rand": 1385,
-   "peak_base": 1385,
+   "peak": 1335,
+   "peak_rand": 1335,
+   "peak_base": 1335,
    "skill_base": 4552,
    "cond_fac": 1.0,
    "skill": 4552,
@@ -1234,14 +1234,14 @@
    "forced": true,
    "seed_pick": "seed=3",
    "peak_seeds": {
-    "seed=1": 1253,
-    "seed=2": 2882,
-    "seed=3": 1385
+    "seed=1": 1208,
+    "seed=2": 2778,
+    "seed=3": 1335
    },
    "peak_base_seeds": {
-    "seed=1": 1253,
-    "seed=2": 1441,
-    "seed=3": 1385
+    "seed=1": 1208,
+    "seed=2": 1389,
+    "seed=3": 1335
    },
    "skill_seeds": {
     "seed=1": 4552,
@@ -1298,9 +1298,9 @@
    },
    "peak_k": 99558.0,
    "skill_k": 190,
-   "peak": 51294,
-   "peak_rand": 51294,
-   "peak_base": 28074,
+   "peak": 34786,
+   "peak_rand": 34786,
+   "peak_base": 19038,
    "skill_base": 190,
    "cond_fac": 1.0,
    "skill": 188,
@@ -1312,19 +1312,19 @@
      "fac": 1.0,
      "kind": "follow",
      "skill": 190,
-     "sum": 28074
+     "sum": 19038
     }
    ],
    "seed_pick": "seed=1",
    "peak_seeds": {
-    "seed=1": 51294,
-    "seed=2": 48348,
-    "seed=3": 54850
+    "seed=1": 34786,
+    "seed=2": 31528,
+    "seed=3": 37120
    },
    "peak_base_seeds": {
-    "seed=1": 28074,
-    "seed=2": 26460,
-    "seed=3": 30018
+    "seed=1": 19038,
+    "seed=2": 17256,
+    "seed=3": 20316
    },
    "skill_seeds": {
     "seed=1": 188,
@@ -1381,25 +1381,25 @@
    },
    "peak_k": 720174.0,
    "skill_k": 814,
-   "peak": 356100,
-   "peak_rand": 356100,
-   "peak_base": 178050,
+   "peak": 275808,
+   "peak_rand": 275808,
+   "peak_base": 137904,
    "skill_base": 814,
    "cond_fac": 1.0,
    "skill": 814,
    "input_skill": 814,
    "segs": 12,
    "forced": false,
-   "seed_pick": "seed=1",
+   "seed_pick": "seed=3",
    "peak_seeds": {
-    "seed=1": 356100,
-    "seed=2": 386064,
-    "seed=3": 353748
+    "seed=1": 266964,
+    "seed=2": 289044,
+    "seed=3": 275808
    },
    "peak_base_seeds": {
-    "seed=1": 178050,
-    "seed=2": 193032,
-    "seed=3": 176874
+    "seed=1": 133482,
+    "seed=2": 144522,
+    "seed=3": 137904
    },
    "skill_seeds": {
     "seed=1": 814,
@@ -1456,9 +1456,9 @@
    },
    "peak_k": 902776.0,
    "skill_k": 731,
-   "peak": 233212,
-   "peak_rand": 233212,
-   "peak_base": 233212,
+   "peak": 207276,
+   "peak_rand": 207276,
+   "peak_base": 207276,
    "skill_base": 731,
    "cond_fac": 1.0,
    "skill": 731,
@@ -1467,14 +1467,14 @@
    "forced": false,
    "seed_pick": "seed=2",
    "peak_seeds": {
-    "seed=1": 343055,
-    "seed=2": 233212,
-    "seed=3": 233212
+    "seed=1": 306160,
+    "seed=2": 207276,
+    "seed=3": 207276
    },
    "peak_base_seeds": {
-    "seed=1": 274444,
-    "seed=2": 233212,
-    "seed=3": 233212
+    "seed=1": 244928,
+    "seed=2": 207276,
+    "seed=3": 207276
    },
    "skill_seeds": {
     "seed=1": 731,
@@ -1531,9 +1531,9 @@
    },
    "peak_k": 1215174.0,
    "skill_k": 530,
-   "peak": 423958,
-   "peak_rand": 423958,
-   "peak_base": 423958,
+   "peak": 386762,
+   "peak_rand": 386762,
+   "peak_base": 386762,
    "skill_base": 530,
    "cond_fac": 1.2,
    "skill": 530,
@@ -1542,14 +1542,14 @@
    "forced": true,
    "seed_pick": "seed=1",
    "peak_seeds": {
-    "seed=1": 423958,
-    "seed=2": 423958,
-    "seed=3": 494617
+    "seed=1": 386762,
+    "seed=2": 386762,
+    "seed=3": 451223
    },
    "peak_base_seeds": {
-    "seed=1": 423958,
-    "seed=2": 423958,
-    "seed=3": 423958
+    "seed=1": 386762,
+    "seed=2": 386762,
+    "seed=3": 386762
    },
    "skill_seeds": {
     "seed=1": 530,
@@ -1606,9 +1606,9 @@
    },
    "peak_k": 333683.0,
    "skill_k": 4507,
-   "peak": 97557,
-   "peak_rand": 97557,
-   "peak_base": 97557,
+   "peak": 86576,
+   "peak_rand": 86576,
+   "peak_base": 86576,
    "skill_base": 4507,
    "cond_fac": 1.3,
    "skill": 4507,
@@ -1617,14 +1617,14 @@
    "forced": true,
    "seed_pick": "seed=3",
    "peak_seeds": {
-    "seed=1": 122542,
-    "seed=2": 90821,
-    "seed=3": 97557
+    "seed=1": 108748,
+    "seed=2": 80597,
+    "seed=3": 86576
    },
    "peak_base_seeds": {
-    "seed=1": 90821,
-    "seed=2": 90821,
-    "seed=3": 97557
+    "seed=1": 80597,
+    "seed=2": 80597,
+    "seed=3": 86576
    },
    "skill_seeds": {
     "seed=1": 4507,
@@ -1681,9 +1681,9 @@
    },
    "peak_k": 2110524.0,
    "skill_k": 3768,
-   "peak": 688450,
-   "peak_rand": 688450,
-   "peak_base": 688450,
+   "peak": 628042,
+   "peak_rand": 628042,
+   "peak_base": 628042,
    "skill_base": 3768,
    "cond_fac": 1.2,
    "skill": 3768,
@@ -1692,14 +1692,14 @@
    "forced": true,
    "seed_pick": "seed=1",
    "peak_seeds": {
-    "seed=1": 688450,
-    "seed=2": 688450,
-    "seed=3": 1032674
+    "seed=1": 628042,
+    "seed=2": 628042,
+    "seed=3": 942062
    },
    "peak_base_seeds": {
-    "seed=1": 688450,
-    "seed=2": 688450,
-    "seed=3": 688450
+    "seed=1": 628042,
+    "seed=2": 628042,
+    "seed=3": 628042
    },
    "skill_seeds": {
     "seed=1": 3768,
@@ -1756,9 +1756,9 @@
    },
    "peak_k": 859259.0,
    "skill_k": 217,
-   "peak": 297474,
-   "peak_rand": 297474,
-   "peak_base": 252814,
+   "peak": 265622,
+   "peak_rand": 265622,
+   "peak_base": 225877,
    "skill_base": 217,
    "cond_fac": 1.0,
    "skill": 217,
@@ -1770,19 +1770,19 @@
      "fac": 1.0,
      "kind": "follow",
      "skill": 533,
-     "sum": 44660
+     "sum": 39745
     }
    ],
    "seed_pick": "seed=2",
    "peak_seeds": {
-    "seed=1": 287740,
-    "seed=2": 297474,
-    "seed=3": 337448
+    "seed=1": 256601,
+    "seed=2": 265622,
+    "seed=3": 301511
    },
    "peak_base_seeds": {
-    "seed=1": 244540,
-    "seed=2": 252814,
-    "seed=3": 286178
+    "seed=1": 218206,
+    "seed=2": 225877,
+    "seed=3": 255826
    },
    "skill_seeds": {
     "seed=1": 217,
@@ -1794,37 +1794,37 @@
      "seed": "seed=1",
      "input_skill": 533,
      "skill": 5158,
-     "peak": 2924397490
+     "peak": 2599160005
     },
     {
      "seed": "seed=1",
      "input_skill": 533,
      "skill": 5157,
-     "peak": 2291483830
+     "peak": 2036635975
     },
     {
      "seed": "seed=2",
      "input_skill": 533,
      "skill": 5157,
-     "peak": 2406422040
+     "peak": 2141525555
     },
     {
      "seed": "seed=2",
      "input_skill": 533,
      "skill": 5158,
-     "peak": 3071348660
+     "peak": 2733257735
     },
     {
      "seed": "seed=3",
      "input_skill": 533,
      "skill": 5158,
-     "peak": 3335890745
+     "peak": 2972300565
     },
     {
      "seed": "seed=3",
      "input_skill": 533,
      "skill": 5157,
-     "peak": 2614511244
+     "peak": 2329546692
     }
    ]
   },
@@ -1877,9 +1877,9 @@
    },
    "peak_k": 644799.0,
    "skill_k": 5088,
-   "peak": 234062,
-   "peak_rand": 234062,
-   "peak_base": 234062,
+   "peak": 213516,
+   "peak_rand": 213516,
+   "peak_base": 213516,
    "skill_base": 5088,
    "cond_fac": 1.0,
    "skill": 5088,
@@ -1888,14 +1888,14 @@
    "forced": false,
    "seed_pick": "seed=3",
    "peak_seeds": {
-    "seed=1": 424652,
-    "seed=2": 189577,
-    "seed=3": 234062
+    "seed=1": 387388,
+    "seed=2": 172941,
+    "seed=3": 213516
    },
    "peak_base_seeds": {
-    "seed=1": 212326,
-    "seed=2": 189577,
-    "seed=3": 234062
+    "seed=1": 193694,
+    "seed=2": 172941,
+    "seed=3": 213516
    },
    "skill_seeds": {
     "seed=1": 5088,
@@ -1952,9 +1952,9 @@
    },
    "peak_k": 391866.0,
    "skill_k": 228,
-   "peak": 97204,
-   "peak_rand": 97204,
-   "peak_base": 97204,
+   "peak": 88068,
+   "peak_rand": 88068,
+   "peak_base": 88068,
    "skill_base": 228,
    "cond_fac": 1.0,
    "skill": 228,
@@ -1966,19 +1966,19 @@
      "fac": 1.0,
      "kind": "follow",
      "skill": 228,
-     "sum": 48602
+     "sum": 44034
     }
    ],
    "seed_pick": "seed=1",
    "peak_seeds": {
-    "seed=1": 97204,
-    "seed=2": 97204,
-    "seed=3": 97204
+    "seed=1": 88068,
+    "seed=2": 88068,
+    "seed=3": 88068
    },
    "peak_base_seeds": {
-    "seed=1": 97204,
-    "seed=2": 97204,
-    "seed=3": 97204
+    "seed=1": 88068,
+    "seed=2": 88068,
+    "seed=3": 88068
    },
    "skill_seeds": {
     "seed=1": 228,
@@ -2035,9 +2035,9 @@
    },
    "peak_k": 1673736.0,
    "skill_k": 379,
-   "peak": 1160496,
-   "peak_rand": 1160496,
-   "peak_base": 580248,
+   "peak": 1001016,
+   "peak_rand": 1001016,
+   "peak_base": 500508,
    "skill_base": 379,
    "cond_fac": 1.0,
    "skill": 379,
@@ -2049,24 +2049,24 @@
      "fac": 1.0,
      "kind": "follow",
      "skill": 379,
-     "sum": 580248
+     "sum": 500508
     }
    ],
    "seed_pick": "seed=2",
    "peak_seeds": {
-    "seed=1": 1174776,
-    "seed=2": 1160496,
-    "seed=3": 1087974
+    "seed=1": 1017540,
+    "seed=2": 1001016,
+    "seed=3": 938460
    },
    "peak_base_seeds": {
-    "seed=1": 587388,
-    "seed=2": 580248,
-    "seed=3": 543984
+    "seed=1": 508770,
+    "seed=2": 500508,
+    "seed=3": 469230
    },
    "skill_seeds": {
     "seed=1": 379,
     "seed=2": 379,
-    "seed=3": 378
+    "seed=3": 379
    }
   },
   "27": {
@@ -2118,9 +2118,9 @@
    },
    "peak_k": 1604416.0,
    "skill_k": 386,
-   "peak": 507566,
-   "peak_rand": 507566,
-   "peak_base": 507566,
+   "peak": 564836,
+   "peak_rand": 564836,
+   "peak_base": 564836,
    "skill_base": 387,
    "cond_fac": 2.0,
    "skill": 387,
@@ -2129,14 +2129,14 @@
    "forced": true,
    "seed_pick": "seed=1",
    "peak_seeds": {
-    "seed=1": 507566,
-    "seed=2": 585376,
-    "seed=3": 485196
+    "seed=1": 564836,
+    "seed=2": 685846,
+    "seed=3": 552466
    },
    "peak_base_seeds": {
-    "seed=1": 507566,
-    "seed=2": 585376,
-    "seed=3": 485196
+    "seed=1": 564836,
+    "seed=2": 685846,
+    "seed=3": 552466
    },
    "skill_seeds": {
     "seed=1": 387,
@@ -2193,9 +2193,9 @@
    },
    "peak_k": 3089292.0,
    "skill_k": 5421,
-   "peak": 1447262,
-   "peak_rand": 1447262,
-   "peak_base": 1447262,
+   "peak": 1320277,
+   "peak_rand": 1320277,
+   "peak_base": 1320277,
    "skill_base": 5421,
    "cond_fac": 2.028,
    "skill": 5421,
@@ -2204,14 +2204,14 @@
    "forced": true,
    "seed_pick": "seed=1",
    "peak_seeds": {
-    "seed=1": 1447262,
-    "seed=2": 1598267,
-    "seed=3": 1447262
+    "seed=1": 1320277,
+    "seed=2": 1458043,
+    "seed=3": 1320277
    },
    "peak_base_seeds": {
-    "seed=1": 1447262,
-    "seed=2": 1598267,
-    "seed=3": 1447262
+    "seed=1": 1320277,
+    "seed=2": 1458043,
+    "seed=3": 1320277
    },
    "skill_seeds": {
     "seed=1": 5421,
@@ -2268,9 +2268,9 @@
    },
    "peak_k": 898698.0,
    "skill_k": 821,
-   "peak": 472036,
-   "peak_rand": 472036,
-   "peak_base": 236018,
+   "peak": 419538,
+   "peak_rand": 419538,
+   "peak_base": 209769,
    "skill_base": 562,
    "cond_fac": 1.0,
    "skill": 562,
@@ -2279,14 +2279,14 @@
    "forced": false,
    "seed_pick": "seed=1",
    "peak_seeds": {
-    "seed=1": 472036,
-    "seed=2": 493916,
-    "seed=3": 472036
+    "seed=1": 419538,
+    "seed=2": 439724,
+    "seed=3": 419538
    },
    "peak_base_seeds": {
-    "seed=1": 236018,
-    "seed=2": 246958,
-    "seed=3": 236018
+    "seed=1": 209769,
+    "seed=2": 219862,
+    "seed=3": 209769
    },
    "skill_seeds": {
     "seed=1": 562,
@@ -2343,25 +2343,25 @@
    },
    "peak_k": 1062288.0,
    "skill_k": 597,
-   "peak": 398997,
-   "peak_rand": 398997,
-   "peak_base": 221226,
+   "peak": 368543,
+   "peak_rand": 368543,
+   "peak_base": 229146,
    "skill_base": 597,
    "cond_fac": 1.0,
    "skill": 597,
    "input_skill": 597,
    "segs": 2,
    "forced": false,
-   "seed_pick": "seed=3",
+   "seed_pick": "seed=2",
    "peak_seeds": {
-    "seed=1": 414937,
-    "seed=2": 337985,
-    "seed=3": 398997
+    "seed=1": 394929,
+    "seed=2": 368543,
+    "seed=3": 288885
    },
    "peak_base_seeds": {
-    "seed=1": 248501,
-    "seed=2": 249867,
-    "seed=3": 221226
+    "seed=1": 246071,
+    "seed=2": 229146,
+    "seed=3": 222239
    },
    "skill_seeds": {
     "seed=1": 597,
@@ -2418,9 +2418,9 @@
    },
    "peak_k": 169964.0,
    "skill_k": 625,
-   "peak": 53538,
-   "peak_rand": 53538,
-   "peak_base": 53538,
+   "peak": 47840,
+   "peak_rand": 47840,
+   "peak_base": 47840,
    "skill_base": 625,
    "cond_fac": 1.0,
    "skill": 625,
@@ -2429,14 +2429,14 @@
    "forced": false,
    "seed_pick": "seed=1",
    "peak_seeds": {
-    "seed=1": 53538,
-    "seed=2": 48390,
-    "seed=3": 72585
+    "seed=1": 47840,
+    "seed=2": 43008,
+    "seed=3": 64512
    },
    "peak_base_seeds": {
-    "seed=1": 53538,
-    "seed=2": 48390,
-    "seed=3": 48390
+    "seed=1": 47840,
+    "seed=2": 43008,
+    "seed=3": 43008
    },
    "skill_seeds": {
     "seed=1": 625,
@@ -2493,9 +2493,9 @@
    },
    "peak_k": 3798252.0,
    "skill_k": 6913,
-   "peak": 736917,
-   "peak_rand": 736917,
-   "peak_base": 736917,
+   "peak": 672252,
+   "peak_rand": 672252,
+   "peak_base": 672252,
    "skill_base": 6913,
    "cond_fac": 1.0,
    "skill": 6913,
@@ -2507,19 +2507,19 @@
      "fac": 1.0,
      "kind": "follow",
      "skill": 5424,
-     "sum": 105273
+     "sum": 96036
     }
    ],
    "seed_pick": "seed=1",
    "peak_seeds": {
-    "seed=1": 736917,
-    "seed=2": 736917,
-    "seed=3": 736917
+    "seed=1": 672252,
+    "seed=2": 672252,
+    "seed=3": 672252
    },
    "peak_base_seeds": {
-    "seed=1": 736917,
-    "seed=2": 736917,
-    "seed=3": 736917
+    "seed=1": 672252,
+    "seed=2": 672252,
+    "seed=3": 672252
    },
    "skill_seeds": {
     "seed=1": 6913,
@@ -2576,9 +2576,9 @@
    },
    "peak_k": 773333.0,
    "skill_k": 743,
-   "peak": 233820,
-   "peak_rand": 233820,
-   "peak_base": 233820,
+   "peak": 208130,
+   "peak_rand": 208130,
+   "peak_base": 208130,
    "skill_base": 743,
    "cond_fac": 1.0,
    "skill": 743,
@@ -2587,14 +2587,14 @@
    "forced": false,
    "seed_pick": "seed=1",
    "peak_seeds": {
-    "seed=1": 233820,
-    "seed=2": 233820,
-    "seed=3": 271345
+    "seed=1": 208130,
+    "seed=2": 208130,
+    "seed=3": 242520
    },
    "peak_base_seeds": {
-    "seed=1": 233820,
-    "seed=2": 233820,
-    "seed=3": 271345
+    "seed=1": 208130,
+    "seed=2": 208130,
+    "seed=3": 242520
    },
    "skill_seeds": {
     "seed=1": 743,
@@ -2651,9 +2651,9 @@
    },
    "peak_k": 557154.0,
    "skill_k": 1017,
-   "peak": 283176,
-   "peak_rand": 283176,
-   "peak_base": 141588,
+   "peak": 260946,
+   "peak_rand": 260946,
+   "peak_base": 130473,
    "skill_base": 1017,
    "cond_fac": 1.5,
    "skill": 1017,
@@ -2662,14 +2662,14 @@
    "forced": true,
    "seed_pick": "seed=1",
    "peak_seeds": {
-    "seed=1": 283176,
-    "seed=2": 263466,
-    "seed=3": 302652
+    "seed=1": 260946,
+    "seed=2": 242802,
+    "seed=3": 279774
    },
    "peak_base_seeds": {
-    "seed=1": 141588,
-    "seed=2": 131733,
-    "seed=3": 151326
+    "seed=1": 130473,
+    "seed=2": 121401,
+    "seed=3": 139887
    },
    "skill_seeds": {
     "seed=1": 1017,
@@ -2726,9 +2726,9 @@
    },
    "peak_k": 1097964.0,
    "skill_k": 1060,
-   "peak": 357390,
-   "peak_rand": 357390,
-   "peak_base": 357390,
+   "peak": 315354,
+   "peak_rand": 315354,
+   "peak_base": 315354,
    "skill_base": 1060,
    "cond_fac": 1.0,
    "skill": 1060,
@@ -2737,14 +2737,14 @@
    "forced": false,
    "seed_pick": "seed=1",
    "peak_seeds": {
-    "seed=1": 357390,
-    "seed=2": 498016,
-    "seed=3": 357390
+    "seed=1": 315354,
+    "seed=2": 441408,
+    "seed=3": 315354
    },
    "peak_base_seeds": {
-    "seed=1": 357390,
-    "seed=2": 373512,
-    "seed=3": 357390
+    "seed=1": 315354,
+    "seed=2": 331056,
+    "seed=3": 315354
    },
    "skill_seeds": {
     "seed=1": 1060,
@@ -2801,9 +2801,9 @@
    },
    "peak_k": 2324178.0,
    "skill_k": 3589,
-   "peak": 592275,
-   "peak_rand": 592275,
-   "peak_base": 592275,
+   "peak": 516464,
+   "peak_rand": 516464,
+   "peak_base": 516464,
    "skill_base": 3589,
    "cond_fac": 1.0,
    "skill": 3589,
@@ -2812,14 +2812,14 @@
    "forced": true,
    "seed_pick": "seed=1",
    "peak_seeds": {
-    "seed=1": 592275,
-    "seed=2": 609442,
-    "seed=3": 560735
+    "seed=1": 516464,
+    "seed=2": 578749,
+    "seed=3": 511817
    },
    "peak_base_seeds": {
-    "seed=1": 592275,
-    "seed=2": 609442,
-    "seed=3": 560735
+    "seed=1": 516464,
+    "seed=2": 578749,
+    "seed=3": 511817
    },
    "skill_seeds": {
     "seed=1": 3589,
@@ -2876,9 +2876,9 @@
    },
    "peak_k": 947700.0,
    "skill_k": 1098,
-   "peak": 184044,
-   "peak_rand": 184044,
-   "peak_base": 184044,
+   "peak": 159366,
+   "peak_rand": 159366,
+   "peak_base": 159366,
    "skill_base": 1098,
    "cond_fac": 1.0,
    "skill": 1098,
@@ -2887,14 +2887,14 @@
    "forced": false,
    "seed_pick": "seed=3",
    "peak_seeds": {
-    "seed=1": 185346,
-    "seed=2": 177426,
-    "seed=3": 184044
+    "seed=1": 160488,
+    "seed=2": 153702,
+    "seed=3": 159366
    },
    "peak_base_seeds": {
-    "seed=1": 185346,
-    "seed=2": 177426,
-    "seed=3": 184044
+    "seed=1": 160488,
+    "seed=2": 153702,
+    "seed=3": 159366
    },
    "skill_seeds": {
     "seed=1": 1098,
@@ -2951,9 +2951,9 @@
    },
    "peak_k": 1086164.0,
    "skill_k": 1070,
-   "peak": 401118,
-   "peak_rand": 401118,
-   "peak_base": 401118,
+   "peak": 365432,
+   "peak_rand": 365432,
+   "peak_base": 365432,
    "skill_base": 1070,
    "cond_fac": 1.0,
    "skill": 1070,
@@ -2965,19 +2965,19 @@
      "fac": 1.0,
      "kind": "follow",
      "skill": 1073,
-     "sum": 55710
+     "sum": 50754
     }
    ],
    "seed_pick": "seed=1",
    "peak_seeds": {
-    "seed=1": 401118,
-    "seed=2": 436408,
-    "seed=3": 401118
+    "seed=1": 365432,
+    "seed=2": 397583,
+    "seed=3": 365432
    },
    "peak_base_seeds": {
-    "seed=1": 401118,
-    "seed=2": 436408,
-    "seed=3": 401118
+    "seed=1": 365432,
+    "seed=2": 397583,
+    "seed=3": 365432
    },
    "skill_seeds": {
     "seed=1": 1070,
@@ -3034,25 +3034,25 @@
    },
    "peak_k": 1118304.0,
    "skill_k": 1111,
-   "peak": 209928,
-   "peak_rand": 209928,
-   "peak_base": 209928,
+   "peak": 211026,
+   "peak_rand": 211026,
+   "peak_base": 211026,
    "skill_base": 1111,
    "cond_fac": 1.0,
    "skill": 1111,
    "input_skill": 1111,
    "segs": 6,
    "forced": false,
-   "seed_pick": "seed=2",
+   "seed_pick": "seed=1",
    "peak_seeds": {
-    "seed=1": 203346,
-    "seed=2": 209928,
-    "seed=3": 213996
+    "seed=1": 211026,
+    "seed=2": 204900,
+    "seed=3": 217860
    },
    "peak_base_seeds": {
-    "seed=1": 203346,
-    "seed=2": 209928,
-    "seed=3": 213996
+    "seed=1": 211026,
+    "seed=2": 204900,
+    "seed=3": 217860
    },
    "skill_seeds": {
     "seed=1": 1111,
@@ -3109,9 +3109,9 @@
    },
    "peak_k": 73972.0,
    "skill_k": 1117,
-   "peak": 11704,
-   "peak_rand": 11704,
-   "peak_base": 11704,
+   "peak": 11288,
+   "peak_rand": 11288,
+   "peak_base": 11288,
    "skill_base": 1117,
    "cond_fac": 1.0,
    "skill": 1117,
@@ -3120,14 +3120,14 @@
    "forced": false,
    "seed_pick": "seed=1",
    "peak_seeds": {
-    "seed=1": 11704,
-    "seed=2": 11704,
-    "seed=3": 11704
+    "seed=1": 11288,
+    "seed=2": 11288,
+    "seed=3": 11288
    },
    "peak_base_seeds": {
-    "seed=1": 11704,
-    "seed=2": 11704,
-    "seed=3": 11704
+    "seed=1": 11288,
+    "seed=2": 11288,
+    "seed=3": 11288
    },
    "skill_seeds": {
     "seed=1": 1117,
@@ -3184,9 +3184,9 @@
    },
    "peak_k": 1681014.0,
    "skill_k": 1155,
-   "peak": 355758,
-   "peak_rand": 355758,
-   "peak_base": 355758,
+   "peak": 315777,
+   "peak_rand": 315777,
+   "peak_base": 315777,
    "skill_base": 1155,
    "cond_fac": 1.0,
    "skill": 1155,
@@ -3198,19 +3198,19 @@
      "fac": 1.0,
      "kind": "follow",
      "skill": 3713,
-     "sum": 61836
+     "sum": 56094
     }
    ],
    "seed_pick": "seed=1",
    "peak_seeds": {
-    "seed=1": 355758,
-    "seed=2": 389919,
-    "seed=3": 328230
+    "seed=1": 315777,
+    "seed=2": 345774,
+    "seed=3": 291351
    },
    "peak_base_seeds": {
-    "seed=1": 355758,
-    "seed=2": 305724,
-    "seed=3": 328230
+    "seed=1": 315777,
+    "seed=2": 271383,
+    "seed=3": 291351
    },
    "skill_seeds": {
     "seed=1": 1155,
@@ -3267,9 +3267,9 @@
    },
    "peak_k": 1469496.0,
    "skill_k": 1158,
-   "peak": 256543,
-   "peak_rand": 256543,
-   "peak_base": 219894,
+   "peak": 234031,
+   "peak_rand": 234031,
+   "peak_base": 200598,
    "skill_base": 1158,
    "cond_fac": 1.0,
    "skill": 1158,
@@ -3281,19 +3281,19 @@
      "fac": 1.0,
      "kind": "recast",
      "skill": 1158,
-     "sum": 36649
+     "sum": 33433
     }
    ],
    "seed_pick": "seed=3",
    "peak_seeds": {
-    "seed=1": 236118,
-    "seed=2": 275471,
-    "seed=3": 256543
+    "seed=1": 215394,
+    "seed=2": 251293,
+    "seed=3": 234031
    },
    "peak_base_seeds": {
-    "seed=1": 236118,
-    "seed=2": 236118,
-    "seed=3": 219894
+    "seed=1": 215394,
+    "seed=2": 215394,
+    "seed=3": 200598
    },
    "skill_seeds": {
     "seed=1": 1158,
@@ -3350,30 +3350,38 @@
    },
    "peak_k": 1663844.0,
    "skill_k": 1180,
-   "peak": 324687,
-   "peak_rand": 324687,
-   "peak_base": 324687,
-   "skill_base": 1180,
+   "peak": 309901,
+   "peak_rand": 309901,
+   "peak_base": 291816,
+   "skill_base": 1181,
    "cond_fac": 1.0,
    "skill": 1180,
    "input_skill": 1180,
-   "segs": 7,
+   "segs": 8,
    "forced": false,
-   "seed_pick": "seed=3",
+   "tail": [
+    {
+     "fac": 1.0,
+     "kind": "recast",
+     "skill": 1180,
+     "sum": 38999
+    }
+   ],
+   "seed_pick": "seed=1",
    "peak_seeds": {
-    "seed=1": 341612,
-    "seed=2": 298622,
-    "seed=3": 324687
+    "seed=1": 309901,
+    "seed=2": 291816,
+    "seed=3": 317352
    },
    "peak_base_seeds": {
-    "seed=1": 298622,
-    "seed=2": 298622,
-    "seed=3": 324687
+    "seed=1": 291816,
+    "seed=2": 291816,
+    "seed=3": 317352
    },
    "skill_seeds": {
     "seed=1": 1180,
-    "seed=2": 1180,
-    "seed=3": 1180
+    "seed=2": 1181,
+    "seed=3": 1181
    }
   },
   "44": {
@@ -3425,9 +3433,9 @@
    },
    "peak_k": 78568.0,
    "skill_k": 1167,
-   "peak": 38152,
-   "peak_rand": 38152,
-   "peak_base": 38152,
+   "peak": 34890,
+   "peak_rand": 34890,
+   "peak_base": 34890,
    "skill_base": 1167,
    "cond_fac": 1.0,
    "skill": 1167,
@@ -3439,19 +3447,19 @@
      "fac": 1.0,
      "kind": "follow",
      "skill": 1169,
-     "sum": 19076
+     "sum": 17445
     }
    ],
    "seed_pick": "seed=1",
    "peak_seeds": {
-    "seed=1": 38152,
-    "seed=2": 38152,
-    "seed=3": 38152
+    "seed=1": 34890,
+    "seed=2": 34890,
+    "seed=3": 34890
    },
    "peak_base_seeds": {
-    "seed=1": 38152,
-    "seed=2": 38152,
-    "seed=3": 38152
+    "seed=1": 34890,
+    "seed=2": 34890,
+    "seed=3": 34890
    },
    "skill_seeds": {
     "seed=1": 1167,
@@ -3508,9 +3516,9 @@
    },
    "peak_k": 375928.0,
    "skill_k": 6161,
-   "peak": 481530,
-   "peak_rand": 481530,
-   "peak_base": 452473,
+   "peak": 192954,
+   "peak_rand": 192954,
+   "peak_base": 179660,
    "skill_base": 6161,
    "cond_fac": 1.0,
    "skill": 1188,
@@ -3522,19 +3530,19 @@
      "fac": 1.0,
      "kind": "follow",
      "skill": 1194,
-     "sum": 242963
+     "sum": 101037
     }
    ],
-   "seed_pick": "seed=2",
+   "seed_pick": "seed=3",
    "peak_seeds": {
-    "seed=1": 506507,
-    "seed=2": 481530,
-    "seed=3": 449688
+    "seed=1": 191371,
+    "seed=2": 202965,
+    "seed=3": 192954
    },
    "peak_base_seeds": {
-    "seed=1": 453814,
-    "seed=2": 452473,
-    "seed=3": 428750
+    "seed=1": 181449,
+    "seed=2": 185661,
+    "seed=3": 179660
    },
    "skill_seeds": {
     "seed=1": 1188,
@@ -3591,9 +3599,9 @@
    },
    "peak_k": 1325714.0,
    "skill_k": 2034,
-   "peak": 340195,
-   "peak_rand": 340195,
-   "peak_base": 183806,
+   "peak": 303658,
+   "peak_rand": 303658,
+   "peak_base": 164366,
    "skill_base": 2034,
    "cond_fac": 1.0,
    "skill": 2034,
@@ -3605,19 +3613,19 @@
      "fac": 1.0,
      "kind": "follow",
      "skill": 5445,
-     "sum": 27417
+     "sum": 25074
     }
    ],
    "seed_pick": "seed=1",
    "peak_seeds": {
-    "seed=1": 340195,
-    "seed=2": 340195,
-    "seed=3": 367338
+    "seed=1": 303658,
+    "seed=2": 303658,
+    "seed=3": 329246
    },
    "peak_base_seeds": {
-    "seed=1": 183806,
-    "seed=2": 183806,
-    "seed=3": 198471
+    "seed=1": 164366,
+    "seed=2": 164366,
+    "seed=3": 178216
    },
    "skill_seeds": {
     "seed=1": 2034,
@@ -3674,9 +3682,9 @@
    },
    "peak_k": 381996.0,
    "skill_k": 1199,
-   "peak": 350742,
-   "peak_rand": 350742,
-   "peak_base": 350742,
+   "peak": 319385,
+   "peak_rand": 319385,
+   "peak_base": 319385,
    "skill_base": 1200,
    "cond_fac": 1.0,
    "skill": 1200,
@@ -3688,25 +3696,25 @@
      "fac": 1.0,
      "kind": "follow",
      "skill": 1205,
-     "sum": 124083
+     "sum": 112990
     },
     {
      "fac": 1.0,
      "kind": "follow",
      "skill": 1206,
-     "sum": 124083
+     "sum": 112990
     }
    ],
    "seed_pick": "seed=2",
    "peak_seeds": {
-    "seed=1": 336664,
-    "seed=2": 350742,
-    "seed=3": 405224
+    "seed=1": 306569,
+    "seed=2": 319385,
+    "seed=3": 369012
    },
    "peak_base_seeds": {
-    "seed=1": 336664,
-    "seed=2": 350742,
-    "seed=3": 313531
+    "seed=1": 306569,
+    "seed=2": 319385,
+    "seed=3": 285513
    },
    "skill_seeds": {
     "seed=1": 1200,
@@ -3763,9 +3771,9 @@
    },
    "peak_k": 1360970.0,
    "skill_k": 1212,
-   "peak": 433758,
-   "peak_rand": 433758,
-   "peak_base": 433758,
+   "peak": 386231,
+   "peak_rand": 386231,
+   "peak_base": 386231,
    "skill_base": 1212,
    "cond_fac": 1.0,
    "skill": 1212,
@@ -3777,19 +3785,19 @@
      "fac": 1.0,
      "kind": "follow",
      "skill": 10708,
-     "sum": 54494
+     "sum": 47966
     }
    ],
-   "seed_pick": "seed=1",
+   "seed_pick": "seed=2",
    "peak_seeds": {
-    "seed=1": 433758,
-    "seed=2": 431855,
-    "seed=3": 440890
+    "seed=1": 387212,
+    "seed=2": 386231,
+    "seed=3": 379901
    },
    "peak_base_seeds": {
-    "seed=1": 433758,
-    "seed=2": 431855,
-    "seed=3": 440890
+    "seed=1": 387212,
+    "seed=2": 386231,
+    "seed=3": 379901
    },
    "skill_seeds": {
     "seed=1": 1212,
@@ -3846,9 +3854,9 @@
    },
    "peak_k": 620610.0,
    "skill_k": 1232,
-   "peak": 272650,
-   "peak_rand": 272650,
-   "peak_base": 228876,
+   "peak": 247350,
+   "peak_rand": 247350,
+   "peak_base": 201960,
    "skill_base": 1232,
    "cond_fac": 1.0,
    "skill": 1229,
@@ -3860,19 +3868,19 @@
      "fac": 1.0,
      "kind": "recast",
      "skill": 1229,
-     "sum": 136325
+     "sum": 123675
     }
    ],
    "seed_pick": "seed=3",
    "peak_seeds": {
-    "seed=1": 276444,
-    "seed=2": 232062,
-    "seed=3": 272650
+    "seed=1": 250788,
+    "seed=2": 204768,
+    "seed=3": 247350
    },
    "peak_base_seeds": {
-    "seed=1": 232062,
-    "seed=2": 232062,
-    "seed=3": 228876
+    "seed=1": 204768,
+    "seed=2": 204768,
+    "seed=3": 201960
    },
    "skill_seeds": {
     "seed=1": 1229,
@@ -3929,9 +3937,9 @@
    },
    "peak_k": 2238785.0,
    "skill_k": 1340,
-   "peak": 1001270,
-   "peak_rand": 1001270,
-   "peak_base": 817573,
+   "peak": 913395,
+   "peak_rand": 913395,
+   "peak_base": 745822,
    "skill_base": 1340,
    "cond_fac": 2.16,
    "skill": 1340,
@@ -3943,19 +3951,19 @@
      "fac": 1.2,
      "kind": "follow",
      "skill": 1348,
-     "sum": 183697
+     "sum": 167573
     }
    ],
    "seed_pick": "seed=1",
    "peak_seeds": {
-    "seed=1": 1001270,
-    "seed=2": 998825,
-    "seed=3": 1070172
+    "seed=1": 913395,
+    "seed=2": 911166,
+    "seed=3": 976253
    },
    "peak_base_seeds": {
-    "seed=1": 817573,
-    "seed=2": 817573,
-    "seed=3": 873839
+    "seed=1": 745822,
+    "seed=2": 745822,
+    "seed=3": 797146
    },
    "skill_seeds": {
     "seed=1": 1340,
@@ -4012,9 +4020,9 @@
    },
    "peak_k": 442521.0,
    "skill_k": 2004,
-   "peak": 371646,
-   "peak_rand": 371646,
-   "peak_base": 139437,
+   "peak": 333378,
+   "peak_rand": 333378,
+   "peak_base": 125082,
    "skill_base": 2004,
    "cond_fac": 1.0,
    "skill": 2004,
@@ -4026,19 +4034,19 @@
      "fac": 1.0,
      "kind": "follow",
      "skill": 2011,
-     "sum": 92772
+     "sum": 83214
     }
    ],
    "seed_pick": "seed=2",
    "peak_seeds": {
-    "seed=1": 399420,
-    "seed=2": 371646,
-    "seed=3": 325296
+    "seed=1": 358263,
+    "seed=2": 333378,
+    "seed=3": 291744
    },
    "peak_base_seeds": {
-    "seed=1": 149859,
-    "seed=2": 139437,
-    "seed=3": 162648
+    "seed=1": 134415,
+    "seed=2": 125082,
+    "seed=3": 145872
    },
    "skill_seeds": {
     "seed=1": 2004,
@@ -4095,9 +4103,9 @@
    },
    "peak_k": 1866861.0,
    "skill_k": 6013,
-   "peak": 671411,
-   "peak_rand": 671411,
-   "peak_base": 374509,
+   "peak": 569261,
+   "peak_rand": 569261,
+   "peak_base": 336395,
    "skill_base": 6013,
    "cond_fac": 1.0,
    "skill": 6013,
@@ -4109,19 +4117,19 @@
      "fac": 1.0,
      "kind": "follow",
      "skill": 10709,
-     "sum": 23377
+     "sum": 25121
     }
    ],
-   "seed_pick": "seed=2",
+   "seed_pick": "seed=1",
    "peak_seeds": {
-    "seed=1": 681258,
-    "seed=2": 671411,
-    "seed=3": 572356
+    "seed=1": 569261,
+    "seed=2": 560106,
+    "seed=3": 622018
    },
    "peak_base_seeds": {
-    "seed=1": 381519,
-    "seed=2": 374509,
-    "seed=3": 385874
+    "seed=1": 336395,
+    "seed=2": 336596,
+    "seed=3": 377999
    },
    "skill_seeds": {
     "seed=1": 6013,
@@ -4178,9 +4186,9 @@
    },
    "peak_k": 651902.0,
    "skill_k": 2058,
-   "peak": 212807,
-   "peak_rand": 212807,
-   "peak_base": 212807,
+   "peak": 189129,
+   "peak_rand": 189129,
+   "peak_base": 189129,
    "skill_base": 2058,
    "cond_fac": 1.5,
    "skill": 2058,
@@ -4189,14 +4197,14 @@
    "forced": true,
    "seed_pick": "seed=2",
    "peak_seeds": {
-    "seed=1": 293659,
-    "seed=2": 212807,
-    "seed=3": 198069
+    "seed=1": 260994,
+    "seed=2": 189129,
+    "seed=3": 176039
    },
    "peak_base_seeds": {
-    "seed=1": 198069,
-    "seed=2": 212807,
-    "seed=3": 198069
+    "seed=1": 176039,
+    "seed=2": 189129,
+    "seed=3": 176039
    },
    "skill_seeds": {
     "seed=1": 2058,
@@ -4253,9 +4261,9 @@
    },
    "peak_k": 970580.0,
    "skill_k": 2067,
-   "peak": 590146,
-   "peak_rand": 590146,
-   "peak_base": 295073,
+   "peak": 538327,
+   "peak_rand": 538327,
+   "peak_base": 269163,
    "skill_base": 2067,
    "cond_fac": 1.1538,
    "skill": 2067,
@@ -4264,14 +4272,14 @@
    "forced": true,
    "seed_pick": "seed=2",
    "peak_seeds": {
-    "seed=1": 649161,
-    "seed=2": 590146,
-    "seed=3": 549888
+    "seed=1": 592160,
+    "seed=2": 538327,
+    "seed=3": 501623
    },
    "peak_base_seeds": {
-    "seed=1": 295073,
-    "seed=2": 295073,
-    "seed=3": 274944
+    "seed=1": 269163,
+    "seed=2": 269163,
+    "seed=3": 250812
    },
    "skill_seeds": {
     "seed=1": 2067,
@@ -4328,9 +4336,9 @@
    },
    "peak_k": 524429.0,
    "skill_k": 2082,
-   "peak": 556493,
-   "peak_rand": 556493,
-   "peak_base": 556493,
+   "peak": 241945,
+   "peak_rand": 241945,
+   "peak_base": 241945,
    "skill_base": 2082,
    "cond_fac": 1.0,
    "skill": 2082,
@@ -4342,19 +4350,19 @@
      "fac": 1.0,
      "kind": "follow",
      "skill": 2086,
-     "sum": 248434
+     "sum": 108011
     }
    ],
    "seed_pick": "seed=1",
    "peak_seeds": {
-    "seed=1": 556493,
-    "seed=2": 556493,
-    "seed=3": 556493
+    "seed=1": 241945,
+    "seed=2": 241945,
+    "seed=3": 241945
    },
    "peak_base_seeds": {
-    "seed=1": 556493,
-    "seed=2": 556493,
-    "seed=3": 556493
+    "seed=1": 241945,
+    "seed=2": 241945,
+    "seed=3": 241945
    },
    "skill_seeds": {
     "seed=1": 2082,
@@ -4411,30 +4419,30 @@
    },
    "peak_k": 584303.0,
    "skill_k": 2092,
-   "peak": 178935,
-   "peak_rand": 178935,
-   "peak_base": 178935,
-   "skill_base": 5494,
+   "peak": 67841,
+   "peak_rand": 67841,
+   "peak_base": 67841,
+   "skill_base": 2092,
    "cond_fac": 1.0,
-   "skill": 5494,
-   "input_skill": 5494,
-   "segs": 5,
-   "forced": true,
+   "skill": 2092,
+   "input_skill": 2092,
+   "segs": 1,
+   "forced": false,
    "seed_pick": "seed=1",
    "peak_seeds": {
-    "seed=1": 178935,
-    "seed=2": 178935,
-    "seed=3": 178935
+    "seed=1": 67841,
+    "seed=2": 67841,
+    "seed=3": 67841
    },
    "peak_base_seeds": {
-    "seed=1": 178935,
-    "seed=2": 178935,
-    "seed=3": 178935
+    "seed=1": 67841,
+    "seed=2": 67841,
+    "seed=3": 67841
    },
    "skill_seeds": {
-    "seed=1": 5494,
-    "seed=2": 5494,
-    "seed=3": 5494
+    "seed=1": 2092,
+    "seed=2": 2092,
+    "seed=3": 2092
    }
   },
   "57": {
@@ -4486,9 +4494,9 @@
    },
    "peak_k": 1079260.0,
    "skill_k": 2125,
-   "peak": 330580,
-   "peak_rand": 330580,
-   "peak_base": 330580,
+   "peak": 301032,
+   "peak_rand": 301032,
+   "peak_base": 301032,
    "skill_base": 2125,
    "cond_fac": 1.0,
    "skill": 2125,
@@ -4497,14 +4505,14 @@
    "forced": false,
    "seed_pick": "seed=2",
    "peak_seeds": {
-    "seed=1": 391012,
-    "seed=2": 330580,
-    "seed=3": 307884
+    "seed=1": 356072,
+    "seed=2": 301032,
+    "seed=3": 280372
    },
    "peak_base_seeds": {
-    "seed=1": 391012,
-    "seed=2": 330580,
-    "seed=3": 307884
+    "seed=1": 356072,
+    "seed=2": 301032,
+    "seed=3": 280372
    },
    "skill_seeds": {
     "seed=1": 2125,
@@ -4561,9 +4569,9 @@
    },
    "peak_k": 618201.0,
    "skill_k": 10711,
-   "peak": 221096,
-   "peak_rand": 221096,
-   "peak_base": 221096,
+   "peak": 201696,
+   "peak_rand": 201696,
+   "peak_base": 201696,
    "skill_base": 10711,
    "cond_fac": 1.0,
    "skill": 10711,
@@ -4572,14 +4580,14 @@
    "forced": false,
    "seed_pick": "seed=1",
    "peak_seeds": {
-    "seed=1": 221096,
-    "seed=2": 199349,
-    "seed=3": 398698
+    "seed=1": 201696,
+    "seed=2": 181857,
+    "seed=3": 363714
    },
    "peak_base_seeds": {
-    "seed=1": 221096,
-    "seed=2": 199349,
-    "seed=3": 199349
+    "seed=1": 201696,
+    "seed=2": 181857,
+    "seed=3": 181857
    },
    "skill_seeds": {
     "seed=1": 10711,
@@ -4636,30 +4644,30 @@
    },
    "peak_k": 1527955.0,
    "skill_k": 6905,
-   "peak": 412016,
-   "peak_rand": 412016,
-   "peak_base": 412016,
-   "skill_base": 6905,
+   "peak": 303382,
+   "peak_rand": 303382,
+   "peak_base": 303382,
+   "skill_base": 2195,
    "cond_fac": 1.0,
-   "skill": 6905,
-   "input_skill": 6905,
-   "segs": 11,
-   "forced": true,
+   "skill": 2195,
+   "input_skill": 2195,
+   "segs": 1,
+   "forced": false,
    "seed_pick": "seed=1",
    "peak_seeds": {
-    "seed=1": 412016,
-    "seed=2": 415998,
-    "seed=3": 385440
+    "seed=1": 303382,
+    "seed=2": 306991,
+    "seed=3": 285405
    },
    "peak_base_seeds": {
-    "seed=1": 412016,
-    "seed=2": 415998,
-    "seed=3": 385440
+    "seed=1": 303382,
+    "seed=2": 306991,
+    "seed=3": 285405
    },
    "skill_seeds": {
-    "seed=1": 6905,
-    "seed=2": 6905,
-    "seed=3": 6905
+    "seed=1": 2195,
+    "seed=2": 2195,
+    "seed=3": 2195
    }
   },
   "60": {
@@ -4711,9 +4719,9 @@
    },
    "peak_k": 1458111.0,
    "skill_k": 2226,
-   "peak": 225513,
-   "peak_rand": 225513,
-   "peak_base": 225513,
+   "peak": 205449,
+   "peak_rand": 205449,
+   "peak_base": 205449,
    "skill_base": 2226,
    "cond_fac": 1.0,
    "skill": 2226,
@@ -4722,14 +4730,14 @@
    "forced": false,
    "seed_pick": "seed=2",
    "peak_seeds": {
-    "seed=1": 231756,
-    "seed=2": 225513,
-    "seed=3": 207987
+    "seed=1": 211137,
+    "seed=2": 205449,
+    "seed=3": 189483
    },
    "peak_base_seeds": {
-    "seed=1": 231756,
-    "seed=2": 225513,
-    "seed=3": 207987
+    "seed=1": 211137,
+    "seed=2": 205449,
+    "seed=3": 189483
    },
    "skill_seeds": {
     "seed=1": 2226,
@@ -4786,9 +4794,9 @@
    },
    "peak_k": 1590318.0,
    "skill_k": 5526,
-   "peak": 422211,
-   "peak_rand": 422211,
-   "peak_base": 211105,
+   "peak": 327712,
+   "peak_rand": 327712,
+   "peak_base": 163856,
    "skill_base": 5526,
    "cond_fac": 1.56,
    "skill": 5526,
@@ -4797,14 +4805,14 @@
    "forced": true,
    "seed_pick": "seed=2",
    "peak_seeds": {
-    "seed=1": 446846,
-    "seed=2": 422211,
-    "seed=3": 223292
+    "seed=1": 344167,
+    "seed=2": 327712,
+    "seed=3": 179572
    },
    "peak_base_seeds": {
-    "seed=1": 223423,
-    "seed=2": 211105,
-    "seed=3": 223292
+    "seed=1": 172084,
+    "seed=2": 163856,
+    "seed=3": 179572
    },
    "skill_seeds": {
     "seed=1": 5526,
@@ -4861,9 +4869,9 @@
    },
    "peak_k": 1061637.0,
    "skill_k": 10715,
-   "peak": 288089,
-   "peak_rand": 288089,
-   "peak_base": 288089,
+   "peak": 256568,
+   "peak_rand": 256568,
+   "peak_base": 256568,
    "skill_base": 10715,
    "cond_fac": 1.5,
    "skill": 10715,
@@ -4872,14 +4880,14 @@
    "forced": true,
    "seed_pick": "seed=2",
    "peak_seeds": {
-    "seed=1": 309363,
-    "seed=2": 288089,
-    "seed=3": 288089
+    "seed=1": 275510,
+    "seed=2": 256568,
+    "seed=3": 256568
    },
    "peak_base_seeds": {
-    "seed=1": 309363,
-    "seed=2": 288089,
-    "seed=3": 288089
+    "seed=1": 275510,
+    "seed=2": 256568,
+    "seed=3": 256568
    },
    "skill_seeds": {
     "seed=1": 10715,
@@ -4936,9 +4944,9 @@
    },
    "peak_k": 378112.0,
    "skill_k": 5455,
-   "peak": 175770,
-   "peak_rand": 175770,
-   "peak_base": 175770,
+   "peak": 151951,
+   "peak_rand": 151951,
+   "peak_base": 151951,
    "skill_base": 5455,
    "cond_fac": 1.0833,
    "skill": 5455,
@@ -4947,14 +4955,14 @@
    "forced": true,
    "seed_pick": "seed=3",
    "peak_seeds": {
-    "seed=1": 169229,
-    "seed=2": 175941,
-    "seed=3": 175770
+    "seed=1": 146389,
+    "seed=2": 152329,
+    "seed=3": 151951
    },
    "peak_base_seeds": {
-    "seed=1": 169229,
-    "seed=2": 175941,
-    "seed=3": 175770
+    "seed=1": 146389,
+    "seed=2": 152329,
+    "seed=3": 151951
    },
    "skill_seeds": {
     "seed=1": 5455,
@@ -5011,9 +5019,9 @@
    },
    "peak_k": 701139.0,
    "skill_k": 2358,
-   "peak": 442040,
-   "peak_rand": 442040,
-   "peak_base": 222739,
+   "peak": 439866,
+   "peak_rand": 439866,
+   "peak_base": 221807,
    "skill_base": 2358,
    "cond_fac": 1.2,
    "skill": 2358,
@@ -5022,14 +5030,14 @@
    "forced": true,
    "seed_pick": "seed=2",
    "peak_seeds": {
-    "seed=1": 495083,
-    "seed=2": 442040,
-    "seed=3": 261442
+    "seed=1": 492649,
+    "seed=2": 439866,
+    "seed=3": 238502
    },
    "peak_base_seeds": {
-    "seed=1": 249466,
-    "seed=2": 222739,
-    "seed=3": 222739
+    "seed=1": 248422,
+    "seed=2": 221807,
+    "seed=3": 221807
    },
    "skill_seeds": {
     "seed=1": 2358,
@@ -5086,9 +5094,9 @@
    },
    "peak_k": 620031.0,
    "skill_k": 2586,
-   "peak": 184395,
-   "peak_rand": 184395,
-   "peak_base": 184395,
+   "peak": 126303,
+   "peak_rand": 126303,
+   "peak_base": 126303,
    "skill_base": 2586,
    "cond_fac": 1.0,
    "skill": 2586,
@@ -5097,14 +5105,14 @@
    "forced": false,
    "seed_pick": "seed=3",
    "peak_seeds": {
-    "seed=1": 189087,
-    "seed=2": 169401,
-    "seed=3": 184395
+    "seed=1": 130116,
+    "seed=2": 114390,
+    "seed=3": 126303
    },
    "peak_base_seeds": {
-    "seed=1": 189087,
-    "seed=2": 169401,
-    "seed=3": 184395
+    "seed=1": 130116,
+    "seed=2": 114390,
+    "seed=3": 126303
    },
    "skill_seeds": {
     "seed=1": 2586,
@@ -5161,9 +5169,9 @@
    },
    "peak_k": 1079631.0,
    "skill_k": 10717,
-   "peak": 277160,
-   "peak_rand": 277160,
-   "peak_base": 277160,
+   "peak": 246848,
+   "peak_rand": 246848,
+   "peak_base": 246848,
    "skill_base": 10717,
    "cond_fac": 1.5,
    "skill": 10717,
@@ -5172,14 +5180,14 @@
    "forced": true,
    "seed_pick": "seed=1",
    "peak_seeds": {
-    "seed=1": 277160,
-    "seed=2": 306081,
-    "seed=3": 277160
+    "seed=1": 246848,
+    "seed=2": 273294,
+    "seed=3": 246848
    },
    "peak_base_seeds": {
-    "seed=1": 277160,
-    "seed=2": 306081,
-    "seed=3": 277160
+    "seed=1": 246848,
+    "seed=2": 273294,
+    "seed=3": 246848
    },
    "skill_seeds": {
     "seed=1": 10717,
@@ -5236,9 +5244,9 @@
    },
    "peak_k": 1483347.0,
    "skill_k": 2386,
-   "peak": 491770,
-   "peak_rand": 491770,
-   "peak_base": 491770,
+   "peak": 446126,
+   "peak_rand": 446126,
+   "peak_base": 446126,
    "skill_base": 2386,
    "cond_fac": 1.0,
    "skill": 2386,
@@ -5247,14 +5255,14 @@
    "forced": false,
    "seed_pick": "seed=2",
    "peak_seeds": {
-    "seed=1": 642800,
-    "seed=2": 491770,
-    "seed=3": 478826
+    "seed=1": 583152,
+    "seed=2": 446126,
+    "seed=3": 436341
    },
    "peak_base_seeds": {
-    "seed=1": 491770,
-    "seed=2": 491770,
-    "seed=3": 478826
+    "seed=1": 446126,
+    "seed=2": 446126,
+    "seed=3": 436341
    },
    "skill_seeds": {
     "seed=1": 2386,
@@ -5311,9 +5319,9 @@
    },
    "peak_k": 903105.0,
    "skill_k": 2342,
-   "peak": 304314,
-   "peak_rand": 304314,
-   "peak_base": 239841,
+   "peak": 240788,
+   "peak_rand": 240788,
+   "peak_base": 189774,
    "skill_base": 2342,
    "cond_fac": 1.0,
    "skill": 2342,
@@ -5325,19 +5333,19 @@
      "fac": 1.0,
      "kind": "follow",
      "skill": 2348,
-     "sum": 64473
+     "sum": 51014
     }
    ],
    "seed_pick": "seed=2",
    "peak_seeds": {
-    "seed=1": 303348,
-    "seed=2": 304314,
-    "seed=3": 345800
+    "seed=1": 239570,
+    "seed=2": 240788,
+    "seed=3": 263744
    },
    "peak_base_seeds": {
-    "seed=1": 239079,
-    "seed=2": 239841,
-    "seed=3": 259350
+    "seed=1": 188814,
+    "seed=2": 189774,
+    "seed=3": 197808
    },
    "skill_seeds": {
     "seed=1": 2342,
@@ -5394,9 +5402,9 @@
    },
    "peak_k": 736548.0,
    "skill_k": 2415,
-   "peak": 273950,
-   "peak_rand": 273950,
-   "peak_base": 273950,
+   "peak": 248534,
+   "peak_rand": 248534,
+   "peak_base": 248534,
    "skill_base": 2415,
    "cond_fac": 1.0,
    "skill": 2415,
@@ -5408,19 +5416,19 @@
      "fac": 1.0,
      "kind": "follow",
      "skill": 2420,
-     "sum": 32459
+     "sum": 29447
     }
    ],
    "seed_pick": "seed=3",
    "peak_seeds": {
-    "seed=1": 244597,
-    "seed=2": 316469,
-    "seed=3": 273950
+    "seed=1": 221907,
+    "seed=2": 287112,
+    "seed=3": 248534
    },
    "peak_base_seeds": {
-    "seed=1": 244597,
-    "seed=2": 244597,
-    "seed=3": 273950
+    "seed=1": 221907,
+    "seed=2": 221907,
+    "seed=3": 248534
    },
    "skill_seeds": {
     "seed=1": 2415,
@@ -5477,9 +5485,9 @@
    },
    "peak_k": 1645824.0,
    "skill_k": 2396,
-   "peak": 227060,
-   "peak_rand": 227060,
-   "peak_base": 211164,
+   "peak": 206858,
+   "peak_rand": 206858,
+   "peak_base": 192378,
    "skill_base": 2396,
    "cond_fac": 1.0,
    "skill": 2394,
@@ -5491,19 +5499,19 @@
      "fac": 1.0,
      "kind": "recast",
      "skill": 2394,
-     "sum": 113530
+     "sum": 103429
     }
    ],
    "seed_pick": "seed=3",
    "peak_seeds": {
-    "seed=1": 212514,
-    "seed=2": 244828,
-    "seed=3": 227060
+    "seed=1": 193606,
+    "seed=2": 223048,
+    "seed=3": 206858
    },
    "peak_base_seeds": {
-    "seed=1": 197637,
-    "seed=2": 183621,
-    "seed=3": 211164
+    "seed=1": 180054,
+    "seed=2": 167286,
+    "seed=3": 192378
    },
    "skill_seeds": {
     "seed=1": 2394,
@@ -5560,9 +5568,9 @@
    },
    "peak_k": 342403.0,
    "skill_k": 2528,
-   "peak": 120006,
-   "peak_rand": 120006,
-   "peak_base": 60003,
+   "peak": 115494,
+   "peak_rand": 115494,
+   "peak_base": 57747,
    "skill_base": 2528,
    "cond_fac": 1.0,
    "skill": 2528,
@@ -5571,14 +5579,14 @@
    "forced": true,
    "seed_pick": "seed=2",
    "peak_seeds": {
-    "seed=1": 122002,
-    "seed=2": 120006,
-    "seed=3": 55167
+    "seed=1": 117416,
+    "seed=2": 115494,
+    "seed=3": 53093
    },
    "peak_base_seeds": {
-    "seed=1": 61001,
-    "seed=2": 60003,
-    "seed=3": 55167
+    "seed=1": 58708,
+    "seed=2": 57747,
+    "seed=3": 53093
    },
    "skill_seeds": {
     "seed=1": 2528,
@@ -5635,9 +5643,9 @@
    },
    "peak_k": 837228.0,
    "skill_k": 2704,
-   "peak": 616092,
-   "peak_rand": 616092,
-   "peak_base": 308046,
+   "peak": 549891,
+   "peak_rand": 549891,
+   "peak_base": 274946,
    "skill_base": 2704,
    "cond_fac": 2.8364,
    "skill": 2704,
@@ -5646,14 +5654,14 @@
    "forced": true,
    "seed_pick": "seed=1",
    "peak_seeds": {
-    "seed=1": 616092,
-    "seed=2": 616092,
-    "seed=3": 658876
+    "seed=1": 549891,
+    "seed=2": 549891,
+    "seed=3": 588078
    },
    "peak_base_seeds": {
-    "seed=1": 308046,
-    "seed=2": 308046,
-    "seed=3": 308046
+    "seed=1": 274946,
+    "seed=2": 274946,
+    "seed=3": 274946
    },
    "skill_seeds": {
     "seed=1": 2704,
@@ -5710,9 +5718,9 @@
    },
    "peak_k": 2456080.0,
    "skill_k": 2735,
-   "peak": 535112,
-   "peak_rand": 535112,
-   "peak_base": 277376,
+   "peak": 475686,
+   "peak_rand": 475686,
+   "peak_base": 246525,
    "skill_base": 2735,
    "cond_fac": 1.0,
    "skill": 2735,
@@ -5724,19 +5732,19 @@
      "fac": 1.0,
      "kind": "follow",
      "skill": 5121,
-     "sum": 19512
+     "sum": 17406
     }
    ],
    "seed_pick": "seed=3",
    "peak_seeds": {
-    "seed=1": 535034,
-    "seed=2": 559274,
-    "seed=3": 535112
+    "seed=1": 475393,
+    "seed=2": 497595,
+    "seed=3": 475686
    },
    "peak_base_seeds": {
-    "seed=1": 277350,
-    "seed=2": 289953,
-    "seed=3": 277376
+    "seed=1": 246536,
+    "seed=2": 258180,
+    "seed=3": 246525
    },
    "skill_seeds": {
     "seed=1": 2735,
@@ -5793,9 +5801,9 @@
    },
    "peak_k": 2289018.0,
    "skill_k": 2613,
-   "peak": 387473,
-   "peak_rand": 387473,
-   "peak_base": 387473,
+   "peak": 353472,
+   "peak_rand": 353472,
+   "peak_base": 353472,
    "skill_base": 2613,
    "cond_fac": 1.7999,
    "skill": 2613,
@@ -5804,14 +5812,14 @@
    "forced": true,
    "seed_pick": "seed=2",
    "peak_seeds": {
-    "seed=1": 345961,
-    "seed=2": 387473,
-    "seed=3": 397851
+    "seed=1": 315599,
+    "seed=2": 353472,
+    "seed=3": 362943
    },
    "peak_base_seeds": {
-    "seed=1": 345961,
-    "seed=2": 387473,
-    "seed=3": 397851
+    "seed=1": 315599,
+    "seed=2": 353472,
+    "seed=3": 362943
    },
    "skill_seeds": {
     "seed=1": 2613,
@@ -5868,9 +5876,9 @@
    },
    "peak_k": 2112936.0,
    "skill_k": 5128,
-   "peak": 375622,
-   "peak_rand": 375622,
-   "peak_base": 375622,
+   "peak": 340765,
+   "peak_rand": 340765,
+   "peak_base": 340765,
    "skill_base": 5128,
    "cond_fac": 1.0,
    "skill": 5128,
@@ -5882,19 +5890,19 @@
      "fac": 1.0,
      "kind": "follow",
      "skill": 5130,
-     "sum": 58690
+     "sum": 53245
     }
    ],
    "seed_pick": "seed=1",
    "peak_seeds": {
-    "seed=1": 375622,
-    "seed=2": 375622,
-    "seed=3": 375622
+    "seed=1": 340765,
+    "seed=2": 340765,
+    "seed=3": 340765
    },
    "peak_base_seeds": {
-    "seed=1": 375622,
-    "seed=2": 375622,
-    "seed=3": 375622
+    "seed=1": 340765,
+    "seed=2": 340765,
+    "seed=3": 340765
    },
    "skill_seeds": {
     "seed=1": 5128,
@@ -5951,9 +5959,9 @@
    },
    "peak_k": 1440404.0,
    "skill_k": 3502,
-   "peak": 305838,
-   "peak_rand": 305838,
-   "peak_base": 305838,
+   "peak": 129250,
+   "peak_rand": 129250,
+   "peak_base": 129250,
    "skill_base": 3502,
    "cond_fac": 2.6667,
    "skill": 3502,
@@ -5962,14 +5970,14 @@
    "forced": true,
    "seed_pick": "seed=1",
    "peak_seeds": {
-    "seed=1": 305838,
-    "seed=2": 303758,
-    "seed=3": 369445
+    "seed=1": 129250,
+    "seed=2": 127415,
+    "seed=3": 149882
    },
    "peak_base_seeds": {
-    "seed=1": 305838,
-    "seed=2": 303758,
-    "seed=3": 295556
+    "seed=1": 129250,
+    "seed=2": 127415,
+    "seed=3": 119905
    },
    "skill_seeds": {
     "seed=1": 3502,
@@ -6026,9 +6034,9 @@
    },
    "peak_k": 425942.0,
    "skill_k": 3761,
-   "peak": 216862,
-   "peak_rand": 216862,
-   "peak_base": 108431,
+   "peak": 193050,
+   "peak_rand": 193050,
+   "peak_base": 96525,
    "skill_base": 3761,
    "cond_fac": 1.0,
    "skill": 3761,
@@ -6037,14 +6045,14 @@
    "forced": true,
    "seed_pick": "seed=1",
    "peak_seeds": {
-    "seed=1": 216862,
-    "seed=2": 216862,
-    "seed=3": 233258
+    "seed=1": 193050,
+    "seed=2": 193050,
+    "seed=3": 207634
    },
    "peak_base_seeds": {
-    "seed=1": 108431,
-    "seed=2": 108431,
-    "seed=3": 116629
+    "seed=1": 96525,
+    "seed=2": 96525,
+    "seed=3": 103817
    },
    "skill_seeds": {
     "seed=1": 3761,
@@ -6101,9 +6109,9 @@
    },
    "peak_k": 733626.0,
    "skill_k": 10721,
-   "peak": 538205,
-   "peak_rand": 538205,
-   "peak_base": 269102,
+   "peak": 651357,
+   "peak_rand": 651357,
+   "peak_base": 325678,
    "skill_base": 10721,
    "cond_fac": 1.1818,
    "skill": 10721,
@@ -6112,14 +6120,14 @@
    "forced": true,
    "seed_pick": "seed=1",
    "peak_seeds": {
-    "seed=1": 538205,
-    "seed=2": 556929,
-    "seed=3": 526821
+    "seed=1": 651357,
+    "seed=2": 708415,
+    "seed=3": 648686
    },
    "peak_base_seeds": {
-    "seed=1": 269102,
-    "seed=2": 278465,
-    "seed=3": 263411
+    "seed=1": 325678,
+    "seed=2": 354207,
+    "seed=3": 324343
    },
    "skill_seeds": {
     "seed=1": 10721,
@@ -6176,9 +6184,9 @@
    },
    "peak_k": 1549385.0,
    "skill_k": 10722,
-   "peak": 333998,
-   "peak_rand": 333998,
-   "peak_base": 333998,
+   "peak": 335700,
+   "peak_rand": 335700,
+   "peak_base": 335700,
    "skill_base": 10722,
    "cond_fac": 1.43,
    "skill": 10722,
@@ -6187,14 +6195,14 @@
    "forced": true,
    "seed_pick": "seed=1",
    "peak_seeds": {
-    "seed=1": 333998,
-    "seed=2": 331867,
-    "seed=3": 410399
+    "seed=1": 335700,
+    "seed=2": 332525,
+    "seed=3": 402248
    },
    "peak_base_seeds": {
-    "seed=1": 333998,
-    "seed=2": 331867,
-    "seed=3": 341999
+    "seed=1": 335700,
+    "seed=2": 332525,
+    "seed=3": 335206
    },
    "skill_seeds": {
     "seed=1": 10722,
@@ -6251,9 +6259,9 @@
    },
    "peak_k": 1394937.0,
    "skill_k": 4450,
-   "peak": 346972,
-   "peak_rand": 346972,
-   "peak_base": 346972,
+   "peak": 299356,
+   "peak_rand": 299356,
+   "peak_base": 299356,
    "skill_base": 4450,
    "cond_fac": 1.6667,
    "skill": 4450,
@@ -6262,14 +6270,14 @@
    "forced": true,
    "seed_pick": "seed=2",
    "peak_seeds": {
-    "seed=1": 418748,
-    "seed=2": 346972,
-    "seed=3": 310886
+    "seed=1": 354020,
+    "seed=2": 299356,
+    "seed=3": 261310
    },
    "peak_base_seeds": {
-    "seed=1": 314061,
-    "seed=2": 346972,
-    "seed=3": 310886
+    "seed=1": 265515,
+    "seed=2": 299356,
+    "seed=3": 261310
    },
    "skill_seeds": {
     "seed=1": 4450,
@@ -6326,9 +6334,9 @@
    },
    "peak_k": 175742.0,
    "skill_k": 4833,
-   "peak": 18120,
-   "peak_rand": 18120,
-   "peak_base": 18120,
+   "peak": 17520,
+   "peak_rand": 17520,
+   "peak_base": 17520,
    "skill_base": 4833,
    "cond_fac": 1.0,
    "skill": 4833,
@@ -6337,14 +6345,14 @@
    "forced": true,
    "seed_pick": "seed=3",
    "peak_seeds": {
-    "seed=1": 16844,
-    "seed=2": 19018,
-    "seed=3": 18120
+    "seed=1": 16286,
+    "seed=2": 18463,
+    "seed=3": 17520
    },
    "peak_base_seeds": {
-    "seed=1": 16844,
-    "seed=2": 19018,
-    "seed=3": 18120
+    "seed=1": 16286,
+    "seed=2": 18463,
+    "seed=3": 17520
    },
    "skill_seeds": {
     "seed=1": 4833,
@@ -6401,9 +6409,9 @@
    },
    "peak_k": 310205.0,
    "skill_k": 4939,
-   "peak": 96246,
-   "peak_rand": 96246,
-   "peak_base": 48123,
+   "peak": 92710,
+   "peak_rand": 92710,
+   "peak_base": 46355,
    "skill_base": 4938,
    "cond_fac": 1.0,
    "skill": 4938,
@@ -6412,14 +6420,14 @@
    "forced": false,
    "seed_pick": "seed=1",
    "peak_seeds": {
-    "seed=1": 96246,
-    "seed=2": 96246,
-    "seed=3": 101232
+    "seed=1": 92710,
+    "seed=2": 92710,
+    "seed=3": 101128
    },
    "peak_base_seeds": {
-    "seed=1": 48123,
-    "seed=2": 48123,
-    "seed=3": 50616
+    "seed=1": 46355,
+    "seed=2": 46355,
+    "seed=3": 50564
    },
    "skill_seeds": {
     "seed=1": 4938,
@@ -6476,9 +6484,9 @@
    },
    "peak_k": 1777782.0,
    "skill_k": 5999,
-   "peak": 356616,
-   "peak_rand": 356616,
-   "peak_base": 356616,
+   "peak": 308268,
+   "peak_rand": 308268,
+   "peak_base": 308268,
    "skill_base": 5999,
    "cond_fac": 1.0,
    "skill": 5999,
@@ -6487,14 +6495,14 @@
    "forced": true,
    "seed_pick": "seed=1",
    "peak_seeds": {
-    "seed=1": 356616,
-    "seed=2": 340620,
-    "seed=3": 412601
+    "seed=1": 308268,
+    "seed=2": 294150,
+    "seed=3": 356090
    },
    "peak_base_seeds": {
-    "seed=1": 356616,
-    "seed=2": 340620,
-    "seed=3": 353658
+    "seed=1": 308268,
+    "seed=2": 294150,
+    "seed=3": 305220
    },
    "skill_seeds": {
     "seed=1": 5999,
@@ -6551,9 +6559,9 @@
    },
    "peak_k": 284709.0,
    "skill_k": 5540,
-   "peak": 112515,
-   "peak_rand": 112515,
-   "peak_base": 112515,
+   "peak": 100599,
+   "peak_rand": 100599,
+   "peak_base": 100599,
    "skill_base": 5540,
    "cond_fac": 1.0,
    "skill": 5540,
@@ -6562,14 +6570,14 @@
    "forced": false,
    "seed_pick": "seed=2",
    "peak_seeds": {
-    "seed=1": 119253,
-    "seed=2": 112515,
-    "seed=3": 112515
+    "seed=1": 106623,
+    "seed=2": 100599,
+    "seed=3": 100599
    },
    "peak_base_seeds": {
-    "seed=1": 119253,
-    "seed=2": 112515,
-    "seed=3": 112515
+    "seed=1": 106623,
+    "seed=2": 100599,
+    "seed=3": 100599
    },
    "skill_seeds": {
     "seed=1": 5540,
@@ -6626,9 +6634,9 @@
    },
    "peak_k": 1859706.0,
    "skill_k": 7327,
-   "peak": 570956,
-   "peak_rand": 570956,
-   "peak_base": 570956,
+   "peak": 489779,
+   "peak_rand": 489779,
+   "peak_base": 489779,
    "skill_base": 7327,
    "cond_fac": 1.0,
    "skill": 7327,
@@ -6637,14 +6645,14 @@
    "forced": false,
    "seed_pick": "seed=1",
    "peak_seeds": {
-    "seed=1": 570956,
-    "seed=2": 545003,
-    "seed=3": 610404
+    "seed=1": 489779,
+    "seed=2": 467516,
+    "seed=3": 523618
    },
    "peak_base_seeds": {
-    "seed=1": 570956,
-    "seed=2": 545003,
-    "seed=3": 610404
+    "seed=1": 489779,
+    "seed=2": 467516,
+    "seed=3": 523618
    },
    "skill_seeds": {
     "seed=1": 7327,
@@ -6701,9 +6709,9 @@
    },
    "peak_k": 299092.0,
    "skill_k": 5860,
-   "peak": 93376,
-   "peak_rand": 93376,
-   "peak_base": 93376,
+   "peak": 91759,
+   "peak_rand": 91759,
+   "peak_base": 91759,
    "skill_base": 5860,
    "cond_fac": 1.3,
    "skill": 5860,
@@ -6712,14 +6720,14 @@
    "forced": true,
    "seed_pick": "seed=2",
    "peak_seeds": {
-    "seed=1": 106977,
-    "seed=2": 93376,
-    "seed=3": 79394
+    "seed=1": 106808,
+    "seed=2": 91759,
+    "seed=3": 77662
    },
    "peak_base_seeds": {
-    "seed=1": 85582,
-    "seed=2": 93376,
-    "seed=3": 79394
+    "seed=1": 85446,
+    "seed=2": 91759,
+    "seed=3": 77662
    },
    "skill_seeds": {
     "seed=1": 5860,
@@ -6776,9 +6784,9 @@
    },
    "peak_k": 766740.0,
    "skill_k": 5852,
-   "peak": 216824,
-   "peak_rand": 216824,
-   "peak_base": 216824,
+   "peak": 183167,
+   "peak_rand": 183167,
+   "peak_base": 183167,
    "skill_base": 5852,
    "cond_fac": 1.3,
    "skill": 5852,
@@ -6787,14 +6795,14 @@
    "forced": true,
    "seed_pick": "seed=3",
    "peak_seeds": {
-    "seed=1": 209282,
-    "seed=2": 281454,
-    "seed=3": 216824
+    "seed=1": 181249,
+    "seed=2": 240759,
+    "seed=3": 183167
    },
    "peak_base_seeds": {
-    "seed=1": 209282,
-    "seed=2": 241246,
-    "seed=3": 216824
+    "seed=1": 181249,
+    "seed=2": 206365,
+    "seed=3": 183167
    },
    "skill_seeds": {
     "seed=1": 5852,
@@ -6851,30 +6859,30 @@
    },
    "peak_k": 989676.0,
    "skill_k": 5912,
-   "peak": 663960,
-   "peak_rand": 663960,
-   "peak_base": 663960,
-   "skill_base": 5912,
+   "peak": 317943,
+   "peak_rand": 317943,
+   "peak_base": 317943,
+   "skill_base": 5888,
    "cond_fac": 1.0,
-   "skill": 5912,
-   "input_skill": 5912,
-   "segs": 12,
-   "forced": true,
+   "skill": 5888,
+   "input_skill": 5888,
+   "segs": 3,
+   "forced": false,
    "seed_pick": "seed=1",
    "peak_seeds": {
-    "seed=1": 663960,
-    "seed=2": 708084,
-    "seed=3": 663960
+    "seed=1": 317943,
+    "seed=2": 340908,
+    "seed=3": 317943
    },
    "peak_base_seeds": {
-    "seed=1": 663960,
-    "seed=2": 708084,
-    "seed=3": 663960
+    "seed=1": 317943,
+    "seed=2": 340908,
+    "seed=3": 317943
    },
    "skill_seeds": {
-    "seed=1": 5912,
-    "seed=2": 5912,
-    "seed=3": 5912
+    "seed=1": 5888,
+    "seed=2": 5888,
+    "seed=3": 5888
    }
   },
   "89": {
@@ -6926,9 +6934,9 @@
    },
    "peak_k": 618785.0,
    "skill_k": 5935,
-   "peak": 148837,
-   "peak_rand": 148837,
-   "peak_base": 148837,
+   "peak": 79374,
+   "peak_rand": 79374,
+   "peak_base": 79374,
    "skill_base": 5935,
    "cond_fac": 1.2136,
    "skill": 5935,
@@ -6937,14 +6945,14 @@
    "forced": true,
    "seed_pick": "seed=1",
    "peak_seeds": {
-    "seed=1": 148837,
-    "seed=2": 140886,
-    "seed=3": 297675
+    "seed=1": 79374,
+    "seed=2": 75800,
+    "seed=3": 158748
    },
    "peak_base_seeds": {
-    "seed=1": 148837,
-    "seed=2": 140886,
-    "seed=3": 148837
+    "seed=1": 79374,
+    "seed=2": 75800,
+    "seed=3": 79374
    },
    "skill_seeds": {
     "seed=1": 5935,
@@ -7001,9 +7009,9 @@
    },
    "peak_k": 1586942.0,
    "skill_k": 10726,
-   "peak": 182234,
-   "peak_rand": 182234,
-   "peak_base": 182234,
+   "peak": 165904,
+   "peak_rand": 165904,
+   "peak_base": 165904,
    "skill_base": 10726,
    "cond_fac": 1.0,
    "skill": 10726,
@@ -7012,14 +7020,14 @@
    "forced": false,
    "seed_pick": "seed=1",
    "peak_seeds": {
-    "seed=1": 182234,
-    "seed=2": 182234,
-    "seed=3": 182234
+    "seed=1": 165904,
+    "seed=2": 165904,
+    "seed=3": 165904
    },
    "peak_base_seeds": {
-    "seed=1": 182234,
-    "seed=2": 182234,
-    "seed=3": 182234
+    "seed=1": 165904,
+    "seed=2": 165904,
+    "seed=3": 165904
    },
    "skill_seeds": {
     "seed=1": 10726,
@@ -7076,9 +7084,9 @@
    },
    "peak_k": 1141744.0,
    "skill_k": 7467,
-   "peak": 535784,
-   "peak_rand": 535784,
-   "peak_base": 535784,
+   "peak": 186800,
+   "peak_rand": 186800,
+   "peak_base": 186800,
    "skill_base": 7467,
    "cond_fac": 1.0,
    "skill": 7467,
@@ -7087,14 +7095,14 @@
    "forced": false,
    "seed_pick": "seed=1",
    "peak_seeds": {
-    "seed=1": 535784,
-    "seed=2": 535784,
-    "seed=3": 1117312
+    "seed=1": 186800,
+    "seed=2": 186800,
+    "seed=3": 386624
    },
    "peak_base_seeds": {
-    "seed=1": 535784,
-    "seed=2": 535784,
-    "seed=3": 558656
+    "seed=1": 186800,
+    "seed=2": 186800,
+    "seed=3": 193312
    },
    "skill_seeds": {
     "seed=1": 7467,
@@ -7151,9 +7159,9 @@
    },
    "peak_k": 1350148.0,
    "skill_k": 7007,
-   "peak": 229392,
-   "peak_rand": 229392,
-   "peak_base": 229392,
+   "peak": 205220,
+   "peak_rand": 205220,
+   "peak_base": 205220,
    "skill_base": 7007,
    "cond_fac": 1.0,
    "skill": 7007,
@@ -7162,14 +7170,14 @@
    "forced": false,
    "seed_pick": "seed=1",
    "peak_seeds": {
-    "seed=1": 229392,
-    "seed=2": 229392,
-    "seed=3": 243936
+    "seed=1": 205220,
+    "seed=2": 205220,
+    "seed=3": 219184
    },
    "peak_base_seeds": {
-    "seed=1": 229392,
-    "seed=2": 229392,
-    "seed=3": 243936
+    "seed=1": 205220,
+    "seed=2": 205220,
+    "seed=3": 219184
    },
    "skill_seeds": {
     "seed=1": 7007,
@@ -7274,25 +7282,25 @@
    },
    "peak_k": 635422.0,
    "skill_k": 6867,
-   "peak": 218354,
-   "peak_rand": 218354,
-   "peak_base": 218354,
+   "peak": 215035,
+   "peak_rand": 215035,
+   "peak_base": 215035,
    "skill_base": 6867,
    "cond_fac": 1.0,
    "skill": 6867,
    "input_skill": 6867,
    "segs": 3,
    "forced": true,
-   "seed_pick": "seed=3",
+   "seed_pick": "seed=1",
    "peak_seeds": {
-    "seed=1": 213837,
-    "seed=2": 268023,
-    "seed=3": 218354
+    "seed=1": 215035,
+    "seed=2": 225203,
+    "seed=3": 211181
    },
    "peak_base_seeds": {
-    "seed=1": 213837,
-    "seed=2": 268023,
-    "seed=3": 218354
+    "seed=1": 215035,
+    "seed=2": 225203,
+    "seed=3": 211181
    },
    "skill_seeds": {
     "seed=1": 6867,
@@ -7349,9 +7357,9 @@
    },
    "peak_k": 5781244.0,
    "skill_k": 10729,
-   "peak": 971727,
-   "peak_rand": 971727,
-   "peak_base": 971727,
+   "peak": 880400,
+   "peak_rand": 880400,
+   "peak_base": 880400,
    "skill_base": 10731,
    "cond_fac": 1.1,
    "skill": 10731,
@@ -7360,14 +7368,14 @@
    "forced": true,
    "seed_pick": "seed=3",
    "peak_seeds": {
-    "seed=1": 906635,
-    "seed=2": 1037540,
-    "seed=3": 971727
+    "seed=1": 821426,
+    "seed=2": 940026,
+    "seed=3": 880400
    },
    "peak_base_seeds": {
-    "seed=1": 906635,
-    "seed=2": 1037540,
-    "seed=3": 971727
+    "seed=1": 821426,
+    "seed=2": 940026,
+    "seed=3": 880400
    },
    "skill_seeds": {
     "seed=1": 10731,
@@ -7424,9 +7432,9 @@
    },
    "peak_k": 286884.0,
    "skill_k": 8150,
-   "peak": 69464,
-   "peak_rand": 69464,
-   "peak_base": 55676,
+   "peak": 52428,
+   "peak_rand": 52428,
+   "peak_base": 40508,
    "skill_base": 8150,
    "cond_fac": 2.0,
    "skill": 8151,
@@ -7438,19 +7446,19 @@
      "fac": 2.0,
      "kind": "recast",
      "skill": 8151,
-     "sum": 34732
+     "sum": 26214
     }
    ],
    "seed_pick": "seed=2",
    "peak_seeds": {
-    "seed=1": 76712,
-    "seed=2": 69464,
-    "seed=3": 55968
+    "seed=1": 58048,
+    "seed=2": 52428,
+    "seed=3": 40860
    },
    "peak_base_seeds": {
-    "seed=1": 61484,
-    "seed=2": 55676,
-    "seed=3": 55968
+    "seed=1": 44852,
+    "seed=2": 40508,
+    "seed=3": 40860
    },
    "skill_seeds": {
     "seed=1": 8151,
@@ -7507,9 +7515,9 @@
    },
    "peak_k": 1772960.0,
    "skill_k": 7057,
-   "peak": 454029,
-   "peak_rand": 454029,
-   "peak_base": 227014,
+   "peak": 444113,
+   "peak_rand": 444113,
+   "peak_base": 222056,
    "skill_base": 7057,
    "cond_fac": 1.3235,
    "skill": 7057,
@@ -7518,14 +7526,14 @@
    "forced": true,
    "seed_pick": "seed=1",
    "peak_seeds": {
-    "seed=1": 454029,
-    "seed=2": 499812,
-    "seed=3": 427214
+    "seed=1": 444113,
+    "seed=2": 480245,
+    "seed=3": 417886
    },
    "peak_base_seeds": {
-    "seed=1": 227014,
-    "seed=2": 249906,
-    "seed=3": 213607
+    "seed=1": 222056,
+    "seed=2": 240123,
+    "seed=3": 208943
    },
    "skill_seeds": {
     "seed=1": 7057,
@@ -7582,30 +7590,30 @@
    },
    "peak_k": 213144.0,
    "skill_k": 7074,
-   "peak": 118920,
-   "peak_rand": 118920,
-   "peak_base": 59460,
-   "skill_base": 7074,
-   "cond_fac": 1.2,
-   "skill": 7074,
-   "input_skill": 7074,
-   "segs": 4,
-   "forced": true,
+   "peak": 97098,
+   "peak_rand": 97098,
+   "peak_base": 48549,
+   "skill_base": 10732,
+   "cond_fac": 1.0,
+   "skill": 10732,
+   "input_skill": 10732,
+   "segs": 2,
+   "forced": false,
    "seed_pick": "seed=3",
    "peak_seeds": {
-    "seed=1": 128035,
-    "seed=2": 114110,
-    "seed=3": 118920
+    "seed=1": 103219,
+    "seed=2": 92165,
+    "seed=3": 97098
    },
    "peak_base_seeds": {
-    "seed=1": 64018,
-    "seed=2": 57055,
-    "seed=3": 59460
+    "seed=1": 51610,
+    "seed=2": 46082,
+    "seed=3": 48549
    },
    "skill_seeds": {
     "seed=1": 7074,
     "seed=2": 7074,
-    "seed=3": 7074
+    "seed=3": 10732
    }
   },
   "99": {
@@ -7657,9 +7665,9 @@
    },
    "peak_k": 85359.0,
    "skill_k": 8087,
-   "peak": 16335,
-   "peak_rand": 16335,
-   "peak_base": 16335,
+   "peak": 15720,
+   "peak_rand": 15720,
+   "peak_base": 15720,
    "skill_base": 8087,
    "cond_fac": 1.0,
    "skill": 8087,
@@ -7668,14 +7676,14 @@
    "forced": true,
    "seed_pick": "seed=2",
    "peak_seeds": {
-    "seed=1": 16581,
-    "seed=2": 16335,
-    "seed=3": 14805
+    "seed=1": 15957,
+    "seed=2": 15720,
+    "seed=3": 14247
    },
    "peak_base_seeds": {
-    "seed=1": 16581,
-    "seed=2": 16335,
-    "seed=3": 14805
+    "seed=1": 15957,
+    "seed=2": 15720,
+    "seed=3": 14247
    },
    "skill_seeds": {
     "seed=1": 8087,
@@ -7732,9 +7740,9 @@
    },
    "peak_k": 102534.0,
    "skill_k": 5572,
-   "peak": 49312,
-   "peak_rand": 49312,
-   "peak_base": 49312,
+   "peak": 43760,
+   "peak_rand": 43760,
+   "peak_base": 43760,
    "skill_base": 5572,
    "cond_fac": 1.0,
    "skill": 5572,
@@ -7743,14 +7751,14 @@
    "forced": false,
    "seed_pick": "seed=2",
    "peak_seeds": {
-    "seed=1": 46298,
-    "seed=2": 49312,
-    "seed=3": 75477
+    "seed=1": 41086,
+    "seed=2": 43760,
+    "seed=3": 66981
    },
    "peak_base_seeds": {
-    "seed=1": 46298,
-    "seed=2": 49312,
-    "seed=3": 50318
+    "seed=1": 41086,
+    "seed=2": 43760,
+    "seed=3": 44654
    },
    "skill_seeds": {
     "seed=1": 5572,
@@ -7807,9 +7815,9 @@
    },
    "peak_k": 2062970.0,
    "skill_k": 10733,
-   "peak": 636814,
-   "peak_rand": 636814,
-   "peak_base": 636814,
+   "peak": 575618,
+   "peak_rand": 575618,
+   "peak_base": 575618,
    "skill_base": 10733,
    "cond_fac": 1.0,
    "skill": 10733,
@@ -7818,14 +7826,14 @@
    "forced": false,
    "seed_pick": "seed=1",
    "peak_seeds": {
-    "seed=1": 636814,
-    "seed=2": 636814,
-    "seed=3": 683224
+    "seed=1": 575618,
+    "seed=2": 575618,
+    "seed=3": 617514
    },
    "peak_base_seeds": {
-    "seed=1": 636814,
-    "seed=2": 636814,
-    "seed=3": 683224
+    "seed=1": 575618,
+    "seed=2": 575618,
+    "seed=3": 617514
    },
    "skill_seeds": {
     "seed=1": 10733,
@@ -7882,25 +7890,25 @@
    },
    "peak_k": 1942128.0,
    "skill_k": 5592,
-   "peak": 290551,
-   "peak_rand": 290551,
-   "peak_base": 290551,
+   "peak": 288858,
+   "peak_rand": 288858,
+   "peak_base": 288858,
    "skill_base": 5592,
    "cond_fac": 1.1,
    "skill": 5592,
    "input_skill": 5592,
    "segs": 1,
    "forced": true,
-   "seed_pick": "seed=1",
+   "seed_pick": "seed=3",
    "peak_seeds": {
-    "seed=1": 290551,
-    "seed=2": 314810,
-    "seed=3": 270317
+    "seed=1": 254021,
+    "seed=2": 445897,
+    "seed=3": 288858
    },
    "peak_base_seeds": {
-    "seed=1": 290551,
-    "seed=2": 275954,
-    "seed=3": 270317
+    "seed=1": 254021,
+    "seed=2": 236101,
+    "seed=3": 288858
    },
    "skill_seeds": {
     "seed=1": 5592,
@@ -7957,25 +7965,25 @@
    },
    "peak_k": 806884.0,
    "skill_k": 7090,
-   "peak": 192245,
-   "peak_rand": 192245,
-   "peak_base": 192245,
+   "peak": 328602,
+   "peak_rand": 328602,
+   "peak_base": 328602,
    "skill_base": 7090,
    "cond_fac": 1.0,
    "skill": 7090,
    "input_skill": 7090,
    "segs": 2,
    "forced": false,
-   "seed_pick": "seed=3",
+   "seed_pick": "seed=1",
    "peak_seeds": {
-    "seed=1": 194485,
-    "seed=2": 183593,
-    "seed=3": 192245
+    "seed=1": 328602,
+    "seed=2": 322131,
+    "seed=3": 365259
    },
    "peak_base_seeds": {
-    "seed=1": 194485,
-    "seed=2": 183593,
-    "seed=3": 192245
+    "seed=1": 328602,
+    "seed=2": 322131,
+    "seed=3": 365259
    },
    "skill_seeds": {
     "seed=1": 7090,
@@ -8032,9 +8040,9 @@
    },
    "peak_k": 4656305.0,
    "skill_k": 7485,
-   "peak": 776560,
-   "peak_rand": 776560,
-   "peak_base": 776560,
+   "peak": 708677,
+   "peak_rand": 708677,
+   "peak_base": 708677,
    "skill_base": 7485,
    "cond_fac": 1.56,
    "skill": 7485,
@@ -8043,14 +8051,14 @@
    "forced": true,
    "seed_pick": "seed=1",
    "peak_seeds": {
-    "seed=1": 776560,
-    "seed=2": 747404,
-    "seed=3": 783853
+    "seed=1": 708677,
+    "seed=2": 682071,
+    "seed=3": 715330
    },
    "peak_base_seeds": {
-    "seed=1": 776560,
-    "seed=2": 747404,
-    "seed=3": 783853
+    "seed=1": 708677,
+    "seed=2": 682071,
+    "seed=3": 715330
    },
    "skill_seeds": {
     "seed=1": 7485,
@@ -8107,9 +8115,9 @@
    },
    "peak_k": 974495.0,
    "skill_k": 7030,
-   "peak": 278236,
-   "peak_rand": 278236,
-   "peak_base": 147627,
+   "peak": 241049,
+   "peak_rand": 241049,
+   "peak_base": 124829,
    "skill_base": 7030,
    "cond_fac": 1.125,
    "skill": 7030,
@@ -8118,14 +8126,14 @@
    "forced": true,
    "seed_pick": "seed=1",
    "peak_seeds": {
-    "seed=1": 278236,
-    "seed=2": 271568,
-    "seed=3": 302770
+    "seed=1": 241049,
+    "seed=2": 227952,
+    "seed=3": 251808
    },
    "peak_base_seeds": {
-    "seed=1": 147627,
-    "seed=2": 146143,
-    "seed=3": 160189
+    "seed=1": 124829,
+    "seed=2": 120587,
+    "seed=3": 131436
    },
    "skill_seeds": {
     "seed=1": 7030,
@@ -8182,9 +8190,9 @@
    },
    "peak_k": 1090682.0,
    "skill_k": 7226,
-   "peak": 359409,
-   "peak_rand": 359409,
-   "peak_base": 359409,
+   "peak": 273740,
+   "peak_rand": 273740,
+   "peak_base": 273740,
    "skill_base": 7226,
    "cond_fac": 1.5,
    "skill": 7226,
@@ -8193,14 +8201,14 @@
    "forced": true,
    "seed_pick": "seed=1",
    "peak_seeds": {
-    "seed=1": 359409,
-    "seed=2": 358253,
-    "seed=3": 373368
+    "seed=1": 273740,
+    "seed=2": 272316,
+    "seed=3": 279458
    },
    "peak_base_seeds": {
-    "seed=1": 359409,
-    "seed=2": 358253,
-    "seed=3": 373368
+    "seed=1": 273740,
+    "seed=2": 272316,
+    "seed=3": 279458
    },
    "skill_seeds": {
     "seed=1": 7226,
@@ -8257,9 +8265,9 @@
    },
    "peak_k": 3838658.0,
    "skill_k": 5673,
-   "peak": 971815,
-   "peak_rand": 971815,
-   "peak_base": 971815,
+   "peak": 945958,
+   "peak_rand": 945958,
+   "peak_base": 945958,
    "skill_base": 5670,
    "cond_fac": 1.3,
    "skill": 5670,
@@ -8268,14 +8276,14 @@
    "forced": true,
    "seed_pick": "seed=3",
    "peak_seeds": {
-    "seed=1": 1035068,
-    "seed=2": 943140,
-    "seed=3": 971815
+    "seed=1": 1037260,
+    "seed=2": 915554,
+    "seed=3": 945958
    },
    "peak_base_seeds": {
-    "seed=1": 1035068,
-    "seed=2": 943140,
-    "seed=3": 971815
+    "seed=1": 1037260,
+    "seed=2": 915554,
+    "seed=3": 945958
    },
    "skill_seeds": {
     "seed=1": 5670,
@@ -8332,25 +8340,25 @@
    },
    "peak_k": 7214312.0,
    "skill_k": 5706,
-   "peak": 959790,
-   "peak_rand": 959790,
-   "peak_base": 959790,
+   "peak": 687343,
+   "peak_rand": 687343,
+   "peak_base": 687343,
    "skill_base": 5706,
    "cond_fac": 1.0,
    "skill": 5706,
    "input_skill": 5706,
    "segs": 4,
    "forced": false,
-   "seed_pick": "seed=3",
+   "seed_pick": "seed=2",
    "peak_seeds": {
-    "seed=1": 964846,
-    "seed=2": 954140,
-    "seed=3": 959790
+    "seed=1": 677867,
+    "seed=2": 687343,
+    "seed=3": 718488
    },
    "peak_base_seeds": {
-    "seed=1": 964846,
-    "seed=2": 954140,
-    "seed=3": 959790
+    "seed=1": 677867,
+    "seed=2": 687343,
+    "seed=3": 718488
    },
    "skill_seeds": {
     "seed=1": 5706,
@@ -8407,9 +8415,9 @@
    },
    "peak_k": 3436984.0,
    "skill_k": 5761,
-   "peak": 474338,
-   "peak_rand": 474338,
-   "peak_base": 474338,
+   "peak": 634622,
+   "peak_rand": 634622,
+   "peak_base": 634622,
    "skill_base": 5761,
    "cond_fac": 1.3,
    "skill": 5761,
@@ -8418,14 +8426,14 @@
    "forced": true,
    "seed_pick": "seed=1",
    "peak_seeds": {
-    "seed=1": 474338,
-    "seed=2": 435886,
-    "seed=3": 585872
+    "seed=1": 634622,
+    "seed=2": 576352,
+    "seed=3": 804965
    },
    "peak_base_seeds": {
-    "seed=1": 474338,
-    "seed=2": 435886,
-    "seed=3": 450497
+    "seed=1": 634622,
+    "seed=2": 576352,
+    "seed=3": 627413
    },
    "skill_seeds": {
     "seed=1": 5761,
@@ -8482,9 +8490,9 @@
    },
    "peak_k": 3141785.0,
    "skill_k": 5759,
-   "peak": 360580,
-   "peak_rand": 360580,
-   "peak_base": 360580,
+   "peak": 520278,
+   "peak_rand": 520278,
+   "peak_base": 520278,
    "skill_base": 5759,
    "cond_fac": 1.1,
    "skill": 5759,
@@ -8493,14 +8501,14 @@
    "forced": true,
    "seed_pick": "seed=1",
    "peak_seeds": {
-    "seed=1": 360580,
-    "seed=2": 333872,
-    "seed=3": 377421
+    "seed=1": 520278,
+    "seed=2": 469260,
+    "seed=3": 532103
    },
    "peak_base_seeds": {
-    "seed=1": 360580,
-    "seed=2": 333872,
-    "seed=3": 377421
+    "seed=1": 520278,
+    "seed=2": 469260,
+    "seed=3": 532103
    },
    "skill_seeds": {
     "seed=1": 5759,
@@ -8605,25 +8613,25 @@
    },
    "peak_k": 2658672.0,
    "skill_k": 5601,
-   "peak": 577926,
-   "peak_rand": 577926,
-   "peak_base": 577926,
+   "peak": 517837,
+   "peak_rand": 517837,
+   "peak_base": 517837,
    "skill_base": 5601,
    "cond_fac": 1.6,
    "skill": 5601,
    "input_skill": 5601,
    "segs": 6,
    "forced": true,
-   "seed_pick": "seed=1",
+   "seed_pick": "seed=2",
    "peak_seeds": {
-    "seed=1": 577926,
-    "seed=2": 540839,
-    "seed=3": 646781
+    "seed=1": 497959,
+    "seed=2": 517837,
+    "seed=3": 557197
    },
    "peak_base_seeds": {
-    "seed=1": 577926,
-    "seed=2": 540839,
-    "seed=3": 646781
+    "seed=1": 497959,
+    "seed=2": 517837,
+    "seed=3": 557197
    },
    "skill_seeds": {
     "seed=1": 5601,
@@ -8680,30 +8688,30 @@
    },
    "peak_k": 472272.0,
    "skill_k": 5609,
-   "peak": 117729,
-   "peak_rand": 117729,
-   "peak_base": 117729,
-   "skill_base": 5609,
+   "peak": 109328,
+   "peak_rand": 109328,
+   "peak_base": 109328,
+   "skill_base": 5612,
    "cond_fac": 1.0,
-   "skill": 5609,
-   "input_skill": 5609,
-   "segs": 3,
+   "skill": 5612,
+   "input_skill": 5612,
+   "segs": 4,
    "forced": false,
    "seed_pick": "seed=2",
    "peak_seeds": {
-    "seed=1": 189868,
-    "seed=2": 117729,
-    "seed=3": 117729
+    "seed=1": 172888,
+    "seed=2": 109328,
+    "seed=3": 109328
    },
    "peak_base_seeds": {
-    "seed=1": 142401,
-    "seed=2": 117729,
-    "seed=3": 117729
+    "seed=1": 132100,
+    "seed=2": 109328,
+    "seed=3": 109328
    },
    "skill_seeds": {
     "seed=1": 5609,
-    "seed=2": 5609,
-    "seed=3": 5609
+    "seed=2": 5612,
+    "seed=3": 5612
    }
   },
   "120": {
@@ -8755,9 +8763,9 @@
    },
    "peak_k": 5957486.0,
    "skill_k": 5625,
-   "peak": 668652,
-   "peak_rand": 668652,
-   "peak_base": 668652,
+   "peak": 925924,
+   "peak_rand": 925924,
+   "peak_base": 925924,
    "skill_base": 5625,
    "cond_fac": 1.0,
    "skill": 5625,
@@ -8766,14 +8774,14 @@
    "forced": false,
    "seed_pick": "seed=1",
    "peak_seeds": {
-    "seed=1": 668652,
-    "seed=2": 755336,
-    "seed=3": 668652
+    "seed=1": 925924,
+    "seed=2": 1028500,
+    "seed=3": 925924
    },
    "peak_base_seeds": {
-    "seed=1": 668652,
-    "seed=2": 755336,
-    "seed=3": 668652
+    "seed=1": 925924,
+    "seed=2": 1028500,
+    "seed=3": 925924
    },
    "skill_seeds": {
     "seed=1": 5625,
@@ -8830,9 +8838,9 @@
    },
    "peak_k": 7705492.0,
    "skill_k": 6039,
-   "peak": 971161,
-   "peak_rand": 971161,
-   "peak_base": 971161,
+   "peak": 887287,
+   "peak_rand": 887287,
+   "peak_base": 887287,
    "skill_base": 6026,
    "cond_fac": 1.1321,
    "skill": 6026,
@@ -8841,14 +8849,14 @@
    "forced": true,
    "seed_pick": "seed=2",
    "peak_seeds": {
-    "seed=1": 1300664,
-    "seed=2": 971161,
-    "seed=3": 867109
+    "seed=1": 1188333,
+    "seed=2": 887287,
+    "seed=3": 792222
    },
    "peak_base_seeds": {
-    "seed=1": 867109,
-    "seed=2": 971161,
-    "seed=3": 867109
+    "seed=1": 792222,
+    "seed=2": 887287,
+    "seed=3": 792222
    },
    "skill_seeds": {
     "seed=1": 6026,
@@ -8905,9 +8913,9 @@
    },
    "peak_k": 5613616.0,
    "skill_k": 6039,
-   "peak": 1348770,
-   "peak_rand": 1348770,
-   "peak_base": 1252167,
+   "peak": 1561892,
+   "peak_rand": 1561892,
+   "peak_base": 1529787,
    "skill_base": 6039,
    "cond_fac": 1.1321,
    "skill": 6039,
@@ -8919,19 +8927,19 @@
      "fac": 1.1321,
      "kind": "recast",
      "skill": 6039,
-     "sum": 210563
+     "sum": 335253
     }
    ],
-   "seed_pick": "seed=1",
+   "seed_pick": "seed=3",
    "peak_seeds": {
-    "seed=1": 1348770,
-    "seed=2": 1308365,
-    "seed=3": 1414344
+    "seed=1": 1726892,
+    "seed=2": 1469188,
+    "seed=3": 1561892
    },
    "peak_base_seeds": {
-    "seed=1": 1252167,
-    "seed=2": 1308365,
-    "seed=3": 1278808
+    "seed=1": 1494195,
+    "seed=2": 1469188,
+    "seed=3": 1529787
    },
    "skill_seeds": {
     "seed=1": 6039,
@@ -8988,25 +8996,25 @@
    },
    "peak_k": 1880496.0,
    "skill_k": 6277,
-   "peak": 566797,
-   "peak_rand": 566797,
-   "peak_base": 566797,
+   "peak": 411205,
+   "peak_rand": 411205,
+   "peak_base": 411205,
    "skill_base": 6270,
    "cond_fac": 1.8,
    "skill": 6270,
    "input_skill": 6270,
    "segs": 5,
    "forced": true,
-   "seed_pick": "seed=1",
+   "seed_pick": "seed=3",
    "peak_seeds": {
-    "seed=1": 566797,
-    "seed=2": 780921,
-    "seed=3": 545791
+    "seed=1": 393304,
+    "seed=2": 615069,
+    "seed=3": 411205
    },
    "peak_base_seeds": {
-    "seed=1": 566797,
-    "seed=2": 780921,
-    "seed=3": 545791
+    "seed=1": 393304,
+    "seed=2": 615069,
+    "seed=3": 411205
    },
    "skill_seeds": {
     "seed=1": 6270,
@@ -9063,9 +9071,9 @@
    },
    "peak_k": 630639.0,
    "skill_k": 5735,
-   "peak": 136465,
-   "peak_rand": 136465,
-   "peak_base": 136465,
+   "peak": 107843,
+   "peak_rand": 107843,
+   "peak_base": 107843,
    "skill_base": 5735,
    "cond_fac": 1.3,
    "skill": 5735,
@@ -9074,14 +9082,14 @@
    "forced": true,
    "seed_pick": "seed=1",
    "peak_seeds": {
-    "seed=1": 136465,
-    "seed=2": 166758,
-    "seed=3": 127495
+    "seed=1": 107843,
+    "seed=2": 129503,
+    "seed=3": 97630
    },
    "peak_base_seeds": {
-    "seed=1": 136465,
-    "seed=2": 138566,
-    "seed=3": 127495
+    "seed=1": 107843,
+    "seed=2": 110227,
+    "seed=3": 97630
    },
    "skill_seeds": {
     "seed=1": 5735,
@@ -9138,25 +9146,25 @@
    },
    "peak_k": 1224237.0,
    "skill_k": 5746,
-   "peak": 270138,
-   "peak_rand": 270138,
-   "peak_base": 270138,
+   "peak": 243318,
+   "peak_rand": 243318,
+   "peak_base": 243318,
    "skill_base": 5746,
    "cond_fac": 1.0,
    "skill": 5746,
    "input_skill": 5746,
    "segs": 3,
    "forced": false,
-   "seed_pick": "seed=3",
+   "seed_pick": "seed=1",
    "peak_seeds": {
-    "seed=1": 252244,
-    "seed=2": 285506,
-    "seed=3": 270138
+    "seed=1": 243318,
+    "seed=2": 249554,
+    "seed=3": 229545
    },
    "peak_base_seeds": {
-    "seed=1": 252244,
-    "seed=2": 285506,
-    "seed=3": 270138
+    "seed=1": 243318,
+    "seed=2": 249554,
+    "seed=3": 229545
    },
    "skill_seeds": {
     "seed=1": 5746,
@@ -9213,25 +9221,25 @@
    },
    "peak_k": 2472426.0,
    "skill_k": 5636,
-   "peak": 567010,
-   "peak_rand": 567010,
-   "peak_base": 567010,
+   "peak": 503216,
+   "peak_rand": 503216,
+   "peak_base": 503216,
    "skill_base": 5636,
    "cond_fac": 1.4,
    "skill": 5636,
    "input_skill": 5636,
    "segs": 6,
    "forced": true,
-   "seed_pick": "seed=3",
+   "seed_pick": "seed=1",
    "peak_seeds": {
-    "seed=1": 563896,
-    "seed=2": 607068,
-    "seed=3": 567010
+    "seed=1": 503216,
+    "seed=2": 553052,
+    "seed=3": 491459
    },
    "peak_base_seeds": {
-    "seed=1": 563896,
-    "seed=2": 607068,
-    "seed=3": 567010
+    "seed=1": 503216,
+    "seed=2": 548141,
+    "seed=3": 491459
    },
    "skill_seeds": {
     "seed=1": 5636,
@@ -9288,9 +9296,9 @@
    },
    "peak_k": 720809.0,
    "skill_k": 5662,
-   "peak": 189954,
-   "peak_rand": 189954,
-   "peak_base": 189954,
+   "peak": 169527,
+   "peak_rand": 169527,
+   "peak_base": 169527,
    "skill_base": 5662,
    "cond_fac": 1.0,
    "skill": 5662,
@@ -9299,14 +9307,14 @@
    "forced": false,
    "seed_pick": "seed=1",
    "peak_seeds": {
-    "seed=1": 189954,
-    "seed=2": 176783,
-    "seed=3": 199842
+    "seed=1": 169527,
+    "seed=2": 157782,
+    "seed=3": 178914
    },
    "peak_base_seeds": {
-    "seed=1": 189954,
-    "seed=2": 176783,
-    "seed=3": 199842
+    "seed=1": 169527,
+    "seed=2": 157782,
+    "seed=3": 178914
    },
    "skill_seeds": {
     "seed=1": 5662,
@@ -9363,9 +9371,9 @@
    },
    "peak_k": 1207020.0,
    "skill_k": 5650,
-   "peak": 390636,
-   "peak_rand": 390636,
-   "peak_base": 334831,
+   "peak": 346919,
+   "peak_rand": 346919,
+   "peak_base": 297359,
    "skill_base": 5650,
    "cond_fac": 1.3,
    "skill": 5650,
@@ -9377,19 +9385,19 @@
      "fac": 1.3,
      "kind": "recast",
      "skill": 5650,
-     "sum": 55805
+     "sum": 49560
     }
    ],
    "seed_pick": "seed=1",
    "peak_seeds": {
-    "seed=1": 390636,
-    "seed=2": 411918,
-    "seed=3": 334828
+    "seed=1": 346919,
+    "seed=2": 370461,
+    "seed=3": 297358
    },
    "peak_base_seeds": {
-    "seed=1": 334831,
-    "seed=2": 411918,
-    "seed=3": 334828
+    "seed=1": 297359,
+    "seed=2": 370461,
+    "seed=3": 297358
    },
    "skill_seeds": {
     "seed=1": 5650,
@@ -9450,9 +9458,9 @@
    },
    "peak_k": 2528511.0,
    "skill_k": 10100,
-   "peak": 705424,
-   "peak_rand": 705424,
-   "peak_base": 651581,
+   "peak": 631196,
+   "peak_rand": 631196,
+   "peak_base": 583479,
    "skill_base": 10100,
    "cond_fac": 1.3,
    "skill": 10099,
@@ -9464,19 +9472,19 @@
      "fac": 1.3,
      "kind": "follow",
      "skill": 10100,
-     "sum": 325790
+     "sum": 291740
     }
    ],
    "seed_pick": "seed=3",
    "peak_seeds": {
-    "seed=1": 833984,
-    "seed=2": 681989,
-    "seed=3": 705424
+    "seed=1": 748082,
+    "seed=2": 610241,
+    "seed=3": 631196
    },
    "peak_base_seeds": {
-    "seed=1": 770328,
-    "seed=2": 606403,
-    "seed=3": 651581
+    "seed=1": 691517,
+    "seed=2": 543056,
+    "seed=3": 583479
    },
    "skill_seeds": {
     "seed=1": 10099,
@@ -9574,9 +9582,9 @@
    },
    "peak_k": 2958606.0,
    "skill_k": 10737,
-   "peak": 652390,
-   "peak_rand": 652390,
-   "peak_base": 652390,
+   "peak": 456870,
+   "peak_rand": 456870,
+   "peak_base": 456870,
    "skill_base": 10737,
    "cond_fac": 1.35,
    "skill": 10737,
@@ -9585,14 +9593,14 @@
    "forced": true,
    "seed_pick": "seed=1",
    "peak_seeds": {
-    "seed=1": 652390,
-    "seed=2": 652390,
-    "seed=3": 652390
+    "seed=1": 456870,
+    "seed=2": 456870,
+    "seed=3": 456870
    },
    "peak_base_seeds": {
-    "seed=1": 652390,
-    "seed=2": 652390,
-    "seed=3": 652390
+    "seed=1": 456870,
+    "seed=2": 456870,
+    "seed=3": 456870
    },
    "skill_seeds": {
     "seed=1": 10737,
@@ -9649,9 +9657,9 @@
    },
    "peak_k": 1589709.0,
    "skill_k": 10540,
-   "peak": 221684,
-   "peak_rand": 221684,
-   "peak_base": 221684,
+   "peak": 198043,
+   "peak_rand": 198043,
+   "peak_base": 198043,
    "skill_base": 10540,
    "cond_fac": 1.2,
    "skill": 10540,
@@ -9660,14 +9668,14 @@
    "forced": true,
    "seed_pick": "seed=3",
    "peak_seeds": {
-    "seed=1": 211950,
-    "seed=2": 316512,
-    "seed=3": 221684
+    "seed=1": 189486,
+    "seed=2": 282965,
+    "seed=3": 198043
    },
    "peak_base_seeds": {
-    "seed=1": 211950,
-    "seed=2": 237384,
-    "seed=3": 221684
+    "seed=1": 189486,
+    "seed=2": 212224,
+    "seed=3": 198043
    },
    "skill_seeds": {
     "seed=1": 10540,
@@ -9724,9 +9732,9 @@
    },
    "peak_k": 2300854.0,
    "skill_k": 9960,
-   "peak": 521521,
-   "peak_rand": 521521,
-   "peak_base": 521521,
+   "peak": 464190,
+   "peak_rand": 464190,
+   "peak_base": 464190,
    "skill_base": 9960,
    "cond_fac": 1.0,
    "skill": 9960,
@@ -9735,14 +9743,14 @@
    "forced": false,
    "seed_pick": "seed=1",
    "peak_seeds": {
-    "seed=1": 521521,
-    "seed=2": 521521,
-    "seed=3": 541485
+    "seed=1": 464190,
+    "seed=2": 464190,
+    "seed=3": 481575
    },
    "peak_base_seeds": {
-    "seed=1": 521521,
-    "seed=2": 521521,
-    "seed=3": 541485
+    "seed=1": 464190,
+    "seed=2": 464190,
+    "seed=3": 481575
    },
    "skill_seeds": {
     "seed=1": 9960,
@@ -9799,9 +9807,9 @@
    },
    "peak_k": 2900220.0,
    "skill_k": 9973,
-   "peak": 311431,
-   "peak_rand": 311431,
-   "peak_base": 311431,
+   "peak": 229471,
+   "peak_rand": 229471,
+   "peak_base": 229471,
    "skill_base": 9973,
    "cond_fac": 1.2,
    "skill": 9973,
@@ -9810,14 +9818,14 @@
    "forced": true,
    "seed_pick": "seed=1",
    "peak_seeds": {
-    "seed=1": 311431,
-    "seed=2": 281476,
-    "seed=3": 312560
+    "seed=1": 229471,
+    "seed=2": 210154,
+    "seed=3": 242425
    },
    "peak_base_seeds": {
-    "seed=1": 311431,
-    "seed=2": 281476,
-    "seed=3": 312560
+    "seed=1": 229471,
+    "seed=2": 210154,
+    "seed=3": 242425
    },
    "skill_seeds": {
     "seed=1": 9973,
@@ -9874,9 +9882,9 @@
    },
    "peak_k": 3487896.0,
    "skill_k": 10738,
-   "peak": 857311,
-   "peak_rand": 857311,
-   "peak_base": 857311,
+   "peak": 645667,
+   "peak_rand": 645667,
+   "peak_base": 645667,
    "skill_base": 10738,
    "cond_fac": 1.1,
    "skill": 10738,
@@ -9885,14 +9893,14 @@
    "forced": true,
    "seed_pick": "seed=2",
    "peak_seeds": {
-    "seed=1": 838807,
-    "seed=2": 857311,
-    "seed=3": 905318
+    "seed=1": 613786,
+    "seed=2": 645667,
+    "seed=3": 646641
    },
    "peak_base_seeds": {
-    "seed=1": 838807,
-    "seed=2": 857311,
-    "seed=3": 905318
+    "seed=1": 613786,
+    "seed=2": 645667,
+    "seed=3": 646641
    },
    "skill_seeds": {
     "seed=1": 10738,
@@ -9942,9 +9950,9 @@
    "disabled": true,
    "peak_k": 3611656.0,
    "skill_k": 9995,
-   "peak": 971480,
-   "peak_rand": 971480,
-   "peak_base": 971480,
+   "peak": 879560,
+   "peak_rand": 879560,
+   "peak_base": 879560,
    "skill_base": 9995,
    "cond_fac": 1.0,
    "skill": 9995,
@@ -9953,14 +9961,14 @@
    "forced": false,
    "seed_pick": "seed=2",
    "peak_seeds": {
-    "seed=1": 1092915,
-    "seed=2": 971480,
-    "seed=3": 971480
+    "seed=1": 989505,
+    "seed=2": 879560,
+    "seed=3": 879560
    },
    "peak_base_seeds": {
-    "seed=1": 971480,
-    "seed=2": 971480,
-    "seed=3": 971480
+    "seed=1": 879560,
+    "seed=2": 879560,
+    "seed=3": 879560
    },
    "skill_seeds": {
     "seed=1": 9995,
@@ -10017,25 +10025,25 @@
    },
    "peak_k": 5169096.0,
    "skill_k": 10008,
-   "peak": 979374,
-   "peak_rand": 979374,
-   "peak_base": 979374,
+   "peak": 896247,
+   "peak_rand": 896247,
+   "peak_base": 896247,
    "skill_base": 10008,
    "cond_fac": 1.0,
    "skill": 10008,
    "input_skill": 10008,
    "segs": 3,
    "forced": false,
-   "seed_pick": "seed=2",
+   "seed_pick": "seed=3",
    "peak_seeds": {
-    "seed=1": 971073,
-    "seed=2": 979374,
-    "seed=3": 1009737
+    "seed=1": 872064,
+    "seed=2": 905983,
+    "seed=3": 896247
    },
    "peak_base_seeds": {
-    "seed=1": 971073,
-    "seed=2": 979374,
-    "seed=3": 1009737
+    "seed=1": 872064,
+    "seed=2": 905983,
+    "seed=3": 896247
    },
    "skill_seeds": {
     "seed=1": 10008,
@@ -10092,25 +10100,25 @@
    },
    "peak_k": 2024120.0,
    "skill_k": 10015,
-   "peak": 425052,
-   "peak_rand": 425052,
-   "peak_base": 425052,
+   "peak": 381636,
+   "peak_rand": 381636,
+   "peak_base": 381636,
    "skill_base": 10015,
    "cond_fac": 1.0,
    "skill": 10015,
    "input_skill": 10015,
    "segs": 10,
    "forced": false,
-   "seed_pick": "seed=3",
+   "seed_pick": "seed=1",
    "peak_seeds": {
-    "seed=1": 428707,
-    "seed=2": 392926,
-    "seed=3": 425052
+    "seed=1": 381636,
+    "seed=2": 349075,
+    "seed=3": 391113
    },
    "peak_base_seeds": {
-    "seed=1": 428707,
-    "seed=2": 392926,
-    "seed=3": 425052
+    "seed=1": 381636,
+    "seed=2": 349075,
+    "seed=3": 391113
    },
    "skill_seeds": {
     "seed=1": 10015,
@@ -10167,9 +10175,9 @@
    },
    "peak_k": 1332194.0,
    "skill_k": 10023,
-   "peak": 79829,
-   "peak_rand": 79829,
-   "peak_base": 79829,
+   "peak": 60210,
+   "peak_rand": 60210,
+   "peak_base": 60210,
    "skill_base": 10023,
    "cond_fac": 1.0,
    "skill": 10023,
@@ -10178,14 +10186,14 @@
    "forced": false,
    "seed_pick": "seed=1",
    "peak_seeds": {
-    "seed=1": 79829,
-    "seed=2": 82614,
-    "seed=3": 79829
+    "seed=1": 60210,
+    "seed=2": 61043,
+    "seed=3": 60210
    },
    "peak_base_seeds": {
-    "seed=1": 79829,
-    "seed=2": 82614,
-    "seed=3": 79829
+    "seed=1": 60210,
+    "seed=2": 61043,
+    "seed=3": 60210
    },
    "skill_seeds": {
     "seed=1": 10023,
@@ -10242,9 +10250,9 @@
    },
    "peak_k": 1133988.0,
    "skill_k": 10739,
-   "peak": 270990,
-   "peak_rand": 270990,
-   "peak_base": 270990,
+   "peak": 228138,
+   "peak_rand": 228138,
+   "peak_base": 228138,
    "skill_base": 10739,
    "cond_fac": 1.0,
    "skill": 10739,
@@ -10253,14 +10261,14 @@
    "forced": false,
    "seed_pick": "seed=2",
    "peak_seeds": {
-    "seed=1": 271556,
-    "seed=2": 270990,
-    "seed=3": 250966
+    "seed=1": 228542,
+    "seed=2": 228138,
+    "seed=3": 210406
    },
    "peak_base_seeds": {
-    "seed=1": 271556,
-    "seed=2": 270990,
-    "seed=3": 250966
+    "seed=1": 228542,
+    "seed=2": 228138,
+    "seed=3": 210406
    },
    "skill_seeds": {
     "seed=1": 10739,
@@ -10317,9 +10325,9 @@
    },
    "peak_k": 2016504.0,
    "skill_k": 10048,
-   "peak": 243365,
-   "peak_rand": 243365,
-   "peak_base": 243365,
+   "peak": 221942,
+   "peak_rand": 221942,
+   "peak_base": 221942,
    "skill_base": 10048,
    "cond_fac": 1.0,
    "skill": 10048,
@@ -10328,14 +10336,14 @@
    "forced": false,
    "seed_pick": "seed=1",
    "peak_seeds": {
-    "seed=1": 243365,
-    "seed=2": 223912,
-    "seed=3": 279172
+    "seed=1": 221942,
+    "seed=2": 219856,
+    "seed=3": 262441
    },
    "peak_base_seeds": {
-    "seed=1": 243365,
-    "seed=2": 223912,
-    "seed=3": 279172
+    "seed=1": 221942,
+    "seed=2": 219856,
+    "seed=3": 262441
    },
    "skill_seeds": {
     "seed=1": 10048,
@@ -10392,9 +10400,9 @@
    },
    "peak_k": 2741769.0,
    "skill_k": 10057,
-   "peak": 735193,
-   "peak_rand": 735193,
-   "peak_base": 369478,
+   "peak": 590897,
+   "peak_rand": 590897,
+   "peak_base": 346610,
    "skill_base": 10057,
    "cond_fac": 1.3,
    "skill": 10057,
@@ -10406,19 +10414,19 @@
      "fac": 1.3,
      "kind": "recast",
      "skill": 10057,
-     "sum": 387321
+     "sum": 314413
     }
    ],
    "seed_pick": "seed=2",
    "peak_seeds": {
-    "seed=1": 823980,
-    "seed=2": 735193,
-    "seed=3": 433343
+    "seed=1": 725577,
+    "seed=2": 590897,
+    "seed=3": 386567
    },
    "peak_base_seeds": {
-    "seed=1": 409635,
-    "seed=2": 369478,
-    "seed=3": 433343
+    "seed=1": 409518,
+    "seed=2": 346610,
+    "seed=3": 386567
    },
    "skill_seeds": {
     "seed=1": 10057,
@@ -10479,9 +10487,9 @@
    },
    "peak_k": 8607472.0,
    "skill_k": 10462,
-   "peak": 3632602,
-   "peak_rand": 3632602,
-   "peak_base": 3632602,
+   "peak": 3310954,
+   "peak_rand": 3310954,
+   "peak_base": 3310954,
    "skill_base": 10462,
    "cond_fac": 1.495,
    "skill": 10462,
@@ -10490,14 +10498,14 @@
    "forced": true,
    "seed_pick": "seed=3",
    "peak_seeds": {
-    "seed=1": 3164954,
-    "seed=2": 3931841,
-    "seed=3": 3632602
+    "seed=1": 2879418,
+    "seed=2": 3585784,
+    "seed=3": 3310954
    },
    "peak_base_seeds": {
-    "seed=1": 3164954,
-    "seed=2": 3162363,
-    "seed=3": 3632602
+    "seed=1": 2879418,
+    "seed=2": 2878304,
+    "seed=3": 3310954
    },
    "skill_seeds": {
     "seed=1": 10462,
@@ -10554,25 +10562,25 @@
    },
    "peak_k": 4863675.0,
    "skill_k": 9938,
-   "peak": 1472844,
-   "peak_rand": 1472844,
-   "peak_base": 1472844,
+   "peak": 1336019,
+   "peak_rand": 1336019,
+   "peak_base": 1336019,
    "skill_base": 9938,
    "cond_fac": 1.2264,
    "skill": 9938,
    "input_skill": 9938,
    "segs": 3,
    "forced": true,
-   "seed_pick": "seed=3",
+   "seed_pick": "seed=2",
    "peak_seeds": {
-    "seed=1": 1843851,
-    "seed=2": 1467710,
-    "seed=3": 1472844
+    "seed=1": 1710079,
+    "seed=2": 1336019,
+    "seed=3": 1305979
    },
    "peak_base_seeds": {
-    "seed=1": 1441983,
-    "seed=2": 1467710,
-    "seed=3": 1472844
+    "seed=1": 1349377,
+    "seed=2": 1336019,
+    "seed=3": 1305979
    },
    "skill_seeds": {
     "seed=1": 9938,
@@ -10629,9 +10637,9 @@
    },
    "peak_k": 1658920.0,
    "skill_k": 9944,
-   "peak": 621050,
-   "peak_rand": 621050,
-   "peak_base": 496840,
+   "peak": 566530,
+   "peak_rand": 566530,
+   "peak_base": 453224,
    "skill_base": 9944,
    "cond_fac": 1.0,
    "skill": 9944,
@@ -10643,19 +10651,19 @@
      "fac": 1.0,
      "kind": "recast",
      "skill": 9944,
-     "sum": 124210
+     "sum": 113306
     }
    ],
    "seed_pick": "seed=1",
    "peak_seeds": {
-    "seed=1": 621050,
-    "seed=2": 496840,
-    "seed=3": 621050
+    "seed=1": 566530,
+    "seed=2": 453224,
+    "seed=3": 566530
    },
    "peak_base_seeds": {
-    "seed=1": 496840,
-    "seed=2": 496840,
-    "seed=3": 496840
+    "seed=1": 453224,
+    "seed=2": 453224,
+    "seed=3": 453224
    },
    "skill_seeds": {
     "seed=1": 9944,
@@ -10712,9 +10720,9 @@
    },
    "peak_k": 2506572.0,
    "skill_k": 10752,
-   "peak": 693876,
-   "peak_rand": 693876,
-   "peak_base": 693876,
+   "peak": 514260,
+   "peak_rand": 514260,
+   "peak_base": 514260,
    "skill_base": 10752,
    "cond_fac": 1.0,
    "skill": 10752,
@@ -10723,14 +10731,14 @@
    "forced": false,
    "seed_pick": "seed=3",
    "peak_seeds": {
-    "seed=1": 636426,
-    "seed=2": 718977,
-    "seed=3": 693876
+    "seed=1": 472955,
+    "seed=2": 525520,
+    "seed=3": 514260
    },
    "peak_base_seeds": {
-    "seed=1": 636426,
-    "seed=2": 718977,
-    "seed=3": 693876
+    "seed=1": 472955,
+    "seed=2": 525520,
+    "seed=3": 514260
    },
    "skill_seeds": {
     "seed=1": 10752,
@@ -10787,25 +10795,33 @@
    },
    "peak_k": 3707752.0,
    "skill_k": 10125,
-   "peak": 1605061,
-   "peak_rand": 1605061,
-   "peak_base": 825562,
+   "peak": 3094706,
+   "peak_rand": 3094706,
+   "peak_base": 1585772,
    "skill_base": 10125,
-   "cond_fac": 1.333,
+   "cond_fac": 1.1108,
    "skill": 10125,
    "input_skill": 10125,
-   "segs": 8,
+   "segs": 10,
    "forced": true,
+   "tail": [
+    {
+     "fac": 1.1108,
+     "kind": "module",
+     "skill": 10125,
+     "sum": 1507677
+    }
+   ],
    "seed_pick": "seed=2",
    "peak_seeds": {
-    "seed=1": 1665437,
-    "seed=2": 1605061,
-    "seed=3": 1552926
+    "seed=1": 3230480,
+    "seed=2": 3094706,
+    "seed=3": 3050933
    },
    "peak_base_seeds": {
-    "seed=1": 838771,
-    "seed=2": 825562,
-    "seed=3": 819313
+    "seed=1": 1639237,
+    "seed=2": 1585772,
+    "seed=3": 1572056
    },
    "skill_seeds": {
     "seed=1": 10125,
@@ -10862,9 +10878,9 @@
    },
    "peak_k": 4160364.0,
    "skill_k": 10151,
-   "peak": 1160728,
-   "peak_rand": 1160728,
-   "peak_base": 1160728,
+   "peak": 1279896,
+   "peak_rand": 1279896,
+   "peak_base": 1279896,
    "skill_base": 10151,
    "cond_fac": 1.0,
    "skill": 10151,
@@ -10873,14 +10889,14 @@
    "forced": true,
    "seed_pick": "seed=2",
    "peak_seeds": {
-    "seed=1": 1046118,
-    "seed=2": 1160728,
-    "seed=3": 1596020
+    "seed=1": 1154229,
+    "seed=2": 1279896,
+    "seed=3": 1739124
    },
    "peak_base_seeds": {
-    "seed=1": 1046118,
-    "seed=2": 1160728,
-    "seed=3": 1197015
+    "seed=1": 1154229,
+    "seed=2": 1279896,
+    "seed=3": 1304343
    },
    "skill_seeds": {
     "seed=1": 10151,
@@ -10937,9 +10953,9 @@
    },
    "peak_k": 5156382.0,
    "skill_k": 10174,
-   "peak": 772406,
-   "peak_rand": 772406,
-   "peak_base": 772406,
+   "peak": 641236,
+   "peak_rand": 641236,
+   "peak_base": 641236,
    "skill_base": 10173,
    "cond_fac": 1.0,
    "skill": 10173,
@@ -10948,14 +10964,14 @@
    "forced": false,
    "seed_pick": "seed=3",
    "peak_seeds": {
-    "seed=1": 770566,
-    "seed=2": 974907,
-    "seed=3": 772406
+    "seed=1": 639694,
+    "seed=2": 809421,
+    "seed=3": 641236
    },
    "peak_base_seeds": {
-    "seed=1": 770566,
-    "seed=2": 974907,
-    "seed=3": 772406
+    "seed=1": 639694,
+    "seed=2": 809421,
+    "seed=3": 641236
    },
    "skill_seeds": {
     "seed=1": 10173,
@@ -11012,25 +11028,33 @@
    },
    "peak_k": 3453121.0,
    "skill_k": 10192,
-   "peak": 634585,
-   "peak_rand": 634585,
-   "peak_base": 634585,
+   "peak": 819442,
+   "peak_rand": 819442,
+   "peak_base": 819442,
    "skill_base": 10192,
    "cond_fac": 1.0,
    "skill": 10192,
    "input_skill": 10192,
-   "segs": 7,
+   "segs": 8,
    "forced": true,
+   "tail": [
+    {
+     "fac": 1.0,
+     "kind": "module",
+     "skill": 10192,
+     "sum": 182099
+    }
+   ],
    "seed_pick": "seed=3",
    "peak_seeds": {
-    "seed=1": 600271,
-    "seed=2": 986666,
-    "seed=3": 634585
+    "seed=1": 786267,
+    "seed=2": 999626,
+    "seed=3": 819442
    },
    "peak_base_seeds": {
-    "seed=1": 600271,
-    "seed=2": 600271,
-    "seed=3": 634585
+    "seed=1": 786267,
+    "seed=2": 786267,
+    "seed=3": 819442
    },
    "skill_seeds": {
     "seed=1": 10192,
@@ -11087,9 +11111,9 @@
    },
    "peak_k": 3575235.0,
    "skill_k": 10218,
-   "peak": 966129,
-   "peak_rand": 966129,
-   "peak_base": 757422,
+   "peak": 868471,
+   "peak_rand": 868471,
+   "peak_base": 680835,
    "skill_base": 10218,
    "cond_fac": 1.0,
    "skill": 10218,
@@ -11098,14 +11122,14 @@
    "forced": true,
    "seed_pick": "seed=1",
    "peak_seeds": {
-    "seed=1": 966129,
-    "seed=2": 909234,
-    "seed=3": 1785898
+    "seed=1": 868471,
+    "seed=2": 817321,
+    "seed=3": 1605344
    },
    "peak_base_seeds": {
-    "seed=1": 757422,
-    "seed=2": 712646,
-    "seed=3": 804294
+    "seed=1": 680835,
+    "seed=2": 640582,
+    "seed=3": 722968
    },
    "skill_seeds": {
     "seed=1": 10218,
@@ -11162,25 +11186,33 @@
    },
    "peak_k": 3175124.0,
    "skill_k": 10230,
-   "peak": 1069778,
-   "peak_rand": 1069778,
-   "peak_base": 1069778,
+   "peak": 1111857,
+   "peak_rand": 1111857,
+   "peak_base": 1111857,
    "skill_base": 10231,
    "cond_fac": 1.0,
    "skill": 10231,
    "input_skill": 10231,
-   "segs": 3,
+   "segs": 4,
    "forced": true,
+   "tail": [
+    {
+     "fac": 1.0,
+     "kind": "module",
+     "skill": 10236,
+     "sum": 143707
+    }
+   ],
    "seed_pick": "seed=2",
    "peak_seeds": {
-    "seed=1": 1050252,
-    "seed=2": 1069778,
-    "seed=3": 1105031
+    "seed=1": 1092642,
+    "seed=2": 1111857,
+    "seed=3": 1148498
    },
    "peak_base_seeds": {
-    "seed=1": 1050252,
-    "seed=2": 1069778,
-    "seed=3": 1105031
+    "seed=1": 1092642,
+    "seed=2": 1111857,
+    "seed=3": 1148498
    },
    "skill_seeds": {
     "seed=1": 10231,
@@ -11237,25 +11269,33 @@
    },
    "peak_k": 3912828.0,
    "skill_k": 10263,
-   "peak": 1120539,
-   "peak_rand": 1120539,
-   "peak_base": 1120539,
+   "peak": 1474881,
+   "peak_rand": 1474881,
+   "peak_base": 1474881,
    "skill_base": 10263,
    "cond_fac": 1.0,
    "skill": 10263,
    "input_skill": 10263,
-   "segs": 3,
+   "segs": 4,
    "forced": true,
+   "tail": [
+    {
+     "fac": 1.0,
+     "kind": "module",
+     "skill": 10258,
+     "sum": 98034
+    }
+   ],
    "seed_pick": "seed=3",
    "peak_seeds": {
-    "seed=1": 1103769,
-    "seed=2": 1479060,
-    "seed=3": 1120539
+    "seed=1": 1470810,
+    "seed=2": 1906714,
+    "seed=3": 1474881
    },
    "peak_base_seeds": {
-    "seed=1": 1103769,
-    "seed=2": 1109295,
-    "seed=3": 1120539
+    "seed=1": 1470810,
+    "seed=2": 1454544,
+    "seed=3": 1474881
    },
    "skill_seeds": {
     "seed=1": 10263,
@@ -11312,9 +11352,9 @@
    },
    "peak_k": 278606.0,
    "skill_k": 10274,
-   "peak": 232788,
-   "peak_rand": 232788,
-   "peak_base": 232788,
+   "peak": 212576,
+   "peak_rand": 212576,
+   "peak_base": 212576,
    "skill_base": 10274,
    "cond_fac": 1.0,
    "skill": 10274,
@@ -11323,14 +11363,14 @@
    "forced": true,
    "seed_pick": "seed=1",
    "peak_seeds": {
-    "seed=1": 232788,
-    "seed=2": 232788,
-    "seed=3": 260722
+    "seed=1": 212576,
+    "seed=2": 212576,
+    "seed=3": 238086
    },
    "peak_base_seeds": {
-    "seed=1": 232788,
-    "seed=2": 232788,
-    "seed=3": 260722
+    "seed=1": 212576,
+    "seed=2": 212576,
+    "seed=3": 238086
    },
    "skill_seeds": {
     "seed=1": 10274,
@@ -11387,9 +11427,9 @@
    },
    "peak_k": 680160.0,
    "skill_k": 10292,
-   "peak": 1053134,
-   "peak_rand": 1053134,
-   "peak_base": 1053134,
+   "peak": 982925,
+   "peak_rand": 982925,
+   "peak_base": 982925,
    "skill_base": 10292,
    "cond_fac": 1.0,
    "skill": 10292,
@@ -11398,14 +11438,14 @@
    "forced": true,
    "seed_pick": "seed=1",
    "peak_seeds": {
-    "seed=1": 1053134,
-    "seed=2": 1053134,
-    "seed=3": 1053134
+    "seed=1": 982925,
+    "seed=2": 982925,
+    "seed=3": 982925
    },
    "peak_base_seeds": {
-    "seed=1": 1053134,
-    "seed=2": 1053134,
-    "seed=3": 1053134
+    "seed=1": 982925,
+    "seed=2": 982925,
+    "seed=3": 982925
    },
    "skill_seeds": {
     "seed=1": 10292,
@@ -11462,9 +11502,9 @@
    },
    "peak_k": 7360185.0,
    "skill_k": 10315,
-   "peak": 858623,
-   "peak_rand": 858623,
-   "peak_base": 858623,
+   "peak": 776379,
+   "peak_rand": 776379,
+   "peak_base": 776379,
    "skill_base": 10315,
    "cond_fac": 1.0,
    "skill": 10315,
@@ -11473,14 +11513,14 @@
    "forced": true,
    "seed_pick": "seed=1",
    "peak_seeds": {
-    "seed=1": 858623,
-    "seed=2": 858623,
-    "seed=3": 858623
+    "seed=1": 776379,
+    "seed=2": 776379,
+    "seed=3": 776379
    },
    "peak_base_seeds": {
-    "seed=1": 858623,
-    "seed=2": 858623,
-    "seed=3": 858623
+    "seed=1": 776379,
+    "seed=2": 776379,
+    "seed=3": 776379
    },
    "skill_seeds": {
     "seed=1": 10315,
@@ -11537,9 +11577,9 @@
    },
    "peak_k": 3218735.0,
    "skill_k": 10337,
-   "peak": 879379,
-   "peak_rand": 879379,
-   "peak_base": 879379,
+   "peak": 805158,
+   "peak_rand": 805158,
+   "peak_base": 805158,
    "skill_base": 10337,
    "cond_fac": 1.0,
    "skill": 10337,
@@ -11548,14 +11588,14 @@
    "forced": true,
    "seed_pick": "seed=1",
    "peak_seeds": {
-    "seed=1": 879379,
-    "seed=2": 840856,
-    "seed=3": 963258
+    "seed=1": 805158,
+    "seed=2": 770005,
+    "seed=3": 880661
    },
    "peak_base_seeds": {
-    "seed=1": 879379,
-    "seed=2": 840856,
-    "seed=3": 785161
+    "seed=1": 805158,
+    "seed=2": 770005,
+    "seed=3": 718892
    },
    "skill_seeds": {
     "seed=1": 10337,
@@ -11612,9 +11652,9 @@
    },
    "peak_k": 1802682.0,
    "skill_k": 10439,
-   "peak": 271225,
-   "peak_rand": 271225,
-   "peak_base": 241026,
+   "peak": 222186,
+   "peak_rand": 222186,
+   "peak_base": 197449,
    "skill_base": 10440,
    "cond_fac": 1.0,
    "skill": 10439,
@@ -11626,19 +11666,19 @@
      "fac": 1.0,
      "kind": "recast",
      "skill": 10439,
-     "sum": 47863
+     "sum": 39210
     }
    ],
    "seed_pick": "seed=1",
    "peak_seeds": {
-    "seed=1": 271225,
-    "seed=2": 276558,
-    "seed=3": 245762
+    "seed=1": 222186,
+    "seed=2": 229187,
+    "seed=3": 203670
    },
    "peak_base_seeds": {
-    "seed=1": 241026,
-    "seed=2": 245762,
-    "seed=3": 245762
+    "seed=1": 197449,
+    "seed=2": 203670,
+    "seed=3": 203670
    },
    "skill_seeds": {
     "seed=1": 10439,
@@ -11695,9 +11735,9 @@
    },
    "peak_k": 2165270.0,
    "skill_k": 10622,
-   "peak": 720663,
-   "peak_rand": 1447998,
-   "peak_base": 720663,
+   "peak": 591101,
+   "peak_rand": 1187675,
+   "peak_base": 591101,
    "skill_base": 10623,
    "cond_fac": 1.0,
    "skill": 10623,
@@ -11706,19 +11746,19 @@
    "forced": false,
    "seed_pick": "seed=2",
    "peak_seeds": {
-    "seed=1": 737623,
-    "seed=2": 720663,
-    "seed=3": 657910
+    "seed=1": 652014,
+    "seed=2": 591101,
+    "seed=3": 582155
    },
    "peak_base_seeds": {
-    "seed=1": 737623,
-    "seed=2": 720663,
-    "seed=3": 657910
+    "seed=1": 652014,
+    "seed=2": 591101,
+    "seed=3": 582155
    },
    "skill_seeds": {
-    "seed=1": 10623,
+    "seed=1": 10622,
     "seed=2": 10623,
-    "seed=3": 10623
+    "seed=3": 10622
    }
   },
   "180": {
@@ -11769,9 +11809,9 @@
    },
    "peak_k": 4796544.0,
    "skill_k": 10641,
-   "peak": 971176,
-   "peak_rand": 971176,
-   "peak_base": 971176,
+   "peak": 790476,
+   "peak_rand": 790476,
+   "peak_base": 790476,
    "skill_base": 10641,
    "cond_fac": 1.0,
    "skill": 10641,
@@ -11780,14 +11820,14 @@
    "forced": true,
    "seed_pick": "seed=1",
    "peak_seeds": {
-    "seed=1": 971176,
-    "seed=2": 1142848,
-    "seed=3": 971176
+    "seed=1": 790476,
+    "seed=2": 937636,
+    "seed=3": 790476
    },
    "peak_base_seeds": {
-    "seed=1": 971176,
-    "seed=2": 1142848,
-    "seed=3": 971176
+    "seed=1": 790476,
+    "seed=2": 937636,
+    "seed=3": 790476
    },
    "skill_seeds": {
     "seed=1": 10641,

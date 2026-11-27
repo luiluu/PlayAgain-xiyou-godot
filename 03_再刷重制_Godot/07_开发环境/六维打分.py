@@ -9,7 +9,7 @@
 
 数据来源（六维打分_实测数据.json，同目录）：
   输出  ＝ T558 R2 起（Kyo 11-27 事项 83 第 1、2 条）：t445_book_probe 炼狱口径（--book-build=lianyu --noisy --force-all-tiers --cond-full --act-tail）整次施放各段直接相加；
-          R4 起：整次施放含行动收尾的词条再释放、技能卡追加释放（--act-tail）；条件全中＝同一合法配装、同一时刻能同时成立的最大组合（k_calibrate eff_full）；种子 1、2、3 各量一遍取中位（附则 E）；
+          R4 起：整次施放含行动收尾的词条再释放、技能卡追加释放（--act-tail）；T580 起 --act-tail 再收角色模块收尾追加（--no-module-tail 回 R4）；条件全中＝同一合法配装、同一时刻能同时成立的最大组合（k_calibrate eff_full）；种子 1、2、3 各量一遍取中位（附则 E）；
           三档都强制量本角色全部改写伤害招（条件全中＝原超强者口径 _prime，R3 起再乘卡面 conds「全中÷当下」条件倍率，自然放得出的招也强制量）；
           R3 起每招取 peak（20 次里最大，含随机再放／随机变身），179 流萤例外取 peak_base（不含 10% 随机再放）——同 T527 平衡报告 峰值汇总.py peak()（Kyo 11-27 事项 83「算，和平衡报告统一」）；全部招里取最大
           （T558 前是 k_calibrate 的「apply 单下×段数比」，T569 查出落地招拼错，旧数留在 peak_k 只作对照）
@@ -239,6 +239,8 @@ def ingest_lianyu(logs):
                         keep.append(c)
                     for t in c.get('tail_dropped', []):  # R4：行动收尾落成原版变体的段，探针已剔除，这里只记名单
                         excl[a].append({'seed': sd, 'input_skill': int(c.get('input_skill', 0)), 'skill': int(t), 'tail': True})
+                    for t in c.get('tail_suspect', []):  # T580：模块收尾单段超主招单段 10 倍，探针没计入，只记名单报协调
+                        excl[a].append({'seed': sd, 'input_skill': int(c.get('input_skill', 0)), 'skill': int(t['skill']), 'tail': True, 'suspect': int(t['hit'])})
                 cands = keep or cands
                 best = max(cands, key=lambda c: (out_peak(c, a), int(c['peak'])))
                 bb = max(cands, key=lambda c: (int(c.get('peak_base', c['peak'])), int(c['peak'])))
@@ -275,8 +277,8 @@ def ingest_lianyu(logs):
             e['excluded_landings'] = excl[i]
         elif i in skip:
             e['no_damage_row'] = True
-    md['_note'] = ('六维打分.py 的实测输入：peak＝T558 R4 炼狱口径（t445_book_probe --book-build=lianyu --noisy --seed=1/2/3 --force-all-tiers --cond-full --act-tail）整次施放合计（含行动收尾的词条再释放、技能卡追加释放）、三档强制量条件全中（合法配装、同一时刻能同时成立的最大组合）且乘卡面条件倍率、'
-                   '取 peak（含随机再放，179 流萤取 peak_base，同 T527 平衡报告）；每个种子内取一人最大，三种子取中位（median_low，seed_pick 是取到的种子），逐种子在 peak_seeds／peak_base_seeds／skill_seeds；tail＝打分那次施放里行动收尾段（kind recast＝词条再释放、follow＝技能卡追加）；peak_rand＝打分那招含随机再放的最大；peak_base／skill_base＝全部招不含随机再放取最大（对照）；cond_fac＝打分那招的卡面条件倍率；peak_k＝T558 前 k_calibrate 旧口径（对照用，不参与打分）；stat＝--stats 标准养成面板；surv＝--survive 3 种子；no_damage_row＝探针量不出伤害')
+    md['_note'] = ('六维打分.py 的实测输入：peak＝T558 R4／T580 炼狱口径（t445_book_probe --book-build=lianyu --noisy --seed=1/2/3 --force-all-tiers --cond-full --act-tail）整次施放合计（含行动收尾的角色模块追加、词条再释放、技能卡追加释放，次序照 XBattleLogic.act）、三档强制量条件全中（合法配装、同一时刻能同时成立的最大组合）且乘卡面条件倍率、'
+                   '取 peak（含随机再放，179 流萤取 peak_base，同 T527 平衡报告）；每个种子内取一人最大，三种子取中位（median_low，seed_pick 是取到的种子），逐种子在 peak_seeds／peak_base_seeds／skill_seeds；tail＝打分那次施放里行动收尾段（kind recast＝词条再释放、follow＝技能卡追加、module＝T580 角色模块收尾追加，强制量摆满渡鸦狩猎／神话、饿狼解析 3 层）；peak_rand＝打分那招含随机再放的最大；peak_base／skill_base＝全部招不含随机再放取最大（对照）；cond_fac＝打分那招的卡面条件倍率；peak_k＝T558 前 k_calibrate 旧口径（对照用，不参与打分）；stat＝--stats 标准养成面板；surv＝--survive 3 种子；no_damage_row＝探针量不出伤害')
     MEAS.write_text(json.dumps(md, ensure_ascii=False, indent=1) + '\n', encoding='utf-8')
     print('输出已换炼狱口径：%d 人有量数，%d 人量不出伤害，停用 %d 人' % (len(rows), len(skip - set(rows)), len(dis)))
 
@@ -521,12 +523,17 @@ def report(ids, base, tier, raw, meas, notes, res, mode_w, old_sample, prev, txt
     w('# 六维全员重算报告（T280，cc Sonnet＋medium；第二版：速度、生存换实测）\n')
     w('依据：设定稿《天启篇_角色六维_v0.3定稿》；T271 全员名次表；Kyo 11-19 23:5x 原话（「谷雨不对……生存至少也是 S」「SS 给得太容易，或者超强者／强者／弱者的总分给得不合理」「SS 的代价：至少两个 C 及以下，不用 D」「六维难倒不是量完之后重定吗」）。**本表是草稿，`six_dim.json` 只在分支里，等 Kyo 过目改完再合。**四骑士、普怪模板沿用 T275。战商、韧性两维手标分这一版**没动**，交小A 人审。\n')
     w('## T558 R2：输出换炼狱口径（Kyo 11-27 事项 83）\n')
-    w('- **口径**：输出一维改用 `t445_book_probe --book-build=lianyu --noisy --seed=1/2/3 --force-all-tiers --cond-full --act-tail`（R4：含行动收尾的词条再释放、技能卡追加释放；条件全中按同一合法配装、同一时刻能同时成立的最大组合；三种子取中位，逐种子见第 12 节）：炼狱 C 模板养成，整次施放（`logic.execute`）各段直接相加，记落地招号；三档都把本角色全部改写伤害招强制量一遍（条件全中，原来只给超强者；R3 起 `--cond-full` 再乘卡面 conds「全中÷当下」条件倍率、自然放得出的招也强制量）；R3 起每招取 `peak`（20 次里最大，含随机再放／随机变身），179 流萤例外取 `peak_base`，同 T527 平衡报告 `峰值汇总.py`；全部招取最大。T558 前的 k_calibrate 旧数（「apply 单下×段数比」，T569 查出绿司机 4759→4760 等拼错）留在实测数据 `peak_k`，不参与打分。')
+    w('- **口径**：输出一维改用 `t445_book_probe --book-build=lianyu --noisy --seed=1/2/3 --force-all-tiers --cond-full --act-tail`（R4：含行动收尾的词条再释放、技能卡追加释放；T580 再收角色模块收尾追加（渡鸦收割／回响、饿狼追击、宿傩追斩、镜流追加段、云裳复演、屠苏剑气等，次序照 act()，强制量摆满渡鸦狩猎＋神话、饿狼解析 3 层；单段超主招 10 倍的不计入）；条件全中按同一合法配装、同一时刻能同时成立的最大组合；三种子取中位，逐种子见第 12 节）：炼狱 C 模板养成，整次施放（`logic.execute`）各段直接相加，记落地招号；三档都把本角色全部改写伤害招强制量一遍（条件全中，原来只给超强者；R3 起 `--cond-full` 再乘卡面 conds「全中÷当下」条件倍率、自然放得出的招也强制量）；R3 起每招取 `peak`（20 次里最大，含随机再放／随机变身），179 流萤例外取 `peak_base`，同 T527 平衡报告 `峰值汇总.py`；全部招取最大。T558 前的 k_calibrate 旧数（「apply 单下×段数比」，T569 查出绿司机 4759→4760 等拼错）留在实测数据 `peak_k`，不参与打分。')
     w('- **谷雨输出手改 S 已去掉**，按实测给档（现 %s，全库第 %d）；辅助 A（Kyo 11-21）照留。' % (let['175']['output'], rk('output', '175')))
     ex = [(i, x) for i in ids for x in meas.get(i, {}).get('excluded_landings', [])]
     if ex:
+        sus = sorted({(i, x['input_skill'], x['skill']) for i, x in ex if x.get('suspect')})
+        ex = [(i, x) for i, x in ex if not x.get('suspect')]
+        if sus:
+            w('- **模块收尾单段超主招单段 10 倍、没计入的（T580 保险，报协调）**：' + '；'.join('%s（%s）%d→%d' % (base[i]['name'], i, a, b) for i, a, b in sus) + '。')
         exs = sorted({(i, x['input_skill'], x['skill'], bool(x.get('tail'))) for i, x in ex})
-        w('- **剔除的样本（落地招不在改写表、按原版公式结算，疑似游戏数据问题，没核能不能在实战里出现，报 Kyo）**：' + '；'.join('%s（%s）%d→%d%s' % (base[i]['name'], i, a, b, '（行动收尾段）' if t else '') for i, a, b, t in exs) + '。')
+        if exs:
+          w('- **剔除的样本（落地招不在改写表、按原版公式结算，疑似游戏数据问题，没核能不能在实战里出现，报 Kyo）**：' + '；'.join('%s（%s）%d→%d%s' % (base[i]['name'], i, a, b, '（行动收尾段）' if t else '') for i, a, b, t in exs) + '。')
     w('- 面板（`--stats`）、生存（`--survive` 3 种子）没重跑，沿用 T558 在 main 8a807d7cf 上量的数（之后 main 只合进了状态名字／说明进运行时，不影响数值）。\n')
     w('## 0. 先说结论（名额口径算出来明显怪的地方）\n')
     fin = ts[mode_w]
