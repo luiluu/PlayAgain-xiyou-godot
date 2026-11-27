@@ -45,16 +45,16 @@
 - 语法检查：1251 个 .gd，0 个问题
 - 发行空壳.py check：0（新函数 `natures_of_actor_id` 登记进 `07_开发环境/发行空壳特例.json`「已确认空值安全」）
 - 工具回归.py：全部通过
-- 云端选测：通过，提交 021a3d3417，12 个场景（选测.py 列出的全部，含 `xiyou_event_compare*` 四个）、3 片，最长一片 3.9 分钟；运行页 https://github.com/luiluu/PlayAgain-xiyou-godot/actions/runs/45927743001（`gh run watch` 前台等完）
+- 云端选测：通过，提交 021a3d3417，12 个场景（选测.py 列出的全部，含 `xiyou_event_compare*` 四个）、3 片，最长一片 3.9 分钟；运行页 https://github.com/luiluu/PlayAgain-xiyou-godot/actions/runs/45927743001（`gh run watch` 前台等完）。之后只在专项里删了 1600×720 截图那两行（窗口没真变宽，拍出来还是 1280×720），只影响带窗口截图，本机无头重跑 36/36
 
-## 截图（1280×720 原尺寸；20x9 为 1600×720 窗口）
+## 截图（1280×720 原尺寸）
 
 改前 → 改后：
 
-- 小铃兰：`../归档/交付截图/luiluu_t554/t554_before_127_16x9.png` → `../归档/交付截图/luiluu_t554/t554_after_127_16x9.png`（20x9 同名）
-- 宿傩（矢照列、防具「全部」、角色属性「无」）：`../归档/交付截图/luiluu_t554/t554_before_172_16x9.png` → `../归档/交付截图/luiluu_t554/t554_after_172_16x9.png`（20x9 同名）
-- 奈叶（第二个出圈的）：`../归档/交付截图/luiluu_t554/t554_before_108_16x9.png` → `../归档/交付截图/luiluu_t554/t554_after_108_16x9.png`
-- 1 号狗逍遥（本来放得下，立绘不变）：`../归档/交付截图/luiluu_t554/t554_before_1_16x9.png` → `../归档/交付截图/luiluu_t554/t554_after_1_16x9.png`
+- 小铃兰：`00_项目管理/归档/交付截图/luiluu_t554/t554_before_127_16x9.png` → `00_项目管理/归档/交付截图/luiluu_t554/t554_after_127_16x9.png`
+- 宿傩（矢照列、防具「全部」、角色属性「无」）：`00_项目管理/归档/交付截图/luiluu_t554/t554_before_172_16x9.png` → `00_项目管理/归档/交付截图/luiluu_t554/t554_after_172_16x9.png`
+- 奈叶（第二个出圈的）：`00_项目管理/归档/交付截图/luiluu_t554/t554_before_108_16x9.png` → `00_项目管理/归档/交付截图/luiluu_t554/t554_after_108_16x9.png`
+- 1 号狗逍遥（本来放得下，立绘不变）：`00_项目管理/归档/交付截图/luiluu_t554/t554_before_1_16x9.png` → `00_项目管理/归档/交付截图/luiluu_t554/t554_after_1_16x9.png`
 
 ## 本分支提交
 

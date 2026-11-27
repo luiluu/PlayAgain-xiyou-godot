@@ -5,7 +5,7 @@ extends Node
 ## - 牌头三行：角色属性（元素色）／武器／防具，掌握去重（小铃兰两个法杖）、一类全会写「全部」、类型名不拆字；
 ##   原版「属性」（人物属性）天启篇不画。
 ## - 西游档不变：actor_info 与改前一致（开关全关时的结果），立绘不缩；开关关＝天启篇也回改前。
-## 带 -- --out=<目录> 且有窗口时截图：小铃兰、宿傩、1 号、奈叶 改前／改后，1280×720 与 1600×720。
+## 带 -- --out=<目录> 且有窗口时截图：小铃兰、宿傩、1 号、奈叶 改前／改后，1280×720。
 const TestEnv = preload("res://tests/xiyou_test_env.gd")
 
 var results: Array = []
@@ -238,8 +238,6 @@ func _shots() -> void:
 			a.select(slot)
 			await frames(2)
 			await shot("t554_%s_%d_16x9" % [phase, id])
-			if id == 127 or id == 172:
-				await shot("t554_%s_%d_20x9" % [phase, id], Vector2i(1600, 720))
 		a.queue_free()
 		await frames(2)
 	_switches(true)
