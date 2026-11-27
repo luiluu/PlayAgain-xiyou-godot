@@ -126,7 +126,8 @@
 
 | 函数／开关 | 调用方 N 处（附 grep 命令） | 逐处结论 |
 | --- | --- | --- |
-| `XXiyouNerf.touches`／`XXiyouNerf.rec` | 调用方 1 处（`git grep -nE 'XXiyouNerf\.(touches|rec)\(' -- '*.gd'`，排除 tests） | `xdb.gd:223-224` 只在 `xiyou_save_on()`（西游档、非天启、开关开）时分派；新增只多认 Skills 5115、States 908 两个 id，其余 id 行为不变；T465 专项 20/20 |
+| `XXiyouNerf.touches`／`XXiyouNerf.rec` | 调用方 1 处（自检按函数名 `rec` 粗数 2923 处、`touches` 5 处，都是同名别的类；本类实际 1 处，`git grep -nE 'XXiyouNerf\.(touches|rec)\(' -- '*.gd'`，排除 tests） | `xdb.gd:223-224` 只在 `xiyou_save_on()`（西游档、非天启、开关开）时分派；新增只多认 Skills 5115、States 908 两个 id，其余 id 行为不变；T465 专项 20/20 |
+| `XXiyouNerf._patch_feitian_st2739` | 1 处（自检按 diff 上下文列出） | 函数体未改，只是新函数 `_patch_hunyuan_*` 插在它后面；T465 专项 20/20 |
 | `XXiyouNerf.ENABLED` | 已有开关，不新增 | 关掉后 5115／908 回原版（`t563.rollback_*` 两项断言） |
 
 ## 截图
@@ -137,4 +138,5 @@
 
 - a19c28dd9 T563 混元大成反伤调整（D293）＋专项 26/26
 - 6821785c6 交付单＋注释措辞「加强」改「调整」
-- （本提交）交付单补云端结果、状态可合并
+- 6ba363f8b 交付单补云端结果、状态可合并
+- （本提交）补 `xiyou_t563_hunyuan.gd.uid`、交付单补共用函数逐处结论
