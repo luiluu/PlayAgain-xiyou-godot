@@ -125,3 +125,5 @@
 - 61cef2da3 T532 元素伤终态：防具本体合计 ≤20%（ARMOR_ELEM_CAP）、终态单件 final（ARMOR_FINAL 默认关）、晶石神文按孔拆单记＋校验＋专项
 - aad3c632f T532 发行空壳登记 stat_list；量数包装 t532_elem_bench（--t532=on|off）与 run.sh
 - e65100b56 T532 量数 36 场（防具合计上限开／关）＋虚拟玩家选线确认排到闭关前（闭关意图下选「再想想」兜圈子）＋climb 摘要
+- f3bdb11f2 T532 交付单
+- 1db5b6015 T532 补新增脚本的 .gd.uid
