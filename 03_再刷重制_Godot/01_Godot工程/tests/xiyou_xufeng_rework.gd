@@ -150,7 +150,7 @@ func _check_rework_data_and_text() -> void:
 			and str(sk.meta.get("passiveELUP03", "")).strip_edges() == "%d%%" % cfg[0]
 			and str(sk.meta.get("DepassiveHarmRe01", "")).strip_edges() == "%d%%" % cfg[1]
 			and str(sk.meta.get("DepassiveHarmRe03", "")).strip_edges() == "%d%%" % cfg[1]
-			and str(sk.damage.formula) == str(cfg[2])
+			and (str(sk.damage.formula) == str(cfg[2]) or (XXufeng.JIAN9 and XXufeng.ACTIVE_SWORDS.has(sid)))  # T586 剑一～剑三改主动战技（公式见 xiyou_xufeng_t586）
 			and (note.contains("伤害:%d " % cfg[2]) if not XXufeng.LOCK_FIX else not note.contains("伤害:"))  # T585 开着删打不出的伤害行
 			and note.contains("物理/寒冰伤害+%d%% 无视敌人物理/寒冰抗性+%d%%" % [cfg[0], cfg[1]]),
 			[sid, sk.damage.formula, sk.meta.get("passiveELUP01"), sk.meta.get("DepassiveHarmRe01")])
@@ -160,7 +160,7 @@ func _check_rework_data_and_text() -> void:
 	var sk9995 := XDB.rec("Skills", 9995)
 	var sk9996 := XDB.rec("Skills", 9996)
 	# T585（XXufeng.LOCK_FIX）开着：基因锁去掉经验 −100%；关着回 T440 口径（细项见 xiyou_xufeng_t585）；剑九不动
-	check("9995.kept", int(sk9995.stypeId) == 4 and int(sk9995.occasion) == 2 and sk9995.meta.has("StartPushState2538"))
+	check("9995.kept", (int(sk9995.stypeId) == 1 and int(sk9995.occasion) == 1) if XXufeng.JIAN9 else (int(sk9995.stypeId) == 4 and int(sk9995.occasion) == 2 and sk9995.meta.has("StartPushState2538")))  # T586 剑九改主动战技
 	check("9996.kept", str(sk9996.meta.get("passiveSPBST9", "")).strip_edges() == ("" if XXufeng.LOCK_FIX else "-100%"))
 
 	# 4) 9997 天下第一：西游档挂表外 19501，2525 原件与 9984/10512 不受影响
@@ -222,7 +222,7 @@ func _check_rework_data_and_text() -> void:
 	var dmg_small := XDamage.eval_formula(sk9998, a, foe, [])
 	check("9998.no_bhp_scaling", dmg_big > 0.0 and is_equal_approx(dmg_big, dmg_small), [dmg_big, dmg_small])
 	check("battle.states_80", a.is_state_affected(XXufeng.ST_TIANXIA) and a.is_state_affected(2539)
-		and a.is_state_affected(2530) and a.is_state_affected(2538) and not a.is_state_affected(2525), a.state_ids)
+		and a.is_state_affected(2530) and (a.is_state_affected(2538) != XXufeng.JIAN9) and not a.is_state_affected(2525), a.state_ids)  # T586 剑九去掉空效果开战状态 2538
 	logic.end_battle(0)
 
 	# 6) 专属装备：Armor 143、Weapon 76 绣冬、Armor 129 春雷（含文字审 P2-1 *249% 与 P3 统一措辞）
@@ -944,11 +944,11 @@ func _check_dummy_tiers() -> void:
 	var w76_off := XDB.rec("Weapons", 76)
 	check("scale_off.xufeng_联动_209000_137",
 		XXufeng.gunlong_atk_mul() == 209000
-		and XXufeng.xiudong_atk_pct() == 137
+		and XXufeng.xiudong_atk_pct() == XXufeng.XIUDONG_ATK_PCT_99
 		and str(sk9998_off.damage.formula).contains("a.atk*209000")
 		and str(sk9998_off.note).contains("己·攻击力*209000")
-		and is_equal_approx(float(w76_off.traits[3].value), 1.37)
-		and str(w76_off.note).contains("攻击力能力值*137%"),
+		and is_equal_approx(float(w76_off.traits[3].value), float(XXufeng.XIUDONG_ATK_PCT_99) / 100.0)
+		and str(w76_off.note).contains("攻击力能力值*%d%%" % XXufeng.XIUDONG_ATK_PCT_99),
 		[sk9998_off.damage.formula, w76_off.traits[3].value])
 	for row in [
 		["scale_off_lv50", 50, 99, 0, 0, 0],
