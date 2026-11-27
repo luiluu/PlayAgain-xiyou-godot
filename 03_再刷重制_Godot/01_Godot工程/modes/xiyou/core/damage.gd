@@ -24,7 +24,7 @@ static func eval_formula(item: Dictionary, a: XBattler, b: XBattler, vars: Array
 	if guyu != null:
 		return float(guyu)
 	var program: Dictionary = item.damage.get("formulaProgram", {})
-	if program.get("status") == "pure":
+	if program.get("status") == "pure" and not XTianqiSkills.attack1_applies(item, a):  # T553：天启篇我方 1 号普攻走 run_item 里的物攻×1 分支（AI 估伤、预估同正式结算）
 		XAlienBattle.push_formula(item, a, b, true)  # evalDamageFormula 包装（逆骨）
 		var context := XFormulaContext.capture(a, b, vars, {}, int(item.id), program)
 		XAlienBattle.pop_formula()

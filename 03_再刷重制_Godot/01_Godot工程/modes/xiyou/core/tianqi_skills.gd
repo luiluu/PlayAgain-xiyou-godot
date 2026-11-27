@@ -943,8 +943,27 @@ static func formula(a, b, item: Dictionary) -> float:
 	return v
 
 
-static func _formula(a, b, item: Dictionary) -> float:
-	var sp := spec(int(item.get("id", 0)))
+## T553（事项82 甲，Kyo 11-26）：天启篇我方 1 号普攻＝物攻 ×1 × 等级缩放（同改写表里「普攻 1.0」的口径，稿 v0.2 第 29 行），
+## 走同一条 _formula（角色条件、单段上限、弱者词条一起吃）。敌人、心魔复制（影·原招换了号）、疫囊扩散不是角色或不是 1 号，照原版 a.atk*4。
+## 不写进 skill_rework.json：1 号敌我共用，按号改写记录会连敌人一起改（T552 报告第二节 5）。表里将来有了 "1" 就让表接管。
+## 回退：ATTACK1 = false（我方普攻回原版 a.atk*4）。
+static var ATTACK1 := true
+const ATTACK1_SPEC := {"kind": "普攻", "damage": {"coef": 1.0, "stats": {"atk": 1}}}
+
+
+static func attack1_applies(item: Dictionary, a) -> bool:
+	return ATTACK1 and int(item.get("id", 0)) == 1 and a is XActor and cards_on() and not has(1)
+
+
+static func attack1_formula(a, b, item: Dictionary) -> float:
+	var prev := _cur_skill
+	var v := _formula(a, b, item, ATTACK1_SPEC)
+	_cur_skill = prev
+	return v
+
+
+static func _formula(a, b, item: Dictionary, sp_override: Dictionary = {}) -> float:
+	var sp := sp_override if not sp_override.is_empty() else spec(int(item.get("id", 0)))
 	var kind := int(item.get("damage", {}).get("type", 1))
 	if sp.has("heal"):
 		var h: Dictionary = sp.heal
