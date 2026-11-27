@@ -236,7 +236,10 @@ func _test_3647() -> void:
 		check("t565.3647.heal_%s" % tag, absf((a.hp - hp0) - per * (n / 3)) <= float(n / 3) + 1.0, {"heal": a.hp - hp0, "expect": per * (n / 3), "mhp": a.mhp})
 		print("T565_3647 %s hits=%d heal=%d mhp=%d pct=%.2f" % [tag, hits, int(a.hp - hp0), int(a.mhp), (a.hp - hp0) * 100.0 / a.mhp])
 	var desc := str(XTianqiSkills.spec(3647).get("desc", []))
-	check("t565.3647.card", desc.contains("每三段命中后恢复自身 2% 最大生命") and desc.contains("12 段合计恢复 8%") and desc.contains("12 段合计物理攻击×600%"), desc)
+	check("t565.3647.card", desc.contains("若第 3 段命中，恢复自身最大生命的 2%") and desc.contains("穿齐血月三件套合计 8%") and desc.contains("12 段合计物理攻击×600%") and not desc.contains("消耗："), desc)
+	# 文字审：表头「命中类型」写必中（卡上显示「命中：必中」），TP 消耗只留数据库那一行
+	var note := str(XDB.rec("Skills", 3647).get("note", ""))
+	check("t565.3647.header", note.contains("命中类型:必中") and not note.contains("命中类型:物理") and int(XDB.rec("Skills", 3647).get("tpCost", 0)) == 35, note.substr(0, 400))
 	# 西游档零改动：关改写时是原记录（1855 底数、Hp +1500）
 	XTianqiSkills.ENABLED = false
 	XTianqiSkills.reload_table()
