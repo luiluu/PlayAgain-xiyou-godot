@@ -250,6 +250,12 @@ func _d294() -> void:
 	_check("d294_skills_materials_and_relic", XDB.rec("Skills", 2618).name == "觉醒:熊猫酒仙"
 		and XDB.rec("Skills", 10737).name == "剑*狂千年·一线" and _rec("Items", 2935).name == "爹咪进阶石" and str(_rec("Armors", 4578).note).contains("专属:路痴刀客"))
 	_check("d294_costume_entry", _rec("Skills", 6820).name == "变身——闪光剑姬" and _d294_clothes(-75) == "我们的光")
+	var ryoma := XTextFix.actor_name(57, "龙马") + "复活术"
+	var w2003 := str(_rec("Weapons", 2003).note)
+	_check("d294_unique_tag_follows_effect_line", w2003.contains("“%s”" % ryoma) and w2003.contains("<KyoUnique: %s>" % ryoma)
+		and _rec("Skills", 6240).name == ryoma, w2003.right(80))
+	_check("d294_kotori_form_toasts", str(_rec("CommonEvents", 1710).list[0].parameters[0]).contains(XTextFix.actor_name(159, "") + "切换炮形态")
+		and str(_rec("CommonEvents", 1711).list[0].parameters[0]).contains(XTextFix.actor_name(159, "") + "切换斧形态"))
 	_check("d294_event_exact_positions", str(_cmd(4, 71, 0, 109)[2]) == "路痴刀客"
 		and str(_rec("CommonEvents", 1511).list[9].parameters[1]) == "一打七")
 	_check("d294_homographs_and_independent_skins", _d294_other_texts() == before, _d294_other_texts())
@@ -262,6 +268,8 @@ func _d294() -> void:
 	_check("d294_legacy_keeps_56_source_actor_names", original.size() == 56 and bad.is_empty() and XGojo.hidden(XGojo.ACTOR), bad)
 	_check("d294_legacy_class_skill_wardrobe", XDB.system().skillTypes[10] == "伊莉雅被动" and _rec("Classes", 167).name == "黄泉"
 		and _rec("Skills", 6820).name == "变身——亚丝娜" and _d294_clothes(-75) == "铃兰")
+	_check("d294_legacy_unique_tag_and_toast", str(_rec("Weapons", 2003).note).contains("<KyoUnique: 龙马复活术>")
+		and str(_rec("CommonEvents", 1710).list[0].parameters[0]).contains("'琴里切换炮形态"))
 	XState._become_current(tq)
 	_check("d294_switch_back", XActorBook.actor_name(169) == "路痴刀客" and XDB.system().skillTypes[10] == "银发小魔导被动")
 	XState._become_current(legacy)
