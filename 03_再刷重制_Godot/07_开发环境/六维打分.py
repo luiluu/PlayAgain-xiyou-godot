@@ -45,6 +45,11 @@ DN = {'output': '输出', 'survive': '生存', 'speed': '速度', 'wit': '战商
 CN = {'super': '超强者', 'strong': '强者', 'weak': '弱者'}
 ATK_SURV = 8000
 MODES = ['A', 'B', 'B2', 'B6', 'C']
+# Kyo D292 Q1 甲（T555／T558）：降档时先降手标维，最后才动实测维——战商、韧性 → 辅助 → 速度 → 生存 → 输出；同一优先级里降名次最靠后的；多 SS 时留优先级最高（实测）的那维。
+# 原来是「降名次最靠后的那个」，宿傩输出、战商并列第 7 按表格顺序降了输出（T555 第一节）
+DEMOTE_PRI = {'wit': 0, 'resolve': 0, 'support': 1, 'speed': 2, 'survive': 3, 'output': 4}
+# Kyo D292 补（11-27 事项 83）：B2 超强者输出 +1 只给定位为输出型的超强者（base_line.json actors[].role＝'输出'）；辅助／坦克／均衡型输出按实测名次配档（钟离回 A）。生存 +1、弱者 −1 不变
+B2_OUTPUT_ROLE = '输出'
 D239 = {'2', '22', '1', '162'}   # 绿司机、维利、狗逍遥、诛仙：Kyo D239「升档」——已升强者（1、162 在天启篇名单里本来就是强者；2、22 这次在 skill_rework.json tiers 里由弱者升强者），数值不动
 # Kyo D238 Q2：虎姐（89）、沙和尚（39）生存手改到 B（团队坦克，单人挨打测不到嘲讽／全队盾价值），其余照实测
 # Kyo 11-19（T278 派单）：谷雨（175）输出改 S、生存至少 S（实测已是 S）；Kyo 11-21 辅助降到 A
@@ -269,7 +274,7 @@ def quota_letters(order, vals):
     return res
 
 
-def assign(ids_all, raw, tier, mode, disabled=frozenset()):
+def assign(ids_all, raw, tier, mode, disabled=frozenset(), role=None):
     ids = [i for i in ids_all if i not in disabled]   # 停用角色不进排名、不占名额
     rank = {d: sorted(ids, key=lambda i: (-raw[i][d], int(i))) for d in DIMS}
     let = {i: {} for i in ids_all}
@@ -302,6 +307,8 @@ def assign(ids_all, raw, tier, mode, disabled=frozenset()):
             for d in dims_b:
                 v = S[let[i][d]]
                 if tier[i] == 'super' and v < 6:
+                    if d == 'output' and role is not None and role[i] != B2_OUTPUT_ROLE:
+                        continue   # D292 补：非输出型超强者输出不 +1
                     v += 1
                 elif tier[i] == 'weak' and v > 1:
                     v -= 1
@@ -332,6 +339,9 @@ def assign(ids_all, raw, tier, mode, disabled=frozenset()):
 
     changes = []
 
+    def worst(i, ds):   # D292 Q1 甲：先降手标维（优先级低），同优先级降名次最靠后的
+        return min(ds, key=lambda d: (DEMOTE_PRI[d], -pos[d][i]))
+
     def demote(i, d):
         old = let[i][d]
         let[i][d] = LET[S[old] - 2]
@@ -346,20 +356,20 @@ def assign(ids_all, raw, tier, mode, disabled=frozenset()):
             x = sc(i)
             if 'multi' in v:
                 ds = [d for d in DIMS if x[d] >= 7]
-                keep = min(ds, key=lambda d: pos[d][i])
+                keep = max(ds, key=lambda d: (DEMOTE_PRI[d], -pos[d][i]))   # 多 SS 优先留实测维
                 for d in ds:
                     if d != keep:
                         demote(i, d)
                 moved = True
-            elif 'ss_s' in v:   # SS 之外 S 超过 1 个：先压名次最靠后的那个 S，保住 SS
+            elif 'ss_s' in v:   # SS 之外 S 超过 1 个：按 D292 甲的顺序压一个 S，保住 SS
                 ssd = [d for d in DIMS if x[d] == 7][0]
-                demote(i, max([d for d in DIMS if x[d] == 6 and d != ssd], key=lambda d: pos[d][i]))
+                demote(i, worst(i, [d for d in DIMS if x[d] == 6 and d != ssd]))
                 moved = True
             elif 'cost' in v:
                 demote(i, [d for d in DIMS if x[d] == 7][0])
                 moved = True
             elif 's_cap' in v:
-                demote(i, max([d for d in DIMS if x[d] == 6], key=lambda d: pos[d][i]))
+                demote(i, worst(i, [d for d in DIMS if x[d] == 6]))
                 moved = True
         if not moved:
             break
@@ -555,7 +565,8 @@ def main():
     meas = load(MEAS)['actors']
     ids, raw, notes = raw_scores(base, tier, txt, meas)
     DISABLED = {i for i in ids if meas.get(i, {}).get('disabled')}
-    res = {m: assign(ids, raw, tier, m, DISABLED) for m in MODES}
+    role = {i: base[i]['role'] for i in ids}
+    res = {m: assign(ids, raw, tier, m, DISABLED, role) for m in MODES}
     for m in MODES:
         ts = tier_stats(ids, res[m][0], tier)
         print(m, ' '.join('%s 均%.1f 中%s 超预算%d' % (CN[t], ts[t]['mean'], ts[t]['med'], ts[t]['over']) for t in CN))
