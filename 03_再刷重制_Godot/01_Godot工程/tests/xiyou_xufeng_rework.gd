@@ -151,7 +151,7 @@ func _check_rework_data_and_text() -> void:
 			and str(sk.meta.get("DepassiveHarmRe01", "")).strip_edges() == "%d%%" % cfg[1]
 			and str(sk.meta.get("DepassiveHarmRe03", "")).strip_edges() == "%d%%" % cfg[1]
 			and str(sk.damage.formula) == str(cfg[2])
-			and note.contains("伤害:%d " % cfg[2])
+			and (note.contains("伤害:%d " % cfg[2]) if not XXufeng.LOCK_FIX else not note.contains("伤害:"))  # T585 开着删打不出的伤害行
 			and note.contains("物理/寒冰伤害+%d%% 无视敌人物理/寒冰抗性+%d%%" % [cfg[0], cfg[1]]),
 			[sid, sk.damage.formula, sk.meta.get("passiveELUP01"), sk.meta.get("DepassiveHarmRe01")])
 	check("swords.sum", el_sum == 100 and de_sum == 30, [el_sum, de_sum])
@@ -159,8 +159,9 @@ func _check_rework_data_and_text() -> void:
 	# 3) 9995 剑九 & 9996 九阶基因锁机制保留
 	var sk9995 := XDB.rec("Skills", 9995)
 	var sk9996 := XDB.rec("Skills", 9996)
+	# T585（XXufeng.LOCK_FIX）开着：基因锁去掉经验 −100%；关着回 T440 口径（细项见 xiyou_xufeng_t585）；剑九不动
 	check("9995.kept", int(sk9995.stypeId) == 4 and int(sk9995.occasion) == 2 and sk9995.meta.has("StartPushState2538"))
-	check("9996.kept", str(sk9996.meta.get("passiveSPBST9", "")).strip_edges() == "-100%")
+	check("9996.kept", str(sk9996.meta.get("passiveSPBST9", "")).strip_edges() == ("" if XXufeng.LOCK_FIX else "-100%"))
 
 	# 4) 9997 天下第一：西游档挂表外 19501，2525 原件与 9984/10512 不受影响
 	var sk9997 := XDB.rec("Skills", 9997)
