@@ -1215,7 +1215,7 @@ static func elem_amp_view(item):
 	if not (sp is Dictionary) or sp.is_empty():
 		return item
 	var src_note := str(item.get("note", ""))
-	var fin := armor_final_on() and kind == "armor" and sp.get("final") is Dictionary and ARMOR_CAP_ETYPES.has(int(item.get("etypeId", 0)))
+	var fin := armor_final_on() and kind == "armor" and sp.get("final") is Dictionary and plain_armor(item)
 	if fin:
 		sp = sp.final  # T532 终态：防具单件重排（ARMOR_FINAL，默认关，待 Kyo 定）
 	var amp: Dictionary = sp.get("amp", {})
@@ -1256,7 +1256,14 @@ static func armor_cap_pct() -> float:
 
 ## 防具本体元素伤全身合计上限：只缩表里普通防具本体那份（_tq_ea_amp），按每一系合计 ÷ 上限等比缩；不改原实例
 static func _armor_capped_slot(e) -> bool:
-	return e is Dictionary and e.get("_tq_ea_amp") is Dictionary and _kind(e) == "armor" and ARMOR_CAP_ETYPES.has(int(e.get("etypeId", 0)))
+	return e is Dictionary and e.get("_tq_ea_amp") is Dictionary and _kind(e) == "armor" and plain_armor(e)
+
+
+## 进 T532 合计上限／终态单件的「普通防具」：副手～戒指栏，且不是七印生成件（借原版底板编号与栏位，T082 已清底板效果）、不是天启篇奖励实例
+## （小o 核 P1-1：七印借号被当普通防具，抢额度又被缩）
+static func plain_armor(e) -> bool:
+	return e is Dictionary and ARMOR_CAP_ETYPES.has(int(e.get("etypeId", 0))) \
+		and XTianqiQiyinEffects.mark_of(e).is_empty() and XTianqiRewards.tag(e).is_empty()
 
 
 static func armor_elem_capped(list: Array) -> Array:

@@ -203,6 +203,103 @@ func _run() -> void:
 		and absf(w_fin - 0.30) < 1e-6 and absf(_amp(back_v, "1") - 0.20) < 1e-6,
 		[_amp(off_v, "1"), _amp(fin_v, "1"), card, _armor_sum(fin_list), fin_raw])
 
+	# 五、小o 核 P1-1：实际七印生成件与普通防具混穿——七印不进合计、不被缩，终态开关也不读 final
+	var rng := XRandomStream.create("5325325325325325", "t532")
+	var qy := []
+	var qy_et := {}
+	for seal in XTianqiQiyinDrop.seals():
+		for pc in XTianqiQiyinGear.parts():
+			if qy.size() >= 2:
+				break
+			var it := XTianqiQiyinEquip.make({"kind": "set", "seal": seal, "part": str(pc.key), "true_seal": false, "grades": ["putong", "putong", "putong"]}, "jianxian", rng)
+			if it.is_empty() or qy_et.has(int(it.etypeId)):
+				continue
+			var vv = XTianqiGear.elem_amp_view(it)
+			if vv is Dictionary and _amp(vv) > 0.0:
+				qy.append(it)
+				qy_et[int(it.etypeId)] = true
+		if qy.size() >= 2:
+			break
+	var plain := []
+	for e in _armors(9):
+		if not qy_et.has(int(e.etypeId)):
+			plain.append(e)
+			break
+	var mix := XTianqiGear.stat_list(qy + plain)
+	var qy_alone := qy.map(func(e): return _amp(XTianqiGear.elem_amp_view(e)))
+	var plain_raw := _raw_sum(plain)
+	XTianqiGear.ARMOR_FINAL = true
+	var mix_fin := XTianqiGear.stat_list(qy + plain)
+	XTianqiGear.ARMOR_FINAL = false
+	var fin_plain := float(XTianqiGear.elem_amp_table().armors[str(int(plain[0].id))].final.amp.get(ELEM, 0)) / 100.0
+	_check("t532_qiyin_not_capped",
+		qy.size() == 2 and plain.size() == 1 and not XTianqiGear.plain_armor(qy[0]) and XTianqiGear.plain_armor(plain[0])
+		and absf(_amp(mix[0]) - float(qy_alone[0])) < 1e-6 and absf(_amp(mix[1]) - float(qy_alone[1])) < 1e-6
+		and absf(_amp(mix[2]) - minf(plain_raw, 0.20)) < 1e-6
+		and absf(_amp(mix_fin[0]) - float(qy_alone[0])) < 1e-6 and absf(_amp(mix_fin[2]) - fin_plain) < 1e-6,
+		[qy_alone, mix.map(func(e): return _amp(e)), mix_fin.map(func(e): return _amp(e)), plain_raw, fin_plain])
+
+	# 六、小o 核 P1-2／P1-3：正常镶嵌入口（XGearUpgrade.apply）在已建缓存的角色上即时进账，逐孔带实例与孔位
+	var b: XActor = s.actor(s.party[1])
+	var wb := XGear.template("weapon", 1826)
+	wb["instanceId"] = "t532_w"
+	wb.upgradeSlots = 6
+	wb.originalUpgradeSlots = 6
+	b.equips[0] = wb
+	b.refresh_passive()
+	var by_before: Dictionary = b.passive_cache().get("bySource", {})
+	s.gain_item(1026, 2)
+	s.gain_item(310, 1)
+	var ok1 := XGearUpgrade.apply(s, wb, 1026)
+	var ok2 := XGearUpgrade.apply(s, wb, 1026)
+	var ok3 := XGearUpgrade.apply(s, wb, 310)
+	b.refresh_passive()
+	var byb: Dictionary = b.passive_cache().get("bySource", {})
+	var rows: Array = byb.get("enhanceHoles", []).filter(func(r): return str(r.instance) == "t532_w")
+	var fire_rows := rows.filter(func(r): return int(r.element) == 2)
+	_check("t532_holes_live_via_apply",
+		ok1 and ok2 and ok3 and (by_before.get("enhanceHoles", []) as Array).is_empty()
+		and rows.size() == 3 and fire_rows.size() == 2 and int(fire_rows[0].hole) == 0 and int(fire_rows[1].hole) == 1
+		and absf(float(fire_rows[0].value) - 0.05) < 1e-9 and absf(float(fire_rows[1].value) - 0.05) < 1e-9
+		and str(rows[2].src) == "rune" and int(rows[2].hole) == 2 and absf(float(rows[2].value) - 0.01) < 1e-9
+		and absf(float(byb.elementAmplify.get(2, {}).get("enhance", 0)) - 0.10) < 1e-9
+		and absf(float(byb.get("enhanceSplit", {}).get(2, {}).get("crystal", 0)) - 0.10) < 1e-9,
+		[ok1, ok2, ok3, rows, byb.elementAmplify.get(2)])
+
+	# 同一角色缓存已建，同进程切 ARMOR_ELEM_CAP 两向，走正常 refresh_passive，账本与九线裁切跟着变
+	for e in arm:
+		b.equips[int(e.etypeId) - 1] = e
+	b.equips[0] = w
+	b.refresh_passive()
+	var probe := XDB.rec("Skills", 1).duplicate(true)
+	probe["damage"] = probe.get("damage", {}).duplicate(true)
+	probe["damage"]["elementId"] = 2
+	var foe := XEnemy.new()
+	foe.setup(int(XDB.table("Troops")[int(XGuardianRework.TROOPS[12])].members[0].enemyId), 3)
+	var eq_of := func() -> float:
+		var t := 0.0
+		var row: Dictionary = b.passive_cache().get("bySource", {}).get("elementAmplify", {}).get(2, {})
+		for k in ["equip", "tianqi"]:
+			t += float(row.get(k, 0.0))
+		return t
+	var cut_of := func() -> float:
+		var r := XDamage.calculate(probe, b, foe, {"critical": false, "variance": false})
+		return float(r.breakdown.row.get("nineCap", {}).get("element", {}).get(2, 0.0))
+	var on1: float = eq_of.call()
+	var cut_on1: float = cut_of.call()
+	XTianqiGear.ARMOR_ELEM_CAP = false
+	b.refresh_passive()
+	var off1: float = eq_of.call()
+	var cut_off: float = cut_of.call()
+	XTianqiGear.ARMOR_ELEM_CAP = true
+	b.refresh_passive()
+	var on2: float = eq_of.call()
+	var cut_on2: float = cut_of.call()
+	_check("t532_switch_live_cache",
+		absf(on1 - 0.20) < 1e-6 and absf(off1 - raw) < 1e-6 and absf(on2 - 0.20) < 1e-6
+		and cut_off > cut_on1 + 0.1 and absf(cut_on1 - cut_on2) < 1e-9,
+		[on1, off1, on2, cut_on1, cut_off, cut_on2])
+
 	# 四、西游档零改动
 	XState.current = null
 	var ws := _west_state()

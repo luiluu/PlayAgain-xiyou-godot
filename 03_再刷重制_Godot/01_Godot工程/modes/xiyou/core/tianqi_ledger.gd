@@ -870,7 +870,7 @@ static func upgrade_holes(eq: Dictionary) -> Array:
 ## 被动缓存的按来源分桶：和 _refresh_passive_now 同一批对象、同样的扫描，求和前按对象的桶分开记。
 ## 返回 {globalHarmRi: {桶: 值}, critHarmRi, skillTypeDvup: {类型: {桶: 值}}, SkETypeHarmRi, skillPass: {技能: {桶: rate}}, passiveELUP: {元素: {桶}}, elementAmplify: {元素: {桶}}}
 static func passive_buckets(a, objs: Array) -> Dictionary:
-	var out := {"globalHarmRi": {}, "critHarmRi": {}, "skillTypeDvup": {}, "SkETypeHarmRi": {}, "skillPass": {}, "passiveELUP": {}, "elementAmplify": {}, "enhanceSplit": {}}
+	var out := {"globalHarmRi": {}, "critHarmRi": {}, "skillTypeDvup": {}, "SkETypeHarmRi": {}, "skillPass": {}, "passiveELUP": {}, "elementAmplify": {}, "enhanceSplit": {}, "enhanceHoles": []}
 	# 期三九线封顶：秘籍格按本数封，所以秘籍桶再并排按本记一份（同样的形状，桶名 "#技能号"）
 	var books := {"globalHarmRi": {}, "critHarmRi": {}, "skillTypeDvup": {}, "SkETypeHarmRi": {}, "skillPass": {}, "passiveELUP": {}, "elementAmplify": {}}
 	for o in objs:
@@ -965,6 +965,10 @@ static func passive_buckets(a, objs: Array) -> Dictionary:
 		if REBUILD_SOURCES and is_gear:
 			var enh := upgrade_amplify(o)
 			var enh_src := {} if enh.is_empty() else {"crystal": upgrade_amplify(o, "crystal"), "rune": upgrade_amplify(o, "rune"), "other": upgrade_amplify(o, "other")}
+			if not enh.is_empty():  # T532（小o 核 P1-2）：逐孔明细带装备实例与孔位，enhance 合计照旧
+				for h in upgrade_holes(o):
+					out.enhanceHoles.append({"instance": str(o.get("instanceId", "")), "base": int(o.get("base", o.get("id", 0))), "etype": int(o.get("etypeId", 0)),
+						"hole": int(h.hole), "item": int(h.item), "src": str(h.src), "element": int(h.element), "value": float(h.value) * sm})
 			var rw_tpl := _runeword_template(o)
 			var rw_amp: Dictionary = rw_tpl.get("yep", {}).get("elementAmplify", {})
 			var base_b := _base_gear_bucket(o)
