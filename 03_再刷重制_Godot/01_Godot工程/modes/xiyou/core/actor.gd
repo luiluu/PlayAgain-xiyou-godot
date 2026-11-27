@@ -751,13 +751,32 @@ func _skills_entry_held() -> Dictionary:
 				_read_verify("skills_entry", m[key].recs, _skill_records(_skill_ids_now()))
 			return m[key]
 		var gen := _read_gen
-		var fresh: Dictionary = _carry_fetch(key, _skills_entry)
+		var fresh := _skills_entry_carried(key)
 		if gen == _read_gen:
 			m[key] = fresh
 		return fresh
 	if _batch_depth > 0:
-		return _carry_fetch("ske1" if _cat_bare else "ske0", _skills_entry)
+		return _skills_entry_carried("ske1" if _cat_bare else "ske0")
 	return _skills_entry()
+
+## 跨步保留（同 _carry_fetch 的 codes＝0 一组）：命中时 READ_VERIFY 只比 id 表与记录——缓存项的键里带 _skills_epoch，
+## 批内挂只带特性的状态会换代，但保留槽的指纹（_carry_fp）没变，记录本身不受影响（同 skills() 的 "sk0"）
+func _skills_entry_carried(key: String) -> Dictionary:
+	var c = _carry_slot()
+	if c == null:
+		return _skills_entry()
+	if c.has(key):
+		carry_hits += 1
+		var hit: Dictionary = c[key]
+		if READ_VERIFY:
+			var ids := _skill_ids_now()
+			verify_memo("carry " + key, self, [hit.ids, hit.recs], [ids, _skill_records(ids)])
+		return hit
+	var wgen := _write_gen
+	var fresh := _skills_entry()
+	if wgen == _write_gen and is_same(c, _carry_slot()):
+		c[key] = fresh
+	return fresh
 
 func _skill_records(ids: Array[int]) -> Array:
 	var out := []
