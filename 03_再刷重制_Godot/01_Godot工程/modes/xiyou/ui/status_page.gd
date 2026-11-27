@@ -227,7 +227,7 @@ static func header_ops(a: XActor) -> Array:
 	var x := 204.0
 	var w := maxf(367.0, 204.0 + 1280 * 0.45)
 	var name := a.display_name()
-	var nick := str(a.nickname)
+	var nick := a.display_nickname()
 	if nick != "":
 		var nw := _tw(name)
 		ops.append(_t("，「%s」" % nick, x + nw, 0, w - nw - PAD))

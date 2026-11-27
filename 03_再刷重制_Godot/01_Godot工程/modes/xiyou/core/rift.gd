@@ -318,6 +318,10 @@ const MOB_NOTE := "<codex_rift_alien_mob>"
 const SLASH_ANIM := 23
 
 
+static func rift3_line(key: String) -> String:
+	return str(RIFT3_LINES.get(key, "")).replace("<徐凤年>", "<%s>" % XTextFix.actor_name(XUFENG_ACTOR, "徐凤年"))
+
+
 static func _fall_route(img: String, idx: int, to_y: int) -> Dictionary:
 	var cmds := [[41, img, idx], [35], [32], [34], [37], [29, 6], [42, 255]]
 	for i in to_y - FALL_FROM.y:
@@ -360,11 +364,11 @@ static func _rift3_pixel_body(indent := 0) -> Array:
 		_c(205, [XUFENG_EV, _route([[36], [38], [16]])], indent),
 		_c(230, [20], indent),
 		_c(101, face, indent),
-		_c(401, [RIFT3_LINES.sense], indent),
+		_c(401, [rift3_line("sense")], indent),
 		_c(101, face, indent),
-		_c(401, [RIFT3_LINES.hint], indent),
+		_c(401, [rift3_line("hint")], indent),
 		_c(101, face, indent),
-		_c(401, [RIFT3_LINES.follow], indent),
+		_c(401, [rift3_line("follow")], indent),
 		_c(230, [30], indent),
 		_c(205, [XUFENG_EV, _route([[31], [29, 4], [42, 200], [1], [42, 150], [1], [42, 100], [1], [42, 50], [1], [42, 0]])], indent),
 		_c(223, [[0, 0, 0, 0], 45, true], indent),
@@ -404,7 +408,7 @@ static func _actor_event(id: int, name: String, note: String) -> Dictionary:
 
 
 static func _xufeng_event() -> Dictionary:
-	return _actor_event(XUFENG_EV, "时空漩涡_徐凤年3", "<codex_rift_actor:%d>" % XUFENG_ACTOR)
+	return _actor_event(XUFENG_EV, "时空漩涡_%s3" % XTextFix.actor_name(XUFENG_ACTOR, "徐凤年"), "<codex_rift_actor:%d>" % XUFENG_ACTOR)
 
 
 static func _mob_event() -> Dictionary:

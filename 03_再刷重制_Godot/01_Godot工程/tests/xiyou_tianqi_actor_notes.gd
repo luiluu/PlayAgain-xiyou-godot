@@ -19,7 +19,7 @@ func _check(name: String, ok: bool, detail = null) -> void:
 func _tianqi_on() -> void:
 	var s := XState.new()
 	s.flags["tianqi"] = {"rules": 1}
-	XState.current = s
+	XState._become_current(s)
 
 
 func _measure(s: String, size: int) -> float:
@@ -89,11 +89,11 @@ func _run() -> void:
 	_check("switch_off_inactive", not XTianqiActorNotes.active() and XTianqiActorNotes.lines_of(127).is_empty())
 	var off_suzuran: Array = XSkinBookPage.actor_info(127).get("note", [])
 	var off_sukuna: Array = XSkinBookPage.actor_info(172).get("note", [])
-	_check("switch_off_fallback_legacy", off_suzuran == ["罗德岛干员铃兰，九倍的温柔与坚强。"] and off_sukuna.is_empty(), [off_suzuran, off_sukuna])
+	_check("switch_off_fallback_tianqi_names", off_suzuran == ["罗德岛干员我们的光，九倍的温柔与坚强。"] and off_sukuna.is_empty(), [off_suzuran, off_sukuna])
 	XTianqiActorNotes.ENABLED = true
 
 	# 西游档（非天启篇）零改动
-	XState.current = XState.new()
+	XState._become_current(XState.new())
 	_check("legacy_save_inactive", not XTianqiActorNotes.active() and XTianqiActorNotes.lines_of(127).is_empty())
 	var leg_suzuran: Array = XSkinBookPage.actor_info(127).get("note", [])
 	var leg_ops := _ops_texts(XActorBook.status_ops(127, _measure))

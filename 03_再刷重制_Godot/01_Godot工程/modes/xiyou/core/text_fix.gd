@@ -29,8 +29,9 @@ static var OVERRIDES := true
 
 const RULES_PATH := "res://modes/xiyou/text_fix/rules.json"
 const OVERRIDES_PATH := "res://modes/xiyou/text_fix/overrides.json"
+const ACTOR_NAMES_PATH := "res://modes/xiyou/tianqi_data/actor_names.json"
 ## 改了修正逻辑（不只是 rules／overrides 数据）就加 1，让旧的修正缓存作废（导出版脚本源码可能读不到，不能只靠源码哈希）
-const CACHE_VER := 4
+const CACHE_VER := 5
 const TABLES := ["Actors", "Classes", "Skills", "Items", "Weapons", "Armors", "Enemies", "States", "Troops", "CommonEvents",
 	"MapInfos", "EquipSuits", "Runewords"]
 const TEXT_KEYS := ["name", "nickname", "profile", "description", "message1", "message2", "message3", "message4"]
@@ -53,6 +54,7 @@ static var _gate: RegEx  # 零宽／繁体／词典任一命中的总预筛
 static var _pos_re: RegEx
 static var _namebox_re: RegEx
 static var _lone_n_re: RegEx
+static var _actor_names = null
 
 
 ## 测试用：一次开关全部（按原版比对时关掉），并清缓存让表重读
@@ -86,8 +88,93 @@ static func any_on() -> bool:
 ## 清掉 XDB 里受影响的表与地图缓存，下次读按当前开关重新处理
 static func clear_cache() -> void:
 	for k in XDB._tables.keys():
-		if str(k).begins_with("map:") or TABLES.has(k):
+		if str(k).begins_with("map:") or TABLES.has(k) or k in ["System", "Plugins"]:
 			XDB._tables.erase(k)
+
+
+static func actor_names() -> Dictionary:
+	if _actor_names == null:
+		var data = XDB.parse_file(ACTOR_NAMES_PATH) if FileAccess.file_exists(ACTOR_NAMES_PATH) else null
+		_actor_names = data if data is Dictionary else {}
+	return _actor_names
+
+
+## 共用文案按当前存档取名。调用方提供西游档原文，发行空壳也可直接走原文。
+static func actor_name(id: int, original: String) -> String:
+	return str(actor_names().get("names", {}).get(str(id), original)) if tq_on() else original
+
+
+## 仅用于明确写入「{角色号}」的天启篇文案。
+static func tianqi_actor_text(text: String) -> String:
+	return text.format(actor_names().get("names", {})) if text.contains("{") else text
+
+
+## 旧天启档可能用事件 320 存过原名。只在显示时处理已登记的原文，保留自定义名字与原存档值。
+static func saved_actor_name(id: int, text: String) -> String:
+	if tq_on() and actor_names().get("saved_names", {}).get(str(id), []).has(text):
+		return actor_name(id, text)
+	return text
+
+
+static func actor_nickname(id: int, text: String) -> String:
+	if not tq_on():
+		return text
+	var fields: Dictionary = actor_names().get("tables", {}).get("Actors", {})
+	return saved_actor_name(id, rename_actor_reference(text, fields.get("%d/nickname" % id, [])))
+
+
+static func rename_actor_reference(text: String, pairs: Array) -> String:
+	for pair in pairs:
+		if text.contains(pair[0]):
+			text = text.replace(pair[0], tianqi_actor_text(pair[1]))
+	return text
+
+
+## 天启篇定向覆盖。路径从记录号或事件下标开始，末级数字可取备注中的一行。
+static func patch_actor_names(table: String, data) -> void:
+	if not tq_on():
+		return
+	var entries: Dictionary = actor_names().get("tables", {}).get(table, {})
+	for path in entries:
+		var parts: PackedStringArray = path.split("/")
+		var parent = data
+		var key: Variant
+		for depth in parts.size():
+			var part := parts[depth]
+			if parent is Array:
+				key = int(part)
+				if key >= parent.size():
+					break
+			elif parent is Dictionary and parent.has(part):
+				key = part
+			else:
+				break
+			var value = parent[key]
+			if value is String:
+				var last := parts.size() - 1
+				if depth == last:
+					parent[key] = rename_actor_reference(value, entries[path])
+				elif depth + 1 == last and parts[last].is_valid_int():
+					var lines: PackedStringArray = value.split("\n")
+					var line := int(parts[last])
+					if line < lines.size():
+						lines[line] = rename_actor_reference(lines[line], entries[path])
+						parent[key] = "\n".join(lines)
+				break
+			parent = value
+
+
+static func patch_actor_advance(plugins: Dictionary) -> void:
+	if not tq_on():
+		return
+	var rows: Dictionary = actor_names().get("advance", {})
+	var advance: Dictionary = plugins.get("Star_ActorAdvanced", {})
+	for id in rows:
+		var key := "Advanced " + str(id)
+		var row = JSON.parse_string(str(advance.get(key, "null")))
+		if row is Dictionary and row.get("AdvancedName") is String:
+			row.AdvancedName = rename_actor_reference(row.AdvancedName, rows[id])
+			advance[key] = JSON.stringify(row)
 
 
 static func rules() -> Dictionary:
@@ -203,7 +290,7 @@ static func _signature() -> String:
 		var h := HashingContext.new()
 		h.start(HashingContext.HASH_SHA256)
 		h.update(str(CACHE_VER).to_utf8_buffer())
-		for p in [RULES_PATH, OVERRIDES_PATH, "res://modes/xiyou/core/text_fix.gd"]:
+		for p in [RULES_PATH, OVERRIDES_PATH, ACTOR_NAMES_PATH, "res://modes/xiyou/core/text_fix.gd"]:
 			h.update(FileAccess.get_file_as_bytes(p))
 		_sig_files = h.finish().hex_encode().substr(0, 16)
 	return "%d%d%d%d%d%d%d.%s" % [int(STRIP_ZW), int(NAMEBOX), int(PAIRS), int(DICT), int(TRAD), int(OVERRIDES), int(tq_on()), _sig_files]
@@ -216,11 +303,12 @@ static func _warn(msg: String) -> void:
 
 
 static func patch_table(name: String, data) -> void:
-	if not any_on() or not TABLES.has(name) or not data is Array:
+	if not TABLES.has(name) or not data is Array:
 		return
 	if OVERRIDES:
 		for e in overrides().get(name, []):
 			_apply_override(e, data, name)
+	patch_actor_names(name, data)
 	if not (STRIP_ZW or NAMEBOX or PAIRS or DICT or TRAD):
 		return
 	rules()
@@ -251,12 +339,14 @@ static func patch_table(name: String, data) -> void:
 
 
 static func patch_map(map_id: int, data) -> void:
-	if not any_on() or not data is Dictionary:
+	if not data is Dictionary:
 		return
 	_applied_tq = tq_on()
+	var table := "Map%03d" % map_id
 	if OVERRIDES:
-		for e in overrides().get("Map%03d" % map_id, []):
-			_apply_override(e, data, "Map%03d" % map_id)
+		for e in overrides().get(table, []):
+			_apply_override(e, data, table)
+	patch_actor_names(table, data)
 	if not (STRIP_ZW or NAMEBOX or PAIRS or DICT or TRAD):
 		return
 	rules()

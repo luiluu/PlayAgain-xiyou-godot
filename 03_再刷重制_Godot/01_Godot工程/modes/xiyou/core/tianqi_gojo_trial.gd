@@ -66,7 +66,7 @@ const FIRST_STATE := 2801
 const LAST_STATE := 2802
 
 const TEXT_LOST := "试炼未通过，可以再次挑战。"
-const TEXT_WIN := "试炼「%s」通过！五条悟完成%s进阶。"
+const TEXT_WIN := "试炼「%s」通过！%s完成%s进阶。"
 const TEXT_PASSED := "试炼「%s」通过！条件够了就能在进阶界面进阶。"
 const TEXT_LACK := "试炼：%s"
 
@@ -128,7 +128,7 @@ static func advance_rows() -> Array:
 	var out := []
 	for i in TIERS.size():
 		var t: Dictionary = TIERS[i]
-		out.append({"AdvancedName": "五条悟%s" % ["一阶", "二阶"][i], "AdvancedActNum": str(i), "AdvancedActNumMaX": str(TIERS.size()),
+		out.append({"AdvancedName": XTextFix.actor_name(XGojo.ACTOR, "五条悟") + ["一阶", "二阶"][i], "AdvancedActNum": str(i), "AdvancedActNumMaX": str(TIERS.size()),
 			"AdvancedActId": str(XGojo.ACTOR), "AdvancedActLevel": str(t.level), "AdvancedGold": str(t.gold), "AdvancedItem": "[]",
 			"AdvancedSkiId": JSON.stringify(t.learn), "AdvancedForId": "[]", "AdvancedNote": "\"\""})
 	return out
@@ -322,7 +322,7 @@ static func finish(s: XState, result: int) -> String:
 	if XAdvance.rank(s, XGojo.ACTOR) != tier - 1 or not XAdvance.missing(s, a).is_empty():
 		return TEXT_PASSED % trial_name(tier)  # 界面开战前查过等级金钱，正常走不到；记了通过，之后照常进阶
 	XAdvance.advance(s, a)
-	return TEXT_WIN % [trial_name(tier), ["", "一阶", "二阶"][clampi(tier, 0, 2)]]
+	return TEXT_WIN % [trial_name(tier), a.display_name(), ["", "一阶", "二阶"][clampi(tier, 0, 2)]]
 
 
 ## 进阶界面选了挑战：存检查点、换单挑、开战、还原、提示。返回战斗结果（-1 没开）
@@ -429,7 +429,7 @@ static func setup(logic, s: XState) -> void:
 		"unit": unit, "awakened": false, "held": false, "round": 0, "nth": 0, "domain": 0, "next_domain": int(dom.get("first", 2)),
 		"fuga": false, "clash": false, "queue": []})
 	_logic_ref = weakref(logic)
-	var open := "伏黑甚尔的影子：「……来收钱了。」" if tier == 1 else "两面宿傩的影子：「让我见识一下吧，现代最强。」"
+	var open := str(t.foe) + ("：「……来收钱了。」" if tier == 1 else "：「让我见识一下吧，现代最强。」")
 	logic.turn_start_logs.append(_text("试炼「%s」：%s" % [trial_name(tier), str(t.foe)]))
 	logic.turn_start_logs.append(_text(open))
 
@@ -524,7 +524,7 @@ static func begin_action(logic, u, skill: Dictionary) -> Array:
 	var f := fight(logic)
 	f.domain = int(trial(2).get("domain", {}).get("turns", 3))
 	logic._state_add(u, ST_SHRINE)
-	var logs := [_text("两面宿傩的影子：「领域展开——伏魔御厨子。」")]
+	var logs := [_text(u.display_name() + "：「领域展开——伏魔御厨子。」")]
 	logs.append_array(_sync_clash(logic))
 	return logs
 
@@ -664,7 +664,7 @@ static func _held(logic) -> void:
 	var f := fight(logic)
 	if not bool(f.held):
 		f.held = true
-		_say(logic, "伏黑甚尔的影子还站着——只有虚式「茈」才能打倒他。")
+		_say(logic, f.shadow.display_name() + "还站着——只有虚式「茈」才能打倒他。")
 
 
 ## 怀玉：五条悟第一次掉到 30% 以下领悟反转术式（挨打后 XGojo.after_hit；持续伤害等别的路在下一个行动开始／结束时补）
@@ -685,9 +685,10 @@ static func check_awaken(logic) -> void:
 	f.awakened = true
 	logic.gain_hp(t, float(t.mhp))
 	XGojo.add_marks(logic, t, XGojo.MARK_CAP, XGojo.MARK_CAP)
-	_say(logic, "五条悟：「……原来如此，是这种感觉啊。」")
-	_say(logic, "五条悟：「天上天下，唯我独尊。」")
-	_say(logic, "五条悟领悟了反转术式！生命回满，苍印、赫印补满。")
+	var name: String = t.display_name()
+	_say(logic, name + "：「……原来如此，是这种感觉啊。」")
+	_say(logic, name + "：「天上天下，唯我独尊。」")
+	_say(logic, name + "领悟了反转术式！生命回满，苍印、赫印补满。")
 
 
 ## 影子倒下（XGojo.finish 收尾时看）：台词
@@ -698,7 +699,8 @@ static func defeat_line(logic) -> Array:
 	if f.shadow.is_alive() or bool(f.get("said_down", false)):
 		return []
 	f.said_down = true
-	return [_text("伏黑甚尔的影子：「……真是输给你了。」" if int(f.tier) == 1 else "两面宿傩的影子：「……真是愉快啊，五条悟。」")]
+	var line := "：「……真是输给你了。」" if int(f.tier) == 1 else "：「……真是愉快啊，%s。」" % f.gojo.display_name()
+	return [_text(f.shadow.display_name() + line)]
 
 
 ## BattleLogic.rewards／grant：试炼没有任何战斗奖励
@@ -729,7 +731,7 @@ static func patch_skills(t: Array) -> void:
 		SOUL: ["释魂刀", 10218, 1, 1, "斩向灵魂的一刀"],
 		DISMANTLE: ["解", 10229, 1, 1, "无形的斩击"],
 		CLEAVE: ["捌", 10230, 1, 1, "按对象的强度调整的斩击"],
-		SHRINE: ["领域展开「伏魔御厨子」", 10231, 11, 0, "展开3回合：每回合结束对五条悟必中斩击"],
+		SHRINE: ["领域展开「伏魔御厨子」", 10231, 11, 0, "展开3回合：每回合结束对%s必中斩击" % XTextFix.actor_name(XGojo.ACTOR, "五条悟")],
 		SLASH: ["御厨子·斩击", 10237, 1, 1, "领域的必中斩击"],
 		FUGA: ["神灶：开", 10233, 1, 1, "领域消散后的烈焰之矢"],
 	}
@@ -769,7 +771,7 @@ static func patch_states(t: Array) -> void:
 	for id in range(FIRST_STATE, LAST_STATE + 1):
 		if not XGojo._free(t, id, "状态"):
 			return
-	var defs := {ST_SHRINE: ["伏魔御厨子", "领域展开中：每回合结束对五条悟必中斩击。", 10231], ST_CLASH: ["领域对拼", "双方领域的必中效果互相抵消。", 0]}
+	var defs := {ST_SHRINE: ["伏魔御厨子", "领域展开中：每回合结束对%s必中斩击。" % XTextFix.actor_name(XGojo.ACTOR, "五条悟"), 10231], ST_CLASH: ["领域对拼", "双方领域的必中效果互相抵消。", 0]}
 	for id in defs:
 		var d: Array = defs[id]
 		var r: Dictionary = (t[2640] as Dictionary).duplicate(true)  # 同 XGojo：宿傩「看破·一」，没有特性、战斗结束去掉的显示状态

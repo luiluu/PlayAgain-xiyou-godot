@@ -392,7 +392,7 @@ static func recruit(s: XState, actor_id: int) -> Array:
 		a.equips[slot] = item
 		a.refresh_passive()  # changeEquip 刷新特性与被动
 	s.add_actor(actor_id)
-	return ["小伙伴 " + str(row[1]) + " 加入队伍", "获得并装备专属法宝：" + str(row[2])]
+	return ["小伙伴 " + XTextFix.actor_name(actor_id, str(row[1])) + " 加入队伍", "获得并装备专属法宝：" + str(row[2])]
 
 
 # ---- 镜流第一期 ----

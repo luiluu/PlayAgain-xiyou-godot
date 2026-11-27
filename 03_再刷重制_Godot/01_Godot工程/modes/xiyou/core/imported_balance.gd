@@ -100,7 +100,7 @@ static func patch_map(map_id: int, data) -> void:
 			if RELEASE_CANGLONG:
 				line = line.replace("苍龙破晓、", "")
 			if RELEASE_XUFENG:
-				line = line.replace("徐凤年、", "")
+				line = line.replace(XTextFix.actor_name(XUFENG, "徐凤年") + "、", "")
 			c.parameters[0] = line
 
 

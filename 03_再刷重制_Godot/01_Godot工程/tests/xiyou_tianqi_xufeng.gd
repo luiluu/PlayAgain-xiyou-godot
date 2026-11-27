@@ -87,7 +87,7 @@ func _run() -> void:
 	var a := s.actor(152)
 
 	# 1. 角色名框与本体 traits 清理（再动 +100%、攻次 +2、物伤 -20% 全清）
-	check("tq.actor_name", str(XTianqiSkills.data().get("actors", {}).get("152", {}).get("name", "")) == "徐凤年")
+	check("tq.actor_name", str(XTianqiSkills.data().get("actors", {}).get("152", {}).get("name", "")) == "北凉柿子")
 	check("tq.strip.atk_times", is_equal_approx(a.attack_times_add(), 0.0), a.attack_times_add())
 	var aplus_sum := 0.0
 	for p in a.action_plus_set():

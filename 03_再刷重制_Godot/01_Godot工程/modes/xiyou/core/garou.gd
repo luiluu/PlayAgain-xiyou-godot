@@ -68,10 +68,10 @@ const PASSIVES := [10265, 10266, 10267, 10268, 10269]
 const COEFF := {10250: [1.88, 0.0], 10251: [1.88, 0.0], 10252: [3.33, 0.0], 10253: [3.33, 0.0], 10254: [3.33, 0.0],
 	10255: [3.33, 0.0], 10256: [22.22, 0.0], 10257: [33.33, 0.0], 10258: [3.33, 0.0], 10259: [6.66, 9.99],
 	10260: [9.99, 6.66], 10261: [3.33, 6.66], 10262: [0.0, 0.0], 10263: [99.99, 66.66]}
-const RECRUIT_TEXT := "饿狼加入队伍，获得并装备破限之心。"
+const RECRUIT_TEXT := "%s加入队伍，获得并装备破限之心。"
 const GROWTH := 10269
 const CATALYST := 2939
-const CATALYST_TEXT := "饿狼突破神之境界，获得神之触媒×1。"
+const CATALYST_TEXT := "%s突破神之境界，获得神之触媒×1。"
 ## garouTraits：比率类（连乘求比）与加值类（相加求差）特性代码
 const RATE_CODES := [11, 12, 13, 21, 23]
 const ADD_CODES := [22, 32, 61]
@@ -302,7 +302,7 @@ static func credit_victory(s: XState, a, boss: bool) -> String:
 	if boss and stage(a) >= 5 and int(a.level) >= 50 and int(s.garou.breakthroughs) >= 333 and not bool(s.garou.get("catalyst", false)):
 		s.gain_item(CATALYST, 1)
 		s.garou["catalyst"] = true
-		return CATALYST_TEXT
+		return CATALYST_TEXT % XTextFix.actor_name(ACTOR, "饿狼")
 	return ""
 
 
@@ -532,7 +532,7 @@ static func relic_help_lines(item: Dictionary) -> Array:
 		return []
 	var r: Array = RELIC_STATS[st]
 	var lv := _num(item.get("level", 0))
-	var lines := ["专属：饿狼；法宝形态：%s；等级上限：%d" % [FORM_NAMES[st], RELIC_MAX_LEVEL],
+	var lines := ["专属：%s；法宝形态：%s；等级上限：%d" % [XTextFix.actor_name(ACTOR, "饿狼"), FORM_NAMES[st], RELIC_MAX_LEVEL],
 		"当前等级：%s / %d；经验：%s" % [_js_num(lv if lv != 0.0 else 1.0), RELIC_MAX_LEVEL, _js_num(_num(item.get("exp", 0)))],
 		"进阶继承：等级、经验及额外词条全部保留",
 		"每级成长：生命/物攻/魔攻/敏捷+%d" % r[0],

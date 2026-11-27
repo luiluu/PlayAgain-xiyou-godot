@@ -36,7 +36,19 @@ static func entries() -> Array:
 				_entries.append({"id": -i, "name": str(d.get("name", "")), "characterName": str(d.get("characterName", "")),
 					"characterIndex": int(float(str(d.get("characterIndex", "0")))) if str(d.get("characterIndex", "")).is_valid_float() else 0,
 					"GetFs": str(d.get("GetFs", ""))})
-	return _entries
+	if not XTextFix.tq_on():
+		return _entries
+	var by_id: Dictionary = XTextFix.actor_names().get("wardrobe", {})
+	var out := _entries.duplicate()
+	for i in out.size():
+		var row: Dictionary = out[i]
+		var key := str(row.id)
+		if by_id.has(key):
+			var named := row.duplicate()
+			for field in by_id[key]:
+				named[field] = XTextFix.rename_actor_reference(row[field], by_id[key][field])
+			out[i] = named
+	return out
 
 
 ## CodexQuality.actorGrade：Number(meta.Actorquality)（非数为 0）查表，表外为 0

@@ -107,6 +107,7 @@ func _run() -> void:
 	# 五、名字改了首领判定照旧
 	_check("boss_name_rule", _rec("Enemies", 850).name == "【超级Boss】瑞丁" and XZhenqi.is_boss_enemy(XEnemy.new().setup(850, 1, 100.0)))
 	_d126()
+	_d294()
 
 	# 六、逐个开关单独关掉，只回退那一类（其余照旧修）
 	XTextFix.set_all(true)
@@ -219,3 +220,61 @@ func _map046_has(needle: String) -> bool:
 		if int(c.code) == 401 and str(c.parameters[0]).contains(needle):
 			return true
 	return false
+
+
+func _d294() -> void:
+	var raw: Array = XDB.load_json("db/Actors.json")
+	var names: Dictionary = XTextFix.actor_names().get("names", {})
+	var original := {}
+	var before := _d294_other_texts()
+	for id in names:
+		if int(id) != XGojo.ACTOR:
+			original[id] = XActorBook.actor_name(int(id))
+	var legacy := XState.current
+	var tq := Kit.new_game("jiusi")
+	var bad := []
+	for id in names:
+		var aid := int(id)
+		var expected := str(names[id])
+		if str(_rec("Actors", aid).name) != expected or XActorBook.actor_name(aid) != expected or str(XSkinBookPage.actor_info(aid).name) != expected:
+			bad.append(id)
+	_check("d294_tq_table_and_both_actor_books", names.size() == 57 and bad.is_empty(), bad)
+	_check("d294_approved_examples", XActorBook.actor_name(85) == "粉红妖精" and XActorBook.actor_name(127) == "我们的光" and XActorBook.actor_name(180) == "5t5")
+	var a := tq.actor(91)
+	a.set_looks({"name": "宇智波鼬"})
+	_check("d294_old_save_name_view", a.display_name() == "一打七" and a.looks.name == "宇智波鼬")
+	a.set_looks({"name": "自订名字"})
+	_check("d294_custom_name", a.display_name() == "自订名字")
+	_check("d294_class_talent_horn", _rec("Classes", 167).name == "路痴刀客" and str(XDB.system().skillTypes[10]) == "银发小魔导被动"
+		and XSkinSkillPage.glyph_of(XDB.system().skillTypes[10]) == "专" and _rec("Items", 2931).name == "伙伴号角：路痴刀客")
+	_check("d294_skills_materials_and_relic", XDB.rec("Skills", 2618).name == "觉醒:熊猫酒仙"
+		and XDB.rec("Skills", 10737).name == "剑*狂千年·一线" and _rec("Items", 2935).name == "爹咪进阶石" and str(_rec("Armors", 4578).note).contains("专属:路痴刀客"))
+	_check("d294_costume_entry", _rec("Skills", 6820).name == "变身——闪光剑姬" and _d294_clothes(-75) == "我们的光")
+	_check("d294_event_exact_positions", str(_cmd(4, 71, 0, 109)[2]) == "路痴刀客"
+		and str(_rec("CommonEvents", 1511).list[9].parameters[1]) == "一打七")
+	_check("d294_homographs_and_independent_skins", _d294_other_texts() == before, _d294_other_texts())
+	XState._become_current(legacy)
+	bad.clear()
+	for id in original:
+		var aid := int(id)
+		if XActorBook.actor_name(aid) != original[id] or str(raw[aid].name) != original[id]:
+			bad.append(id)
+	_check("d294_legacy_keeps_56_source_actor_names", original.size() == 56 and bad.is_empty() and XGojo.hidden(XGojo.ACTOR), bad)
+	_check("d294_legacy_class_skill_wardrobe", XDB.system().skillTypes[10] == "伊莉雅被动" and _rec("Classes", 167).name == "黄泉"
+		and _rec("Skills", 6820).name == "变身——亚丝娜" and _d294_clothes(-75) == "铃兰")
+	XState._become_current(tq)
+	_check("d294_switch_back", XActorBook.actor_name(169) == "路痴刀客" and XDB.system().skillTypes[10] == "银发小魔导被动")
+	XState._become_current(legacy)
+
+
+func _d294_clothes(id: int) -> String:
+	for row in XChangeClothes.entries():
+		if row.id == id:
+			return str(row.name)
+	return ""
+
+
+func _d294_other_texts() -> Array:
+	return [_rec("Skills", 7831).name, _rec("Skills", 7894).description, _rec("Armors", 7923).name,
+		_rec("Skills", 6812).name, _rec("Skills", 6816).name, _rec("Skills", 6808).name, _d294_clothes(-101),
+		_cmd(93, 3, 0, 1)]

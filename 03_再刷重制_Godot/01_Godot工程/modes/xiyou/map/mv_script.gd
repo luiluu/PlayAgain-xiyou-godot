@@ -73,7 +73,7 @@ static func _module_recruit(module: String) -> Callable:
 			return func(s: XState, interp) -> bool:
 				if not XGarou.recruit(s):
 					return false
-				await interp.host.show_text("", 0, [XGarou.RECRUIT_TEXT])  # $gameMessage.add
+				await interp.host.show_text("", 0, [XGarou.RECRUIT_TEXT % XTextFix.actor_name(XGarou.ACTOR, "饿狼")])  # $gameMessage.add
 				return true
 		"CodexToji":
 			return func(s: XState, interp) -> bool:
@@ -91,7 +91,7 @@ static func _module_recruit(module: String) -> Callable:
 			return func(s: XState, interp) -> bool:
 				if not XSukuna.recruit(s):
 					return false
-				interp.host.toast(XSukuna.RECRUIT_TEXT)  # $.toaster
+				interp.host.toast(XSukuna.recruit_text())  # $.toaster
 				return true
 		"CodexLiuying":
 			return func(s: XState, interp) -> bool:
@@ -817,7 +817,7 @@ static func _boss_roster(kind: String, interp, tier_ids = null, notes = null, wh
 		lines.append_array(["超强者仅限地狱及以上难度出战。", "每名出战超强者：首领八项属性+20%。", "第2、4、6…回合霸体，持续一整回合。",
 			"霸体回合每名超强者再令首领输出+20%。", "洪荒以下路线压制：灭世微幅、天灾小幅、地狱大幅。", "天灾、地狱：受到伤害×1.2、×1.5，", "给队友的治疗、护盾、增益×0.8、×0.5。"])
 	else:
-		lines.append_array(["镜流属于强者，不计入超强者难度加成。", "强者在普通、困难、地狱路线有小幅压制。"])
+		lines.append_array([XTextFix.actor_name(XYomiJingliu.JINGLIU, "镜流") + "属于强者，不计入超强者难度加成。", "强者在普通、困难、地狱路线有小幅压制。"])
 	var list := [{"code": 101, "indent": 0, "parameters": [str(who[0]), int(who[1]), 0, 2]}]
 	for l in lines:
 		list.append({"code": 401, "indent": 0, "parameters": [l]})
@@ -1411,7 +1411,7 @@ static func _replay_rift3_missed(interp) -> void:
 			break
 		if not XRift.RIFT3_LINES.has(k):
 			continue
-		var line := str(XRift.RIFT3_LINES[k])
+		var line := XRift.rift3_line(k)
 		var msg: Dictionary
 		if k == "whisper":
 			msg = {"face": "", "index": 0, "background": 1, "position": 1, "lines": [line]}

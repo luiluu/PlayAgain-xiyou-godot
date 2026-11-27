@@ -355,7 +355,7 @@ func _huaiyu_mechanics() -> void:
 	var lg := _battle(s, 1)
 	_check("h_active", XTianqiGojoTrial.active(lg) and lg.enemies.size() == 1 and lg.actors.size() == 1)
 	var e: XEnemy = lg.enemies[0]
-	_check("h_shadow", e.display_name() == "伏黑甚尔的影子" and str(e.data().meta.get("Sideview Battler", "")) == "Codex_Toji_SV" and XTianqiGojoTrial.is_shadow(lg, e))
+	_check("h_shadow", e.display_name() == "爹咪的影子" and str(e.data().meta.get("Sideview Battler", "")) == "Codex_Toji_SV" and XTianqiGojoTrial.is_shadow(lg, e))
 	_check("h_tint", XTianqiGojoTrial.tint(e) != Color.WHITE and XTianqiGojoTrial.tint(a) == Color.WHITE)
 	XTianqiGojoTrial.SHADOW_TINT = false
 	_check("h_tint_off", XTianqiGojoTrial.tint(e) == Color.WHITE)
@@ -559,7 +559,7 @@ func _xinsu_mechanics() -> void:
 	# T501 R2 小A 核 P1-1：影子生命＝unit×hp_units（unit 已含 K），敌人生命统一折算不能再缩一次
 	var want_hp := roundf(float(f.unit) * float(XTianqiGojoTrial.trial(2).hp_units))
 	_check("x_shadow_hp_once", XTianqiBase.enemy_hp_pct() == 40 and absf(float(e.mhp) - want_hp) <= 2.0, [e.mhp, want_hp, XTianqiBase.enemy_hp_pct()])
-	_check("x_shadow", e.display_name() == "两面宿傩的影子" and lg.make_action_times(e) == 1 and e.mdf > 0.0)
+	_check("x_shadow", e.display_name() == "大爷的影子" and lg.make_action_times(e) == 1 and e.mdf > 0.0)
 	lg.turn = 1
 	_check("x_r1", int(lg.decide(e)[0].id) == XTianqiGojoTrial.DISMANTLE)
 	lg.turn = 2
@@ -807,7 +807,7 @@ func _switches() -> void:
 	XTianqiGojoTrial.prepare(1)
 	var lg := XBattleLogic.new()
 	lg.setup(int(XTianqiGojoTrial.data().troop), s)
-	_check("off_no_shadow", not XTianqiGojoTrial.active(lg) and not lg.enemies.any(func(x): return x.display_name() == "伏黑甚尔的影子"))
+	_check("off_no_shadow", not XTianqiGojoTrial.active(lg) and not lg.enemies.any(func(x): return x.display_name() == "爹咪的影子"))
 	lg.end_battle(0)
 	XTianqiGojoTrial.ENABLED = true
 	XTianqiGojoTrial.LEARN_SHIFT = false

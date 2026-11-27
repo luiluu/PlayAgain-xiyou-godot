@@ -1474,16 +1474,16 @@ class ActorNotesT556(unittest.TestCase):
         self.t = json.loads((chk.DATA_DIR / 'actor_notes.json').read_text(encoding='utf-8'))
         actors_path = chk.PROJECT / 'modes' / 'xiyou' / 'generated' / 'db' / 'Actors.json'
         self.actors_db = json.loads(actors_path.read_text(encoding='utf-8')) if actors_path.is_file() else None
+        self.names = chk._load_opt('actor_names.json')['names']
 
     def test_current_passes(self):
-        self.assertEqual(chk.actor_notes_rules(self.t, self.actors_db), [])
+        self.assertEqual(chk.actor_notes_rules(self.t, self.actors_db, self.names), [])
 
     def test_broken(self):
         cases = [
             (lambda t: t['actors']['127'].__setitem__('trait', '全能辅助，伤害+20%。'), '不含内部数值编号与禁用词'),
             (lambda t: t['actors']['172'].__setitem__('story', '病友世界来的测试角色，横行千年前的诅咒之王。'), '不含内部数值编号与禁用词'),
             (lambda t: t['actors']['175'].__setitem__('trait', '自然治疗神明，花期消耗MP追加自然伤害。'), '不含内部数值编号与禁用词'),
-            (lambda t: t['actors']['143'].__setitem__('trait', '传说中的魔法少女，暂未编入天启篇候选池，仍是图鉴收藏模板玩法。'), '不含内部数值编号与禁用词'),
             (lambda t: t['actors']['72'].__setitem__('trait', '神暗双仪式辅助，交替施展神光与恶魇可触发双倍伤害。'), '不含倍率词「倍」'),
             (lambda t: t['actors']['107'].__setitem__('trait', '前排护盾坦克，以雄厚生命撑起玉璋护盾'), '中文句号'),
             (lambda t: t['actors']['167'].__setitem__('story', '太短。'), '长度'),
@@ -1492,8 +1492,31 @@ class ActorNotesT556(unittest.TestCase):
         for mut, word in cases:
             t = copy.deepcopy(self.t)
             mut(t)
-            bad = chk.actor_notes_rules(t, self.actors_db)
+            bad = chk.actor_notes_rules(t, self.actors_db, self.names)
             self.assertTrue(any(word in str(b) for b in bad), (word, bad))
+
+    def test_trait_meta_each_word(self):
+        for term in ('收藏', '模板', '编入', '暂未', '候选池', '图鉴', '玩法'):
+            with self.subTest(term=term):
+                t = copy.deepcopy(self.t)
+                t['actors']['143']['trait'] = f'穿行于苍茫星海的魔法少女，擅长使用{term}支援队友。'
+                self.assertIn(('actors.143.trait 不含内部数值编号与禁用词', term),
+                              chk.actor_notes_rules(t, self.actors_db, self.names))
+
+    def test_story_word_in_context(self):
+        t = copy.deepcopy(self.t)
+        t['actors']['143']['story'] = '她收藏各色雕刻模板，暂未收到回信，后来被编入边境巡队。'
+        self.assertEqual(chk.actor_notes_rules(t, self.actors_db, self.names), [])
+        t['actors']['143']['story'] = '她暂未编入天启篇，是四处行走的魔法少女。'
+        self.assertIn(('actors.143.story 不含内部数值编号与禁用词', '暂未编入天启篇'),
+                      chk.actor_notes_rules(t, self.actors_db, self.names))
+
+    def test_name_dictionary_contract(self):
+        catalog = chk._load_opt('actor_names.json')
+        self.assertEqual(chk.actor_names_rules(catalog), [])
+        catalog['tables']['Actors']['85/name'][0][1] = '{99999}'
+        self.assertIn(('Actors/85/name 引用了不存在的角色', ['爱莉', '{99999}']),
+                      chk.actor_names_rules(catalog))
 
 
 if __name__ == '__main__':

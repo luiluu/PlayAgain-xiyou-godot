@@ -413,7 +413,7 @@ static func compute_missed_lines(at_time: float) -> Array[String]:
 
 ## 直读 XRift.RIFT3_LINES[key] 并剥离 MV 控制符与前导换行空白，返回 {"speaker": 名签, "text": 纯正文}
 static func parse_rift_line(key: String) -> Dictionary:
-	var raw := str(XRift.RIFT3_LINES.get(key, ""))
+	var raw := XRift.rift3_line(key)
 	if raw == "":
 		return {"speaker": "", "text": ""}
 	if _re_speaker == null:

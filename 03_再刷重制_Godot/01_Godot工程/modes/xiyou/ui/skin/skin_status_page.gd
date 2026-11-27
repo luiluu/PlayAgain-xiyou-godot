@@ -143,8 +143,9 @@ func _draw_actor() -> void:
 	var nw := head.get_string_size(fit[0], HORIZONTAL_ALIGNMENT_LEFT, -1, fit[1]).x
 	XUiSkin.ds(actor_panel, head, Vector2((sz.x - nw) / 2.0, y + 24), fit[0], HORIZONTAL_ALIGNMENT_LEFT, -1, fit[1], XUiSkin.TEXT)
 	y += 34
-	if str(a.nickname) != "":
-		var nick := "「%s」" % a.nickname
+	var display_nick := a.display_nickname()
+	if display_nick != "":
+		var nick := "「%s」" % display_nick
 		var kw := body.get_string_size(nick, HORIZONTAL_ALIGNMENT_LEFT, -1, XUiSkin.FS_AUX).x
 		XUiSkin.ds(actor_panel, body, Vector2((sz.x - kw) / 2.0, y + 16), nick, HORIZONTAL_ALIGNMENT_LEFT, w, XUiSkin.FS_AUX, XUiSkin.GOLD)
 		y += 22

@@ -4284,15 +4284,17 @@ def check_suit_template(_args) -> bool:
 
 ACTOR_NOTES_FORBIDDEN = re.compile(
     r'[0-9%×*]|测试角色|定制角色|特殊角色|图像已接入|繁星版|纳西妲版本|高爆版|隐藏加成'
-    r'|候选池|暂未|编入|图鉴|收藏|模板|玩法'
+    r'|候选池|图鉴|玩法'
     r'|(?<![A-Za-z])(?:TP|MP|HP)(?![A-Za-z])'
 )
+ACTOR_NOTES_STORY_META = re.compile(r'暂未(?:被)?编入天启篇|(?:角色|人物|战斗)模板')
+ACTOR_NOTES_TRAIT_META = re.compile(r'收藏|模板|编入|暂未')
 # 特点行额外禁「倍」（防倍伤／倍增／双倍等倍率说法）；故事行保留 Kyo 审定样稿 127 小铃兰「九倍的温柔与坚强」
 ACTOR_NOTES_TRAIT_FORBIDDEN = re.compile(r'倍')
 ACTOR_NOTES_HIDDEN = {141, 157, 160, 161, 166}  # 同 core/imported_balance.gd（146 苍龙、152 徐凤年已解放）
 
 
-def actor_notes_rules(table: dict, actors_db=None) -> list:
+def actor_notes_rules(table: dict, actors_db=None, actor_names=None) -> list:
     """actor_notes.json（T556，天启篇人物图鉴全员备注，Kyo 11-27 事项 84 定稿）：
     两行无前缀（story 一两句故事＋trait 角色定位与特点），禁止内部数值、编号与出戏元词；
     转换产物 Actors.json 在时核对全部 163 位天启篇图鉴可见角色齐全且名字一致。"""
@@ -4322,17 +4324,24 @@ def actor_notes_rules(table: dict, actors_db=None) -> list:
             check('actors.%s.%s 不含换行' % (k, fld), '\n' not in txt and '\r' not in txt, txt)
             check('actors.%s.%s 长度在 15～65 字内' % (k, fld), 15 <= len(txt) <= 65, len(txt))
             check('actors.%s.%s 以中文句号结尾' % (k, fld), txt.endswith('。'), txt[-4:])
-            m = ACTOR_NOTES_FORBIDDEN.search(txt)
+            meta = ACTOR_NOTES_STORY_META if fld == 'story' else ACTOR_NOTES_TRAIT_META
+            m = ACTOR_NOTES_FORBIDDEN.search(txt) or meta.search(txt)
             check('actors.%s.%s 不含内部数值编号与禁用词' % (k, fld), m is None, m.group(0) if m else None)
             if fld == 'trait':
                 m2 = ACTOR_NOTES_TRAIT_FORBIDDEN.search(txt)
                 check('actors.%s.trait 不含倍率词「倍」' % k, m2 is None, m2.group(0) if m2 else None)
+    names = actor_names or {}
+    for sid, name in names.items():
+        check('actors.%s 名字与天启篇命名表一致' % sid,
+              isinstance(actors.get(sid), dict) and actors[sid].get('name') == name, name)
     if isinstance(actors_db, list):
         want = {}
         for rec in actors_db:
             if isinstance(rec, dict) and rec.get('name') and int(rec.get('id', 0)) not in ACTOR_NOTES_HIDDEN:
                 want[str(int(rec['id']))] = str(rec['name'])
         want['180'] = '五条悟'  # 天启篇动态注册（core/gojo.gd）
+        for sid in want.keys() & names.keys():
+            want[sid] = names[sid]
         missing = sorted(set(want) - set(actors), key=int)
         extra = sorted(set(actors) - set(want), key=lambda x: int(x) if x.isdigit() else 999999)
         check('覆盖全部天启篇图鉴可见角色', not missing, missing[:10])
@@ -4347,7 +4356,50 @@ def actor_notes_rules(table: dict, actors_db=None) -> list:
 def check_actor_notes(_args) -> bool:
     actors_path = PROJECT / 'modes' / 'xiyou' / 'generated' / 'db' / 'Actors.json'
     actors_db = json.loads(actors_path.read_text(encoding='utf-8')) if actors_path.is_file() else None
-    return _run_table('actor_notes.json', lambda t: actor_notes_rules(t, actors_db))
+    names = _load_opt('actor_names.json').get('names', {})
+    return _run_table('actor_notes.json', lambda t: actor_notes_rules(t, actors_db, names))
+
+
+def actor_names_rules(table: dict) -> list:
+    bad = []
+    names = table.get('names')
+    if not isinstance(names, dict) or len(names) != 57:
+        return [('names 应有 57 个人物新名', type(names).__name__)]
+    if any(not k.isdecimal() or int(k) < 1 or not isinstance(v, str) or not v.strip() for k, v in names.items()):
+        return [('names 须为角色号到非空文字的表', names)]
+    saved = table.get('saved_names')
+    if not isinstance(saved, dict) or saved.keys() != names.keys() or any(
+        not isinstance(row, list) or not row or any(not isinstance(v, str) or not v for v in row)
+        for row in saved.values()
+    ):
+        bad.append(('saved_names 须逐角色列出可识别的旧名', None))
+
+    def check_pairs(label, pairs):
+        if not isinstance(pairs, list):
+            bad.append((label + ' 须为替换数组', pairs))
+            return
+        for pair in pairs:
+            if not isinstance(pair, list) or len(pair) != 2 or any(not isinstance(x, str) or not x for x in pair):
+                bad.append((label + ' 须为 [原文字, 新文字]', pair))
+                continue
+            if any(ref not in names for ref in re.findall(r'\{([^{}]+)\}', pair[1])):
+                bad.append((label + ' 引用了不存在的角色', pair))
+
+    for section in ('tables', 'advance', 'wardrobe'):
+        rows = table.get(section)
+        if not isinstance(rows, dict) or not rows:
+            bad.append((section + ' 须为非空字典', rows))
+            continue
+        for key, row in rows.items():
+            if section == 'advance':
+                check_pairs(key, row)
+                continue
+            if not isinstance(row, dict) or not row:
+                bad.append((section + '.' + key + ' 须为非空字典', row))
+                continue
+            for path, pairs in row.items():
+                check_pairs(key + '/' + path, pairs)
+    return bad
 
 
 # 每张表一个检查函数：(名字, 函数(args) -> 是否通过)。词条表那张单加 affix_table 时往这里登记。
@@ -4401,6 +4453,7 @@ CHECKS = [
     ('gear_elem_amp', check_gear_elem_amp),
     ('suit_template', check_suit_template),
     ('actor_notes', check_actor_notes),
+    ('actor_names', lambda _args: _run_table('actor_names.json', actor_names_rules)),
 ]
 
 

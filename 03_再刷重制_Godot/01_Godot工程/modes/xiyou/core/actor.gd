@@ -121,6 +121,8 @@ func data() -> Dictionary:
 	if not is_same(_looks_src, rec) or _looks_out.is_empty():
 		_looks_out = rec.duplicate()
 		_looks_out.merge(looks, true)
+		if looks.has("name"):
+			_looks_out.name = XTextFix.saved_actor_name(actor_id, str(looks.name))
 		_looks_src = rec
 	return _looks_out
 
@@ -154,6 +156,10 @@ func is_actor() -> bool:
 
 func display_name() -> String:
 	return str(data().get("name", ""))
+
+
+func display_nickname() -> String:
+	return XTextFix.actor_nickname(actor_id, nickname)
 
 func _level() -> int:
 	return _lv
