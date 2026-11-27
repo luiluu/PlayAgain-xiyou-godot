@@ -13,6 +13,9 @@ static var PHYS_AMP_ON_DECK := true
 ## T533（预算稿 v0.16 七.4／九.17，D290）：天启篇走角色卡公式的招，防御通过率按这一招的主属性算（原来一律拿物攻、魔攻算，吃生命／防御的招被压两遍）。
 ## 主属性值＝卡上权重加权平均 Σ(权重×属性)÷hit_weight（生命、魔法上限按标准线 ÷25 折，同 XTianqiSkills.hit_weight；协调 11-27 定 A）。回退：false＝照旧拿物攻／魔攻。
 static var MAIN_STAT_PASS := true
+## T534（预算稿 v0.16 九.20 甲，D290）：天启篇我方挨必中招（命中类型必中、结算没传 mode、不是真伤），老承伤率（原版装备、被动、状态的物理／魔法承伤 sparam 6／7）
+## 取 min(1, max(物承, 魔承))：两个都减伤按减得少的算、有一个易伤就不减、易伤不带过来；这一支承伤穿透按 0；incomingMultiplier 照乘。敌人挨打、西游档不变。回退：false＝必中照旧 1。
+static var CERTAIN_INCOMING := true
 static var _formulas := {}
 
 
@@ -303,7 +306,10 @@ static func main_stat_value(d: Dictionary, a: XBattler, method := "A") -> float:
 
 
 ## 承伤率（T530 抽成独立接口，供后续 T534 必中招承伤率直接接）
-static func _calc_incoming(b: XBattler, physical: bool, magical: bool, kind: String, frame: Dictionary) -> float:
+## certain（T534）：这一招是必中且结算没传 mode（_calculate 判好传进来），只在天启篇我方挨打时起作用
+static func _calc_incoming(b: XBattler, physical: bool, magical: bool, kind: String, frame: Dictionary, certain := false) -> float:
+	if certain and kind != "true" and not physical and not magical and certain_incoming_applies(b):
+		return minf(1.0, maxf(0.0, maxf(b.pdr, b.mdr))) * maxf(0.0, frame.incomingMultiplier)  # 穿透按 0
 	var incoming := 1.0
 	if kind != "true":
 		incoming = maxf(0.0, b.pdr) if physical else (maxf(0.0, b.mdr) if magical else 1.0)
@@ -311,6 +317,11 @@ static func _calc_incoming(b: XBattler, physical: bool, magical: bool, kind: Str
 	if incoming > 0.0 and incoming < 1.0:
 		incoming = 1.0 - (1.0 - incoming) * (1.0 - clampf(pierce, 0.0, 1.0))
 	return incoming * maxf(0.0, frame.incomingMultiplier)
+
+
+## T534：必中招吃老承伤率的守卫（开关开、天启篇档、挨打方是我方角色）
+static func certain_incoming_applies(b: XBattler) -> bool:
+	return CERTAIN_INCOMING and b != null and b.is_actor() and XTianqi.active(XState.current)
 
 
 static func critical_multiplier_bonus(b: XBattler) -> float:
@@ -450,7 +461,7 @@ static func _calculate(item: Dictionary, a: XBattler, b: XBattler, options := {}
 			originals = [0]
 	var physical := mode == "physical" if options.has("mode") else is_physical(item)
 	var magical := mode == "magical" if options.has("mode") else is_magical(item)
-	var incoming := _calc_incoming(b, physical, magical, kind, frame)
+	var incoming := _calc_incoming(b, physical, magical, kind, frame, int(item.get("hitType", 0)) == 0 and not options.has("mode"))  # T534：必中招（没传 mode）
 	var guard := 1.0 if kind == "true" else (1.0 / (2.0 * b.grd) if b.is_guard() else 1.0)
 	var growth := maxf(0.0, frame.growthMultiplier) * XZhenqi.damage_mult(a, b, options)
 	var tianqi := XTianqiCombat.damage_mult(a, b)  # 天启篇档位出伤／承伤、弱者协力、助力位光环（独立乘区，只乘一次；原版档恒 1）

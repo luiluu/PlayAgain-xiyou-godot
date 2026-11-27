@@ -286,7 +286,7 @@ func _stance_ids(a: XActor) -> Array:
 	return a.skill_ids.filter(func(id): return id in [2615, 2616, 2622, 2623])
 
 
-## 7. 陈两对姿态：真走公共事件切换，切换后旧姿态退出；金钟罩 物理／魔法 −10%、必中不减；玄牛 再生 +5%
+## 7. 陈两对姿态：真走公共事件切换，切换后旧姿态退出；金钟罩 物理／魔法 −10%、必中 T534 起同 −10%；玄牛 再生 +5%
 func _test_7_chen_stances_battle() -> void:
 	var s := _new_tianqi_state([74, 1, 2, 3, 4])
 	var chen: XActor = s.actor(74)
@@ -297,7 +297,7 @@ func _test_7_chen_stances_battle() -> void:
 	var e := _enemy(12)
 	_check("t7_chen_lv50_starts_tiger_and_drunk", _has_all(chen, [2615, 2622], [2616, 2623]), _stance_ids(chen))
 
-	# 醉酒狂暴 → 金钟罩（CE386）：醉酒退出；物理／魔法承伤 ×0.9，必中不变
+	# 醉酒狂暴 → 金钟罩（CE386）：醉酒退出；物理／魔法承伤 ×0.9，必中（305）T534 起也 ×0.9
 	var base := _taken(e, chen)
 	await _run_ce(host, 386)
 	var bell := _taken(e, chen)
@@ -307,7 +307,8 @@ func _test_7_chen_stances_battle() -> void:
 	_check("t7_ce386_bell_on_drunk_off", _has_all(chen, [2623], [2622]), _stance_ids(chen))
 	_check("t7_bell_phys_mag_minus10_true_unchanged",
 		float(base[0]) > 0.0 and float(base[1]) > 0.0 and float(base[2]) > 0.0
-		and absf(r_phys - 0.9) < 0.01 and absf(r_mag - 0.9) < 0.01 and absf(r_true - 1.0) < 0.001,
+		and absf(r_phys - 0.9) < 0.01 and absf(r_mag - 0.9) < 0.01
+		and absf(r_true - (0.9 if XDamage.CERTAIN_INCOMING else 1.0)) < 0.01,  # T534（九.20 甲）：必中招 305 也吃 min(1,max(物承,魔承))＝0.9；开关关回 1
 		{"base": base, "bell": bell, "ratio": [r_phys, r_mag, r_true]})
 
 	# 金钟罩 → 醉酒狂暴（CE387）：金钟罩退出，承伤回到原样
