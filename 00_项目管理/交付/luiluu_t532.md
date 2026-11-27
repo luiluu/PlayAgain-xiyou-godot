@@ -25,7 +25,7 @@
 
 ## 交接板
 
-- 下一步：换家核查（小o 6.2-sol high）；Kyo 定终态单件表（见「要 Kyo 定」）后开 `ARMOR_FINAL`；T450 重标时用的是封顶后的防具元素伤。
+- 下一步：R1 交小o 复核；Kyo 定终态单件表（见「要 Kyo 定」）后开 `ARMOR_FINAL`；T450 重标时用的是封顶后的防具元素伤。
 - 用户试玩说明：天启篇防具元素增伤全身合计封 +20%，穿满高档普通防具的输出会低一些（R1 复跑：B 档 33 层赢的两场回合数 7→13、20→19，其余不变）；西游档不变。
 - 需要用户决定：防具单件终态表（下表，开关默认关）。
 
@@ -79,7 +79,7 @@
 - R1 本机专项（`并行测试.py --full`，提交 f90fc13f5）：`xiyou_tianqi_t532_elem_final` 11/11、`xiyou_tianqi_ledger_p3` 44/44、`xiyou_t530_ledger_core` 59/59、`xiyou_t549_gear_skills` 1970/1970、`xiyou_tianqi_deck_phys_amp` 25/25、`xiyou_tianqi_ledger` 83/83、`xiyou_tianqi_orbs` 56/56、`xiyou_tianqi_nine_off` 19/19、`xiyou_tianqi_phase4` 178/178、`xiyou_tianqi_affix_battle` 89/89、`xiyou_tianqi_equip_roundtrip` 7/7、`xiyou_tianqi_qiyin_effects` 71/71、`xiyou_tianqi_skills` 248/248、`xiyou_tianqi_live_sample` 32/32。
 - R0 本机专项：`xiyou_tianqi_t532_elem_final` 8/8、`xiyou_tianqi_ledger_p3` 44/44、`xiyou_t530_ledger_core` 59/59、`xiyou_t549_gear_skills` 1970/1970、`xiyou_tianqi_deck_phys_amp` 25/25、`xiyou_tianqi_ledger` 83/83、`xiyou_tianqi_orbs` 56/56、`xiyou_tianqi_nine_off` 19/19、`xiyou_tianqi_phase4` 178/178、`xiyou_tianqi_affix_battle` 89/89、`xiyou_tianqi_suit_template` 48/48、`xiyou_tianqi_t528` 19/19、`xiyou_tianqi_t524_leaks` 22/22、`xiyou_tianqi_skills` 248/248、`xiyou_tianqi_live_sample` 32/32、`xiyou_virtual_player`（explore）16/16。
 - `天启篇数据校验.py`：全部通过；`发行空壳.py check`：0。
-- R1 云端选测：待填
+- R1 云端选测：https://github.com/luiluu/PlayAgain-xiyou-godot/actions/runs/46078527683 （提交 7da775a02，整轮 839 场景 16 片，第 1 次 success；`gh run watch` 前台等完）
 - R0 云端选测：https://github.com/luiluu/PlayAgain-xiyou-godot/actions/runs/46063163888 （提交 e65100b56，整轮 839 场景 16 片）。第 1 次：唯一失败 `xiyou_ui_detail_d3`（`list_inertia_off_stops`、`list_tap_keeps_pixel_pos`，列表惯性／触点像素，本卡没碰界面代码；本机同提交跑 93/93 过）；`gh run rerun --failed` 第 2 次全过，结论 success。我猜是云端时序偶发，没深查。
 
 ## 数值报告：逐种子分布
@@ -181,3 +181,4 @@
 - f3bdb11f2 T532 交付单
 - 1db5b6015 T532 补新增脚本的 .gd.uid
 - f90fc13f5 T532 R1 返修（小o 核 P1-1～3）
+- 7da775a02 T532 R1 复跑 36 场＋交付单逐条回应小o 核
