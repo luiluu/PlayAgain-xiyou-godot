@@ -5,7 +5,8 @@ extends Node
 ##   2560 绯红之夜（163 普通闪躲）：免疫一次即死或致命伤
 ##   2554 不死之躯（159 不灭之躯）：复活回 30%（每场一次）
 ##   1099 预感的庇护、1178 拼命守护：死后 30% 复活（回 30%，每场一次）
-## 西游档：同一批状态的记录与原表一致、实战照旧（9.9%、三次、回满、两次掷骰）。
+##   2561 吃瘪之力（164 吃瘪之力）：受到伤害 −10%（Kyo 11-27 事项 73：天启篇改成设计稿 −10%，西游档不动）
+## 西游档：同一批状态的记录与原表一致、实战照旧（9.9%、三次、回满、两次掷骰、吃瘪之力照贝吉特调整 −50%）。
 const Kit := preload("res://tests/lib/tq_save_kit.gd")
 const N := 20000
 const MHP := 100000.0
@@ -119,8 +120,10 @@ func _run() -> void:
 		var r: Array = tq[id]
 		_check("tq.%s_rate_30pct" % id, absf(float(r[0]) - 0.3) < 0.015, r)
 		_check("tq.%s_heal_30pct" % id, float(r[1]) == floorf(MHP * 0.3), r)
+	_check("tq.2561_minus10pct", tq["2561"] == 900.0, tq["2561"])
+	_check("tq.2561_skill_desc", XTianqiSkills.data().skills["9942"].desc == ["效果：受到的伤害 −10%"], XTianqiSkills.data().skills["9942"].desc)
 	# 备注里不再留没生效的脚本改写（note_sub），免得读备注的人以为改到了
-	for id in [2562, 2560, 2554]:
+	for id in [2562, 2560, 2554, 2561]:
 		_check("tq.%d_no_dead_note_sub" % id, not XTianqiSkills.data().states[str(id)].has("note_sub"), id)
 
 	# 首领状态窗：表里显式标「异常」的 39 个都进 Debuff 页签（T566 复核遗留：原来按 kind_of 有 22 个进了 Buff）
@@ -149,7 +152,7 @@ func _run() -> void:
 	XTianqiSkills._state_recs = {}
 	var off := _measure("tianqi_rollback")
 	_check("rollback.old_values", off["2562"] == [901.0, 99.0] and off["2560"] == 3 and off["2554"] == [MHP, false]
-		and absf(float(off["1099"][0]) - (1.0 - 0.7 * 0.7)) < 0.015, off)
+		and absf(float(off["1099"][0]) - (1.0 - 0.7 * 0.7)) < 0.015 and off["2561"] == 500.0, off)
 	XTianqiSkills.REVIVE_SINGLE_ROLL = true
 	XTianqiSkills.EFFECT_NUMS = true
 	XTianqiSkills._state_recs = {}
@@ -167,6 +170,7 @@ func _run() -> void:
 	_check("xy.2560_three", x["2560"] == 3, x["2560"])
 	_check("xy.2554_full", x["2554"] == [MHP, false], x["2554"])
 	_check("xy.1099_two_rolls", absf(float(x["1099"][0]) - (1.0 - 0.6 * 0.6)) < 0.015, x["1099"])
+	_check("xy.2561_vegeta_half", x["2561"] == float(floori(1000.0 * float(XVegetaTune.cfg().get("chibie", 0.1)))) and x["2561"] == 500.0, x["2561"])
 	_check("xy.1178_two_rolls", absf(float(x["1178"][0]) - (1.0 - 0.65 * 0.65)) < 0.015, x["1178"])
 
 	kit.teardown()
