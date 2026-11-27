@@ -8,8 +8,9 @@
   --mode A|B|C   写哪一版进 six_dim.json（缺省 C；三版的总分分布报告里一直都算）
 
 数据来源（六维打分_实测数据.json，同目录）：
-  输出  ＝ T558 R2 起（Kyo 11-27 事项 83 第 1、2 条）：t445_book_probe 炼狱口径（--book-build=lianyu --noisy --force-all-tiers）整次施放各段直接相加；
-          三档都强制量本角色全部改写伤害招（条件全中＝原超强者口径）；每招取 peak_base（段数最少的那几次里最大，不含随机再放／随机变身），全部招里取最大
+  输出  ＝ T558 R2 起（Kyo 11-27 事项 83 第 1、2 条）：t445_book_probe 炼狱口径（--book-build=lianyu --noisy --force-all-tiers --cond-full）整次施放各段直接相加；
+          三档都强制量本角色全部改写伤害招（条件全中＝原超强者口径 _prime，R3 起再乘卡面 conds「全中÷当下」条件倍率，自然放得出的招也强制量）；
+          R3 起每招取 peak（20 次里最大，含随机再放／随机变身），179 流萤例外取 peak_base（不含 10% 随机再放）——同 T527 平衡报告 峰值汇总.py peak()（Kyo 11-27 事项 83「算，和平衡报告统一」）；全部招里取最大
           （T558 前是 k_calibrate 的「apply 单下×段数比」，T569 查出落地招拼错，旧数留在 peak_k 只作对照）
   生存  ＝ k_calibrate --survive 实测挨打（K_SURV：标准敌人固定攻击、自动战斗带保命技、撑过的回合数）；面板（K_STAT）只兜底
   速度  ＝ k_calibrate --stats 的标准养成敏捷（K_STAT）×（追加行动几率＋技能描述里的再动／拉条／先制／敏捷加成）
@@ -25,7 +26,7 @@
   python3 .../六维打分.py --ingest --calib calib.log miss.log --stats stats.log --surv surv.log --write
   输出（T558 R2 起）：分片跑炼狱探针，再只替换输出一维（面板、生存照旧）：
   G2="… -s res://tests/test_main_loop.gd res://tests/virtual_player/t445_book_probe.tscn --"
-  $=G2 --tier=all --actors=<base_line.json 全部号，可分片> --book-build=lianyu --noisy --seed=1 --force-all-tiers > lianyu_sN.log   # 4 片并行约 50 分钟
+  $=G2 --tier=all --actors=<base_line.json 全部号，可分片> --book-build=lianyu --noisy --seed=1 --force-all-tiers --cond-full > lianyu_sN.log   # 4 片并行
   python3 .../六维打分.py --lianyu lianyu_s*.log --write
 """
 import argparse
@@ -197,8 +198,16 @@ def ingest(calib, stats, first=(), surv=()):
     MEAS.write_text(json.dumps({'_note': '六维打分.py 的实测输入（由 --ingest 生成）：peak＝k_calibrate 含烙印整次施放峰值；stat＝--stats 标准养成面板；no_damage_row＝探针量不出伤害', 'actors': out}, ensure_ascii=False, indent=1) + '\n', encoding='utf-8')
 
 
+BASE_ONLY = {'179'}  # T527 峰值汇总.py／T501 K交集.py：流萤取 peak_base（10% 随机再放不计，T488 预算口径／D287 验收沿用）
+
+
+def out_peak(c, actor):
+    """T558 R3（Kyo 11-27 事项 83「随机再放算，和平衡报告统一」）：同 T527 峰值汇总.py peak()：含随机再放的 peak，流萤例外取 peak_base。"""
+    return int(c.get('peak_base', c['peak'])) if str(actor) in BASE_ONLY else int(c['peak'])
+
+
 def ingest_lianyu(logs):
-    """T558 R2：只替换输出一维。炼狱探针 K_ROW 里 lianyu.cast_peaks（自然出招）＋lianyu.forced_main（强制量）每行取 peak_base（没有取 peak），全部取最大。"""
+    """T558 R2／R3：只替换输出一维。炼狱探针 K_ROW 里 lianyu.cast_peaks（自然出招）＋lianyu.forced_main（强制量）每行取 out_peak()（R3：peak，流萤取 peak_base），全部取最大。"""
     md = load(MEAS)
     acts = md['actors']
     rw = load(DATA / 'skill_rework.json')['skills']
@@ -221,8 +230,11 @@ def ingest_lianyu(logs):
                     else:
                         keep.append(c)
                 cands = keep or cands
-                best = max(cands, key=lambda c: (int(c.get('peak_base', c['peak'])), int(c['peak'])))
-                rows[a] = {'peak': int(best.get('peak_base', best['peak'])), 'peak_rand': int(best['peak']), 'skill': int(best.get('skill', 0)), 'input_skill': int(best.get('input_skill', best.get('skill', 0))),
+                best = max(cands, key=lambda c: (out_peak(c, a), int(c['peak'])))
+                bb = max(cands, key=lambda c: (int(c.get('peak_base', c['peak'])), int(c['peak'])))
+                rows[a] = {'peak': out_peak(best, a), 'peak_rand': int(best['peak']), 'peak_base': int(bb.get('peak_base', bb['peak'])), 'skill_base': int(bb.get('skill', 0)),
+                           'cond_fac': float(best.get('cond_fac', 1.0)),
+                           'skill': int(best.get('skill', 0)), 'input_skill': int(best.get('input_skill', best.get('skill', 0))),
                            'segs': len(best.get('segments', [])) or None, 'forced': bool(best.get('forced', False))}
             elif l.startswith('K_SKIP '):
                 a = l.split()[1]
@@ -230,7 +242,7 @@ def ingest_lianyu(logs):
     for i, e in acts.items():
         if 'peak' in e and 'peak_k' not in e:
             e['peak_k'], e['skill_k'] = e['peak'], e.get('skill')   # T558 k_calibrate 旧口径，只作对照
-        for k in ('peak', 'skill', 'segs', 'peak_first', 'peak_rand', 'input_skill', 'forced', 'no_damage_row', 'excluded_landings'):
+        for k in ('peak', 'skill', 'segs', 'peak_first', 'peak_rand', 'peak_base', 'skill_base', 'cond_fac', 'input_skill', 'forced', 'no_damage_row', 'excluded_landings'):
             e.pop(k, None)
         if i in rows:
             e.update(rows[i])
@@ -238,8 +250,8 @@ def ingest_lianyu(logs):
             e['excluded_landings'] = excl[i]
         elif i in skip:
             e['no_damage_row'] = True
-    md['_note'] = ('六维打分.py 的实测输入：peak＝T558 R2 炼狱口径（t445_book_probe --book-build=lianyu --noisy --seed=1 --force-all-tiers）整次施放合计、三档强制量条件全中、取 peak_base；'
-                   'peak_rand＝同一招含随机再放的最大；peak_k＝T558 前 k_calibrate 旧口径（对照用，不参与打分）；stat＝--stats 标准养成面板；surv＝--survive 3 种子；no_damage_row＝探针量不出伤害')
+    md['_note'] = ('六维打分.py 的实测输入：peak＝T558 R3 炼狱口径（t445_book_probe --book-build=lianyu --noisy --seed=1 --force-all-tiers --cond-full）整次施放合计、三档强制量条件全中且乘卡面条件倍率、'
+                   '取 peak（含随机再放，179 流萤取 peak_base，同 T527 平衡报告）；peak_rand＝打分那招含随机再放的最大；peak_base／skill_base＝全部招不含随机再放取最大（对照）；cond_fac＝打分那招的卡面条件倍率；peak_k＝T558 前 k_calibrate 旧口径（对照用，不参与打分）；stat＝--stats 标准养成面板；surv＝--survive 3 种子；no_damage_row＝探针量不出伤害')
     MEAS.write_text(json.dumps(md, ensure_ascii=False, indent=1) + '\n', encoding='utf-8')
     print('输出已换炼狱口径：%d 人有量数，%d 人量不出伤害，停用 %d 人' % (len(rows), len(skip - set(rows)), len(dis)))
 
@@ -484,7 +496,7 @@ def report(ids, base, tier, raw, meas, notes, res, mode_w, old_sample, prev, txt
     w('# 六维全员重算报告（T280，cc Sonnet＋medium；第二版：速度、生存换实测）\n')
     w('依据：设定稿《天启篇_角色六维_v0.3定稿》；T271 全员名次表；Kyo 11-19 23:5x 原话（「谷雨不对……生存至少也是 S」「SS 给得太容易，或者超强者／强者／弱者的总分给得不合理」「SS 的代价：至少两个 C 及以下，不用 D」「六维难倒不是量完之后重定吗」）。**本表是草稿，`six_dim.json` 只在分支里，等 Kyo 过目改完再合。**四骑士、普怪模板沿用 T275。战商、韧性两维手标分这一版**没动**，交小A 人审。\n')
     w('## T558 R2：输出换炼狱口径（Kyo 11-27 事项 83）\n')
-    w('- **口径**：输出一维改用 `t445_book_probe --book-build=lianyu --noisy --seed=1 --force-all-tiers`：炼狱 C 模板养成，整次施放（`logic.execute`）各段直接相加，记落地招号；三档都把本角色全部改写伤害招强制量一遍（条件全中，原来只给超强者）；每招取 `peak_base`（段数最少的那几次里最大，不含随机再放／随机变身），全部招取最大。T558 前的 k_calibrate 旧数（「apply 单下×段数比」，T569 查出绿司机 4759→4760 等拼错）留在实测数据 `peak_k`，不参与打分。')
+    w('- **口径**：输出一维改用 `t445_book_probe --book-build=lianyu --noisy --seed=1 --force-all-tiers --cond-full`：炼狱 C 模板养成，整次施放（`logic.execute`）各段直接相加，记落地招号；三档都把本角色全部改写伤害招强制量一遍（条件全中，原来只给超强者；R3 起 `--cond-full` 再乘卡面 conds「全中÷当下」条件倍率、自然放得出的招也强制量）；R3 起每招取 `peak`（20 次里最大，含随机再放／随机变身），179 流萤例外取 `peak_base`，同 T527 平衡报告 `峰值汇总.py`；全部招取最大。T558 前的 k_calibrate 旧数（「apply 单下×段数比」，T569 查出绿司机 4759→4760 等拼错）留在实测数据 `peak_k`，不参与打分。')
     w('- **谷雨输出手改 S 已去掉**，按实测给档（现 %s，全库第 %d）；辅助 A（Kyo 11-21）照留。' % (let['175']['output'], rk('output', '175')))
     ex = [(i, x) for i in ids for x in meas.get(i, {}).get('excluded_landings', [])]
     if ex:
@@ -527,7 +539,7 @@ def report(ids, base, tier, raw, meas, notes, res, mode_w, old_sample, prev, txt
     w('## 3. 每一维怎么算（公式）\n')
     w('所有量都在同一套标准养成下取：81 级、进阶满、每栏挑主属性最高的一件神话装备、本人专属法宝 99 级、技能熟练度拿满（`k_calibrate` 的 `_state`）。')
     w('| 维度 | 公式 | 可信度 |\n|---|---|---|')
-    w('| 输出 | **T558 R2 起**：炼狱口径整次施放合计（`t445_book_probe --book-build=lianyu --noisy --force-all-tiers`，三档强制量、条件全中，取 peak_base）。没量到的：纯辅助记 0；其余按同档实测中位数代入（※）。 | 高（※ 除外） |')
+    w('| 输出 | **T558 R2 起**：炼狱口径整次施放合计（`t445_book_probe --book-build=lianyu --noisy --force-all-tiers --cond-full`，三档强制量、条件全中乘卡面条件倍率，取 peak 含随机再放，流萤取 peak_base）。没量到的：纯辅助记 0；其余按同档实测中位数代入（※）。 | 高（※ 除外） |')
     w('| 生存 | **实测挨打**：标准敌人（攻击固定 %d，每回合物理＋魔法各打一下，伤害走游戏自己的防御／魔防／承伤率／档位承伤／护盾／减伤／复活结算）面前，角色**自动战斗**带着自己的护盾、回复、减伤、复活类技能正常放（魔法、TP 照耗），打到倒下（最多 60 回合）；取 3 个种子「撑过的回合数」的中位数排名，同回合再比死前总承伤。角色自动战斗之外加一条「保命技先放」：技能表里不带伤害、类别是护盾／治疗／复活或描述含自盾／减伤／免死／回血的技能，能用就放（护盾减伤类每回合，回复类血量不到 90%% 才放），因为游戏自带自动战斗的默认选招不一定放它们。面板（生命、防御）只给没实测的人兜底。 | 高（自动战斗选招是游戏自己的 AI） |' % ATK_SURV)
     w('| 速度 | **敏捷 × 行动次数**：`agi × (100 ＋ 再动 ＋ 拉条 ＋ 先制 ＋ 敏捷加成)/100`：再动＝max(面板追加行动几率合计×100，技能描述里「N%再动」，没写几率的再动按 30)；技能描述里有「提前行动／拉条」+30、「先制／先手」+10、「敏捷 +x%」取 x/2（封 20）。agi 和追加行动几率取标准养成面板（模块里的条件再动，如五条悟六眼 10%，面板读不到，由描述补）。 | 中高 |')
     w('| 辅助 | 职责底分（辅助5／坦克3／均衡2／输出1）＋友方技能类别（治疗·复活／护盾·代命／增益·光环·驱散／召唤，封顶 2）；同分看治疗类技能种类数＋词条数。**这一版没动。** | 中低 |')
@@ -675,7 +687,7 @@ def main():
     let = res[a.mode][0]
     tab['actors'] = {i: {'name': base[i]['name'], 'class': tier[i], **{d: let[i][d] for d in DIMS}, **({'_note': HAND_REASONS[i]} if i in HAND_OVERRIDE else {})} for i in ids}
     tab['_note'] = ('天启篇六维（T275 表结构；T280 全员按实测重算，设定稿 天启篇_角色六维_v0.3定稿，Kyo D234）。刻度 E～SSS＝1～8 分；全表整数（附则 E）。只读数据，战斗中不重算；本表不碰伤害、血防、敏捷。'
-                    ' actors 含 156 人（T280 终表，Kyo D238／D239 定稿，分档口径 %s）：输出＝T558 R2 炼狱口径整次施放合计（三档强制量、条件全中，Kyo 11-27 事项 83）实测名次；生存＝标准敌人面前自动战斗实测挨打；速度＝敏捷×行动次数（再动／拉条／先制）；辅助＝职责＋机制词；'
+                    ' actors 含 156 人（T280 终表，Kyo D238／D239 定稿，分档口径 %s）：输出＝T558 R3 炼狱口径整次施放合计（三档强制量、条件全中乘卡面条件倍率、含随机再放，Kyo 11-27 事项 83）实测名次；生存＝标准敌人面前自动战斗实测挨打；速度＝敏捷×行动次数（再动／拉条／先制）；辅助＝职责＋机制词；'
                     '战商／韧性＝按角色号逐人手标分名次（依据原作人设／技能，非实测）；按全库名额配档再按 R1～R3 降档；停用角色（146、152、161、141）不占名额、暂记 C；虎姐(89)、沙和尚(39) 生存手改到 B（手改理由：团队坦克）；没有速度机制且敏捷并列的人速度记 C；D239：狗逍遥(1)、绿司机(2)、维利(22)、诛仙(162) 已升强者、数值不动。打分脚本 07_开发环境/六维打分.py，报告 07_开发环境/六维全员重算报告.md。') % a.mode
     jp.write_text(json.dumps(tab, ensure_ascii=False, indent=1) + '\n', encoding='utf-8')
     REPORT.write_text(report(ids, base, tier, raw, meas, notes, res, a.mode, old, prev, txt), encoding='utf-8')
