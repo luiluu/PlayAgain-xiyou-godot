@@ -1,6 +1,6 @@
 extends Node
 ## 【cc·T533】防御通过率按主属性：全名单对照（不是专项，检查.sh 不跑；单独跑带 --audio-driver Dummy、临时 HOME）。
-## 天启篇档，全体可选角色（超强者／强者／弱者＋天启篇五条悟）各升到 81 级、不穿装备，取已学会的走角色卡公式的伤害招，
+## 天启篇档，五档候选池并集（＋五条悟）各升到 81 级、不穿装备，取已学会的＋实际攻击指令（T553 普攻）里走角色卡公式的伤害招，
 ## 目标双防都取标准线 81 级攻击 1640（同《基础数值重构》「六项相等」的标准角色），逐招打一行：
 ## T533_ROW|角色号|角色名|梯队|招号|招名|mode|卡上属性|改前通过率|A（产品）|B（取最大项）|改前用的攻击值|A 主属性值|B 主属性值
 ## mixed mode 两侧权重同正式结算按公式微扰取（XDamage._mixed_weights，目标用一只 1 号敌人占位）。
@@ -14,8 +14,14 @@ func _ready() -> void:
 
 
 func _run() -> void:
-	var ids: Array = XTier.ids(XTier.SUPER) + XTier.ids(XTier.STRONG) + XTier.ids(XTier.WEAK)
-	ids = ids.filter(func(id): return not XImportedBalance.is_disabled_actor(id))
+	var ids: Array = []  # T533 R2（小o P1-1）：按天启篇五档候选池的并集枚举（原来按梯队表＋停用表，漏 9 人）
+	for dk in XTianqi.DIFFICULTIES:
+		var p := XTianqi.pool(str(dk.key))
+		for tier in p:
+			for id in p[tier]:
+				if not ids.has(int(id)):
+					ids.append(int(id))
+	ids.sort()
 	var weak: Array = XTier.ids(XTier.WEAK).filter(func(id): return not XImportedBalance.is_disabled_actor(id) and not XActorModules.IDS.has(id))
 	var s := XTianqi.start_new_game(3, "jianxian", weak.slice(0, 5))
 	XTianqi.take_pending()
@@ -32,6 +38,7 @@ func _run() -> void:
 			XTianqi._joining = false
 		var a: XActor = s.actor(int(id))
 		if a == null:
+			print("T533_NOROW|%d|入队失败" % int(id))
 			continue
 		a.change_level(LV)
 		a.keep_unequippable = true
@@ -40,9 +47,18 @@ func _run() -> void:
 		a.read_touch()
 		a.param_mark_dirty()
 		a.refresh_passive()
-		for item in a.skills():
+		var items: Array = a.skills()
+		var atk_item := a.attack_skill()  # T533 R2：实际攻击指令（T553 我方 1 号普攻走 ATTACK1_SPEC；换了普攻的取替换后那一招）
+		if not atk_item.is_empty() and not items.any(func(x): return int(x.id) == int(atk_item.id)):
+			items.append(atk_item)
+		var before_rows := rows
+		for item in items:
 			var d := XDamage.card_damage_spec(item, a)
-			if d.is_empty() or not int(item.get("damage", {}).get("type", 0)) in [1, 2, 5, 6]:
+			if not int(item.get("damage", {}).get("type", 0)) in [1, 2, 5, 6]:
+				continue
+			if d.is_empty():  # T533 R2：不走角色卡公式的伤害招（本卡不改，通过率照旧物攻／魔攻），列出来备查
+				var prog: Dictionary = item.get("damage", {}).get("formulaProgram", {})
+				print("T533_NONCARD|%d|%s|%d|%s|%s|%s|%s" % [int(id), a.display_name(), int(item.id), str(item.get("name", "")), XDamage.item_mode(item), str(prog.get("status", "")) + "/" + str(prog.get("module", "")), str(item.get("damage", {}).get("formula", "")).substr(0, 60).replace("|", "/")])
 				continue
 			var mode := XDamage.item_mode(item)
 			var w := [0.0, 1.0] if mode == "magical" else ([1.0, 0.0])
@@ -57,5 +73,7 @@ func _run() -> void:
 			var old_att: float = w[0] * a.atk + w[1] * a.mat
 			print("T533_ROW|%d|%s|%s|%d|%s|%s|%s|%.4f|%.4f|%.4f|%.0f|%.0f|%.0f" % [int(id), a.display_name(), XTier.tier_of(int(id)), int(item.id), str(item.get("name", "")), mode, stats, before, pa, pb, old_att, va, vb])
 			rows += 1
-	print("T533_LIST_DONE|rows=%d" % rows)
+		if rows == before_rows:  # 没有卡公式伤害招（连普攻都不是）
+			print("T533_NOROW|%d|%s" % [int(id), a.display_name()])
+	print("T533_LIST_DONE|rows=%d|actors=%d" % [rows, ids.size()])
 	get_tree().quit(0)

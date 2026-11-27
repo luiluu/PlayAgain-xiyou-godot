@@ -30,3 +30,21 @@ multi=[r for r in changed if len(keys(r['stats']))>1 or 'max_of' in r['stats']]
 print(f"\n变化超过 ±20%（相对）共 {len(big)} 行；多属性招 {len(multi)} 行（A 与 B 差见上表最后一列），其中 |A−B|>5 个百分点 {sum(1 for r in multi if abs(r['pa']-r['pb'])>0.05)} 行。")
 ups=sum(1 for r in changed if r['pa']>r['bef']+1e-9); downs=sum(1 for r in changed if r['pa']<r['bef']-1e-9)
 print(f"方向：变高 {ups} 行，变低 {downs} 行，不变 {len(changed)-ups-downs} 行。")
+
+# T533 R2（小o P1-1）：逐人覆盖核对——每位候选池角色有几行、普攻在不在；不走卡公式的伤害招另列（noncard 文件，可选第二参数）
+cnt={}; atk1=set()
+for r in rows:
+    cnt.setdefault((r['aid'],r['name']),0); cnt[(r['aid'],r['name'])]+=1
+    if r['sid']==1: atk1.add(r['aid'])
+print(f"\n### 逐人覆盖（{len(cnt)} 人，五档候选池并集＋五条悟；每人至少 1 行）\n")
+print("| 角色 | 行数 | 含 1 号普攻（T553） |")
+print("|---|---|---|")
+for (aid,name),n in sorted(cnt.items()):
+    print(f"| {aid} {name} | {n} | {'是' if aid in atk1 else '否（普攻被替换或不走 T553）'} |")
+if len(sys.argv)>2 and Path(sys.argv[2]).exists():
+    nc=[l.split('|') for l in Path(sys.argv[2]).read_text(encoding='utf-8').splitlines() if l.startswith('T533_NONCARD')]
+    print(f"\n### 不走角色卡公式的伤害招（本卡不改，通过率照旧物攻／魔攻）：{len(nc)} 行、{len(set(x[1] for x in nc))} 人\n")
+    print("| 角色 | 招 | mode | 公式来源 | 公式（前 60 字） |")
+    print("|---|---|---|---|---|")
+    for x in nc:
+        print(f"| {x[1]} {x[2]} | {x[3]} {x[4]} | {x[5]} | {x[6]} | `{x[7]}` |")

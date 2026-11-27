@@ -37,7 +37,11 @@ func _fight_floor(s: XState, f: int, ln: String, sd: int) -> Dictionary:
 				break
 		var e := XEnemy.new().setup(eid, s.difficulty, 100.0)
 		for a in s.battle_members():
-			for item in a.skills():
+			var items: Array = a.skills()
+			var atk_item: Dictionary = a.attack_skill()  # T533 R2（小o P1-1）：实际攻击指令也列（T553 普攻）
+			if not atk_item.is_empty() and not items.any(func(x): return int(x.id) == int(atk_item.id)):
+				items.append(atk_item)
+			for item in items:
 				var d := XDamage.card_damage_spec(item, a)
 				if d.is_empty() or not int(item.get("damage", {}).get("type", 0)) in [1, 2, 5, 6]:
 					continue
