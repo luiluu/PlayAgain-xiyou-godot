@@ -21,12 +21,18 @@
 - 防回流：`天启篇数据校验.py` 的 actor_names 检查加 `actor_names_leftover_rules`——skill_rework.json 玩家可见字段（跳过 `_` 注释键和 `note_*` 正则）再出现已改名角色的原名就报错，「黄泉路见」等同形字列白名单；单测 `test_skill_rework_leftover_old_names`。
 - 不改：非角色皮肤名（典藏衣橱纳西妲、芙宁娜等，换装卡 6808 一拳超人／6812 佩恩／6816 白胡子）、12 人待确认名单里除 127、85 以外的 10 人、已隐藏的 161 胡桃／166 利姆露、已化名角色称号里的原作名，都留给另单。
 - **R2 返修（cc，c2b6e63bc；小o 核查退回的 5 条）**：
-  - P1-1 存档：`XState.from_dict` 开头按「目标存档」的档位读表（`XTextFix.begin_load`，`_become_current` 里 `end_load` 收回），角色 setup 的默认称号取目标档文字；从天启档读西游档不再把「小黑炭」带进西游档、也不再存成显式称号。已被写坏的旧档（显式称号正好等于另一档位的默认称号，只认 actor_names.json 登记过的称号改名）读档时换回目标档默认称号，下次存档就不再写；玩家自订称号不动。主菜单／状态页称号走的是 `display_nickname()`，读的就是这里的 nickname，跟着对。
+  - P1-1 存档（「已写坏的旧档读档时换回」一段已被 R3 撤掉，见下）：`XState.from_dict` 开头按「目标存档」的档位读表（`XTextFix.begin_load`，`_become_current` 里 `end_load` 收回），角色 setup 的默认称号取目标档文字；从天启档读西游档不再把「小黑炭」带进西游档、也不再存成显式称号。已被写坏的旧档（显式称号正好等于另一档位的默认称号，只认 actor_names.json 登记过的称号改名）读档时换回目标档默认称号，下次存档就不再写；玩家自订称号不动。主菜单／状态页称号走的是 `display_nickname()`，读的就是这里的 nickname，跟着对。
   - P2-1 标题阵容与存档预览：新增 `XTextFix.actor_name_in／actor_nickname_in／actor_rec_name`（按指定档位取名）。开局阵容卡（新旧两版界面）按天启篇取名；`XSave.summary／summary_dict` 的队长名、开局页覆盖确认的阵容、读档页 `XSaveScene` 的头像下名字都按存档自己的档位取名。
   - P2-2 `XHelpCard.unique_global_keys` 缓存记下算它时的武器、防具表对象，换档重读表后自动重算；两种切换顺序都有断言。
   - P2-3 `XTextFix.gear_actor_view`：天启篇里装备实例按底号取 actor_names.json 的 Weapons／Armors 定向条目，实例里「改名后正好等于现在模板行」的那一行才换（名字、说明、备注行），词缀、强化等实例自有内容不动、存档值不动；接在 `_content` 与 `detail_rows` 最前面。
   - P3-1 回流校验：单字原名（74 陈）按两种结构查——本角色技能（skill_rework 里 `actor` 是它）的可见文字、「觉醒／进阶／羁绊:陈」标签；`note_add` 只查 `<pos … text=… size=>` 的展示文字。新单测 `test_skill_rework_leftover_single_char_and_note_add` 五个反例逐个独立。新规则当场抓到一处真漏：5470 琉璃金身说明「身与意合，陈开局时获得」，改为「熊猫酒仙开局时获得」。
   - 测试：`xiyou_text_fix` 新增 15 条 t562_* 断言（天启→读西游档→存→冷读、写坏档还原、自订称号保留、反向读、两向预览、唯一标签换档、旧天启档 2003 实例经 XSave 读回后卡面新名＋◆唯一＋词缀保留、西游档同实例仍原文）。把 xstate／help_card 两处修复撤掉重跑，P1 断言确实失败（「小黑炭」），恢复后 92/92。
+- **R3 返修（cc，013357219；小o R2 复核退回 P1-1、P2-1，口径按协调定：玩家存档最重要、宁可保守）**：
+  - P1-1 读档不改称号存值：撤掉 R2 的 `repair_saved_nickname`（读档时把「等于另一档默认」的显式称号换回本档默认——会把玩家刻意设的值吞掉）。现在 `from_dict` 原样取存档 `nickname`，`XActor.nickname_saved` 记下「存档里本来有这个键」，再存时照写（哪怕等于本档默认），做到存什么读什么、写回什么。`begin_load` 保留：没存称号的角色取目标档默认，不会再把另一档默认写成显式值。
+  - 显示层：`XTextFix.actor_nickname`（`display_nickname()`）只在天启篇、且整串正好等于登记的西游原称号时换成天启称号；含原名的自订长称号（如「裴钱的旧友」）原样显示。西游档一律原样显示。
+  - **歧义的取舍**：旧格式只有一个 `nickname` 值，「被跨档写坏」和「刻意自订成另一档默认」区分不了。跨档写坏只出现在本分支 R1（`actor_names.json` 与称号改名从未进 main、没发行过），玩家手里不会有这种档，所以一律不修、保留原值。代价：① 西游档里显式存着天启默认称号（如「小黑炭」）时照样显示「小黑炭」；② 天启档里显式存着西游原称号（如「裴钱」，公共事件 324 按原文设的也是这个值）时存值不动、显示换成天启称号——这正是 324 事件按原文设称号要的效果，刻意写原称号的玩家看到的是新称号，但存档值保留，回西游口径即原样。
+  - P2-1 新版读档右牌（`skin_save_page.gd` `card_info`）队伍名改走 `XSkinSavePage.party_name`＝按存档自己的档位取名。`actor_name_in／actor_nickname_in` 不再看 `tq_on()` 早退，直接按 `actor_names.json` 两向换（要天启取 `names`；要西游且现在是天启名就换回 `saved_names` 原名），标题冷启动表口径不定时也对。
+  - 测试：`xiyou_text_fix` 去掉 R2 的两条「写坏档还原」断言，新增 10 条（9 条 t562r3_*＋t562_tq_save_no_explicit_nick）：西游档显式＝天启默认、天启档显式＝西游默认两向各「热读→再存→模拟冷读（清当前档与文字缓存）」、天启档自订长称号存值与显示都不替换、显式等于本档默认再存不丢键、天启档没存称号再存不写键、新版右牌在天启档／西游档／标题无当前档（含清缓存）四种场景看两档存档都对。只用测试目录合成存档。
 - 玩家可见：天启篇里 57 名角色换成新名（如 五条悟→5t5、宿傩→大爷、伏黑甚尔→爹咪、小铃兰→我们的光、爱莉→粉红妖精），连带称号、职业、专属技能、号角、进阶石、专武说明、换装卡与对话；西游档不变。
 
 ## 交接板
@@ -52,6 +58,9 @@
 | `XActor.data()`（`looks.name` 过 `saved_actor_name`） | 全部 `display_name()` 读法 | 只在天启档、且 `looks.name` 正好是登记过的旧名时换；自订名字、西游档原样（d294_old_save_name_view、d294_custom_name）。 |
 | `XDB.table`（System 套改名、Plugins 套进阶名） | 全部读表处 | 西游档两个函数都直接返回。 |
 | `CACHE_VER` 4→5，签名加 `actor_names.json` | 文字修正磁盘缓存 | 改名表一变旧缓存就作废。 |
+| `XState.to_dict` 称号写入条件加 `nickname_saved`（R3） | 1 处（`git grep -n 'nickname_saved' -- '*.gd'`：actor.gd 定义、xstate.gd 读写、equipment.gd clone） | 只有读档时存档本来有 `nickname` 键才为真；新开档、没存过称号的档行为不变；clone 一并复制，预览副本不影响存档。 |
+| `XTextFix.actor_nickname`（R3 改整串匹配） | `XActor.display_nickname()` → actor_page、status_page、skin_status_page 3 处 | 西游档原样；天启档只换整串等于原称号的，长称号不换；默认称号本来就是天启表文字，不受影响。 |
+| `XTextFix.actor_name_in／actor_nickname_in`（R3 去掉 `tq_on()` 早退） | `git grep -nE 'actor_(rec_)?(nick)?name_in\(' -- '*.gd'`：xsave summary／summary_dict、save_scene、skin_save_page、entry 开局阵容、tianqi_start_page 2 处 | 要天启篇的都直接取 `names`（与原先在天启档里读表结果相同）；要西游的只在当前文字正好是新名时换回原名，否则原样。 |
 
 ## 测试
 
@@ -66,6 +75,8 @@
 - R2 云端选测第五轮（c2b6e63bc，基准 926737a34）：725 个场景，724 过、1 失败、1 偶发（xiyou_map_hotkeys 单跑通过算过）。https://github.com/luiluu/PlayAgain-xiyou-godot/actions/runs/45947518800
   - 失败的 `xiyou_text_fix` 断言其实 92/92 全过，是新断言里天启档样本沿用 Kit 的图号 0，存档预览读地图名时日志出「读取失败 maps/Map000.json」，跑测脚本把 ERROR 行算失败；改成给样本真图号 4（6bfc95f2f），本机 92/92、日志无 ERROR。
 - R2 云端选测第六轮（6bfc95f2f，基准 c2b6e63bc）：1/1 通过。https://github.com/luiluu/PlayAgain-xiyou-godot/actions/runs/45951006717
+- R3 本机：`xiyou_text_fix` 100/100（日志无 ERROR）、`xiyou_actor_change` 48/48、`xiyou_text_batch23` 28/28、`xiyou_ui_skin_card_j` 114/114；`语法检查.py` 1252 个 .gd 0 问题。
+- R3 云端选测第七轮（013357219，基准 5ec72d64d）：784 个场景、16 片，全部通过。https://github.com/luiluu/PlayAgain-xiyou-godot/actions/runs/45952924377
 - 截图：没截（本单验收不要求；名字由 xiyou_text_fix 两档断言覆盖）。
 
 ## 本分支提交
@@ -79,3 +90,4 @@
 - aa495569b T562 T528 专项的贝吉特代价描述按天启篇新名断言（cc）
 - c2b6e63bc T562 R2：跨档读档称号、存档预览取名、唯一标签缓存、旧天启档装备实例、回流校验单字与 note_add（cc）
 - 6bfc95f2f T562 R2 专项：天启档预览样本给真地图号（cc）
+- 013357219 T562 R3：读档不改称号存值、显示层整串换名、新版读档右牌按存档档位取名（cc）
