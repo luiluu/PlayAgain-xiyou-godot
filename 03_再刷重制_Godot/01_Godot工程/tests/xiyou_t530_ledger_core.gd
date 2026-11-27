@@ -100,7 +100,7 @@ func _run() -> void:
 	_test_2_affix_caps_and_suits()
 	_test_3_immunity_and_dual_element()
 	_test_4_penetration_def_ignore_and_text()
-	_test_5_regen_45_pct()
+	_test_5_regen_81_pct()
 	_test_6_combos_1_3_4_5()
 	_test_7_xiyou_untouched()
 	_test_8_t529_suit_mult_ledger()
@@ -522,7 +522,7 @@ func _test_4_penetration_def_ignore_and_text() -> void:
 
 
 # ---- 5. 每回合自动回复各线合计 81%（九.7甲＋Kyo 11-26 事项81 长生宝珠 45%），负再生不折 ----
-func _test_5_regen_45_pct() -> void:
+func _test_5_regen_81_pct() -> void:
 	var lg := _logic(true)
 	var s := lg.state
 	# 角色 113 黑猫猫自带 +30% hrg（应封到 10%）
