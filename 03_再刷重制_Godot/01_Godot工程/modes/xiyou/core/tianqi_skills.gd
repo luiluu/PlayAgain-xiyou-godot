@@ -671,7 +671,11 @@ static func rec_state(id: int, base: Dictionary) -> Dictionary:
 	var note := _note_edit(str(r.get("note", "")), sp)
 	note += str(sp.get("note_add", ""))
 	if sp.has("state_note"):
-		note = RegEx.create_from_string("(?s)<StateNote>.*?</StateNote>").sub(note, "<StateNote>\n%s\n</StateNote>" % str(sp.state_note))
+		var sn_re := RegEx.create_from_string("(?s)<StateNote>.*?</StateNote>")
+		if sp.get("state_note_append", false) and sn_re.search(note) == null:  # T528 R2：原记录没有 <StateNote> 的（贝吉特形态等）补一段，否则说明进不了运行时记录
+			note += "\n<StateNote>\n%s\n</StateNote>" % str(sp.state_note)
+		else:
+			note = sn_re.sub(note, "<StateNote>\n%s\n</StateNote>" % str(sp.state_note))
 	r.note = note
 	r.meta = parse_meta(note)
 	if YEP_RECOMPUTE:

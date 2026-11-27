@@ -62,6 +62,8 @@ func _run() -> void:
 	_test_1_innate_caps_runtime()
 	_test_1_folded_coefs()
 	_test_2_vegito_four_forms()
+	_test_2b_vegito_two_turn_upgrade()
+	_test_2c_vegito_cards()
 	_test_3_t527_outliers()
 	_test_5_xiyou_zero_change()
 
@@ -235,6 +237,70 @@ func _test_2_vegito_four_forms() -> void:
 		and is_equal_approx(harm, 0.30) and is_equal_approx(elem, 0.30)
 		and pooled.is_empty() and form_img == "clbjt",
 		[ra, rm, harm, elem, pooled.size(), form_img])
+
+
+## 2B. T528 R2（核查 P1-1）：真战斗里两回合升级——上一回合挂着旧形态，升级后下一回合施放新形态招，旧形态要被移除、终伤不越 +30%
+## 学会／遗忘照公共事件 1717（学 10563 忘 10562）、1720（学 10566 忘 10565）的内容手动做；回合结束／开始走 XBattleLogic.end_turn／start_turn。
+func _test_2b_vegito_two_turn_upgrade() -> void:
+	var s := _new_tianqi_state([164, 1, 2, 3])
+	var v: XActor = s.actor(164)
+	v.equips = []
+	v.skill_ids = [9940, 10562, 10568]
+	v.clear_states()
+	var lg := XBattleLogic.new()
+	lg.setup(2, s)
+	v.add_state(2776)
+	# 链一：五十倍界王拳 → 超赛 1
+	lg.start_turn()
+	lg.act(v, XDB.rec("Skills", 10562), v)
+	var had_2770 := v.is_state_affected(2770)
+	v.learn_skill(10563)
+	v.forget_skill(10562)
+	lg.end_turn()
+	lg.start_turn()
+	lg.act(v, XDB.rec("Skills", 10563), v)
+	_touch(v)
+	var h1 := float(v._passive_cache.get("globalHarmRi", 0.0))
+	_check("t2b_kaioken_to_ss1_replaces",
+		had_2770 and v.is_state_affected(2771) and not v.is_state_affected(2770) and is_equal_approx(h1, 0.20),
+		[had_2770, v.is_state_affected(2771), v.is_state_affected(2770), h1])
+	# 链二：超赛 3 → 超蓝
+	v.learn_skill(10565)
+	v.forget_skill(10563)
+	lg.end_turn()
+	lg.start_turn()
+	lg.act(v, XDB.rec("Skills", 10565), v)
+	var had_2773 := v.is_state_affected(2773) and not v.is_state_affected(2771)
+	v.learn_skill(10566)
+	v.forget_skill(10565)
+	lg.end_turn()
+	lg.start_turn()
+	lg.act(v, XDB.rec("Skills", 10566), v)
+	_touch(v)
+	var h2 := float(v._passive_cache.get("globalHarmRi", 0.0))
+	var forms := [2567, 2770, 2771, 2772, 2773, 2774].filter(func(id): return v.is_state_affected(id))
+	_check("t2b_ss3_to_blue_replaces",
+		had_2773 and forms == [2774] and is_equal_approx(h2, 0.30) and str(v.data().get("battlerName", "")) == "clbjt",
+		[had_2773, forms, h2, v.data().get("battlerName", "")])
+
+
+## 2C. T528 R2（核查 P2-2）：变身卡对象是自己、超蓝写战后倒下；形态状态说明进运行时记录
+func _test_2c_vegito_cards() -> void:
+	_new_tianqi_state([164])
+	var bad := []
+	for sid in [10563, 10564, 10565, 10566]:
+		var n := str(XDB.rec("Skills", sid).get("note", ""))
+		if not n.contains("对象:自己") or n.contains("单个敌人"):
+			bad.append(sid)
+	var blue := " ".join(XTianqiSkills.spec(10566).get("desc", []))
+	var notes := []
+	for stid in [2567, 2770, 2771, 2772, 2773, 2774]:
+		if not str(XDB.rec("States", stid).get("note", "")).contains("<StateNote>"):
+			notes.append(stid)
+	_check("t2c_vegito_cards_self_and_notes",
+		bad.is_empty() and blue.contains("战斗结束时，贝吉特会倒下") and notes.is_empty()
+		and str(XDB.rec("States", 2774).get("note", "")).contains("战斗结束时倒下"),
+		[bad, blue, notes])
 
 
 ## 3. T527 越线 4 人（107/167/171/175）D287 调数验证

@@ -1472,8 +1472,26 @@ INNATE_MUTEX_GROUPS = (
     frozenset(('sk:7500', 'sk:7517')),
     frozenset(('sk:10113', 'sk:10579', 'sk:10580', 'sk:10581', 'sk:10582', 'sk:10583',
                'sk:10585', 'sk:10586', 'sk:10587', 'sk:10588', 'sk:10589', 'sk:10591')),
-    frozenset(('st:2567', 'st:2770', 'st:2771', 'st:2772', 'st:2773', 'st:2774')),
 )
+# T528 R2（核查 P1-1）：贝吉特界王拳／超赛形态不再静态假定互斥——施放招要真的带「移除其余形态」（效果 22）才按互斥取最大，
+# 否则按叠加求和（会越线报错）。超蓝 2774 是终形：移除会触发倒下，其余招不移除它；低阶招在学超蓝前已被公共事件 1716～1720 遗忘。
+VEGETA_FORM_SKILLS = {'9943': '2567', '10562': '2770', '10563': '2771', '10564': '2772', '10565': '2773', '10566': '2774'}
+VEGETA_TERMINAL_FORM = '2774'
+
+
+def vegeta_mutex_missing(skills_sr: dict, db_skills: dict) -> list:
+    """返回缺的 [技能号, 该移除而没移除的状态号]；空表示形态互斥由数据落实。"""
+    missing = []
+    for sid, own in VEGETA_FORM_SKILLS.items():
+        sp = skills_sr.get(sid) or {}
+        effs = list(db_skills.get(sid, {}).get('effects', []))
+        rem = {(int(x[0]), int(x[1])) for x in sp.get('effects_remove', []) if isinstance(x, list) and len(x) >= 2}
+        effs = [e for e in effs if (int(e.get('code', -1)), int(e.get('dataId', -1))) not in rem] + list(sp.get('effects_add', []))
+        removed = {str(int(e.get('dataId', 0))) for e in effs if int(e.get('code', 0)) == 22 and float(e.get('value1', 0)) >= 1}
+        for other in VEGETA_FORM_SKILLS.values():
+            if other != own and other != VEGETA_TERMINAL_FORM and other not in removed:
+                missing.append([sid, other])
+    return missing
 
 _RE_HARM = re.compile(r'(?i)<passiveHarmRi:([-]?\d+(?:\.\d+)?)(%?)>')
 _RE_CRIT = re.compile(r'(?i)<passiveCrHarmRi:([-]?\d+(?:\.\d+)?)(%?)>')
@@ -1526,10 +1544,10 @@ def _scan_innate_note(note: str) -> dict:
     return res
 
 
-def _max_with_mutex(items: list) -> float:
+def _max_with_mutex(items: list, groups=INNATE_MUTEX_GROUPS) -> float:
     used = set()
     total = 0.0
-    for grp in INNATE_MUTEX_GROUPS:
+    for grp in groups:
         g_vals = [v for tag, v in items if tag in grp]
         if g_vals:
             total += max(g_vals)
@@ -1582,6 +1600,12 @@ def actor_innate_cap_rules(table: dict, db_dir=None) -> list:
     if not (has_db and (db_dir / 'Actors.json').is_file() and (db_dir / 'Classes.json').is_file() and (DATA_DIR / 'base_line.json').is_file()):
         return bad
 
+    groups = INNATE_MUTEX_GROUPS
+    miss = vegeta_mutex_missing(skills_sr, db_skills)
+    if miss:
+        bad.append('角色自带入池上限(T528)：贝吉特形态招没移除其余形态（效果 22），形态会叠加：%s' % miss)
+    else:
+        groups = groups + (frozenset('st:' + x for x in VEGETA_FORM_SKILLS.values()),)
     db_actors = {str(x['id']): x for x in json.loads((db_dir / 'Actors.json').read_text(encoding='utf-8')) if x}
     db_classes = {str(x['id']): x for x in json.loads((db_dir / 'Classes.json').read_text(encoding='utf-8')) if x}
     base_actors = json.loads((DATA_DIR / 'base_line.json').read_text(encoding='utf-8')).get('actors', {})
@@ -1657,19 +1681,19 @@ def actor_innate_cap_rules(table: dict, db_dir=None) -> list:
             for k, v in r['skill'].items():
                 if v > 0:
                     skill_src.setdefault(k, []).append(('st:' + stid, v))
-        hs = _max_with_mutex(harm_src)
-        cs = _max_with_mutex(crit_src)
+        hs = _max_with_mutex(harm_src, groups)
+        cs = _max_with_mutex(crit_src, groups)
         if hs > INNATE_CAPS['harm'] + 1e-6:
             bad.append('角色自带入池上限(T528)：actor/%s 合计终伤 +%.0f%% 超 +30%%' % (aid, hs))
         if cs > INNATE_CAPS['crit'] + 1e-6:
             bad.append('角色自带入池上限(T528)：actor/%s 合计爆伤 +%.0f%% 超 +50%%' % (aid, cs))
         for e, lst in elem_src.items():
-            es = _max_with_mutex(lst)
+            es = _max_with_mutex(lst, groups)
             if es > INNATE_CAPS['elem'] + 1e-6:
                 bad.append('角色自带入池上限(T528)：actor/%s 元素%s合计 +%.0f%% 超 +30%%' % (aid, e, es))
-        st_m = max((_max_with_mutex(lst) for k, lst in skill_src.items() if k.startswith('stype:')), default=0.0)
-        sk_m = max((_max_with_mutex(lst) for k, lst in skill_src.items() if k.startswith('sket:')), default=0.0)
-        sp_m = max((_max_with_mutex(lst) for k, lst in skill_src.items() if k.startswith('spass:')), default=0.0)
+        st_m = max((_max_with_mutex(lst, groups) for k, lst in skill_src.items() if k.startswith('stype:')), default=0.0)
+        sk_m = max((_max_with_mutex(lst, groups) for k, lst in skill_src.items() if k.startswith('sket:')), default=0.0)
+        sp_m = max((_max_with_mutex(lst, groups) for k, lst in skill_src.items() if k.startswith('spass:')), default=0.0)
         if st_m + sk_m + sp_m > INNATE_CAPS['skill'] + 1e-6:
             bad.append('角色自带入池上限(T528)：actor/%s 合计技能伤 +%.0f%% 超 +30%%' % (aid, st_m + sk_m + sp_m))
     return bad
