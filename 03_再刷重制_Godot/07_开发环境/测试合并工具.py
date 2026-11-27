@@ -2238,6 +2238,29 @@ for name in filter(None, files):
         self.assertEqual(self.call_task('blackflash', '--finish'), 0, self.last_output)
         self.assertFalse(wt.exists())
 
+    def test_case_alias_of_one_sheet_counts_once(self):
+        """T571（11-27）：任务名 T571、分支 cc/t571，候选名 cc_T571.md 在 macOS 不分大小写时读得到 cc_t571.md 本身。
+        只认提交树里逐字存在的路径：算一份，变更记录草稿只写一次。"""
+        self.cc_lane('t571')
+        self.put(str(merge.BOARD), '# board\n## 正在进行\n\n## 待交叉核查\n| cc/t571 |\n## end\n')
+        self.g('add', '.'); self.g('commit', '-m', 'board')
+        self.assertEqual(self.call_task('T571', '--branch', 'cc/t571'), 0, self.last_output)
+        self.assertEqual((self.root / merge.LOG).read_text().count('【cc】新写法'), 1)
+
+    def test_two_sheets_differing_only_in_case_refuse(self):
+        """小o 核 25f0e0779 P1：树里真有两份只差大小写、内容不同的交付单，按小写去重会放行其一、prepare 删两条路径。须拦下。"""
+        wt = self.cc_lane('dupcase')
+        blob = subprocess.run(['git', '-C', str(wt), 'hash-object', '-w', '--stdin'], input='# other\n- 状态：可合并\n',
+                              capture_output=True, text=True, check=True).stdout.strip()
+        self.g('update-index', '--add', '--cacheinfo', '100644,%s,00_项目管理/交付/cc_Dupcase.md' % blob, cwd=wt)
+        self.g('commit', '-m', 'case twin sheet', cwd=wt)
+        self.g('worktree', 'remove', '--force', str(wt))
+        self.put(str(merge.BOARD), '# board\n## 正在进行\n\n## 待交叉核查\n| cc/dupcase |\n## end\n')
+        self.g('add', '.'); self.g('commit', '-m', 'board')
+        self.assertEqual(self.call_task('Dupcase', '--branch', 'cc/dupcase'), 1, self.last_output)
+        self.assertIn('2 份交付单', self.last_output)
+        self.assertTrue((self.root / merge.BOARD).exists())
+
     def test_both_cc_and_claude_branches_ask_for_branch_option(self):
         wt = self.cc_lane('twin')
         self.g('branch', 'claude/twin', 'cc/twin')                        # 只有 cc/twin 有工作树时照工作树合并，不报错
