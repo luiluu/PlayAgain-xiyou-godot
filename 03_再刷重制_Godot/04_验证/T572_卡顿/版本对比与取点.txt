@@ -1,0 +1,20 @@
+# 版本对比（2400 帧画面探针，敌群 454，玩家存档；第一轮）
+HEAD rep1 RESULT speed=1 seg=true frames=2400 total_ms=24090 mean_ms=10.04 p50=1.18 p95=43.11 max=890.46 over50ms=108 actions=21
+HEAD rep1 RESULT speed=4 seg=true frames=2400 total_ms=22936 mean_ms=9.56 p50=1.18 p95=35.38 max=893.23 over50ms=75 actions=18
+562c783cf rep1 RESULT speed=1 seg=true frames=2400 total_ms=13981 mean_ms=5.83 p50=0.85 p95=21.36 max=170.88 over50ms=31 actions=20
+562c783cf rep1 RESULT speed=4 seg=true frames=2400 total_ms=12276 mean_ms=5.12 p50=0.70 p95=21.41 max=163.22 over50ms=26 actions=15
+1667d3cda rep1 RESULT speed=1 seg=true frames=2400 total_ms=21521 mean_ms=8.97 p50=1.21 p95=30.42 max=566.24 over50ms=66 actions=20
+1667d3cda rep1 RESULT speed=4 seg=true frames=2400 total_ms=18458 mean_ms=7.69 p50=1.08 p95=25.93 max=456.44 over50ms=62 actions=15
+HEAD rep2 RESULT speed=1 seg=true frames=2400 total_ms=24973 mean_ms=10.41 p50=1.22 p95=39.93 max=995.09 over50ms=88 actions=21
+
+# main 第一父链取点的逻辑基准（40 次行动；未修）
+562c783cf 补丁线 dev.485: BENCH acts=40 setup_ms=142.6 decide_ms=892.0 act_ms=5698.0 (per 142.4, worst 347.3) views_ms=203.3 turn_ms=365.6（剖析模式下，偏慢）
+518f475c7 2026-11-23 合并 luiluu/t430-comic-anim-event（dev.873）收尾 | BENCH acts=40 setup_ms=298.6 decide_ms=881.9 act_ms=9355.0 (per 233.9, worst 566.1) views_ms=470.5 turn_ms=707.3
+7971fd9a7 2026-11-21 合并 luiluu/t269（dev.830）收尾 | BENCH acts=30 setup_ms=209.3 decide_ms=354.2 act_ms=9151.4 (per 305.0, worst 563.8) views_ms=255.9 turn_ms=541.1
+43cc5b0b6 2026-11-20 合并 luiluu/cc-t277-six-dim-enemy-ai（dev.794）收尾 | BENCH acts=40 setup_ms=203.7 decide_ms=1279.9 act_ms=9683.0 (per 242.1, worst 541.5) views_ms=337.9 turn_ms=599.4
+e836f3867 2026-11-19 v0.03.03（0.485）补丁记录：T224＋T225 已推 | BENCH acts=40 setup_ms=174.6 decide_ms=856.4 act_ms=7469.6 (per 186.7, worst 465.1) views_ms=293.7 turn_ms=436.2
+934cc73a1 2026-11-18 合并 cc/t178-multi-hit（dev.711）收尾 | BENCH acts=40 setup_ms=297.3 decide_ms=1014.1 act_ms=6347.2 (per 158.7, worst 408.7) views_ms=243.0 turn_ms=422.5
+e805abe7e 2026-11-17 合并 gpt/mira-feet | BENCH acts=40 setup_ms=162.5 decide_ms=910.9 act_ms=6028.4 (per 150.7, worst 379.4) views_ms=231.4 turn_ms=403.8
+dce99e152 2026-11-16 合并 cc/zhengdao-party-rules（dev.632）收尾 | BENCH acts=40 setup_ms=160.3 decide_ms=818.1 act_ms=5708.4 (per 142.7, worst 233.7) views_ms=236.9 turn_ms=472.8
+10856b6b8 2026-11-14 核查销账：xa/canglong-formula-check（cc 乙档 11-14 通过） | BENCH acts=40 setup_ms=155.3 decide_ms=808.3 act_ms=6006.9 (per 150.2, worst 246.5) views_ms=235.6 turn_ms=355.0
+782d73588 2026-11-14: per 137.3

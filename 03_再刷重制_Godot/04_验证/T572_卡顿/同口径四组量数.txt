@@ -1,0 +1,17 @@
+补丁线修后(146a60a5d+T572) bench1 BENCH acts=40 setup_ms=251.9 decide_ms=754.3 act_ms=6175.0 (per 154.4, worst 360.9) views_ms=333.6 turn_ms=426.9
+补丁线修后(146a60a5d+T572) bench2 BENCH acts=40 setup_ms=273.6 decide_ms=867.8 act_ms=6581.6 (per 164.5, worst 388.7) views_ms=320.4 turn_ms=342.8
+补丁线修后(146a60a5d+T572) frame1 RESULT speed=1 seg=true frames=2400 total_ms=12678 mean_ms=5.28 p50=0.89 p95=16.56 max=316.46 over50ms=23 actions=19
+补丁线修后(146a60a5d+T572) frame4 RESULT speed=4 seg=true frames=2400 total_ms=11884 mean_ms=4.95 p50=0.87 p95=15.94 max=327.28 over50ms=22 actions=14
+补丁线修前(146a60a5d) bench1 BENCH acts=40 setup_ms=344.1 decide_ms=1394.0 act_ms=14091.3 (per 352.3, worst 847.3) views_ms=1024.1 turn_ms=792.4
+补丁线修前(146a60a5d) bench2 BENCH acts=40 setup_ms=333.3 decide_ms=1601.7 act_ms=14799.8 (per 370.0, worst 685.3) views_ms=992.4 turn_ms=942.6
+补丁线修前(146a60a5d) frame1 RESULT speed=1 seg=true frames=2400 total_ms=21576 mean_ms=8.99 p50=0.96 p95=34.90 max=717.09 over50ms=77 actions=19
+补丁线修前(146a60a5d) frame4 RESULT speed=4 seg=true frames=2400 total_ms=16861 mean_ms=7.03 p50=0.89 p95=17.22 max=544.29 over50ms=56 actions=17
+main修后(6238229b6) bench1 BENCH acts=40 setup_ms=301.0 decide_ms=900.8 act_ms=7178.6 (per 179.5, worst 385.7) views_ms=376.1 turn_ms=340.4
+main修后(6238229b6) bench2 BENCH acts=40 setup_ms=294.1 decide_ms=431.8 act_ms=8532.3 (per 213.3, worst 382.7) views_ms=386.1 turn_ms=545.0
+main修后(6238229b6) frame1 RESULT speed=1 seg=true frames=2400 total_ms=15719 mean_ms=6.55 p50=0.95 p95=19.82 max=379.87 over50ms=46 actions=23
+main修后(6238229b6) frame4 RESULT speed=4 seg=true frames=2400 total_ms=13894 mean_ms=5.79 p50=0.91 p95=16.14 max=303.64 over50ms=41 actions=19
+main修前(82fc26506) bench1 BENCH acts=40 setup_ms=379.6 decide_ms=1494.6 act_ms=15782.4 (per 394.6, worst 951.4) views_ms=1092.3 turn_ms=908.5
+main修前(82fc26506) bench2 BENCH acts=40 setup_ms=374.6 decide_ms=1539.7 act_ms=14959.9 (per 374.0, worst 877.6) views_ms=1019.2 turn_ms=901.0
+main修前(82fc26506) frame1 RESULT speed=1 seg=true frames=2400 total_ms=19770 mean_ms=8.24 p50=0.95 p95=31.34 max=766.31 over50ms=70 actions=20
+main修前(82fc26506) frame4 RESULT speed=4 seg=true frames=2400 total_ms=19627 mean_ms=8.18 p50=0.92 p95=28.24 max=1290.94 over50ms=69 actions=15
+ALLDONE
