@@ -759,7 +759,7 @@ func param_mark_dirty() -> void:
 	if param_cache_on:
 		param_dirty = true
 
-## T576（O-待定-7）：XResourceContext 里 gain 末尾的标脏（krz gainHp 等之后 need_refresh）。这一步之前只有资源写入，
+## T576（O-684）：XResourceContext 里 gain 末尾的标脏（krz gainHp 等之后 need_refresh）。这一步之前只有资源写入，
 ## 技能表、特性表的输入都没变：只作废只读窗口与跨步保留（同 HP／MP／TP 的写入器），技能表不换代。SKILLS_HOLD 关时同 param_mark_dirty
 func param_mark_dirty_resource() -> void:
 	if not XActor.SKILLS_HOLD:
