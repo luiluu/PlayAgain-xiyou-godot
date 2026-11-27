@@ -77,6 +77,9 @@
 - R2 云端选测第六轮（6bfc95f2f，基准 c2b6e63bc）：1/1 通过。https://github.com/luiluu/PlayAgain-xiyou-godot/actions/runs/45951006717
 - R3 本机：`xiyou_text_fix` 100/100（日志无 ERROR）、`xiyou_actor_change` 48/48、`xiyou_text_batch23` 28/28、`xiyou_ui_skin_card_j` 114/114；`语法检查.py` 1252 个 .gd 0 问题。
 - R3 云端选测第七轮（013357219，基准 5ec72d64d）：784 个场景、16 片，全部通过。https://github.com/luiluu/PlayAgain-xiyou-godot/actions/runs/45952924377
+- R4（小o R3 复核 P1-1）：`text_fix.gd` 的 `actor_nickname` 在天启档多认一种：整串等于完整西游默认称号（按 Actors 表现值经 `actor_nickname_in` 两向换算）时显示天启篇默认称号，修「丢你蕾姆」「狂龙刀法·南宫恨」「独门武学·南宫恨」三条；存值不改，含原称号的长自订照旧原样，西游档 `tq_on()` 为假直接返回、零改动。
+- R4 本机：`xiyou_text_fix` 103/103（新增 t562r4 热读、冷读、长自订三条；撤掉修复时 101/103，两条 t562r4 失败）。
+- R4 云端选测第八轮（9edffc62f，基准 fe7421ae5）：37 个场景、3 片，全部通过。https://github.com/luiluu/PlayAgain-xiyou-godot/actions/runs/45982982439
 - 截图：没截（本单验收不要求；名字由 xiyou_text_fix 两档断言覆盖）。
 
 ## 本分支提交
@@ -91,3 +94,4 @@
 - c2b6e63bc T562 R2：跨档读档称号、存档预览取名、唯一标签缓存、旧天启档装备实例、回流校验单字与 note_add（cc）
 - 6bfc95f2f T562 R2 专项：天启档预览样本给真地图号（cc）
 - 013357219 T562 R3：读档不改称号存值、显示层整串换名、新版读档右牌按存档档位取名（cc）
+- 9edffc62f T562 R4：天启档完整西游默认称号显示天启篇默认称号＋回归断言（cc）
