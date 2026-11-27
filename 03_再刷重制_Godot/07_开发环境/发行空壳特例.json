@@ -42,6 +42,7 @@
   "XTianqiGear.open_type": "true",
   "XTianqiGear.type_name": "BODY:var types: Array = XDB.system().get(\"equipTypes\", [])\nreturn str(types[etype]) if etype >= 0 and etype < types.size() else \"\"",
   "XTianqiGear.view": "range(a.equip_slots().size())",
+  "XTianqiGear.stat_list": "list",
   "XTianqiLineCards.pick": "-1",
   "XTianqiRandom.create_gear": "XGear.create(kind, base_id, s)",
   "XTianqiLook.main_color": "fallback",
