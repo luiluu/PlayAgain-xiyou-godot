@@ -136,6 +136,9 @@ var _check := {}
 ## 等待画面应答的消息 {token, frame, msg}；token 每场战斗递增，旧 token 无效
 var _waiting := {}
 var _event_token := 0
+## 强制行动之后的停顿（FORCE_YIELD）另用一串负数 token（-1、-2…）：不推进 _event_token，消息记录里的 token 与没有停顿时逐字相同；
+## 正负不重号，旧的消息 token 续不了停顿，反过来也一样（T576 返修，小o 合包核 P1-2）
+var _yield_token := 0
 ## 无界面宿主（run_turn）的消息应答：msg -> 选项序号／数值／null；未设置时确认（选项取默认项）
 var message_responder: Callable
 ## makeUniqueNames：敌人 → 字母（出现时才分配）、原名 → 已分配个数
@@ -1804,8 +1807,8 @@ func _drive_events() -> Array:
 				return logs
 			"forced_action":
 				if FORCE_YIELD and yield_forced:
-					_event_token += 1
-					_waiting = {"token": _event_token, "yield": true}
+					_yield_token -= 1
+					_waiting = {"token": _yield_token, "yield": true}
 					return logs
 			_:
 				for sk in _runner.skipped:

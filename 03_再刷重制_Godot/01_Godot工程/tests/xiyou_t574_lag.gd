@@ -216,6 +216,25 @@ func _events(make: Callable, troop: int, kill: bool, mode: String, reserve: int,
 	return {"logs": JSON.stringify(_plain(logs, l)).sha256_text(), "sig": _sig(l), "yields": yields, "forced": forced, "won": l.is_won(), "size": logs.size()}
 
 
+## run_turn 打到结束（最多 8 回合），原始日志不做摘要以外的处理（保留 message.token）
+func _run_turns(make: Callable, troop: int) -> Dictionary:
+	seed(572001)
+	var s: XState = make.call()
+	var l := XBattleLogic.new()
+	l.yield_forced = true
+	l.setup(troop, s, XBattleRandom.create(XRandomStream.hex64(572001)))
+	l.auto = true
+	l.enemies[0].hp = maxf(1.0, floorf(l.enemies[0].mhp * 0.19))
+	var logs := []
+	var rounds := 0
+	while rounds < 8 and not l.is_over():
+		rounds += 1
+		logs.append_array(l.run_turn({}))
+	var tokens := logs.filter(func(x): return x is Dictionary and str(x.get("type", "")) == "message").map(func(x): return int(x.token))
+	var text := JSON.stringify(_plain(logs, l))
+	return {"logs": text.sha256_text(), "size": text.length(), "sig": _sig(l), "tokens": tokens, "yields": -l._yield_token, "rounds": rounds}
+
+
 func _force_headless() -> void:
 	# 预约公共事件 1222：接连两次 339（8151 打敌全体、8153 奶我方全体）
 	for kill in [false, true]:
@@ -246,6 +265,20 @@ func _force_headless() -> void:
 	check("t776.three_yields", int(r776.step.yields) == 3, r776.step)
 	check("t776.step_same", r776.step.logs == r776.whole.logs and r776.step.sig == r776.whole.sig, [r776.step, r776.whole])
 	check("t776.run_same", r776.run.logs == r776.whole.logs and r776.run.sig == r776.whole.sig, [r776.run, r776.whole])
+	# 敌群 830（小o 合包核 P1-2）：首名敌人 19% 生命，敌群页先 339 强制行动再 101 文字。run_turn（无界面宿主，开着 yield_forced）
+	# 打到结束，开关两态原始日志（含 message.token）逐字相同；停顿走自己的负数 token，不推进消息的 token
+	var t830 := {}
+	for on in [true, false]:
+		if on:
+			XBattleLogic.FORCE_YIELD = true
+		else:
+			XBattleLogic.FORCE_YIELD = false
+		t830[on] = _run_turns(mk, 830)
+	XBattleLogic.FORCE_YIELD = true
+	print("T574 t830 on=%s off=%s" % [JSON.stringify(t830[true]).left(300), JSON.stringify(t830[false]).left(300)])
+	check("t830.has_message_after_yield", int(t830[true].yields) > 0 and (t830[true].tokens as Array).size() > 0, t830[true])
+	check("t830.tokens_same", t830[true].tokens == t830[false].tokens, [t830[true].tokens, t830[false].tokens])
+	check("t830.raw_same", t830[true].logs == t830[false].logs and t830[true].sig == t830[false].sig, [t830[true].size, t830[false].size])
 	# 回退：FORCE_YIELD 关着时开了 yield_forced 也不停
 	XBattleLogic.FORCE_YIELD = false
 	var off := _events(_doria_state, 2, false, "step", CE_ZHULANG, 1)
