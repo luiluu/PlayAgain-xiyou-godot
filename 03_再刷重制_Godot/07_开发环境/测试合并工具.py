@@ -2260,6 +2260,15 @@ for name in filter(None, files):
         self.assertEqual(self.call_task('Dupcase', '--branch', 'cc/dupcase'), 1, self.last_output)
         self.assertIn('2 份交付单', self.last_output)
         self.assertTrue((self.root / merge.BOARD).exists())
+        # 小o 复核第 2 轮：任务名写小写（带 --branch 与默认分支入口都试），大写那份原被收成附带交付单、退出 0
+        for args in (('dupcase', '--branch', 'cc/dupcase'), ('dupcase',)):
+            self.assertEqual(self.call_task(*args), 1, self.last_output)
+            self.assertIn('大小写重名', self.last_output)
+            self.assertIn('cc_Dupcase.md', self.last_output)
+            self.assertNotIn('【cc】新写法', (self.root / merge.LOG).read_text() if (self.root / merge.LOG).exists() else '')
+            self.assertEqual(self.g('status', '--porcelain'), '')
+        self.assertIn('00_项目管理/交付/cc_Dupcase.md', self.g('-c', 'core.quotepath=false', 'ls-tree', '-r', '--name-only', 'cc/dupcase'))
+        self.assertIn('00_项目管理/交付/cc_dupcase.md', self.g('-c', 'core.quotepath=false', 'ls-tree', '-r', '--name-only', 'cc/dupcase'))
 
     def test_both_cc_and_claude_branches_ask_for_branch_option(self):
         wt = self.cc_lane('twin')

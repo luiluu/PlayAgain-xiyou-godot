@@ -822,6 +822,16 @@ def plan(root, task, branch=None):
             check_opt_drafts(read(p), p, registry)        # 接续交付单的优化草稿照本期的查（tools39）
             extra.append(p)
     changed = [p for p in changed if p not in gone]
+    # 大小写重名一律拦（协调定，小o 复核 0006cb0b2 P1 第 2 轮）：主交付单、附带交付单与本次带来的交付目录文件按 casefold 比，
+    # 有两条相同就停，不分是不是同一文件、不自动去重。macOS 不分大小写，两份并存时读盘读到同一份，草稿会写两次／漏写、两条路径都删
+    sheet_paths = sorted({str(delivery), *extra, *(p for p in changed if p.startswith('00_项目管理/交付/') and p.endswith('.md'))})
+    folded = {}
+    for p in sheet_paths:
+        folded.setdefault(p.casefold(), []).append(p)
+    clash = [v for v in folded.values() if len(v) > 1]
+    if clash:
+        raise RuntimeError('交付单大小写重名（%s），须手工只留一份：车道删掉多的那份再交'
+                           % '；'.join('、'.join(v) for v in clash))
     no_uid = missing_gd_uids(root, fork, target)
     if no_uid:
         # 只提示不拦：--finish 收尾时 lane_uids 会把主工作区导入生成的 .uid 带进来；交付自检.py 把它算问题，在车道里就补上
