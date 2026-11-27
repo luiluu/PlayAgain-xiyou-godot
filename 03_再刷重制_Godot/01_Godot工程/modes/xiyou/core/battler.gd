@@ -28,6 +28,8 @@ var hp := 0.0:
 	set(v):
 		if immortal and v > 0.0 and hp <= 0.0:
 			immortal_rescues += 1  # T232 R1：序列 IMMORTAL 下 0 血被救回（回血／复活）的次数，七印待定击倒认溢出用
+		if v > 0.0 and not revive_rolled.is_empty():
+			revive_rolled.clear()  # T570 R1：重新有了生命，下次归零重新掷
 		hp = v
 		XActor._read_gen += 1
 		XActor._write_gen += 1
@@ -35,6 +37,9 @@ var hp := 0.0:
 var immortal := false
 ## T232 R1：挂 IMMORTAL 时从 0 血被救回（hp 从 ≤0 写成 >0）计一次；不参与任何结算，只给七印判「待定击倒的溢出还算不算数」
 var immortal_rescues := 0
+## T570 R1：天启篇单掷骰复活（cond.once_per_fall）在这次归零里已经掷过的状态号 → true；hp 写成 >0 时清空。
+## 多段攻击里目标 0 血暂缓阵亡，后续命中会再跑 Deselect，靠它让同一次倒下只掷一次。不存档。
+var revive_rolled := {}
 ## A resource refresh can leave HP zero while death is resisted/removed in this result.
 var resource_death_blocked := false
 ## krz_state_re 的能力值缓存（Game_Enemy.param 的 _ParamCache2／need_refresh_param，正式版战斗中才用）：开战后读过的格子
@@ -583,6 +588,7 @@ func _add_state(id: int, random: XRandomStream = null) -> void:
 	if source != null:
 		state_origins[id] = weakref(source)
 	XTianqiTrumpet.state_added(self, id, source)  # 天启篇号卷三号：自己上的减益回合数 ×1.33
+	XTianqiSkills.state_cast(id, source)  # T570 R1：普通闪躲每次成功施放给绯红之夜一次保护
 	# Game_Battler.addState：新附加的状态 refresh 后由 krz 标 dirty；已有状态（_Fix_StackOverflow 分支）只续回合
 	if fresh:
 		if lifecycle_context.get("resources") != null:

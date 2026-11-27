@@ -727,7 +727,7 @@ static func rec_state(id: int, base: Dictionary) -> Dictionary:
 			e.steps = steps
 			if rv.has("chance"):
 				if str(e.cond.get("kind", "")) == "down_each" and REVIVE_SINGLE_ROLL:  # T570：原版倒下时 hp≤0、isDead 各掷一次，30% 实为约 51%；天启篇改成每次倒下掷一次
-					e.cond = {"kind": "down", "below": float(rv.chance)}
+					e.cond = {"kind": "down", "below": float(rv.chance), "once_per_fall": true, "state": id}
 				elif str(e.cond.get("kind", "")) == "down_each":
 					e.cond.above = 1.0 - float(rv.chance)
 				elif str(e.cond.get("kind", "")) == "down":
@@ -753,6 +753,23 @@ static func rec_state(id: int, base: Dictionary) -> Dictionary:
 ## T570 回退开关：false 回到 T570 之前（down_each 两次掷骰约 51%；effect_nums／effect_floor_hp_gain 不改预编译效果）
 static var REVIVE_SINGLE_ROLL := true
 static var EFFECT_NUMS := true
+## T570 R1 回退开关：false＝绯红之夜只在开战（Battle 阶段）发次数，施法挂上／续上不补发
+static var CAST_GRANT := true
+
+
+## T570 R1：状态表 cast_grant＝true——这条状态在行动里被挂上（含已有时续上）就把它 Battle 阶段 set_variable 的那个变量至少置成该值。
+## 2560 绯红之夜：次数存在变量里（新源 1597），原版只在 Battle 阶段（开战）初始化，普通闪躲当场施放给不了保护、用完同场续施也补不回。
+static func state_cast(id: int, source) -> void:
+	if source == null or not CAST_GRANT or XState.current == null or not has_state(id) or not cards_on():
+		return
+	if not (_states[id] is Dictionary and bool((_states[id] as Dictionary).get("cast_grant", false))):
+		return
+	var effs = XDB.rec("States", id).get("effects")
+	if not effs is Array:
+		return
+	for e in effs:
+		if e is Dictionary and str(e.get("phase", "")) == "battle" and str(e.get("op", "")) == "set_variable" and XStateEffects._variable_writable(int(e.id)):
+			XState.current.set_variable(int(e.id), maxf(XState.current.variable(int(e.id)), float(e.value)))
 
 
 ## effects 里（含 fixed／fixed2 各份程序）值等于 old 的数字字面量换成 new；顶层 op（set_variable 之类）的 value 同理

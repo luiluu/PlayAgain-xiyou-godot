@@ -630,6 +630,10 @@ class SkillReworkGrowth(unittest.TestCase):
             self.assertTrue(any('states/850 effect_nums' in b for b in chk.skill_rework_rules(t)), repr(wrong))
         t['states']['850']['effect_floor_hp_gain'] = 1
         self.assertTrue(any('states/850 effect_floor_hp_gain' in b for b in chk.skill_rework_rules(t)))
+        t['states']['850']['cast_grant'] = True
+        self.assertFalse([b for b in chk.skill_rework_rules(t) if 'cast_grant' in b])
+        t['states']['850']['cast_grant'] = 1
+        self.assertTrue(any('states/850 cast_grant' in b for b in chk.skill_rework_rules(t)))
 
     def test_battle_end_bool(self):
         t = self._table()

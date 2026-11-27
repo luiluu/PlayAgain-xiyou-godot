@@ -749,6 +749,10 @@ static func _revive_cond(cond: Dictionary, t: XBattler, c: Dictionary) -> bool:
 		"down":
 			if not (t.hp <= 0.0 or t.is_dead()):
 				return false
+			if cond.get("once_per_fall", false):  # T570 R1：天启篇同一次归零只掷一次（多段攻击暂缓阵亡时后续命中不再掷）
+				if t.revive_rolled.has(int(cond.state)):
+					return false
+				t.revive_rolled[int(cond.state)] = true
 			return not cond.has("below") or (random != null and random.next_float("state_effect", "revive") < float(cond.below))
 		"down_each":
 			if random == null:
