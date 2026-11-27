@@ -91,14 +91,16 @@ const FABAO_GROW_ALL := 12       # 每级全属性 +12（原 15）
 const FABAO_GROW_MMP_EXTRA := 18 # 魔法额外 +18，即每级 +30（原额外 +35，即 +50）
 
 ## Weapon 76 绣冬（75 级专属主手，方案 B：承接主要输出，保留 2301 紫炎与成长）
-const XIUDONG_ATK_PCT_888 := 197     # 物攻能力值 *197%（原 300%；T468 法宝 99→888 折算开启口径 176%；T586 剑九「收剑」压低每回合 4 动的 75/80 级，补到 197%）
-const XIUDONG_ATK_PCT_99 := 153      # 物攻能力值 *153%（T440 原 99 级法宝口径 137%，SCALE_99_TO_888 关闭时联动回退；T586 同比补到 153%）
+const XIUDONG_ATK_PCT_888 := 176     # 物攻能力值 *176%（原 300%；T468 法宝 99→888 折算开启口径）
+const XIUDONG_ATK_PCT_99 := 137      # 物攻能力值 *137%（T440 原 99 级法宝口径，SCALE_99_TO_888 关闭时联动回退）
 const XIUDONG_EL_AMP := 290      # 11 元素增幅 +290%（原 +600%）
 const XIUDONG_HARM := 120        # 终伤/爆伤 +120%（原 +450%）
 const XIUDONG_GROW := 4          # 绣冬 76 每级物攻/魔攻 +4（原 +10）
 
 ## Armor 129 春雷（75 级专属副手，方案 B：保留再动+1、完整生存成长 mhp*200/mmp*150/agi*25 与 2301 紫炎，配轻输出词条）
-const CHUNLEI_ATK_PCT := 105     # 物攻能力值 *105%（原 300%）
+## T586：剑九「收剑」作废本回合剩下的行动，每回合 4 动的 75/80 全套掉得多 → 补在春雷（只影响全套，单穿绣冬分工不动）
+const CHUNLEI_ATK_PCT_888 := 118     # 物攻能力值 *118%（原 300%；T440 105%）
+const CHUNLEI_ATK_PCT_99 := 120      # 物攻能力值 *120%（SCALE_99_TO_888 关闭时联动回退；T440 105%）
 const CHUNLEI_EL_AMP := 45       # 11 元素增幅 +45%（原 +600%）
 const CHUNLEI_HARM := 5          # 终伤/爆伤 +5%（原 +450%）
 const CHUNLEI_ATK_GROW := 1      # 每级物攻/魔攻 +1（原 +30；生命 +200、魔法 +150、敏捷 +25 保留原值）
@@ -137,6 +139,11 @@ static func gunlong_atk_mul() -> int:
 ## 76 绣冬物攻能力值百分比：联动 XMagicWeapon.SCALE_99_TO_888（开 176，关回退 137）
 static func xiudong_atk_pct() -> int:
 	return XIUDONG_ATK_PCT_888 if XMagicWeapon.SCALE_99_TO_888 else XIUDONG_ATK_PCT_99
+
+
+## 129 春雷物攻能力值百分比：联动 XMagicWeapon.SCALE_99_TO_888（开 118，关 120）
+static func chunlei_atk_pct() -> int:
+	return CHUNLEI_ATK_PCT_888 if XMagicWeapon.SCALE_99_TO_888 else CHUNLEI_ATK_PCT_99
 
 
 ## 9995 剑九物攻系数：联动 XMagicWeapon.SCALE_99_TO_888
@@ -1033,7 +1040,7 @@ static func _patch_chunlei_129(a: Dictionary) -> void:
 	var new_traits := []
 	for tr in a.get("traits", []):
 		if int(tr.get("code", 0)) == 21 and int(tr.get("dataId", 0)) == 2:
-			tr.value = float(CHUNLEI_ATK_PCT) / 100.0
+			tr.value = float(chunlei_atk_pct()) / 100.0
 			new_traits.append(tr)
 		elif int(tr.get("code", 0)) == 61 and int(tr.get("dataId", 0)) == 0:
 			aplus_seen += 1
@@ -1063,7 +1070,7 @@ static func _patch_chunlei_129(a: Dictionary) -> void:
 	_replace_note_meta(a, "造成所有伤害结果*350%", "造成所有伤害结果*249%")
 	_replace_note_meta(a, "物理 、雷电 阴阳 混沌伤+600%", "物理 、雷电 阴阳 混沌伤+%d%%" % CHUNLEI_EL_AMP)
 	_replace_note_meta(a, "再动+2 ", "再动+1 ")
-	_replace_note_meta(a, "攻击力能力值*300%", "攻击力能力值*%d%%，爆伤+%d%%，伤害+%d%%" % [CHUNLEI_ATK_PCT, CHUNLEI_HARM, CHUNLEI_HARM])
+	_replace_note_meta(a, "攻击力能力值*300%", "攻击力能力值*%d%%，爆伤+%d%%，伤害+%d%%" % [chunlei_atk_pct(), CHUNLEI_HARM, CHUNLEI_HARM])
 
 
 # ---- 通用替换工具 ----

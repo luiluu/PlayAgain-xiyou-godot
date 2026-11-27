@@ -275,7 +275,7 @@ func _check_rework_data_and_text() -> void:
 		and n129.contains("造成所有伤害结果*249%")
 		and n129.contains("再动+1 ")
 		and n129.contains("混沌伤+%d%%" % XXufeng.CHUNLEI_EL_AMP)
-		and n129.contains("攻击力能力值*%d%%，爆伤+%d%%，伤害+%d%%" % [XXufeng.CHUNLEI_ATK_PCT, XXufeng.CHUNLEI_HARM, XXufeng.CHUNLEI_HARM]),
+		and n129.contains("攻击力能力值*%d%%，爆伤+%d%%，伤害+%d%%" % [XXufeng.chunlei_atk_pct(), XXufeng.CHUNLEI_HARM, XXufeng.CHUNLEI_HARM]),
 		n129)
 	# 装备检索面板（XGearQuery）：重做生效时绣冬/春雷基础特性均判定为「固定」，不会误判成「随机 / 附加」
 	var q_w76: Dictionary = XGearQuery.record(XGear.template("weapon", 76))
@@ -665,7 +665,7 @@ func _check_r2_migrations() -> void:
 		and str(w_on.note).contains("造成所有伤害结果*249%")
 		and is_equal_approx(float(w_on.customParams.params[2].level), float(XXufeng.XIUDONG_GROW))
 		and is_equal_approx(float(w_on.params[2]), 199.0)
-		and is_equal_approx(float(c_on.traits[0].value), float(XXufeng.CHUNLEI_ATK_PCT) / 100.0)
+		and is_equal_approx(float(c_on.traits[0].value), float(XXufeng.chunlei_atk_pct()) / 100.0)
 		and (c_on.traits as Array).filter(func(tr): return int(tr.code) == 61).size() == 1
 		and is_equal_approx(float(c_on.yep.elementAmplify["1"]), float(XXufeng.CHUNLEI_EL_AMP) / 100.0)
 		and str(c_on.meta.get("passiveHarmRi", "")) == str(XXufeng.CHUNLEI_HARM)
