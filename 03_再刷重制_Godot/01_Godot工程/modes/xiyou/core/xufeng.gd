@@ -66,22 +66,22 @@ const SWORDS := {
 }
 
 ## 9997 天下第一（80 级被动）＋ 表外状态 ST_TIANXIA（19501，保留神秘成圣双步机制）
-const TIANXIA_STATE_PCT := 1     # 神秘成圣（19501）终伤 +1%、暴击再 +1%（原 2525 为 +70%/+70%）
-const TIANXIA_HARM := 1          # 终伤/爆伤 +%（原 200）
-const TIANXIA_ELUP := 1          # 全属性伤害 +%（原 180）
-const TIANXIA_DEHARM := 10       # 无视所有抵抗 %（原 30）
-const TIANXIA_STAT_PCT := 1      # 六维属性 +%（原 200）
-const TIANXIA_MHP_FLAT := 20000  # 最大生命 +（原 100000）
-const TIANXIA_MHP_PCT := 50      # 最大生命 +%（原 500）
-const TIANXIA_MMP_FLAT := 10000  # 最大魔法 +（原 30000）
-const TIANXIA_MMP_PCT := 50      # 最大魔法 +%（原 300）
-const TIANXIA_CRIT_HIT := 50     # 暴击/命中 +%（原 500）
-const TIANXIA_APLUS := 1         # 再次行动几率 %（原 100）
+const TIANXIA_STATE_PCT := 4  # 神秘成圣（19501）终伤、暴击各 +%（原 2525 70%；T440 1）（T586 v0.4 平摊）
+const TIANXIA_HARM := 10  # 终伤/爆伤 +%（原 200；T440 1）（T586 v0.4 平摊）
+const TIANXIA_ELUP := 9  # 全属性伤害 +%（原 180；T440 1）（T586 v0.4 平摊）
+const TIANXIA_DEHARM := 30  # 无视所有抵抗 %（原 30；T440 10）（T586 v0.4 平摊）
+const TIANXIA_STAT_PCT := 10  # 六维属性 +%（原 200；T440 1）（T586 v0.4 平摊）
+const TIANXIA_MHP_FLAT := 50000  # 最大生命 +（原 100000；T440 20000）（T586 v0.4 平摊）
+const TIANXIA_MHP_PCT := 250  # 最大生命 +%（原 500；T440 50）（T586 v0.4 平摊）
+const TIANXIA_MMP_FLAT := 15000  # 最大魔法 +（原 30000；T440 10000）（T586 v0.4 平摊）
+const TIANXIA_MMP_PCT := 150  # 最大魔法 +%（原 300；T440 50）（T586 v0.4 平摊）
+const TIANXIA_CRIT_HIT := 250  # 暴击/命中 +%（原 500；T440 50）（T586 v0.4 平摊）
+const TIANXIA_APLUS := 5  # 再次行动几率 %（原 100；T440 1）（T586 v0.4 平摊）
 
 ## 9998 剑气滚龙壁·封印（每段公式，去 b.hp*0.000015）与 State 2539 真·剑九
 const GUNLONG_BASE := 666666         # 保留原版固定底数
-const GUNLONG_ATK_MUL_888 := 130000  # 物攻整数系数（原 3000 + b.hp*0.000015；T468 法宝 99→888 折算开启口径）
-const GUNLONG_ATK_MUL_99 := 209000   # 物攻整数系数（T440 原 99 级法宝口径，SCALE_99_TO_888 关闭时联动回退）
+const GUNLONG_ATK_MUL_888 := 111000  # 物攻整数系数（原 3000 + b.hp*0.000015；T468 法宝 99→888 折算开启口径；T440 130000；T586 剑九多给、9998 抵回）
+const GUNLONG_ATK_MUL_99 := 179000  # 物攻整数系数（99 级法宝口径，SCALE_99_TO_888 关闭时联动回退；T440 209000）
 const ST2539_RATE := 2               # 真·剑九终伤加成整数倍（2 → +200%，原 5 → +500%）
 
 ## Armor 143 徐凤年·不朽法宝（保留全部 11 条 traits）
@@ -98,12 +98,12 @@ const XIUDONG_HARM := 120        # 终伤/爆伤 +120%（原 +450%）
 const XIUDONG_GROW := 4          # 绣冬 76 每级物攻/魔攻 +4（原 +10）
 
 ## Armor 129 春雷（75 级专属副手，方案 B：保留再动+1、完整生存成长 mhp*200/mmp*150/agi*25 与 2301 紫炎，配轻输出词条）
-## T586：剑九「收剑」作废本回合剩下的行动，每回合 4 动的 75/80 全套掉得多 → 补在春雷（只影响全套，单穿绣冬分工不动）
-const CHUNLEI_ATK_PCT_888 := 118     # 物攻能力值 *118%（原 300%；T440 105%）
-const CHUNLEI_ATK_PCT_99 := 120      # 物攻能力值 *120%（SCALE_99_TO_888 关闭时联动回退；T440 105%）
-const CHUNLEI_EL_AMP := 45       # 11 元素增幅 +45%（原 +600%）
-const CHUNLEI_HARM := 5          # 终伤/爆伤 +5%（原 +450%）
-const CHUNLEI_ATK_GROW := 1      # 每级物攻/魔攻 +1（原 +30；生命 +200、魔法 +150、敏捷 +25 保留原值）
+## T586 v0.4：春雷各项都有份（不再把终伤、成长压到 1%），物攻回 T440 的 105%
+const CHUNLEI_ATK_PCT_888 := 105  # 物攻能力值 *%（原 300%；T440 105%）（T586 v0.4 平摊）
+const CHUNLEI_ATK_PCT_99 := 105  # 物攻能力值 *%（SCALE_99_TO_888 关闭时联动回退；T440 105%）（T586 v0.4 平摊）
+const CHUNLEI_EL_AMP := 90  # 11 元素增幅 +%（原 +600%；T440 45）（T586 v0.4 平摊）
+const CHUNLEI_HARM := 30  # 终伤/爆伤 +%（原 +450%；T440 5）（T586 v0.4 平摊）
+const CHUNLEI_ATK_GROW := 5  # 每级物攻/魔攻 +（原 +30；T440 1；生命 +200、魔法 +150、敏捷 +25 保留原值）（T586 v0.4 平摊）
 
 ## T586 主动四招：每段 (GUNLONG_BASE + 物攻×系数)×(1+熟练度)，与 9998 同形；系数整数、联动 SCALE_99_TO_888 [888 口径, 99 口径]
 ## 9998 每段 130000／209000、五段，下面「约 X 次 9998」都按此折算
@@ -113,9 +113,14 @@ const ACTIVE_SWORDS := {
 	9989: {"name": "剑三·三斤", "hits": 1, "scope": 1, "mul": [520000, 836000], "mp": 0, "tp": 30, "tp_gain": 0, "cd": 3},     # 单体一击约 0.8 次，50% 眩晕 1 回合
 }
 const SWORD3_STUN_PCT := 50
+## T586 v0.4 平摊（Kyo 11-27「平摊一下削弱给其他地方」）：T440 没动的两条高档被动也分担削弱
+const SK_SHENGZHE := 9976            # 圣者境界（60 级）
+const SHENGZHE_HARM := 90            # 暴伤／终伤 +%（原 100）
+const SK_JIANDAO := 10085            # 剑道唯吾（75 级）
+const JIANDAO_ELUP := 300            # 物理伤 +%（原 350）
 const JIAN9_HITS := 9
-const JIAN9_ATK_MUL_888 := 343000    # 九段合计约 4.75 次 9998（T586 第 2 轮，木桩实测定；第 1 轮 361000）
-const JIAN9_ATK_MUL_99 := 551000
+const JIAN9_ATK_MUL_888 := 380000  # 九段合计约 5.5 次 T440 的 9998（Kyo 11-28「剑9多给一点，因为背负的代价太大」）
+const JIAN9_ATK_MUL_99 := 611000  # 99 级法宝口径
 const JIAN9_TP := 50
 const JIAN9_WARMUP := 2              # 预热：每回合开始减 1，到 0 才能用 → 2 即开场冷却 1 回合、第 2 回合起可用（T586 专项实测）
 const JIAN9_COOLDOWN := 2            # 之后冷却 2 回合（战后冷却 −10 必清零）
@@ -185,7 +190,7 @@ static func touches(table_name: String, id: int) -> bool:
 	match table_name:
 		"Skills":
 			return id == SK_DAHUANGTING or id == SK_TIANXIA or id == SK_GUNLONG or SWORDS.has(id) \
-				or (LOCK_FIX and id == SK_GENELOCK) or (JIAN9 and id == SK_SWORD9)
+				or (LOCK_FIX and id == SK_GENELOCK) or (JIAN9 and id == SK_SWORD9) or id == SK_SHENGZHE or id == SK_JIANDAO
 		"States":
 			return id == ST_TRUE_SWORD9
 		"Armors":
@@ -219,6 +224,13 @@ static func rec(table_name: String, id: int, base: Dictionary) -> Dictionary:
 				_fix_genelock(r)
 			elif id == SK_SWORD9 and JIAN9:
 				_patch_jian9(r)
+			elif id == SK_SHENGZHE:
+				_replace_tag(r, "passiveHarmRi", str(SHENGZHE_HARM))
+				_replace_tag(r, "passiveCrHarmRi", str(SHENGZHE_HARM))
+				_replace_note_meta(r, "暴击伤害、最终伤害各＋100%", "暴击伤害、最终伤害各＋%d%%" % SHENGZHE_HARM)
+			elif id == SK_JIANDAO:
+				_replace_tag(r, "passiveELUP01", "%d%%" % JIANDAO_ELUP)
+				_replace_note_meta(r, "物理伤害+350%", "物理伤害+%d%%" % JIANDAO_ELUP)
 			elif id == SK_TIANXIA:
 				_patch_9997(r)
 				_redirect_9997_state(r)

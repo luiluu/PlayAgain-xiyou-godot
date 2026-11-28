@@ -930,8 +930,12 @@ func _check_dummy_tiers() -> void:
 			"xf_seeds": xf_list.map(func(v): return snappedf(v, 0.01)),
 		}))
 		if must_pass:
-			check("dummy.%s.ratio" % tag, ratio >= 1.15 and ratio <= 1.25,
-				{"kd_T": snappedf(kd_m, 0.01), "xf_T": snappedf(xf_m, 0.01), "ratio": snappedf(ratio, 0.0001)})
+			# T586（Kyo 11-27 定口径 B）：5 回合与 10 回合比值（各自五种子均值）取平均，守 1.15～1.25
+			var r10 := _ratio10(lv, art_lv, kd_wpn, xf_wpn, xf_off, seeds)
+			var avg := (ratio + r10) / 2.0
+			print("BENCHB ", tag, " ", JSON.stringify({"r5": snappedf(ratio, 0.0001), "r10": snappedf(r10, 0.0001), "avg": snappedf(avg, 0.0001)}))
+			check("dummy.%s.ratio_b" % tag, avg >= 1.15 and avg <= 1.25,
+				{"r5": snappedf(ratio, 0.0001), "r10": snappedf(r10, 0.0001), "avg": snappedf(avg, 0.0001)})
 		elif tag.ends_with("_single"):
 			check("dummy.%s.option_b_range" % tag, ratio >= 0.70 and ratio <= 0.85,
 				{"kd_T": snappedf(kd_m, 0.01), "xf_T": snappedf(xf_m, 0.01), "ratio": snappedf(ratio, 0.0001)})
@@ -943,10 +947,10 @@ func _check_dummy_tiers() -> void:
 	var sk9998_off := XDB.rec("Skills", 9998)
 	var w76_off := XDB.rec("Weapons", 76)
 	check("scale_off.xufeng_联动_209000_137",
-		XXufeng.gunlong_atk_mul() == 209000
+		XXufeng.gunlong_atk_mul() == XXufeng.GUNLONG_ATK_MUL_99
 		and XXufeng.xiudong_atk_pct() == XXufeng.XIUDONG_ATK_PCT_99
-		and str(sk9998_off.damage.formula).contains("a.atk*209000")
-		and str(sk9998_off.note).contains("己·攻击力*209000")
+		and str(sk9998_off.damage.formula).contains("a.atk*%d" % XXufeng.GUNLONG_ATK_MUL_99)
+		and str(sk9998_off.note).contains("己·攻击力*%d" % XXufeng.GUNLONG_ATK_MUL_99)
 		and is_equal_approx(float(w76_off.traits[3].value), float(XXufeng.XIUDONG_ATK_PCT_99) / 100.0)
 		and str(w76_off.note).contains("攻击力能力值*%d%%" % XXufeng.XIUDONG_ATK_PCT_99),
 		[sk9998_off.damage.formula, w76_off.traits[3].value])
@@ -966,8 +970,11 @@ func _check_dummy_tiers() -> void:
 			"kd_T": snappedf(kd_m, 0.01), "xf_T": snappedf(xf_m, 0.01),
 			"ratio": snappedf(ratio, 0.0001),
 		}))
-		check("dummy.%s.ratio" % tag, ratio >= 1.15 and ratio <= 1.25,
-			{"kd_T": snappedf(kd_m, 0.01), "xf_T": snappedf(xf_m, 0.01), "ratio": snappedf(ratio, 0.0001)})
+		var r10 := _ratio10(int(row[1]), int(row[2]), int(row[3]), int(row[4]), int(row[5]), seeds)
+		var avg := (ratio + r10) / 2.0
+		print("BENCHB ", tag, " ", JSON.stringify({"r5": snappedf(ratio, 0.0001), "r10": snappedf(r10, 0.0001), "avg": snappedf(avg, 0.0001)}))
+		check("dummy.%s.ratio_b" % tag, avg >= 1.15 and avg <= 1.25,
+			{"r5": snappedf(ratio, 0.0001), "r10": snappedf(r10, 0.0001), "avg": snappedf(avg, 0.0001)})
 	XMagicWeapon.SCALE_99_TO_888 = true
 	XStateEffects.force_critical = false
 
@@ -979,7 +986,13 @@ func _mean(arr: Array) -> float:
 	return s / float(arr.size())
 
 
-func _bench_seeds(aid: int, art_id: int, wpn_id: int, off_id: int, lv: int, art_lv: int, mastery: int, seeds: Array) -> Array:
+func _ratio10(lv: int, art_lv: int, kd_wpn: int, xf_wpn: int, xf_off: int, seeds: Array) -> float:
+	var kd := _mean(_bench_seeds(122, 4575, kd_wpn, 0, lv, art_lv, 32, seeds, 10))
+	var xf := _mean(_bench_seeds(152, 143, xf_wpn, xf_off, lv, art_lv, 32, seeds, 10))
+	return xf / maxf(1e-9, kd)
+
+
+func _bench_seeds(aid: int, art_id: int, wpn_id: int, off_id: int, lv: int, art_lv: int, mastery: int, seeds: Array, rounds := 5) -> Array:
 	var out := []
 	for sd in seeds:
 		var s := XState.new_game_blank()
@@ -1015,7 +1028,7 @@ func _bench_seeds(aid: int, art_id: int, wpn_id: int, off_id: int, lv: int, art_
 		foe.recover_all()
 
 		var total_dmg := 0.0
-		for _t in 5:
+		for _t in rounds:
 			logic.start_turn()
 			var n_act := 1
 			for p in a.action_plus_set():
