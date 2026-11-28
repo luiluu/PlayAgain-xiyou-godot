@@ -101,7 +101,7 @@ func click_cell(c: Vector2i) -> void:
 ## WindowFit.apply 给安卓根窗口记了个居中 position（引擎挪不动窗口，但值记下了），引擎算 get_global_mouse_position 时把它
 ## 又减一次（安卓的鼠标坐标本来就是窗口内坐标）；T507 之前触屏分支用事件自身坐标把目的地改回正确格，掩盖了它。
 ## 开着时移动端点地用事件自身坐标、长按跟手用最近一次鼠标事件自身坐标，不读窗口 position；桌面一行不变。
-## WindowFit.MOBILE_SKIP（同号）从根上不再给移动端设窗口位置。回退：MOBILE_TAP_POS = false（O-待定·T587触屏坐标）。
+## WindowFit.MOBILE_SKIP（同号）从根上不再给移动端设窗口位置。回退：MOBILE_TAP_POS = false（O-690）。
 static var MOBILE_TAP_POS := true
 
 
