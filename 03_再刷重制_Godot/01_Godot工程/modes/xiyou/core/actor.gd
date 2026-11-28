@@ -1640,7 +1640,7 @@ func param(i: int) -> float:
 
 func _param_now(i: int) -> float:
 	var before_race := XTusu.param(self, i, XXuanBattle.param(self, i, XGuyu.param(self, i, XAlienBattle.param(self, i, XLiuying.param(self, i, XTianqiFamineAlien.actor_param(self, i, XTianqiPlagueAlien.actor_param(self, i, XTianqiRewards.actor_param(self, i, XTianqiHorsemen.actor_param(self, i, param_before_alien(i))))))))))
-	return XHubris.formula_param(self, i, XTianqiGrowth.unrace(self, i, before_race, XRaceBattle.param(self, i, before_race)))  # 天启篇饥荒线异化：终焉枯竭者降 MP 上限； 狂妄 evalDamageFormula 包装换掉目标的 param（最外层）：公式里物防按穿透打折；按原版安装先后由内到外：天启四骑士（疫病、病弱、识破、破产、碎甲，重制新加，最内层）→专属角色模块（米拉 2、宿傩 18）→小猫剑圣（20）→云裳（31）→流萤（新源 34，在云裳夹值之外）→异化逆骨（33）→谷雨储备（38）→璇共宿（41）→屠苏盾相补底（42）→种族祝福（53）；序号按冻结 v0.28 modules.json 从 1 数
+	return XXufeng.lijie_param(self, i, XHubris.formula_param(self, i, XTianqiGrowth.unrace(self, i, before_race, XRaceBattle.param(self, i, before_race))))  # T586 R2：剑九力竭最外层 ×50%； 天启篇饥荒线异化：终焉枯竭者降 MP 上限； 狂妄 evalDamageFormula 包装换掉目标的 param（最外层）：公式里物防按穿透打折；按原版安装先后由内到外：天启四骑士（疫病、病弱、识破、破产、碎甲，重制新加，最内层）→专属角色模块（米拉 2、宿傩 18）→小猫剑圣（20）→云裳（31）→流萤（新源 34，在云裳夹值之外）→异化逆骨（33）→谷雨储备（38）→璇共宿（41）→屠苏盾相补底（42）→种族祝福（53）；序号按冻结 v0.28 modules.json 从 1 数
 
 ## 异化包装之内的取值（逆骨的物攻改读物防取这一层，原版 old.call(this, 3)）
 func param_before_alien(i: int) -> float:

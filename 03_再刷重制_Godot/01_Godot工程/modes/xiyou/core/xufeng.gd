@@ -28,6 +28,9 @@ static var LOCK_FIX := true
 ## 去掉 9995 的空公共事件 1704、Hide in Battle、空效果开战状态 2538。只在 xiyou_save_on() 时经 rec 分派，天启篇（skill_rework.json）不读。
 ## 回退：JIAN9 = false（回到 T585 口径：剑一～剑三纯被动、9995 原样）。
 static var JIAN9 := true
+## T586 R2：力竭在属性最外层 ×50%（装备、被动等比率照乘，实际属性真减半），施放当回合状态栏只列收剑。
+## 设 false 回到 R1：力竭挂八项 −50% 能力值比率特性（与装备比率加算，全套时最大魔法只少约 25%）、收剑挂 +50% 抵消
+static var LIJIE_MUL := true
 
 const ACTOR := 152
 const SK_DAHUANGTING := 9985
@@ -300,15 +303,16 @@ static func out_state_rec(id: int, t: Array) -> Dictionary:
 		r.message2 = "%1收剑了！"
 		r.minTurns = 1
 		r.maxTurns = 1
-		# P2-1：力竭和收剑同时挂上，卡面写「下一回合力竭」→ 收剑在的这一回合把力竭的 −50% 加回来，属性照旧；回合末收剑解除后才真正减半
-		# （能力值比率是加算 1＋Σ(值−1)，见 XBattler.traits_pi，所以抵消项是 +(100−LIJIE_PARAM_PCT)%）
-		var traits: Array = (r.get("traits", []) as Array).duplicate(true)
-		for pid in 8:
-			traits.append({"code": 21, "dataId": pid, "value": float(200 - LIJIE_PARAM_PCT) / 100.0})
-		r.traits = traits
-		r.note = "<BuffType:收剑>\n<StateNote>\n剑九已出，本回合不能再行动\n</StateNote>"
+		if not LIJIE_MUL:
+			var traits: Array = (r.get("traits", []) as Array).duplicate(true)
+			for pid in 8:
+				traits.append({"code": 21, "dataId": pid, "value": float(200 - LIJIE_PARAM_PCT) / 100.0})
+			r.traits = traits
+		r.note = "<BuffType:收剑>\n<StateNote>\n剑九已出，本回合不能再行动\n收剑期间属性不变，下一回合力竭：全属性-%d%%\n</StateNote>" % (100 - LIJIE_PARAM_PCT) if LIJIE_MUL else "<BuffType:收剑>\n<StateNote>\n剑九已出，本回合不能再行动\n</StateNote>"
 	else:
-		# 持续 2、回合末解除：挂上的这回合（收剑抵消，属性不变）＋下一整回合（全属性 ×50%），能行动
+		# 持续 2、回合末解除：挂上的这回合（收剑在，属性不变、状态栏不显示）＋下一整回合（八项属性 ×50%），能行动
+		# T586 R2：不挂能力值比率特性——比率是加算 1＋Σ(值−1)（XBattler.traits_pi），装备 +100% 时 −50% 只剩少 25%；
+		# 改在 XActor._param_now 最外层乘 lijie_param，同等条件下实际属性真减半
 		r.name = "力竭"
 		r.message1 = "%1力竭了！"
 		r.message2 = "%1力竭了！"
@@ -317,12 +321,28 @@ static func out_state_rec(id: int, t: Array) -> Dictionary:
 		r.minTurns = 2
 		r.maxTurns = 2
 		r.traits = []
-		for pid in 8:
-			r.traits.append({"code": 21, "dataId": pid, "value": float(LIJIE_PARAM_PCT) / 100.0})
+		if not LIJIE_MUL:
+			for pid in 8:
+				r.traits.append({"code": 21, "dataId": pid, "value": float(LIJIE_PARAM_PCT) / 100.0})
 		r.note = "<BuffType:力竭>\n<StateNote>\n全属性-%d%%\n</StateNote>" % (100 - LIJIE_PARAM_PCT)
 	r.meta = XZhenqi.extract_meta(r.note)
 	_st_out_cache[id] = [src, r]
 	return r
+
+
+## T586 R2：力竭生效中（收剑已解除）＝八项属性在最外层 ×LIJIE_PARAM_PCT%；收剑还在的施放当回合不减
+static func lijie_active(b) -> bool:
+	return JIAN9 and LIJIE_MUL and b.state_ids.has(ST_LIJIE) and not b.state_ids.has(ST_SHOUJIAN)
+
+## XActor._param_now 最外层：力竭时属性乘 LIJIE_PARAM_PCT%（与装备、被动等各层相乘，不跟比率特性加算）
+static func lijie_param(b, _i: int, v: float) -> float:
+	if not lijie_active(b):
+		return v
+	return roundf(v * float(LIJIE_PARAM_PCT) / 100.0)
+
+## 状态栏与侧栏格子：施放当回合力竭还没生效，不显示（收剑的说明里写了下一回合力竭）
+static func lijie_hidden(b, id: int) -> bool:
+	return id == ST_LIJIE and JIAN9 and LIJIE_MUL and b.state_ids.has(ST_SHOUJIAN)
 
 
 # ---- 读档双向同步既有专属装备实例（P1-2） ----
@@ -890,7 +910,7 @@ static func _patch_jian9(s: Dictionary) -> void:
 	s.name = "剑九·六千里"
 	_drop_effect(s, 44, 1704)
 	_set_atk_formula(s, SK_SWORD9, jian9_atk_mul())
-	var seq := _set_seq(s, JIAN9_HITS, "target", [["Add State %d" % ST_SHOUJIAN, "user"], ["Add State %d" % ST_LIJIE, "user"]])  # P1-1：只打所选目标；先收剑再力竭，力竭当回合被收剑抵掉
+	var seq := _set_seq(s, JIAN9_HITS, "target", [["Add State %d" % ST_SHOUJIAN, "user"], ["Add State %d" % ST_LIJIE, "user"]])  # P1-1：只打所选目标；先收剑再力竭，收剑在的当回合力竭不生效（lijie_active）
 	var lines := PackedStringArray([
 		"<quality:5>", "<ici:5>",
 		"<Warmup: %d>" % JIAN9_WARMUP,

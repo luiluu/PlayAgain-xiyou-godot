@@ -40,6 +40,7 @@ func _run() -> void:
 	XXufeng.clear_cache()
 	_check_data_on()
 	_check_battle_flow()
+	_check_lijie_fullset()
 	_check_jian9_two_enemies()
 	_check_sword1_sword3()
 	_check_old_save()
@@ -154,7 +155,7 @@ func _check_data_on() -> void:
 	var st2 := XDB.rec("States", XXufeng.ST_SHOUJIAN)
 	var st3 := XDB.rec("States", XXufeng.ST_LIJIE)
 	check("on.states", str(st2.get("name", "")) == "收剑" and int(st2.restriction) == 4 and int(st2.maxTurns) == 1
-		and str(st3.get("name", "")) == "力竭" and int(st3.restriction) == 0 and int(st3.maxTurns) == 2 and st3.traits.size() == 8,
+		and str(st3.get("name", "")) == "力竭" and int(st3.restriction) == 0 and int(st3.maxTurns) == 2 and st3.traits.is_empty(),
 		[st2.get("name"), st3.get("name")])
 	check("on.table_pure", int(raw9995.occasion) == 2 and _has_effect(raw9995, 44, 1704) and int(raw9987.stypeId) == 4 and int(raw9987.occasion) == 1,
 		[raw9995.occasion, raw9987.stypeId])
@@ -212,6 +213,59 @@ func _check_battle_flow() -> void:
 	logic.end_battle(0)
 	check("flow.after_battle_clean", not a.is_state_affected(XXufeng.ST_SHOUJIAN) and not a.is_state_affected(XXufeng.ST_LIJIE)
 		and a.cooldown_left(9995) == 0, [a.state_ids, a.cooldowns])
+
+
+## T586 R2（小o P2-1）：80 级全套（装备有 +100% 最大魔法等比率）力竭也是八项实际属性减半；状态详情施放当回合不列力竭，下一回合列「力竭·1回合」
+func _check_lijie_fullset() -> void:
+	var s := _setup_actor(152, TIERS[3], 1)
+	var a: XActor = s.actor(152)
+	var sk9 := XDB.rec("Skills", 9995)
+	var logic := XBattleLogic.new()
+	logic.setup(70, s, XBattleRandom.create(str(s.random_master)))
+	var foe: XEnemy = logic.enemies[0]
+	foe.param_refresh()
+	foe.recover_all()
+	logic.start_turn()
+	logic.end_turn()
+	logic.start_turn()
+	a.tp = 100.0
+	a.param_mark_dirty()
+	var p0 := _params8(a)
+	check("full.rate_stacked", a.param_rate(1) > 1.5, a.param_rate(1))  # 夹具确有装备比率，加算会把 −50% 稀释
+	logic.act(a, sk9, foe)
+	foe.hp = foe.mhp
+	a.param_mark_dirty()
+	check("full.t2.params_unchanged", a.is_state_affected(XXufeng.ST_LIJIE) and _params8(a) == p0, [p0, _params8(a)])
+	var rows2 := XPartyStatusPanel.rows_for(a)
+	var ids2 := rows2.map(func(r): return int(r.id))
+	var sj := rows2.filter(func(r): return int(r.id) == XXufeng.ST_SHOUJIAN)
+	check("full.t2.panel", not ids2.has(XXufeng.ST_LIJIE) and sj.size() == 1 and str(sj[0].description).contains("下一回合力竭"), rows2)
+	logic.end_turn()
+	logic.start_turn()
+	a.param_mark_dirty()
+	var p3 := _params8(a)
+	var exact := true
+	for i in 8:
+		if absf(float(p3[i]) - roundf(float(p0[i]) * XXufeng.LIJIE_PARAM_PCT / 100.0)) > 1.0:
+			exact = false
+	check("full.t3.params_exact_half", exact, [p0, p3])
+	var lj := XPartyStatusPanel.rows_for(a).filter(func(r): return int(r.id) == XXufeng.ST_LIJIE)
+	check("full.t3.panel", lj.size() == 1 and str(lj[0].duration) == "1回合" and str(lj[0].description).contains("全属性-50%"), lj)
+	print("LIJIE_FULL ", JSON.stringify({"p0": p0, "p3": p3}))
+	logic.end_turn()
+	logic.start_turn()
+	a.param_mark_dirty()
+	check("full.t4.recovered", not a.is_state_affected(XXufeng.ST_LIJIE) and _params8(a) == p0, [p0, _params8(a)])
+	logic.end_battle(0)
+	# 回退开关：LIJIE_MUL=false 回到 R1（力竭挂八项 −50% 比率特性、收剑 +50% 抵消、状态栏不藏）
+	XXufeng.LIJIE_MUL = false
+	XXufeng.clear_cache()
+	var off3 := XDB.rec("States", XXufeng.ST_LIJIE)
+	var off2 := XDB.rec("States", XXufeng.ST_SHOUJIAN)
+	check("full.switch_off", off3.traits.size() == 8 and (off2.traits as Array).filter(func(t): return int(t.code) == 21).size() == 8
+		and not XXufeng.lijie_active(a) and not XXufeng.lijie_hidden(a, XXufeng.ST_LIJIE), [off3.traits.size(), off2.traits.size()])
+	XXufeng.LIJIE_MUL = true
+	XXufeng.clear_cache()
 
 
 func _params8(a: XActor) -> Array:
