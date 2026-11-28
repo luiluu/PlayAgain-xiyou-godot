@@ -124,6 +124,10 @@ func _is_d271_build() -> bool:
 
 
 func _ready() -> void:
+	# T580（T591 a2ad33fc9）：本探针不经 TestEnv.isolate（k_calibrate 自己建档），本机开着测试模式时技能升满、经验 ×10；这里把测试模式指到测试目录（关）
+	var real_on := XTestMode.enabled()
+	preload("res://tests/xiyou_test_env.gd").isolate_test_mode("user://test_t445_book_probe")
+	print("T580_TEST_MODE real=%s isolated=%s" % [real_on, XTestMode.enabled()])
 	for arg in OS.get_cmdline_user_args():
 		if arg.begins_with("--book-build="):
 			book_build = arg.trim_prefix("--book-build=")
