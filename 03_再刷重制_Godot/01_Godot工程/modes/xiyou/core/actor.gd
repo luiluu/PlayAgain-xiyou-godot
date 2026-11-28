@@ -1792,6 +1792,9 @@ func _refresh_passive_now() -> void:
 		for o in objs:
 			sig_notes.append(str(o.get("note", "")))
 			sig_meta.append((o.get("meta", {}) as Dictionary).hash())
+			# T532（小o 核 P1-3）：镶嵌、防具元素封顶开关只改 yep／upgrades，不改备注；
+			# R2：账本逐孔行记装备实例／底板／栏位，同底板同镶嵌的两件换装也要失效
+			sig_meta.append(hash([o.get("yep", {}), o.get("upgrades", []), o.get("instanceId", ""), o.get("base", o.get("id", 0)), o.get("etypeId", 0)]))
 		sig_meta.append(XTianqiLedger.state_origin_sig(self).hash())  # T530 P2-6：状态施加者变了不能用旧分桶
 		if not _pm_base.is_empty() and _pm_fix == FIX_CRIT_PUSH and _pm_meta == sig_meta and _pm_notes == sig_notes and _pm_base.has("bySource") == XTianqiLedger.bucketing():
 			var memo: Dictionary = _pm_base.duplicate(true)

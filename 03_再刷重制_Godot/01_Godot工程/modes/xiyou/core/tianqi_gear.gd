@@ -327,6 +327,7 @@ static func stat_list(list: Array) -> Array:
 		list = list.map(func(e): return element_fabao_view(e))  # 天启篇系别法宝（T442）：老档已有实例去原版特性/标签，只留本系或治疗 +10%
 	if elem_amp_on():
 		list = list.map(func(e): return elem_amp_view(e))  # T451：通用武器（5～50%）与保留栏位普通防具（5～20%）元素/物理增幅按档重调
+		list = armor_elem_capped(list)  # T532：普通防具本体元素伤全身合计 ≤ +20%（每系各算，武器全额不进）
 	list = list.filter(func(e): return not plain_mount(e)) if mount_on() else list  # 普通坐骑原来的特性不算（先滤，宝珠名额不让它占）
 	if not XTianqiOrbs.on():
 		return list
@@ -1214,7 +1215,11 @@ static func elem_amp_view(item):
 	if not (sp is Dictionary) or sp.is_empty():
 		return item
 	var src_note := str(item.get("note", ""))
-	var ckey := "%s:%d" % [kind, base_id]
+	var fin := armor_final_on() and kind == "armor" and sp.get("final") is Dictionary and plain_armor(item)
+	if fin:
+		sp = sp.final  # T532 终态：防具单件重排（ARMOR_FINAL，默认关，待 Kyo 定）
+	var amp: Dictionary = sp.get("amp", {})
+	var ckey := "%s:%d%s" % [kind, base_id, ":f" if fin else ""]
 	var c = _elem_amp_views.get(ckey)
 	if not (c is Array and c[0] == src_note):
 		var note := _rewrite_elem_amp_note(src_note, sp)
@@ -1223,6 +1228,88 @@ static func elem_amp_view(item):
 	var v: Dictionary = item.duplicate(false)
 	v["note"] = c[1]
 	v["meta"] = c[2]
-	v["yep"] = _rescaled_elem_amp_yep(item, kind, base_id, sp.get("amp", {}))
+	v["yep"] = _rescaled_elem_amp_yep(item, kind, base_id, amp)
 	v["_tq_ea_view"] = true
+	v["_tq_ea_amp"] = amp  # T532：本体那份（百分数整数），防具合计上限按它算
 	return v
+
+
+# ==== G. 固定词条元素伤终态（T532，预算稿 v0.16 九.2／附表四，D290）====
+## 开关（T532）：true＝天启篇普通防具（gear_elem_amp.json 的 armors 段）本体给的元素／物理增幅，全身合计每一系不超过 armor_cap.pct（+20%），
+## 超了各件按比例等缩；武器全额、不进这 20；宝珠、强化（晶石／神文）、符文之语、随机词条的增量不进、不缩；专武、系别法宝、神器、坐骑不在表里不进。
+## false＝回退到 T451（各件全额相加）。西游档恒不生效（elem_amp_on 守 XTianqi.active）。
+static var ARMOR_ELEM_CAP := true
+## 开关（T532 终态）：true＝防具单件改读 armors.<id>.final（重排后单件数，满穿合计入额）；false＝照 T451 单件 5～20%。
+## 改的是 Kyo 事项 50 亲定的数，Kyo 点头前默认关（协调 11-27 批）。
+static var ARMOR_FINAL := false
+## 进合计上限的防具栏（副手～戒指，etype 2～10）；法宝（13，系别法宝线）、坐骑（16）、神器（17，成长神器线）不进
+const ARMOR_CAP_ETYPES := [2, 3, 4, 5, 6, 7, 8, 9, 10]
+
+
+static func armor_final_on() -> bool:
+	return ARMOR_FINAL and elem_amp_on()
+
+
+static func armor_cap_pct() -> float:
+	return float(elem_amp_table().get("armor_cap", {}).get("pct", 20))
+
+
+## 防具本体元素伤全身合计上限：只缩表里普通防具本体那份（_tq_ea_amp），按每一系合计 ÷ 上限等比缩；不改原实例
+static func _armor_capped_slot(e) -> bool:
+	return e is Dictionary and e.get("_tq_ea_amp") is Dictionary and _kind(e) == "armor" and plain_armor(e)
+
+
+## 进 T532 合计上限／终态单件的「普通防具」：副手～戒指栏，且不是七印生成件（借原版底板编号与栏位，T082 已清底板效果）、不是天启篇奖励实例
+## （小o 核 P1-1：七印借号被当普通防具，抢额度又被缩）
+static func plain_armor(e) -> bool:
+	return e is Dictionary and ARMOR_CAP_ETYPES.has(int(e.get("etypeId", 0))) \
+		and XTianqiQiyinEffects.mark_of(e).is_empty() and XTianqiRewards.tag(e).is_empty()
+
+
+static func armor_elem_capped(list: Array) -> Array:
+	if not ARMOR_ELEM_CAP or not elem_amp_on():
+		return list
+	var sums := {}
+	for e in list:
+		if _armor_capped_slot(e):
+			for ek in e._tq_ea_amp:
+				sums[str(ek)] = float(sums.get(str(ek), 0.0)) + float(e._tq_ea_amp[ek])
+	var cap := armor_cap_pct()
+	var over := {}
+	for ek in sums:
+		if float(sums[ek]) > cap + 1e-9:
+			over[ek] = cap / float(sums[ek])
+	if over.is_empty():
+		return list
+	var out := []
+	for e in list:
+		if not _armor_capped_slot(e):
+			out.append(e)
+			continue
+		var hit := false
+		for ek in e._tq_ea_amp:
+			if over.has(str(ek)):
+				hit = true
+				break
+		if not hit:
+			out.append(e)
+			continue
+		var v: Dictionary = e.duplicate(false)
+		var yep: Dictionary = (e.get("yep", {}) as Dictionary).duplicate(true)
+		var ea: Dictionary = yep.get("elementAmplify", {}) if yep.get("elementAmplify") is Dictionary else {}
+		var scaled := {}
+		for ek in e._tq_ea_amp:
+			var ks := str(ek)
+			var base := float(e._tq_ea_amp[ek]) / 100.0
+			if over.has(ks):
+				var nb := base * float(over[ks])
+				ea[ks] = float(ea.get(ks, base)) - base + nb
+				scaled[ks] = nb * 100.0
+			else:
+				scaled[ks] = float(e._tq_ea_amp[ek])
+		yep["elementAmplify"] = ea
+		v["yep"] = yep
+		v["_tq_ea_amp"] = scaled
+		v["_tq_ea_capped"] = true
+		out.append(v)
+	return out
