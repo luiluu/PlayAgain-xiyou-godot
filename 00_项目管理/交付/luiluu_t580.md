@@ -1,7 +1,7 @@
 # 交付：luiluu/t580
 
 - 车道／工作者：T580 六维输出补算角色模块收尾追加（cc，claude-opus-5-5＋medium，P8；接 T558 量具）
-- 状态：进行中
+- 状态：可合并
 
 ## 变更记录草稿
 
@@ -152,3 +152,19 @@
 ## 西游档零改动
 
 - 只动探针、`六维打分.py`、`six_dim.json`（只在天启篇读）、六维报告与实测数据、六维专项；游戏代码一行没动。`xiyou_tianqi_six_dim` 第三节西游档中性通过。
+
+## 测试
+
+- `语法检查.py`：0 问题。`天启篇数据校验.py`：退出码 0（全部通过）。`发行空壳.py check`：退出码 0（88 个脚本、879 个函数都有）。
+- 本机前台（`--audio-driver Dummy`，96a3779ca 树，之后 six_dim.json 没再变）：xiyou_tianqi_six_dim 69/69、xiyou_tianqi_six_dim_book_boss 66/66、xiyou_tianqi_six_dim_radar 33/33、xiyou_tianqi_six_dim_resist 69/69、xiyou_tianqi_enemy_ai 103/103。
+- 云端选测：https://github.com/luiluu/PlayAgain-xiyou-godot/actions/runs/46103807314 （ecd99c0dd，整轮 843 个场景、16 片，`gh run watch` 等完）：通过；偶发 1 个 xiyou_tianqi_seed_fix（并行时失败、单跑通过，算通过）。
+- 量数：主跑 156 人×3 种子（151 人有量数）＋R4 口径基准轮＋种族／弱者对照轮各 3 种子，BOOK_PROBE 全部 invalid=false、violations=0；每片退出码 1 的是 5 个无伤害／停用的人没出行（同 R4）。
+
+## 本分支提交
+
+- 0215b2bba 炼狱探针 `--act-tail` 收角色模块收尾追加、摆渡鸦／饿狼门槛、10 倍保险、种族／弱者对照开关
+- 1d20dd5c5 全库三种子重量重出 six_dim.json、报告、实测数据；打分脚本记 10 倍保险名单
+- 96a3779ca 六维专项跟表（东方教主输出 B→D）
+- c63d2b2ba 摘 T591 a2ad33fc9（测试夹具隔离测试模式）
+- 6a11fa964 炼狱探针隔离测试模式
+- 2a18703a1、3b7a1732b、ecd99c0dd 及本提交：交付单
