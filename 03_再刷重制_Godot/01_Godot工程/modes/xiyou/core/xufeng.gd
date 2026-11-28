@@ -81,7 +81,7 @@ const TIANXIA_APLUS := 2  # 再次行动几率 %（原 100；T440 1）（T586 v0
 ## 9998 剑气滚龙壁·封印（每段公式，去 b.hp*0.000015）与 State 2539 真·剑九
 const GUNLONG_BASE := 666666         # 保留原版固定底数
 const GUNLONG_ATK_MUL_888 := 92000  # 物攻整数系数（原 3000 + b.hp*0.000015；T468 法宝 99→888 折算开启口径；T440 130000；T586 剑九多给、9998 抵回）
-const GUNLONG_ATK_MUL_99 := 148000  # 物攻整数系数（99 级法宝口径，SCALE_99_TO_888 关闭时联动回退；T440 209000）
+const GUNLONG_ATK_MUL_99 := 139000  # 物攻整数系数（99 级法宝口径，SCALE_99_TO_888 关闭时联动回退；T440 209000）
 const ST2539_RATE := 2               # 真·剑九终伤加成整数倍（2 → +200%，原 5 → +500%）
 
 ## Armor 143 徐凤年·不朽法宝（保留全部 11 条 traits）
@@ -102,25 +102,25 @@ const XIUDONG_GROW := 4          # 绣冬 76 每级物攻/魔攻 +4（原 +10）
 const CHUNLEI_ATK_PCT_888 := 105  # 物攻能力值 *%（原 300%；T440 105%）（T586 v0.4 平摊）
 const CHUNLEI_ATK_PCT_99 := 105  # 物攻能力值 *%（SCALE_99_TO_888 关闭时联动回退；T440 105%）（T586 v0.4 平摊）
 const CHUNLEI_EL_AMP := 90  # 11 元素增幅 +%（原 +600%；T440 45）（T586 v0.4 平摊）
-const CHUNLEI_HARM := 20  # 终伤/爆伤 +%（原 +450%；T440 5）（T586 v0.4 平摊）
+const CHUNLEI_HARM := 25  # 终伤/爆伤 +%（原 +450%；T440 5）（T586 v0.4 平摊）
 const CHUNLEI_ATK_GROW := 5  # 每级物攻/魔攻 +（原 +30；T440 1；生命 +200、魔法 +150、敏捷 +25 保留原值）（T586 v0.4 平摊）
 
 ## T586 主动四招：每段 (GUNLONG_BASE + 物攻×系数)×(1+熟练度)，与 9998 同形；系数整数、联动 SCALE_99_TO_888 [888 口径, 99 口径]
-## 9998 每段 130000／209000、五段，下面「约 X 次 9998」都按此折算
+## 9998 每段 92000／148000（T586 第 3 轮同比，原按 130000／209000 定）、五段，下面「约 X 次 9998」都按此折算
 const ACTIVE_SWORDS := {
-	9987: {"name": "剑一·龙蛇", "hits": 1, "scope": 6, "mul": [97000, 156000], "mp": 500, "tp": 0, "tp_gain": 5, "cd": 0},     # 随机敌人四段，合计约 0.6 次 9998；每段命中回 TP
-	9988: {"name": "剑二·并蒂莲", "hits": 2, "scope": 2, "mul": [260000, 418000], "mp": 0, "tp": 20, "tp_gain": 0, "cd": 2},   # 敌方全体两段，每个敌人约 0.8 次
-	9989: {"name": "剑三·三斤", "hits": 1, "scope": 1, "mul": [520000, 836000], "mp": 0, "tp": 30, "tp_gain": 0, "cd": 3},     # 单体一击约 0.8 次，50% 眩晕 1 回合
+	9987: {"name": "剑一·龙蛇", "hits": 1, "scope": 6, "mul": [69000, 110000], "mp": 500, "tp": 0, "tp_gain": 5, "cd": 0},     # 随机敌人四段，合计约 0.6 次 9998；每段命中回 TP
+	9988: {"name": "剑二·并蒂莲", "hits": 2, "scope": 2, "mul": [184000, 296000], "mp": 0, "tp": 20, "tp_gain": 0, "cd": 2},   # 敌方全体两段，每个敌人约 0.8 次
+	9989: {"name": "剑三·三斤", "hits": 1, "scope": 1, "mul": [368000, 592000], "mp": 0, "tp": 30, "tp_gain": 0, "cd": 3},     # 单体一击约 0.8 次，50% 眩晕 1 回合
 }
 const SWORD3_STUN_PCT := 50
 ## T586 v0.4 平摊（Kyo 11-27「平摊一下削弱给其他地方」）：T440 没动的两条高档被动也分担削弱
 const SK_SHENGZHE := 9976            # 圣者境界（60 级）
 const SHENGZHE_HARM := 90            # 暴伤／终伤 +%（原 100）
 const SK_JIANDAO := 10085            # 剑道唯吾（75 级）
-const JIANDAO_ELUP := 250            # 物理伤 +%（原 350）
+const JIANDAO_ELUP := 275            # 物理伤 +%（原 350）
 const JIAN9_HITS := 9
 const JIAN9_ATK_MUL_888 := 361000  # 九段合计约 5.5 次 T440 的 9998（Kyo 11-28「剑9多给一点，因为背负的代价太大」）
-const JIAN9_ATK_MUL_99 := 580000  # 99 级法宝口径
+const JIAN9_ATK_MUL_99 := 545000  # 99 级法宝口径
 const JIAN9_TP := 50
 const JIAN9_WARMUP := 2              # 预热：每回合开始减 1，到 0 才能用 → 2 即开场冷却 1 回合、第 2 回合起可用（T586 专项实测）
 const JIAN9_COOLDOWN := 2            # 之后冷却 2 回合（战后冷却 −10 必清零）
@@ -833,6 +833,7 @@ static func _aps(text: String) -> String:
 static func _patch_active_sword(s: Dictionary, id: int) -> void:
 	var cfg: Dictionary = ACTIVE_SWORDS[id]
 	var hits := int(cfg.hits)
+	s.name = str(cfg.name)
 	s.stypeId = 1
 	s.occasion = 1
 	s.scope = int(cfg.scope)
@@ -880,6 +881,7 @@ static func _patch_jian9(s: Dictionary) -> void:
 	s.tpCost = JIAN9_TP
 	s.successRate = 100
 	s.description = "战技\n劣马黄酒六千里"
+	s.name = "剑九·六千里"
 	_drop_effect(s, 44, 1704)
 	_set_atk_formula(s, SK_SWORD9, jian9_atk_mul())
 	var seq := _set_seq(s, JIAN9_HITS, "enemies", [["Add State %d" % ST_LIJIE, "user"], ["Add State %d" % ST_SHOUJIAN, "user"]])

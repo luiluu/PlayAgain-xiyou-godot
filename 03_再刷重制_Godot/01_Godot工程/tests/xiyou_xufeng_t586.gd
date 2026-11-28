@@ -11,7 +11,7 @@ extends Node
 ##    剑九一击（暴击／不暴击）对狂刀最强单招、三敌木桩、TP 不补满。
 var passed := 0
 var total := 0
-const CARD_BANNED := ["西游档", "天启", "启封", "a.atk", "skillMasteryLevel", "361000", "97000", "260000", "520000"]
+const CARD_BANNED := ["西游档", "天启", "启封", "a.atk", "skillMasteryLevel", "361000", "69000", "184000", "368000"]
 
 
 func check(tag: String, ok: bool, detail = null) -> void:
