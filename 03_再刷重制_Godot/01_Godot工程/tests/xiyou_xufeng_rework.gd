@@ -204,7 +204,7 @@ func _check_rework_data_and_text() -> void:
 		and XSmartAI.formula_safe(str(sk9998.damage.formula))
 		and sk9998.meta.has("StartPushState2539")
 		and int(sk9998.yepEffects) == 5
-		and n9998.contains("[%d+己·攻击力*%d]*[1+技能等级]" % [XXufeng.GUNLONG_BASE, XXufeng.gunlong_atk_mul()])
+		and n9998.contains("伤害:连续攻击单个敌人五次，伤害随攻击力和技能等级提升。") and not n9998.contains("己·攻击力")
 		and n9998.contains("消耗10tp"),
 		[sk9998.damage.formula, n9998])
 	var st2539_xy := XDB.rec("States", 2539)
@@ -951,7 +951,7 @@ func _check_dummy_tiers() -> void:
 		XXufeng.gunlong_atk_mul() == XXufeng.GUNLONG_ATK_MUL_99
 		and XXufeng.xiudong_atk_pct() == XXufeng.XIUDONG_ATK_PCT_99
 		and str(sk9998_off.damage.formula).contains("a.atk*%d" % XXufeng.GUNLONG_ATK_MUL_99)
-		and str(sk9998_off.note).contains("己·攻击力*%d" % XXufeng.GUNLONG_ATK_MUL_99)
+		and not str(sk9998_off.note).contains("己·攻击力")
 		and is_equal_approx(float(w76_off.traits[3].value), float(XXufeng.XIUDONG_ATK_PCT_99) / 100.0)
 		and str(w76_off.note).contains("攻击力能力值*%d%%" % XXufeng.XIUDONG_ATK_PCT_99),
 		[sk9998_off.damage.formula, w76_off.traits[3].value])

@@ -40,6 +40,7 @@ func _run() -> void:
 	XXufeng.clear_cache()
 	_check_data_on()
 	_check_battle_flow()
+	_check_jian9_two_enemies()
 	_check_sword1_sword3()
 	_check_old_save()
 	_check_off()
@@ -176,6 +177,7 @@ func _check_battle_flow() -> void:
 	a.tp = 100.0
 	check("flow.t2.can", logic.can_use(a, sk9), [a.warmups, a.cooldowns])
 	var atk0 := a.atk
+	var p0 := _params8(a)
 	var hits := 0
 	var dmg := 0.0
 	for e in logic.act(a, sk9, foe):
@@ -186,11 +188,20 @@ func _check_battle_flow() -> void:
 	check("flow.t2.nine_hits", hits == 9 and dmg > 0.0, [hits, dmg])
 	check("flow.t2.tp_paid", is_equal_approx(a.tp, 100.0 - XXufeng.JIAN9_TP) or a.tp < 100.0, a.tp)
 	check("flow.t2.shoujian", a.is_state_affected(XXufeng.ST_SHOUJIAN) and not logic.can_move(a), a.state_ids)
+	# P2-1：卡面写「下一回合力竭」→ 施放当回合八项属性不变
+	a.param_mark_dirty()
+	check("flow.t2.params_unchanged", a.is_state_affected(XXufeng.ST_LIJIE) and _params8(a) == p0, [p0, _params8(a)])
 	logic.end_turn()
 	logic.start_turn()
 	a.tp = 100.0
 	check("flow.t3.lijie", logic.can_move(a) and not a.is_state_affected(XXufeng.ST_SHOUJIAN) and a.is_state_affected(XXufeng.ST_LIJIE), a.state_ids)
 	check("flow.t3.atk_half", a.atk < atk0 * 0.6 and a.atk > atk0 * 0.4, [atk0, a.atk])
+	var p3 := _params8(a)
+	var halved := true
+	for i in 8:
+		if not (float(p3[i]) < float(p0[i]) * 0.6 and float(p3[i]) > float(p0[i]) * 0.4):
+			halved = false
+	check("flow.t3.params_half", halved, [p0, p3])
 	check("flow.t3.cooldown", not logic.can_use(a, sk9), a.cooldowns)
 	logic.end_turn()
 	logic.start_turn()
@@ -201,6 +212,55 @@ func _check_battle_flow() -> void:
 	logic.end_battle(0)
 	check("flow.after_battle_clean", not a.is_state_affected(XXufeng.ST_SHOUJIAN) and not a.is_state_affected(XXufeng.ST_LIJIE)
 		and a.cooldown_left(9995) == 0, [a.state_ids, a.cooldowns])
+
+
+func _params8(a: XActor) -> Array:
+	var out := []
+	for i in 8:
+		out.append(a.param(i))
+	return out
+
+
+## P1-1：两个敌人时剑九只打所选的那个（选中 9 段、未选中 0 段、未选中不掉血）
+func _check_jian9_two_enemies() -> void:
+	var s := _make_xiyou_state(80)
+	var a: XActor = s.actor(152)
+	var sk9 := XDB.rec("Skills", 9995)
+	var troops: Array = XDB.table("Troops")
+	var members_bak: Array = troops[70].members
+	var m2 := []
+	for i in 2:
+		var m: Dictionary = members_bak[0].duplicate(true)
+		m.x = int(m.get("x", 400)) + i * 60
+		m2.append(m)
+	troops[70].members = m2
+	var logic := XBattleLogic.new()
+	logic.setup(70, s, XBattleRandom.create(str(s.random_master)))
+	troops[70].members = members_bak
+	check("two.setup", logic.enemies.size() == 2, logic.enemies.size())
+	if logic.enemies.size() != 2:
+		return
+	for foe in logic.enemies:
+		foe.param_refresh()
+		foe.recover_all()
+	var picked: XEnemy = logic.enemies[1]
+	var other: XEnemy = logic.enemies[0]
+	logic.start_turn()
+	logic.end_turn()
+	logic.start_turn()
+	a.tp = 100.0
+	var hp_other := other.hp
+	var n_picked := 0
+	var n_other := 0
+	for e in logic.act(a, sk9, picked):
+		if e is Dictionary and str(e.get("type", "")) == "hit":
+			if is_same(e.get("target"), picked):
+				n_picked += 1
+			elif is_same(e.get("target"), other):
+				n_other += 1
+	print("TWO_ENEMIES jian9 picked=%d other=%d" % [n_picked, n_other])
+	check("two.jian9_9_0", n_picked == 9 and n_other == 0 and other.hp == hp_other, [n_picked, n_other, hp_other, other.hp])
+	logic.end_battle(0)
 
 
 func _check_sword1_sword3() -> void:

@@ -300,9 +300,15 @@ static func out_state_rec(id: int, t: Array) -> Dictionary:
 		r.message2 = "%1收剑了！"
 		r.minTurns = 1
 		r.maxTurns = 1
+		# P2-1：力竭和收剑同时挂上，卡面写「下一回合力竭」→ 收剑在的这一回合把力竭的 −50% 加回来，属性照旧；回合末收剑解除后才真正减半
+		# （能力值比率是加算 1＋Σ(值−1)，见 XBattler.traits_pi，所以抵消项是 +(100−LIJIE_PARAM_PCT)%）
+		var traits: Array = (r.get("traits", []) as Array).duplicate(true)
+		for pid in 8:
+			traits.append({"code": 21, "dataId": pid, "value": float(200 - LIJIE_PARAM_PCT) / 100.0})
+		r.traits = traits
 		r.note = "<BuffType:收剑>\n<StateNote>\n剑九已出，本回合不能再行动\n</StateNote>"
 	else:
-		# 持续 2、回合末解除：挂上的这回合（已收剑）＋下一整回合，全属性 ×50%，能行动
+		# 持续 2、回合末解除：挂上的这回合（收剑抵消，属性不变）＋下一整回合（全属性 ×50%），能行动
 		r.name = "力竭"
 		r.message1 = "%1力竭了！"
 		r.message2 = "%1力竭了！"
@@ -884,7 +890,7 @@ static func _patch_jian9(s: Dictionary) -> void:
 	s.name = "剑九·六千里"
 	_drop_effect(s, 44, 1704)
 	_set_atk_formula(s, SK_SWORD9, jian9_atk_mul())
-	var seq := _set_seq(s, JIAN9_HITS, "enemies", [["Add State %d" % ST_LIJIE, "user"], ["Add State %d" % ST_SHOUJIAN, "user"]])
+	var seq := _set_seq(s, JIAN9_HITS, "target", [["Add State %d" % ST_SHOUJIAN, "user"], ["Add State %d" % ST_LIJIE, "user"]])  # P1-1：只打所选目标；先收剑再力竭，力竭当回合被收剑抵掉
 	var lines := PackedStringArray([
 		"<quality:5>", "<ici:5>",
 		"<Warmup: %d>" % JIAN9_WARMUP,
@@ -991,9 +997,10 @@ static func _patch_9998(s) -> void:
 		}],
 		"result": "completion",
 	}
+	# T586 文字审 P2-2：卡面不写内部公式和攻击系数（运行时公式照旧在 damage.formula）
 	_replace_note_meta(s,
 		"[666666+己·攻击力*3000+敌·生命值*0.00001]*[1+技能等级]",
-		"[%d+己·攻击力*%d]*[1+技能等级]" % [GUNLONG_BASE, atk_mul])
+		"连续攻击单个敌人五次，伤害随攻击力和技能等级提升。")
 	_replace_note_meta(s, "老剑神李淳罡的绝学,消耗15tp", "老剑神李淳罡的绝学,消耗10tp")
 
 
