@@ -7,15 +7,25 @@
 extends RefCounted
 
 
-## 设 XSave.dir_override 与 XConfig.path_override 到 user://test_<name>，删掉上次留下的 options.json 并按默认值重读；
+## 设 XSave.dir_override 与 XConfig.path_override 到 user://test_<name>，删掉上次留下的 options.json 并按默认值重读；测试模式也指到这里（关，T591）；
 ## rift_seen 为真时把 rift1、rift2、rift3（漩涡二、三阶段，XRift）记成看过（立即写盘）。返回测试目录。
 static func isolate(name: String, rift_seen := true) -> String:
 	XSave.dir_override = "user://test_" + name
 	XConfig.path_override = XSave.dir().path_join("options.json")
 	DirAccess.remove_absolute(ProjectSettings.globalize_path(XConfig.path_override))
 	XConfig._loaded_path = "<unloaded>"
+	isolate_test_mode(XSave.dir())
 	if rift_seen:
 		XConfig.whisper_mark("rift1")
 		XConfig.whisper_mark("rift2")   # 漩涡二阶段过场（XRift，Map4 EV203：rift1 看过就播）同样占住大厅，一并记成看过
 		XConfig.whisper_mark("rift3")   # 漩涡三阶段过场（XRift，Map4 EV205：rift2 看过后下一次进大厅就播）同样占住大厅，一并记成看过
 	return XSave.dir()
+
+
+## T591：测试模式的解锁、状态文件指到测试目录（那里没有解锁文件＝测试模式关）。本机开发用户目录开着测试模式时，
+## 不隔离的话用过的技能结算后直接升满（西游档 Lv100000）、经验 ×10、掉落词缀加速，本机量数／截图和云端对不上。
+## 要测试模式的测试在这之后自己再设 override（照 xiyou_test_mode）。
+static func isolate_test_mode(dir: String) -> void:
+	XTestMode.unlock_override = dir.path_join("test_mode_unlock")
+	XTestMode.state_override = dir.path_join("test_mode_state")
+	XTestMode._on_loaded_from = "<unloaded>"
