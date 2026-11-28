@@ -5,6 +5,7 @@ const TestEnv = preload("res://tests/xiyou_test_env.gd")
 ## 2) 同一项属性只出现一次（织神天梭顶部八项已含成长，不另写加成行）；
 ## 3) 吞噬升级最低装备品级＝喂入判定 XFabaoFeed.min_grade 的当前一级，品级名与颜色照七档品质，到本层上限不写；
 ## 4) 天启篇的卡面开关开、关逐行相同；两个开关关掉回到原写法。
+## T595（Kyo 11-28）：不再写「法宝加成：当前值」行；开关 FABAO_NO_BONUS_ROW_T595 关掉回到 T588 写法。
 var passed := 0
 var total := 0
 
@@ -60,19 +61,22 @@ func _no_full_info(lines: Array) -> bool:
 func _run() -> void:
 	TestEnv.isolate("xiyou_fabao_card_t588")
 	var was_state := XState.current
-	var was := [XHelpCard.FABAO_BRIEF_T588, XHelpCard.FABAO_FEED_GRADE_T588]
+	var was := [XHelpCard.FABAO_BRIEF_T588, XHelpCard.FABAO_FEED_GRADE_T588, XHelpCard.FABAO_NO_BONUS_ROW_T595]
+	XHelpCard.FABAO_NO_BONUS_ROW_T595 = true
 	XHelpCard.FABAO_BRIEF_T588 = true
 	XHelpCard.FABAO_FEED_GRADE_T588 = true
 	_test_lines()
 	_test_all_fabao()
 	_test_feed_grade()
 	_test_tianqi_and_rollback()
+	_test_bonus_row_rollback()
 	_test_reinforced_once()
 	_test_evolve_and_over_cap()
 	_test_detail_key()
 	await _test_feed_layout()
 	XHelpCard.FABAO_BRIEF_T588 = was[0]
 	XHelpCard.FABAO_FEED_GRADE_T588 = was[1]
+	XHelpCard.FABAO_NO_BONUS_ROW_T595 = was[2]
 	XState.current = was_state
 	print("TEST_RESULT=" + JSON.stringify({"passed": passed, "total": total}))
 	get_tree().quit(0 if passed == total else 1)
@@ -82,12 +86,11 @@ func _test_lines() -> void:
 	var s := _state(1)
 	var zx := _gear("armor", 123, 5)
 	var note := str(zx.note)
-	var bonus := "法宝加成：全属性+%d" % int(XActor.magic_param(zx, 0))
 	for rows in _views(zx):
 		var lines := _plain(rows)
 		var at := lines.find("法宝等级：5/12")
 		check("zx.level_once", at >= 0 and _count(lines, "法宝等级：") == 1, lines)
-		check("zx.bonus_once_after_level", at >= 0 and lines.find(bonus) == at + 1 and _count(lines, "全属性+") == 1, lines)
+		check("zx.no_bonus_row", _count(lines, "法宝加成") == 0 and _count(lines, "全属性+") == 0, lines)
 		check("zx.no_full_info", _no_full_info(lines), lines)
 		var green: Array = rows.filter(func(r): return XHelpCard.plain(str(r[0])).contains("法宝等级："))
 		check("zx.level_green", green.size() == 1 and str(green[0][2]) == XHelpCard.FABAO_LEVEL_COLOR, green)
@@ -101,7 +104,7 @@ func _test_lines() -> void:
 	s.set_variable(20, 30)
 	zx["level"] = 99
 	var top := _plain(XHelpCard.content(zx))
-	check("zx.level99", top.has("法宝等级：99/99") and top.has("法宝加成：全属性+15984") and _no_full_info(top), top)
+	check("zx.level99", top.has("法宝等级：99/99") and _count(top, "法宝加成") == 0 and _no_full_info(top), top)
 
 	# 织神天梭：顶部八项之外不另写加成；原「当前等级」行换成同一写法
 	s.set_variable(20, 1)
@@ -121,8 +124,8 @@ func _test_lines() -> void:
 	for rows in _views(gr):
 		var lines := _plain(rows)
 		var at := lines.find("法宝等级：5/12")
-		check("garou.order", at >= 0 and at + 2 < lines.size() and str(lines[at + 1]).begins_with("经验：") and str(lines[at + 2]).begins_with("法宝加成：")
-			and _count(lines, "法宝等级：") == 1 and _count(lines, "法宝加成：") == 1 and _no_full_info(lines), lines)
+		check("garou.order", at >= 0 and at + 1 < lines.size() and str(lines[at + 1]).begins_with("经验：")
+			and _count(lines, "法宝等级：") == 1 and _count(lines, "法宝加成") == 0 and _no_full_info(lines), lines)
 
 
 ## 全库法宝：1 级、本层中段、99 级三种，等级行最多一行、不剩满级字样
@@ -142,7 +145,7 @@ func _test_all_fabao() -> void:
 				var item := _gear("weapon" if table == "Weapons" else "armor", int(rec.id), lv)
 				var lines := _plain(XHelpCard.content(item))
 				var text := "\n".join(PackedStringArray(lines))
-				if _count(lines, "法宝等级：%d/99" % lv) != 1 or _count(lines, "法宝加成：") > 1 or text.contains("累计") or text.contains("满级（") or text.contains("法宝满级") or text.contains("已满级") or _count(lines, "当前等级：") > 0:
+				if _count(lines, "法宝等级：%d/99" % lv) != 1 or _count(lines, "法宝加成") != 0 or text.contains("累计") or text.contains("满级（") or text.contains("法宝满级") or text.contains("已满级") or _count(lines, "当前等级：") > 0:
 					bad.append([int(rec.id), lv, lines])
 	check("all.seen", seen > 100, seen)
 	check("all.clean", bad.is_empty(), bad.slice(0, 2))
@@ -201,6 +204,24 @@ func _test_tianqi_and_rollback() -> void:
 	check("rollback.old_yunshang", old_ys.has("当前等级：5 / 12"), old_ys)
 	XHelpCard.FABAO_BRIEF_T588 = true
 	XHelpCard.FABAO_FEED_GRADE_T588 = true
+
+
+## T595 回退：开关关掉，普通法宝与破限之心各回来一行「法宝加成」，紧跟等级（经验）行；其余行逐行相同
+func _test_bonus_row_rollback() -> void:
+	_state(30)
+	for id in [123, 7904]:
+		var item := _gear("armor", id, 99)
+		var on := _plain(XHelpCard.content(item))
+		XHelpCard.FABAO_NO_BONUS_ROW_T595 = false
+		var off := _plain(XHelpCard.content(item))
+		XHelpCard.FABAO_NO_BONUS_ROW_T595 = true
+		var rest := off.filter(func(x): return not str(x).begins_with("法宝加成："))
+		check("t595.rollback.%d" % id, _count(off, "法宝加成：") == 1 and rest == on, [on, off])
+	var zx_item := _gear("armor", 123, 99)
+	XHelpCard.FABAO_NO_BONUS_ROW_T595 = false
+	var zx_off := _plain(XHelpCard.content(zx_item))
+	XHelpCard.FABAO_NO_BONUS_ROW_T595 = true
+	check("t595.rollback.text", zx_off.find("法宝加成：全属性+15984") == zx_off.find("法宝等级：99/99") + 1, zx_off)
 
 
 ## 用正常强化规则装补天石（随机数固定取高值）
