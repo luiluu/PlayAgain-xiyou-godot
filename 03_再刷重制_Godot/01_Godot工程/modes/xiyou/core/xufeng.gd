@@ -324,7 +324,7 @@ static func out_state_rec(id: int, t: Array) -> Dictionary:
 		if not LIJIE_MUL:
 			for pid in 8:
 				r.traits.append({"code": 21, "dataId": pid, "value": float(LIJIE_PARAM_PCT) / 100.0})
-		r.note = "<BuffType:力竭>\n<StateNote>\n全属性-%d%%\n</StateNote>" % (100 - LIJIE_PARAM_PCT)
+		r.note = "<BuffType:减益>\n<StateNote>\n全属性-%d%%\n</StateNote>" % (100 - LIJIE_PARAM_PCT)
 	r.meta = XZhenqi.extract_meta(r.note)
 	_st_out_cache[id] = [src, r]
 	return r

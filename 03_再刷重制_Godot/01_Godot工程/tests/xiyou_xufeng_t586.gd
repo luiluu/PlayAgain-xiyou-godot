@@ -250,7 +250,7 @@ func _check_lijie_fullset() -> void:
 			exact = false
 	check("full.t3.params_exact_half", exact, [p0, p3])
 	var lj := XPartyStatusPanel.rows_for(a).filter(func(r): return int(r.id) == XXufeng.ST_LIJIE)
-	check("full.t3.panel", lj.size() == 1 and str(lj[0].duration) == "1回合" and str(lj[0].description).contains("全属性-50%"), lj)
+	check("full.t3.panel", lj.size() == 1 and str(lj[0].duration) == "1回合" and str(lj[0].kind) == "异常" and str(lj[0].description).contains("全属性-50%"), lj)
 	print("LIJIE_FULL ", JSON.stringify({"p0": p0, "p3": p3}))
 	logic.end_turn()
 	logic.start_turn()
