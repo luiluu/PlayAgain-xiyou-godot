@@ -167,28 +167,29 @@ func _check_rework_data_and_text() -> void:
 	var sk9997 := XDB.rec("Skills", 9997)
 	var n9997 := str(sk9997.note)
 	check("9997.repoint_19501", sk9997.meta.has("StartPushState19501") and not sk9997.meta.has("StartPushState2525"), sk9997.meta.keys())
+	var X := XXufeng
 	check("9997.data_text",
-		str(sk9997.meta.get("passiveHarmRi", "")) == "1"
-		and str(sk9997.meta.get("passiveCrHarmRi", "")) == "1"
-		and str(sk9997.meta.get("passiveELUP01", "")) == "1%"
-		and str(sk9997.meta.get("DepassiveHarmRe01", "")).strip_edges() == "10%"
-		and str(sk9997.meta.get("passivePBST2", "")) == "1%"
-		and str(sk9997.meta.get("passiveAPLUS", "")) == "1%"
-		and n9997.contains("你有1%的几率再次行动")
-		and (n9997.contains("爆伤+1%，终伤+1%") or n9997.contains("爆伤+1%，伤害+1%"))
-		and n9997.contains("所有伤害+1%")
-		and n9997.contains("暴击率+50%") and n9997.contains("命中率+50%")
-		and n9997.contains("所有属性+1%")
-		and n9997.contains("最大魔法值+10000 +50%")
-		and n9997.contains("最大生命值+20000 +50%")
-		and n9997.contains("无视敌人所有抵抗10%"),
+		str(sk9997.meta.get("passiveHarmRi", "")) == str(X.TIANXIA_HARM)
+		and str(sk9997.meta.get("passiveCrHarmRi", "")) == str(X.TIANXIA_HARM)
+		and str(sk9997.meta.get("passiveELUP01", "")) == "%d%%" % X.TIANXIA_ELUP
+		and str(sk9997.meta.get("DepassiveHarmRe01", "")).strip_edges() == "%d%%" % X.TIANXIA_DEHARM
+		and str(sk9997.meta.get("passivePBST2", "")) == "%d%%" % X.TIANXIA_STAT_PCT
+		and str(sk9997.meta.get("passiveAPLUS", "")) == "%d%%" % X.TIANXIA_APLUS
+		and n9997.contains("你有%d%%的几率再次行动" % X.TIANXIA_APLUS)
+		and (n9997.contains("爆伤+%d%%，终伤+%d%%" % [X.TIANXIA_HARM, X.TIANXIA_HARM]) or n9997.contains("爆伤+%d%%，伤害+%d%%" % [X.TIANXIA_HARM, X.TIANXIA_HARM]))
+		and n9997.contains("所有伤害+%d%%" % X.TIANXIA_ELUP)
+		and n9997.contains("暴击率+%d%%" % X.TIANXIA_CRIT_HIT) and n9997.contains("命中率+%d%%" % X.TIANXIA_CRIT_HIT)
+		and n9997.contains("所有属性+%d%%" % X.TIANXIA_STAT_PCT)
+		and n9997.contains("最大魔法值+%d +%d%%" % [X.TIANXIA_MMP_FLAT, X.TIANXIA_MMP_PCT])
+		and n9997.contains("最大生命值+%d +%d%%" % [X.TIANXIA_MHP_FLAT, X.TIANXIA_MHP_PCT])
+		and n9997.contains("无视敌人所有抵抗%d%%" % X.TIANXIA_DEHARM),
 		n9997)
 	var st19501 := XDB.rec("States", XXufeng.ST_TIANXIA)
 	var st2525 := XDB.rec("States", 2525)
 	check("st19501_and_2525_intact",
 		int(st19501.get("id", 0)) == XXufeng.ST_TIANXIA
-		and is_equal_approx(float(st19501.effects[0].groups[0].steps[0].k), 0.01)
-		and is_equal_approx(float(st19501.effects[0].groups[0].steps[1].k), 0.01)
+		and is_equal_approx(float(st19501.effects[0].groups[0].steps[0].k), float(XXufeng.TIANXIA_STATE_PCT) / 100.0)
+		and is_equal_approx(float(st19501.effects[0].groups[0].steps[1].k), float(XXufeng.TIANXIA_STATE_PCT) / 100.0)
 		and is_equal_approx(float(st2525.effects[0].groups[0].steps[0].k), 0.7)
 		and XDB.rec("Skills", 9984).meta.has("StartPushState2525")
 		and XDB.rec("Skills", 10512).meta.has("StartPushState2525"),
