@@ -190,6 +190,7 @@
 
 ## 测试
 
+- **R2 轮**：云端选测通过，492 个场景、16 片（提交 9c737eb9cf，基准 0bb4060aaf），https://github.com/luiluu/PlayAgain-xiyou-godot/actions/runs/46109772605 （`gh run watch` 前台等完，success）；本机（临时 HOME 隔离测试模式）`xiyou_xufeng_t586` 53/53、`xiyou_xufeng_rework` 65/65（`PENDING_KYO` 5 条不在线内只打印）、`xiyou_xufeng_t585` 29/29、`xiyou_tianqi_xufeng` 33/33；语法检查 0 问题。
 - **返修轮**：云端选测通过，194 个场景、4 片（提交 d29357db34，基准 9b392462bb），https://github.com/luiluu/PlayAgain-xiyou-godot/actions/runs/46106491496 （`gh run watch` 前台等完，success）；本机 `xiyou_xufeng_t586` 46/46、`xiyou_xufeng_rework` 65/65（6 条 `PENDING_KYO` 只打印，数与改前逐位相同）、`xiyou_xufeng_t585`、`xiyou_tianqi_xufeng`、`xiyou_test_env_isolate` 通过；语法检查 1280 个 .gd 0 问题。
 - 以下是返修前：
 - 云端选测：通过，711 个场景、16 片（提交 6cc5a02993，基准 38702d755d），https://github.com/luiluu/PlayAgain-xiyou-godot/actions/runs/46100981583
