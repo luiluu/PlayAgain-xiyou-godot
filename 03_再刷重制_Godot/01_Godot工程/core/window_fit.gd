@@ -12,7 +12,7 @@ static func rectangle(usable: Rect2i) -> Rect2i:
 	return Rect2i(usable.position + (usable.size - dims) / 2, dims)
 
 ## T587：移动端（安卓／iOS）不设窗口大小和位置。引擎在安卓上挪不动根窗口、也不让改大小，但 position 会照样记下，
-## 之后引擎换算鼠标坐标时把它多减一次，点地目的地整体往左上偏（见 MVPlayer.MOBILE_TAP_POS）。回退：MOBILE_SKIP = false。
+## 之后引擎换算鼠标坐标时把它多减一次，点地目的地整体往左上偏（见 MVPlayer.MOBILE_TAP_POS）。回退：MOBILE_SKIP = false（O-待定·T587触屏坐标）。
 static var MOBILE_SKIP := true
 
 static func mobile_skip() -> bool:
