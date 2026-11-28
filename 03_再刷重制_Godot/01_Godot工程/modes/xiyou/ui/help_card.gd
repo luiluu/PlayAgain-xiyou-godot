@@ -242,6 +242,8 @@ static func desc_params(obj: Dictionary, type: int) -> Array:
 			pos[2] = rows.size()
 		1, 2:
 			var params: Array = XTianqiGear.effective_params(obj) if not XYunshang.relic_item(obj) else XYunshang.relic_params(obj)  # 期四装备八项（T104）：关着同 obj.params
+			if _fabao_merged(obj):
+				params = _fabao_merged_params(obj, params)
 			for i in range(params.size()):
 				if params[i] != null and float(params[i]) != 0.0:
 					rows.append([str(terms.get("params", [])[i]) + ":" + _num(params[i]), OTHER_SIZE, PARAM_COLORS[i], false, null])
@@ -746,6 +748,43 @@ static var FABAO_FEED_GRADE_T588 := true
 const FABAO_LEVEL_HEAD := "法宝等级："
 const FABAO_LEVEL_COLOR := "rgba(128,255,28,1)"  # 绿；不用 \c 码，免得被 sort_effects 当特效行挪走、和加成行拆开
 const FABAO_FEED_HEAD := "吞噬升级最低装备品级："
+const FABAO_OVER_CAP_HINT := "超出本层上限的等级会在推进楼层后恢复生效"
+
+
+## 法宝实例自带平加（补天石等强化、原件基础属性）时，成长并进顶部八项、不另写「法宝加成」，同一项只出现一次（核查 P2-1）。
+## 没有平加的法宝照旧写一行「法宝加成」。织神天梭本来就走 relic_params，不在这里。
+static func _fabao_merged(obj: Dictionary) -> bool:
+	if not FABAO_BRIEF_T588 or XYunshang.relic_item(obj) or not XMagicWeapon.scale_active(obj):
+		return false
+	var nonzero := func(v): return v != null and float(v) != 0.0
+	return (obj.get("params", []) as Array).any(nonzero) and XActor.magic_per_level(obj).any(nonzero)
+
+
+static func _fabao_merged_params(obj: Dictionary, params: Array) -> Array:
+	var out := []
+	for i in params.size():
+		out.append((float(params[i]) if params[i] != null else 0.0) + roundf(XActor.magic_param(obj, i)))
+	return out
+
+
+## 存档里的等级被本层上限压住时写一句（核查 P3-2）；顶到数据上限（99）的不写
+static func _fabao_over_cap(obj: Dictionary) -> bool:
+	return XMagicWeapon.level_of(obj) > XMagicWeapon.effective_level(obj) and XMagicWeapon.max_level(obj) < XMagicWeapon.top_level(obj)
+
+
+## 「法宝等级」行连同后面的加成、经验行之后的位置；没有等级行返回 -1
+static func _fabao_block_end(rows: Array) -> int:
+	for i in rows.size():
+		if not plain(str(rows[i][0])).begins_with(FABAO_LEVEL_HEAD):
+			continue
+		var at := i + 1
+		while at < rows.size():
+			var p := str(plain(str(rows[at][0])))
+			if not (p.begins_with("法宝加成：") or p.begins_with("法宝经验：") or p.begins_with("经验：")):
+				break
+			at += 1
+		return at
+	return -1
 
 
 static func _fabao_level_row(obj: Dictionary) -> Array:
@@ -772,14 +811,7 @@ static func _fabao_feed_row(obj: Dictionary, rows: Array) -> void:
 		return
 	var grade := XFabaoFeed.min_grade(XMagicWeapon.level_of(obj))
 	var cfg := XQuality.config()
-	var at := -1
-	for i in rows.size():
-		var p := plain(str(rows[i][0]))
-		if p.begins_with(FABAO_LEVEL_HEAD):
-			at = i + 1
-			while at < rows.size() and (str(plain(str(rows[at][0]))).begins_with("法宝加成：") or str(plain(str(rows[at][0]))).begins_with("法宝经验：") or str(plain(str(rows[at][0]))).begins_with("经验：")):
-				at += 1
-			break
+	var at := _fabao_block_end(rows)
 	if at < 0:
 		at = rows.size()
 		for i in range(2, rows.size()):
@@ -838,6 +870,11 @@ static func _apply_fabao_scale_rows(obj: Dictionary, rows: Array) -> void:
 			if has_level_row:
 				level_end = kept.size()  # 加成行跟在经验行后面
 			continue
+		if FABAO_BRIEF_T588 and p.begins_with("进化：") and not XThreeGrowth.spec_of(obj).is_empty() and p.contains("级时进化为"):
+			var nr := r.duplicate()
+			nr[0] = str(r[0]).replace("，获得", "，每级成长翻倍，并获得")  # 只改显示，不改实例备注（核查 P3-1）
+			kept.append(nr)
+			continue
 		if _fabao_kirin_re.search(p) != null:
 			var nr := r.duplicate()
 			nr[0] = "\\c[1]麒麟（可如法宝一样升级）"
@@ -874,7 +911,7 @@ static func _apply_fabao_scale_rows(obj: Dictionary, rows: Array) -> void:
 			var brief_rows := []
 			if not has_level_row:
 				brief_rows.append(_fabao_level_row(obj))
-			if cur_text != "":
+			if cur_text != "" and not _fabao_merged(obj):
 				brief_rows.append(["法宝加成：" + cur_text, 18, "rgba(255,255,255,1)", false, 0])
 			for k in brief_rows.size():
 				kept.insert(insert_at + k, brief_rows[k])
@@ -893,6 +930,10 @@ static func _apply_fabao_scale_rows(obj: Dictionary, rows: Array) -> void:
 			add.append("\\c[3]加成：法宝满级（Lv.%d/%d）累计 %s%s" % [eff_lv, top_lv, cur_text, evo_hint])
 	for k in add.size():
 		kept.insert(insert_at + k, [add[k], 18, "rgba(255,255,255,1)", false, 0])
+	if FABAO_BRIEF_T588 and _fabao_over_cap(obj):
+		var end := _fabao_block_end(kept)
+		if end >= 0:
+			kept.insert(end, [FABAO_OVER_CAP_HINT, 18, "rgba(255,255,255,1)", false, 0])
 	rows.clear()
 	rows.append_array(kept)
 

@@ -509,33 +509,55 @@ func _paint_list(c: XMVCanvas) -> void:
 					XItemRow.paint(c, d[i].rec, y, XItemRow.right_text(d[i]), 1.0 if d[i].enabled else XUI.DIM.a, _is_new_drawn(d[i].rec))
 
 
+## 上一次画信息窗时正文的底边、给底部提示留出的高度（专项核不重叠用）
+var info_bottom := 0.0
+var info_reserve := 0.0
+
+
 func _paint_info(c: XMVCanvas) -> void:
 	var item := _current() if _mode == "list" else (_item if _mode in ["action", "upgrade", "augment"] else {})
-	paint_info(c, item)
-	if _mode == "action":
-		_paint_fabao_feed(c, item)
+	var lines := XHelpCard.fabao_feed_lines(item) if _mode == "action" and not item.is_empty() else []
+	info_reserve = LH * lines.size()
+	info_bottom = paint_info(c, item, info_reserve)
+	_paint_fabao_feed(c, lines)
 
 
 ## T588：打开法宝操作菜单（吞噬升级的「喂入」几行）时，信息窗底部写当前法宝等级与这一级的最低装备品级（西游档；其他情形没有行）
-static func _paint_fabao_feed(c: XMVCanvas, item: Dictionary) -> void:
-	var lines := XHelpCard.fabao_feed_lines(item) if not item.is_empty() else []
+static func _paint_fabao_feed(c: XMVCanvas, lines: Array) -> void:
 	var y := c.size.y - LH * lines.size()
 	for r in lines:
 		c.text(str(r[0]), 6.0, y, c.size.x - 12.0, "left", XQuality.parse_rgba(str(r[2])), XUI.FONT_SIZE, LH)
 		y += LH
 
 
-## Window_ItemInfo（YEP_ItemCore＋YEP_X_ItemUpgradeSlots，正式版把插槽行右移 215）
-static func paint_info(c: XMVCanvas, item: Dictionary) -> void:
+## 底部要留 reserve 高度给提示时（核查 P2-3），强化记录多到放不下就分栏排（2～4 栏，一条不少）；reserve 为 0 照原版一栏
+static func history_columns(item: Dictionary, reserve: float, height: float) -> int:
+	if reserve <= 0.0 or not item.has("instanceId"):
+		return 1
+	var base := XGear.template(str(item.kind), int(item.base))
+	var count: int = (item.get("upgrades", []) as Array).size() if int(base.get("upgradeSlots", 0)) > 0 else 0
+	var other := 1 + (1 if int(base.get("upgradeSlots", 0)) >= 0 else 0)  # 名字行、剩余插槽行
+	var aug := XDB.plugin("YEP_X_AttachAugments")
+	if str(aug.get("Show Augment Info", "true")) == "true":
+		XOrbs.ensure(item)
+		other += (1 if str(aug.get("Info Title", "镶嵌物")) != "" else 0) + item.augmentSlots.size()
+	var cols := 1
+	while cols < 4 and (other + ceili(count / float(cols))) * LH > height - reserve:
+		cols += 1
+	return cols
+
+
+## Window_ItemInfo（YEP_ItemCore＋YEP_X_ItemUpgradeSlots，正式版把插槽行右移 215）；返回画到的底边
+static func paint_info(c: XMVCanvas, item: Dictionary, reserve := 0.0) -> float:
 	if item.is_empty():
-		return
+		return 0.0
 	var dx := 6.0
 	var dw := c.size.x - dx * 2
 	c.icon(int(item.get("iconIndex", 0)), dx + 2, 2)
 	c.text(XQuality.list_name(item), dx + 36, 0, dw - 36, "left", XGear.color(item), XUI.FONT_SIZE, LH)
 	XItemRow.paint_magic_level(c, item, dx, 0)
 	if not item.has("instanceId"):
-		return
+		return LH
 	var dy := LH
 	var base := XGear.template(str(item.kind), int(item.base))
 	if int(base.get("upgradeSlots", 0)) >= 0:
@@ -548,17 +570,20 @@ static func paint_info(c: XMVCanvas, item: Dictionary) -> void:
 	if int(base.get("upgradeSlots", 0)) > 0:
 		var fmt := str(XDB.plugin("YEP_X_ItemUpgradeSlots").get("Slot Format", "\\}插入%1: %2\\{"))
 		var history: Array = item.get("upgrades", [])
+		var cols := history_columns(item, reserve, c.size.y)
 		for i in range(history.size()):
 			var mat := XDB.rec("Items", int(history[i].get("item", 0)))
 			var applied := "\\i[%d]%s" % [int(mat.get("iconIndex", 0)), str(history[i].get("name", mat.get("name", "")))]
-			var t := XMVText.new(XMVText.convert_escapes(fmt.replace("%1", str(i + 1)).replace("%2", applied)), dx + SLOT_SHIFT, dy, dw)
+			var x := dx + SLOT_SHIFT if cols == 1 else dx + dw / cols * (i % cols)
+			var t := XMVText.new(XMVText.convert_escapes(fmt.replace("%1", str(i + 1)).replace("%2", applied)), x, dy, dw if cols == 1 else 0.0)  # 分栏不自动换行（换行按整窗宽比绝对 x，传栏宽会一直换行）
 			t.run()
 			XMVText.paint(c, t.glyphs)
-			dy += LH
+			if i % cols == cols - 1 or i == history.size() - 1:
+				dy += LH
 	# YEP_X_AttachAugments drawAugmentInfo（正式版标题左移 38、宝珠行右移 220）
 	var aug := XDB.plugin("YEP_X_AttachAugments")
 	if str(aug.get("Show Augment Info", "true")) != "true":
-		return
+		return dy
 	var title := str(aug.get("Info Title", "镶嵌物"))
 	if title != "":
 		c.text(title, dx - 38, dy, dw, str(aug.get("Title Alignment", "center")), XUI.SYSTEM, XUI.FONT_SIZE, LH)
@@ -569,6 +594,7 @@ static func paint_info(c: XMVCanvas, item: Dictionary) -> void:
 		t.run()
 		XMVText.paint(c, t.glyphs)
 		dy += LH
+	return dy
 
 
 ## Window_MenuActor：每行 173；头像 144 竖直居中 (x+1)；名字 (158,0)、Lv (158,36)；HP/MP/TP 在 x 314、宽 = 内容宽 − 326

@@ -33,12 +33,20 @@ func _switch(on: bool) -> void:
 
 
 ## 真开物品页（西游档走原版界面）：护甲分类停在这件法宝上；action 为真时打开操作菜单（吞噬升级的「喂入」行在这里）
-func _page(on: bool, id: int, lv: int, action := false) -> Control:
+func _page(on: bool, id: int, lv: int, action := false, stones := 0) -> Control:
 	_switch(on)
 	var s := XState.current
 	s.gear.clear()
 	var item := XGear.template("armor", id)
 	item["level"] = lv
+	if stones > 0:  # 正常强化规则装补天石（随机数固定取高值）
+		item["upgradeSlots"] = stones
+		item["originalUpgradeSlots"] = stones
+		var roll: Callable = XGear.roll_fn
+		XGear.roll_fn = func(): return 0.99
+		for i in stones:
+			XGearUpgrade.apply_effects(item, XDB.rec("Items", 1828), true)
+		XGear.roll_fn = roll
 	s.register_gear(item)
 	s.gear.append(item)
 	var page := XItemScene.new()
@@ -80,6 +88,9 @@ func _run() -> void:
 			var name := ("other_" if tianqi else "xiyou_") + str(pair[3])
 			await _image(await _page(false, pair[0], pair[1], pair[2]), name + "_before")
 			await _image(await _page(true, pair[0], pair[1], pair[2]), name + "_after")
+		if not tianqi:  # 核查返工：强化过的法宝卡（P2-1）、12 条强化记录时的操作菜单（P2-3）
+			await _image(await _page(true, 123, 30, false, 3), "xiyou_reinforced_card_after")
+			await _image(await _page(true, 123, 30, true, 12), "xiyou_feed_menu_12records_after")
 	_switch(true)
 	print("TEST_RESULT=" + JSON.stringify({"passed": 1, "total": 1}))
 	get_tree().quit.call_deferred(0)
