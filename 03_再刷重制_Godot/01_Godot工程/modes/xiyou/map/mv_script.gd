@@ -212,6 +212,11 @@ static func run(code: String, interp) -> Array:
 	if js == "if(window.CodexAbyssMerchant)CodexAbyssMerchant.complete(this);":
 		await XAbyssMerchant.complete(s, interp)
 		return []
+	# T621：五张路线图补的 complete（XAbyssMerchant.patch_map 插的，原版没有这句；'open' 是 175 当场打开）
+	if js == XAbyssMerchant.EXTRA_JS or js == XAbyssMerchant.EXTRA_JS_OPEN:
+		if XAbyssMerchant.EXTRA_ROUTES and not XTianqi.active(s):
+			await XAbyssMerchant.complete(s, interp, js == XAbyssMerchant.EXTRA_JS_OPEN)
+		return []
 	if js == "CodexAbyssMerchant.openCurrent(this);":
 		await XAbyssMerchant.open_current(interp)
 		return []

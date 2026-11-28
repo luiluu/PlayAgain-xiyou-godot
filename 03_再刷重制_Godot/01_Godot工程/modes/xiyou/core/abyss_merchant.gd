@@ -44,12 +44,69 @@ static var NO_FORCE_OPEN := true
 ## T621（Kyo 11-28「深渊商人位置可能不对」）：逐图核过站位（游戏自己的通行判断，从首领格出发走得到哪里），这几张原版把商人摆在
 ## 墙里：174、184、211、216（39×35 十字图，原 (13,20) 站在左下墙沿上、只有北面一格挨得到）、177、210、223（19×19 菱形图，原 (13,17)
 ## 整个埋在墙里、四面都走不到）。挪到同形状别的深渊图商人的位置：十字图 (16,14)、菱形图 (4,7)，四面通行同那些图。
-## 其余 25 张原位能走到、不挡路、不站传送点，不动（175 原 (13,20) 也在墙里，但 175 没有首领事件调 CE1439、商人在那张图从不出现，不动）。
+## 175（71×45 多房间，原 (13,20) 也埋在墙里）随 EXTRA_ROUTES 补上商人后挪到 EV006 首领那间屋右下角 (10,22)，不挡路、两面走得到
+## （175 商人出现时当场打开，见 EXTRA_ROUTES）。其余 24 张原位能走到、不挡路、不站传送点，不动。
 ## false＝回到原版站位。
 static var MOVE_STUCK := true
 const STUCK_POS := {174: [Vector2i(13, 20), Vector2i(16, 14)], 184: [Vector2i(13, 20), Vector2i(16, 14)],
 	211: [Vector2i(13, 20), Vector2i(16, 14)], 216: [Vector2i(13, 20), Vector2i(16, 14)],
-	177: [Vector2i(13, 17), Vector2i(4, 7)], 210: [Vector2i(13, 17), Vector2i(4, 7)], 223: [Vector2i(13, 17), Vector2i(4, 7)]}
+	177: [Vector2i(13, 17), Vector2i(4, 7)], 210: [Vector2i(13, 17), Vector2i(4, 7)], 223: [Vector2i(13, 17), Vector2i(4, 7)],
+	175: [Vector2i(13, 20), Vector2i(10, 22)]}
+
+
+## T621（Kyo 11-28 定）：53、107、110、113、175 五张商人路线图（CodexMerchants 里有路线、商人事件、敌群表）原版首领事件不调 CE1439，
+## complete 从不执行、商人从不出现。开着时载入地图数据时给首领事件那页补一条 complete（XDB.map → patch_map），跟别的深渊图一样：
+## 同一套出现率与保底、按层合账、按难度给点、不强制弹出。补在哪：53 照 37 的次序放在 CE1438 之后（「前往未知存在」选完之后，
+## 选了去未知存在就换图、不领点，同 37）；107、110、113 放在首领战之后（这三张没有去未知存在的选项，也不调 CE1438）。
+## 175（25 层）十个首领事件打完当场就要选「前往未知存在／否」，两头都换图，人留不下，所以补在战斗之后、选项之前，商人出现时
+## 照原版当场打开（关掉再选去向）；只补商人这一条，CE1439 别的奖励（肝帝积分券等）不补。只管西游档，天启篇不执行。
+## false＝不补（原版：这五张图商人从不出现）。
+static var EXTRA_ROUTES := true
+const EXTRA_JS := "CodexAbyssMerchant.completeExtra(this);"
+const EXTRA_JS_OPEN := "CodexAbyssMerchant.completeExtra(this,'open');"
+## 图 → [[事件, 页], …]（首领战那页）
+const EXTRA_PAGES := {53: [[5, 1]], 107: [[5, 1]], 110: [[5, 1]], 113: [[5, 1]],
+	175: [[3, 0], [4, 0], [5, 0], [6, 0], [7, 0], [8, 0], [9, 0], [10, 0], [11, 0], [30, 0]]}
+
+
+## XDB.map 载入时补 complete（每份地图数据只补一次；找不到插入点就不动）
+static func patch_map(map_id: int, data) -> void:
+	if not EXTRA_ROUTES or not EXTRA_PAGES.has(map_id) or not data is Dictionary:
+		return
+	var events: Array = data.get("events", [])
+	for pair in EXTRA_PAGES[map_id]:
+		var eid: int = pair[0]
+		if eid >= events.size() or not events[eid] is Dictionary or int(pair[1]) >= (events[eid].pages as Array).size():
+			continue
+		var list: Array = events[eid].pages[pair[1]].list
+		if list.any(func(c): return int(c.code) == 355 and str(c.parameters[0]).begins_with("CodexAbyssMerchant.completeExtra")):
+			continue
+		var at := _extra_index(list)
+		if at < 0:
+			continue
+		var js := EXTRA_JS_OPEN if map_id == 175 else EXTRA_JS
+		list.insert(at, {"code": 355, "indent": int(list[at - 1].indent), "parameters": [js]})
+
+
+## 插在哪：有 CE1438 就紧跟其后；否则跟在最后一场战斗后面（战斗带胜负分支时跟在分支收尾 412 之后，否则紧跟 301）
+static func _extra_index(list: Array) -> int:
+	for i in list.size():
+		if int(list[i].code) == 117 and int(list[i].parameters[0]) == 1438:
+			return i + 1
+	var last := -1
+	for i in list.size():
+		if int(list[i].code) == 301:
+			last = i
+	if last < 0:
+		return -1
+	var ind := int(list[last].indent)
+	if ind == 0 or last + 1 >= list.size() or int(list[last + 1].code) != 0:
+		return last + 1
+	# 301 在条件分支里（111 … 0 412）：跳到包它的那个分支收尾 412 之后
+	for i in range(last + 1, list.size()):
+		if int(list[i].code) == 412 and int(list[i].indent) == ind - 1:
+			return i + 1
+	return -1
 
 
 ## 商人事件该站哪：卡墙里的那几张给新位置；不是商人、不在表里或开关关着返回 (-1,-1)（照数据原位）
@@ -221,7 +278,7 @@ static func ledger_key(key: String) -> String:
 
 
 ## M.complete(interpreter)：领到点数返回 true；出现时提示（NO_FORCE_OPEN 关着时提示后直接打开商人，interp 为 null 时不开）
-static func complete(s: XState, interp = null) -> bool:
+static func complete(s: XState, interp = null, force_open := false) -> bool:
 	var cur = run(s)
 	var r := route(int(s.map_id))
 	if cur == null or r.is_empty() or bool(cur.claimed) or battle.is_empty() or not bool(battle.won) or not bool(battle.eligible) \
@@ -241,13 +298,14 @@ static func complete(s: XState, interp = null) -> bool:
 	# 按层合账时带上这一份现有的点数（Kyo 11-19 清单 3；玩家可见文字，待小A 审）
 	var total := ("（本层共 %d 点）" % int(l.balances[who.key])) if LAYER_LEDGER else ""
 	# T621：不强制弹出时提示玩家自己去找（玩家可见文字，待小A 审）
-	var met := (str(who.kind) + ("出现了，走过去和他对话就能交易。" if NO_FORCE_OPEN else "出现了。")) if cur.appeared else ""
+	var walk := NO_FORCE_OPEN and not force_open
+	var met := (str(who.kind) + ("出现了，走过去和他对话就能交易。" if walk else "出现了。")) if cur.appeared else ""
 	var text := "获得%s＋%d%s。" % [points_name(str(who.key)), gain, total] + met
 	if interp != null:
 		if interp.host.has_method("refresh_events"):
 			interp.host.refresh_events()
 		interp.host.toast(text)
-		if cur.appeared and not NO_FORCE_OPEN:
+		if cur.appeared and not walk:
 			await open_current(interp)
 	return true
 

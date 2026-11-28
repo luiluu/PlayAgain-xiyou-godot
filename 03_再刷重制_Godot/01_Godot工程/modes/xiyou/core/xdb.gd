@@ -295,6 +295,7 @@ static func map(map_id: int) -> Dictionary:
 		XFestLobby.patch_map(map_id, _tables[key])  # 冠军庆典：大厅使者、报名处、奖杯、BGM（只在活动期间，O-466）
 		XHonghuangMonument.patch_map(map_id, _tables[key])  # T460：西游大厅洪荒碑（EV82，开关 XHonghuangMonument.ENABLED）
 		XTianqiGuardianGift.patch_map(map_id, _tables[key])  # 天启篇守层者去见面礼、首胜必给宝珠必开压箱底店（T236）
+		XAbyssMerchant.patch_map(map_id, _tables[key])  # T621：53/107/110/113/175 首领事件补深渊商人 complete（开关 XAbyssMerchant.EXTRA_ROUTES）
 		XTianqiOrbs.patch_map(map_id, _tables[key])  # 天启篇原作旧宝珠不再给：事件里给的换成同值宝珠残片（T518）
 	return _tables[key] if _tables[key] != null else {}
 
