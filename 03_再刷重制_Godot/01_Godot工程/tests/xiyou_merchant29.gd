@@ -116,6 +116,7 @@ func case_of(id: String) -> Dictionary:
 
 
 func _run() -> void:
+	XAbyssMerchant.NO_FORCE_OPEN = false   # 原版对照：出现就弹出商人界面；T621 不强制弹出由 xiyou_t621_merchant 核
 	o = JSON.parse_string(FileAccess.get_file_as_string("res://tests/fixtures/merchant29_oracle.json"))
 	check("source", o.sourceIdentity.runtimeInputs == XDB.load_json("manifest.json").runtimeInputs)
 	check("cases", o.cases.size() == 26 and o.cases.all(func(c): return c.errors.is_empty()))

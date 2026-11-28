@@ -36,7 +36,11 @@ func setup_event(map: int, ev: Dictionary) -> void:
 	event_id = int(ev.id)
 	data = ev
 	name = "Event%d" % event_id
-	locate(int(ev.x), int(ev.y))
+	var fp := XAbyssMerchant.fixed_pos(map, ev)   # T621：卡墙里的深渊商人挪到能走到的格
+	if fp.x >= 0:
+		locate(fp.x, fp.y)
+	else:
+		locate(int(ev.x), int(ev.y))
 	refresh()
 
 
@@ -434,6 +438,10 @@ func restore_state(d: Dictionary) -> void:
 	grid = Vector2i(int(d.x), int(d.y))
 	var r: Array = d.get("real", [d.x, d.y])
 	real = Vector2(float(r[0]), float(r[1]))
+	var fp := XAbyssMerchant.fixed_pos(map_id, data)   # T621：旧存档里记着墙里原位的深渊商人，读档后也挪过去
+	if fp.x >= 0 and grid == Vector2i(int(data.x), int(data.y)):
+		grid = fp
+		real = Vector2(fp)
 	direction = int(d.direction)
 	pattern = int(d.get("pattern", pattern))
 	opacity = int(d.get("opacity", opacity))

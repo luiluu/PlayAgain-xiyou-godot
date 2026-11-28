@@ -35,6 +35,31 @@ static var TIERED_REWARD := true
 const REWARDS := {"13": [8, 14], "15": [8, 11], "17": [8, 11], "19": [8, 11], "20": [8, 11], "22": [8, 11]}
 const REWARD_FLAT := 10
 
+## T621（Kyo 11-28「深渊商人强制跳出来影响体验」）：原版 complete 末尾商人一出现就 openCurrent 直接弹出商人界面（v0.62.12
+## installAbyssMerchantRuntime.js 第 31 行），打完首领连着被拉进商店。改成只提示「出现了」、商人事件照旧在图上出现（第 2 页），
+## 玩家自己走过去对话才打开（商人第 2 页本来就是 openCurrent）。本轮这张图里商人一直在，离开这张图才走。
+## false＝回到原版：出现就直接弹出商人界面。
+static var NO_FORCE_OPEN := true
+
+## T621（Kyo 11-28「深渊商人位置可能不对」）：逐图核过站位（游戏自己的通行判断，从首领格出发走得到哪里），这几张原版把商人摆在
+## 墙里：174、184、211、216（39×35 十字图，原 (13,20) 站在左下墙沿上、只有北面一格挨得到）、177、210、223（19×19 菱形图，原 (13,17)
+## 整个埋在墙里、四面都走不到）。挪到同形状别的深渊图商人的位置：十字图 (16,14)、菱形图 (4,7)，四面通行同那些图。
+## 其余 25 张原位能走到、不挡路、不站传送点，不动（175 原 (13,20) 也在墙里，但 175 没有首领事件调 CE1439、商人在那张图从不出现，不动）。
+## false＝回到原版站位。
+static var MOVE_STUCK := true
+const STUCK_POS := {174: [Vector2i(13, 20), Vector2i(16, 14)], 184: [Vector2i(13, 20), Vector2i(16, 14)],
+	211: [Vector2i(13, 20), Vector2i(16, 14)], 216: [Vector2i(13, 20), Vector2i(16, 14)],
+	177: [Vector2i(13, 17), Vector2i(4, 7)], 210: [Vector2i(13, 17), Vector2i(4, 7)], 223: [Vector2i(13, 17), Vector2i(4, 7)]}
+
+
+## 商人事件该站哪：卡墙里的那几张给新位置；不是商人、不在表里或开关关着返回 (-1,-1)（照数据原位）
+static func fixed_pos(map_id: int, ev: Dictionary) -> Vector2i:
+	if not MOVE_STUCK or not STUCK_POS.has(map_id) or not str(ev.get("note", "")).contains("<CodexMerchant29>"):
+		return Vector2i(-1, -1)
+	var row: Array = STUCK_POS[map_id]
+	return row[1] if Vector2i(int(ev.get("x", -1)), int(ev.get("y", -1))) == row[0] else Vector2i(-1, -1)
+
+
 const RUN_FLAG := "_merchantRun29"
 const LEDGER_FLAG := "_codexMerchants29"
 const LABELS := ["Mod特效", "神话特效", "混沌神话特效"]
@@ -195,7 +220,7 @@ static func ledger_key(key: String) -> String:
 	return key
 
 
-## M.complete(interpreter)：领到点数返回 true；出现时提示后打开商人（interp 为 null 时不开）
+## M.complete(interpreter)：领到点数返回 true；出现时提示（NO_FORCE_OPEN 关着时提示后直接打开商人，interp 为 null 时不开）
 static func complete(s: XState, interp = null) -> bool:
 	var cur = run(s)
 	var r := route(int(s.map_id))
@@ -215,12 +240,14 @@ static func complete(s: XState, interp = null) -> bool:
 	l.misses[who.key] = 0 if cur.appeared else misses + 1
 	# 按层合账时带上这一份现有的点数（Kyo 11-19 清单 3；玩家可见文字，待小A 审）
 	var total := ("（本层共 %d 点）" % int(l.balances[who.key])) if LAYER_LEDGER else ""
-	var text := "获得%s＋%d%s。" % [points_name(str(who.key)), gain, total] + ((str(who.kind) + "出现了。") if cur.appeared else "")
+	# T621：不强制弹出时提示玩家自己去找（玩家可见文字，待小A 审）
+	var met := (str(who.kind) + ("出现了，走过去和他对话就能交易。" if NO_FORCE_OPEN else "出现了。")) if cur.appeared else ""
+	var text := "获得%s＋%d%s。" % [points_name(str(who.key)), gain, total] + met
 	if interp != null:
 		if interp.host.has_method("refresh_events"):
 			interp.host.refresh_events()
 		interp.host.toast(text)
-		if cur.appeared:
+		if cur.appeared and not NO_FORCE_OPEN:
 			await open_current(interp)
 	return true
 
