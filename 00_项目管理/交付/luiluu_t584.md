@@ -43,7 +43,8 @@
 
 ## 测试
 
-- R1 本机：`xiyou_t584_add_clamp` 18/18（撤回修复 17/18，咬得住）。
+- R1 本机：`xiyou_t584_add_clamp` 18/18（撤回修复 17/18，咬得住）；`发行空壳.py check` 通过。
+- R1 云端选测：通过，513 个场景、16 片（提交 cd47cba2f，基准 ed5f4b0d0），https://github.com/luiluu/PlayAgain-xiyou-godot/actions/runs/46085635366
 - 本机：`xiyou_t584_add_clamp` 15/15、`xiyou_state_effects` 32816/32816。
 - `发行空壳.py check`：通过（88 个脚本，879 个函数都有）。
 - 云端选测：通过，231 个场景、16 片（提交 c7b5cd054，基准 2e8cf9d74），https://github.com/luiluu/PlayAgain-xiyou-godot/actions/runs/46082656458
@@ -57,4 +58,4 @@
 - 1445a9598 WIP：T584 探针复现角色 162 加 2720 后生命不夹上限（探针在下一提交删除）
 - c7b5cd054 T584 天启篇角色加状态后补夹生命／魔法上限（XBattler.TQ_ADD_CLAMP），专项 15/15
 - ed5f4b0d0 交付单
-- （R1 提交）补夹挪到 XActor.add_state 最末，专项 18/18；交付单补 R1
+- cd47cba2f R1：补夹挪到 XActor.add_state 最末，专项 18/18；交付单补 R1
