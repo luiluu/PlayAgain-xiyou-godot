@@ -24,6 +24,9 @@ func _init(test_name: String) -> void:
 	XSave.dir_override = dir
 	XConfig.path_override = ProjectSettings.globalize_path(_config)
 	XConfig._loaded_path = "<unloaded>"
+	XTestMode.unlock_override = dir.path_join("test_mode_unlock")  # T591：本机开着测试模式也不带进来（技能升满、经验 ×10）
+	XTestMode.state_override = dir.path_join("test_mode_state")
+	XTestMode._on_loaded_from = "<unloaded>"
 	XMessageBox.auto = true
 
 
@@ -35,6 +38,9 @@ func teardown() -> void:
 	XSave.dir_override = ""
 	XConfig.path_override = ""
 	XConfig._loaded_path = "<unloaded>"
+	XTestMode.unlock_override = ""
+	XTestMode.state_override = ""
+	XTestMode._on_loaded_from = "<unloaded>"
 
 
 ## 真开局：五名弱档角色入队、选好线、开场跑完（同 xiyou_tianqi_seed_fix 的 _state）
