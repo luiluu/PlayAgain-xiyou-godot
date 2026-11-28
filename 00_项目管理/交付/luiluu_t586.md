@@ -160,6 +160,10 @@
 | `XActor._skills_switches` | 2 处（`git grep -n "_skills_switches()" -- '*.gd'`） | 只多拼一位 `JIAN9`；切开关时技能表作废重算，平时值不变 |
 | `XXufeng.touches` | 3 处（`git grep -nE "XXufeng\.touches\(" -- '*.gd'`） | 多认 9995（`JIAN9` 开）与 9976、10085；调用前都判 `xiyou_save_on()`，天启篇不分派 |
 | `XXufeng.rec` | 2 处（xdb.gd） | 多改 9987～9989（`_patch_active_sword`，在 D272 `_patch_sword` 与 T585 `_fix_sword_passive` 之后）、9995、9976、10085；缓存键加 `:J` 位 |
+| `XXufeng.clear_cache` | 225 处粗数（`git grep -nE "clear_cache\(" -- '*.gd'`，多为别的类同名函数；`XXufeng.clear_cache` 实际调用方是测试与 `original_data`） | 只多清一个表外状态缓存 `_st_out_cache`；清得更多、不会留旧副本 |
+| `XXufeng.tianxia_state_rec` | 1 处（`out_state_rec` 内，xdb.gd 改走 `out_state_rec`） | 本体没改，19501 照旧由它出 |
+| `XXufeng._patch_chunlei_129` | 2 处（`rec`、`_gear_pair`） | 本体没改，只读的常量换数（终伤 25、元素 90、每级攻 5）；新改 `chunlei_atk_pct()` 联动 SCALE_99_TO_888，读档同步按新模板重算 |
+| `XXufeng.xiudong_atk_pct`、`XXufeng._drop_aps_line` | 6／2 处 | 本单最终没改（绣冬中途改过又回到 176%／137%；`_drop_aps_line` 是 T585 的，没动） |
 | D272 常量（9998、天下第一、春雷、99 口径） | `XXufeng` 内部＋`tests/xiyou_xufeng_rework.gd` | 读档装备同步按模板重算（`after_load`），老档的春雷读档自动换新数；专项 p1_2.* 照过 |
 
 ## 测试
