@@ -8,9 +8,17 @@ extends RefCounted
 ## - 战斗双元素：佩戴者在西游档发动伤害类行动（dmg_type in [1,2,5,6]）时，XDamage.action_elements / original_elements 追加该元素，
 ##   形成流萤式「原属性＋X」双元素（择优结算抗性、克制与增伤；原无属性伤害招保留无属性保底，避免遇免疫降伤）。
 ## - 掉落：西游档二层深渊（「深渊:未知存在」地图）全部【未知存在】敌人击败后，每只独立以固定 1/888 掉落（不吃队伍掉率加成、不被挂机/品质屏蔽）。
-## - 回退开关：ENABLED = false 时停止掉落且战斗附加元素不生效（数据库定义常驻以兼容已有存档）。
+##   T622（D302 Kyo 11-28 事项 111）扩范围：九张「深渊:未知存在」图的全部敌人＋八张第二层深渊（SECOND_LAYER）的全部敌人都按 1/888 掉；
+##   保底：胜利结算时每只合格敌人计一次，连续 PITY_COUNT 只没出就必出一件，出了（含自然掉）从 0 重算。计数存在存档 flags[PITY_FLAG]
+##   （跟存档走：读档回到存档时的数，赐福本身也在存档里一起回滚，SL 刷不出多的；旧档没这个键从 0 起）。
+## - 回退开关：ENABLED = false 时停止掉落且战斗附加元素不生效（数据库定义常驻以兼容已有存档）；
+##   EXPAND = false 回到只认未知存在图里的【未知存在】敌人；PITY = false 不计数、不保底（已存的计数留着不动）。
 
 static var ENABLED := true
+## T622：掉落范围扩到未知存在图全部敌人＋第二层深渊；false＝T472 原口径
+static var EXPAND := true
+## T622：888 只保底；false＝不计数、不保底
+static var PITY := true
 
 ## 号段：Armors 表外追加（原表到 8000，五条悟眼罩 8001，冠军戒指 8010～8012）
 const ARMOR := 8013
@@ -27,6 +35,13 @@ const ICON_PATH := "res://content/xiyou/icons/elemental_king_blessing.png"
 
 ## 掉落：二层深渊所有【未知存在】固定 1/888
 const DROP_RATE := 1.0 / 888.0
+## T622 保底：连续这么多只合格敌人没出，这一只必出
+const PITY_COUNT := 888
+const PITY_FLAG := "_elemKingPity"
+## T622 第二层深渊：楼层门按随机变量＋邀请函二选一进低层或高层，高层再连进未知存在（按实际传送与 MapInfos 父子对出）。
+## 38 无尽虚空(低 37)、51 星辰大海(50)、53 生命圣所(52)、57 悬空圣域(56)、59 诸神黄昏(58)、113 蚀之魔渊(110)、165 魔神之渊(164)、168 蚀之魔渊1(167)。
+## 174/175/184/211 是单层深渊直通未知存在、107 旧魔王之渊不连未知存在，都不算（协调 11-28 定）。
+const SECOND_LAYER := [38, 51, 53, 57, 59, 113, 165, 168]
 
 ## 全部 13 种活跃元素（ID 2～9、11～15，与 XDamage.ACTIVE 对齐，不含物理与治疗）
 const ELEMENTS := [2, 3, 4, 5, 6, 7, 8, 9, 11, 12, 13, 14, 15]
@@ -225,22 +240,68 @@ static func is_unknown_enemy(e) -> bool:
 	return e is XEnemy and str(e.data().get("name", "")).contains("【未知存在】")
 
 
-## 二层深渊所有【未知存在】固定 1/888 掉落（仅西游档，不吃掉率加成、不被挂机/品质屏蔽）
+## 本场合格的地图：未知存在图，或（EXPAND）第二层深渊
+static func is_drop_map(map_id: int) -> bool:
+	return is_unknown_abyss_map(map_id) or (EXPAND and SECOND_LAYER.has(map_id))
+
+
+## 这只敌人算不算：EXPAND 时合格地图上的全部敌人；关掉回到只认【未知存在】
+static func is_drop_enemy(e) -> bool:
+	return e is XEnemy and (EXPAND or is_unknown_enemy(e))
+
+
+## 存档里的保底计数（旧档没有＝0）
+static func pity_of(s: XState) -> int:
+	return maxi(0, int(s.flags.get(PITY_FLAG, 0))) if s != null else 0
+
+
+## 合格地图全部合格敌人固定 1/888 掉落（仅西游档，不吃掉率加成、不被挂机/品质屏蔽）＋888 只保底。
+## 只算不写：本场算完的计数放在 logic 的 meta，胜利发奖（commit）时才写进存档，rewards() 再调不重掷、不重计。
 static func battle_drops(logic) -> Array:
 	var out := []
 	if not ENABLED or logic == null or logic.state == null or logic.random == null:
 		return out
 	var s: XState = logic.state
-	if XTianqi.active(s) or not is_unknown_abyss_map(s.map_id):
+	if XTianqi.active(s) or not is_drop_map(s.map_id):
 		return out
 	if XDB.rec("Armors", ARMOR).is_empty():
 		return out
+	var before := pity_of(s)
+	var count := before
+	var eligible := 0
+	var pity_hits := 0
 	for e in logic.enemies:
-		if e.hidden or e.is_alive() or not is_unknown_enemy(e):
+		if e.hidden or e.is_alive() or not is_drop_enemy(e):
 			continue
-		if logic.random.reward_for(logic.stable_id(e) + "|elem_king").next_float("elem_king_drop", "0") < DROP_RATE:
+		eligible += 1
+		var hit: bool = logic.random.reward_for(logic.stable_id(e) + "|elem_king").next_float("elem_king_drop", "0") < DROP_RATE
+		if not hit and PITY:
+			count += 1
+			if count >= PITY_COUNT:
+				hit = true
+				pity_hits += 1
+		if hit:
+			count = 0
 			out.append({"kind": 3, "id": ARMOR, "elem_king": true})
+	if PITY:
+		logic.set_meta("elem_king_pity", {"before": before, "after": count, "eligible": eligible, "drops": out.size(), "pity_hits": pity_hits})
 	return out
+
+
+## 胜利发奖（BattleLogic.grant）时写进存档：发到手的赐福件数对得上才用重算后的数；被别处清空了掉落（如幻化之战）就只累加、不重算
+static func commit(logic, r: Dictionary) -> void:
+	if not PITY or logic == null or logic.state == null or not logic.has_meta("elem_king_pity"):
+		return
+	var m: Dictionary = logic.get_meta("elem_king_pity")
+	if bool(m.get("committed", false)):
+		return
+	m["committed"] = true
+	var s: XState = logic.state
+	var got := (r.get("drops", []) as Array).filter(func(d): return d is Dictionary and bool(d.get("elem_king", false))).size()
+	var now := int(m.after) if got == int(m.drops) else int(m.before) + int(m.eligible)
+	s.flags[PITY_FLAG] = now
+	if XTestMode.enabled():
+		print("[XTestMode] T622 赐福保底：%d → %d（合格 %d 只，掉 %d 件，其中保底 %d）" % [int(m.before), now, int(m.eligible), got, int(m.pity_hits)])
 
 
 ## 独立 32×32 图标（XUI.icon_texture 分流；XItemStatusPainter.large_icon 自动最近邻放大）

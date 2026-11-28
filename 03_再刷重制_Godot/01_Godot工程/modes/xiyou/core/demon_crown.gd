@@ -14,6 +14,7 @@ extends RefCounted
 ##   floor_ok_facts、窗口单独配 floor_rule.crown_window）；层数不够时这一场照常结算（settled、掉落照旧），只是不涨、不减。西游档不判。
 ## - 死亡（addNewState 死亡）：战斗中按「角色:第几次:uid」、战斗外按世界序号各记一次，b 减半。
 ## - 掉落：Map162、敌群 539～542、不朽的未知战斗（XYunshangOrders.immortal_clear），开战掷一次，胜利且 <3% 发一件，提示「获得了"头顶"！」。
+##   T622 西游档加 33 场保底（PITY，计数在账本本档那条 pity，见下）。
 ## - 得到数据库那件 7940（事件、商店）改由账本发；带 uid 的被直接失去（卖出、存仓库、分解）记 removed（O-696 T616 起存仓库不记，见 WAREHOUSE_KEEP）。按底子扣（事件）不记，原版独立物品留在
 ##   $dataArmors 里、重放找得到就不重发，重制用 flags._codexCrownKnown 记「本档建过的 uid」顶替。
 ## 编号：原版 crypto 16 字节，重制 Crypto 16 字节。开战掷点：原版 Math.random，重制取战斗规则流。
@@ -26,6 +27,13 @@ const LIMIT := 1000.0
 const DROP_RATE := 0.03
 const DROP_MAP := 162
 const DROP_TROOPS := [539, 540, 541, 542]
+## T622（D302 Kyo 11-28 事项 111「头顶也加保底」）：合格战斗（DROP_MAP、DROP_TROOPS、不朽通关）连续 PITY_COUNT 场胜利没出，这一场必出；
+## 出了（含自然 3%）从 0 重算。只数＝1/DROP_RATE 取整＝33。计数放在本档账本那条 profiles[编号].pity（不新开账本、旧账本没这个键从 0 起）：
+## 头顶的掉落本身记在账本里（读旧档照样在），计数要和它同一份走，否则读档计数回退、头顶留着就能 SL 反复刷保底；
+## 同一遭遇序号重打不重计（只在这一行第一次结算时算，与掷点同口径）。仅西游档；PITY=false 不计不保底（已记的数留着）。
+static var PITY := true
+const PITY_COUNT := 33
+const PITY_KEY := "pity"
 const FILE := "crown_progress_v1.json"
 const UID := "_codexCrownUid"
 const BONUS := "_codexCrownBonus"
@@ -549,6 +557,14 @@ static func begin(s: XState, troop: int, roll: Callable, logic = null) -> void:
 		battle = {"key": key, "ordinal": ordinal, "wears": list, "serial": {}, "same": int(r.get("map", -1)) == s.map_id and int(r.get("troop", -1)) == troop, "finished": false, "row": pending, "floor": XTianqiGrowth.crown_facts(s, logic) if logic != null else null}  # T548 返修 P1-1：开战取层数事实（结算时四骑士／七印标记已清）
 		return true)
 
+static func pity_on(s: XState) -> bool:
+	return PITY and s != null and not XTianqi.active(s)
+
+## 本档账本里的保底计数（不可用或没有＝0；给专项和界面看）
+static func pity_of(s: XState) -> int:
+	var p = profile(s)
+	return int(p.get(PITY_KEY, 0)) if p is Dictionary else 0
+
 static func _drop_battle(s: XState, troop: int) -> bool:
 	return s.map_id == DROP_MAP and troop in DROP_TROOPS and XYunshangOrders.immortal_clear(s, troop)
 
@@ -580,7 +596,16 @@ static func finish(s: XState, result: int) -> void:
 					var g = n.items.get(str(x.uid))
 					if g != null and not bool(g.get("removed", false)):
 						g.bonus = next(float(g.bonus))
-				if bool(r.eligible) and float(r.roll) < DROP_RATE:
+				var hit := bool(r.eligible) and float(r.roll) < DROP_RATE
+				if bool(r.eligible) and pity_on(s):  # T622：33 场保底（计数在本档账本 pity，与掷点、发货同一次写盘）
+					var c := int(n.get(PITY_KEY, 0)) + (0 if hit else 1)
+					if not hit and c >= PITY_COUNT:
+						hit = true
+						r[PITY_KEY] = true
+					n[PITY_KEY] = 0 if hit else c
+					if XTestMode.enabled():
+						print("[XTestMode] T622 头顶保底：计数 %d%s" % [int(n[PITY_KEY]), "（保底发出）" if r.has(PITY_KEY) else ("（自然掉，重算）" if hit else "")])
+				if hit:
 					r.dropUid = uuid()
 					n.items[r.dropUid] = {"spec": _spec(s), "bonus": 0.0, "removed": false})
 			if not ok:
