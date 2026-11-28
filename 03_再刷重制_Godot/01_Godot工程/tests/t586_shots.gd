@@ -168,6 +168,7 @@ func _run() -> void:
 		return
 	get_window().size = Vector2i(1280, 720)
 	TestEnv.isolate("t586_shots")
+	print("TESTMODE unlocked=", XTestMode.unlocked(), " enabled=", XTestMode.enabled())  # T591：测试模式要关着（isolate 已把解锁／状态文件指到测试目录）
 	XSplashScreen.shown = true
 	XUiSkin.FORCE = true
 	XImportedBalance.RELEASE_XUFENG = true
