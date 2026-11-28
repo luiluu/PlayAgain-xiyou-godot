@@ -204,7 +204,7 @@ func _check_rework_data_and_text() -> void:
 		and XSmartAI.formula_safe(str(sk9998.damage.formula))
 		and sk9998.meta.has("StartPushState2539")
 		and int(sk9998.yepEffects) == 5
-		and n9998.contains("伤害:连续攻击单个敌人五次，伤害随攻击力和技能等级提升。") and not n9998.contains("己·攻击力")
+		and n9998.contains("伤害:连续攻击敌方全体五次，伤害随攻击力和技能等级提升。") and n9998.contains("对象:敌方全体攻击五次") and not n9998.contains("单体") and not n9998.contains("己·攻击力")
 		and n9998.contains("消耗10tp"),
 		[sk9998.damage.formula, n9998])
 	var st2539_xy := XDB.rec("States", 2539)
