@@ -16,7 +16,7 @@ const Z := preload("res://tests/lib/zh_fwd.gd")
 ## - p9：图标格号（技能与天衣等走 HD 图集，32／128 两种大小、四边透明）、织神天梭说明（等级 1／5／888）、天衣说明的粉色与粉色窗口皮。
 ## - p8.lose.sell／.base：领取后穿上卸下（不记）、商店卖出（XItemMarks.sell，记移除）／按底子扣（s.gain_gear 负数，不记），再读领取前的档；
 ##   重制另比存进方桌仓库（XWarehouse.deposit＝原版 loseItem，同卖出）与星级仓库（直接改 _armors，同按底子扣）。
-##   O-待定（T616）：方桌仓库默认不再记移除（存仓库不是失去，同按底子扣）——「warehouse」关掉 WAREHOUSE_KEEP 照原版比卖出，「warehouse_keep」开着比按底子扣。
+##   O-696（T616）：方桌仓库默认不再记移除（存仓库不是失去，同按底子扣）——「warehouse」关掉 WAREHOUSE_KEEP 照原版比卖出，「warehouse_keep」开着比按底子扣。
 const FIXTURE := "res://tests/fixtures/yunshang_oracle.json"
 var checks := 0
 var failures: Array = []
@@ -235,7 +235,7 @@ func _run() -> void:
 	await p8_advance()
 	await p8_fallback()
 	for how in ["sell", "base", "warehouse", "warehouse_keep", "star"]:
-		XYunshangOrders.WAREHOUSE_KEEP = how != "warehouse"  # O-待定 T616 回退支：照原版存仓库记移除
+		XYunshangOrders.WAREHOUSE_KEEP = how != "warehouse"  # O-696 T616 回退支：照原版存仓库记移除
 		p8_lose(how)
 	XYunshangOrders.WAREHOUSE_KEEP = true
 	p9_display()

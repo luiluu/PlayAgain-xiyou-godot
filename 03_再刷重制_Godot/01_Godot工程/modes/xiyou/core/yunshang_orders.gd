@@ -28,7 +28,7 @@ extends RefCounted
 ##   扣碎片、移除所选天衣、stage＋1，提示「云裳完成第N次进阶」。不走进阶表那一行的学技能、扣金钱（原版 onConfirmOk 包装不调旧的），技能由同步按等级与进阶学。
 ## - 失去天衣（gainItem 包装，第 200～204 行）：带 _yunUid 的天衣被直接失去（商店卖出、存进仓库、分解，走 XState.lose_gear）时记一条 remove，
 ##   读领取前的档时重放发了再移除，不能再领一次；穿上卸下、按底子扣（事件、合成材料、星级仓库）照原版不记。参照 p8.lose。
-##   O-待定（T616）起存进方桌仓库不再记（见 WAREHOUSE_KEEP）。
+##   O-696（T616）起存进方桌仓库不再记（见 WAREHOUSE_KEEP）。
 ## 招募仍按存档旗标（一期），不进账本。
 
 const FILE := "yunshang_orders_v1.json"
@@ -195,7 +195,7 @@ static func find_uid(s: XState, uid: String) -> Dictionary:
 ## 进阶在同一个事务里写「人道意志碎片 −50／−188」紧跟恰好 3／9 条 remove（ADVANCE 表），卖出／分解的 remove 一次只写一条、前面不带碎片扣除。
 ## 卖出／分解的收益随旧档一起回滚，放过不算刷。false＝照原版连穿着的一起卸下移除。
 static var KEEP_WORN_ON_LOAD := true
-## O-待定（T616，玩家反馈 0.04.08 头顶存仓库消失，同类问题）：原版存仓库走 loseItem，天衣被记一条 remove（同卖掉）；读存仓库之前的档时
+## O-696（T616，玩家反馈 0.04.08 头顶存仓库消失，同类问题）：原版存仓库走 loseItem，天衣被记一条 remove（同卖掉）；读存仓库之前的档时
 ## 重放这条把背包里那件删掉。true（默认）：存进方桌仓库不记 remove（XWarehouse.deposit）；修复后真失去的 remove 带 src "lose"；
 ## 修复前写下、没有来源、又不是进阶消耗的 remove，读档时指向本档背包里那件就以存档为准保留（穿着的照旧归 KEEP_WORN_ON_LOAD 管）（口径 A，同头顶 XDemonCrown.WAREHOUSE_KEEP，
 ## 卖掉的钱随旧档一起回滚，不算刷）。读档前把账本原样复制一份 FILE＋BACKUP_SUFFIX（只备一次，不覆盖）。false：照原版。
@@ -230,7 +230,7 @@ static func remove_uid(s: XState, uid: String, instance: String, base_id: int, c
 		kept_on_load.append(uid)
 		print("云裳账本：读档重放的移除 %s 指向身上穿着的天衣「%s」，以存档为准保留" % [uid, str(item.get("name", ""))])
 		return
-	if _loading and WAREHOUSE_KEEP and legacy and not consumed and not _worn(s, item):  # O-待定 T616：修复前的 remove 分不清存仓库还是卖掉，背包里的以存档为准（穿着的归 O-472）
+	if _loading and WAREHOUSE_KEEP and legacy and not consumed and not _worn(s, item):  # O-696 T616：修复前的 remove 分不清存仓库还是卖掉，背包里的以存档为准（穿着的归 O-472）
 		kept_on_load.append(uid)
 		print("云裳账本：读档重放的移除 %s 是修复前写的（可能是存仓库），指向本档的天衣「%s」，以存档为准保留" % [uid, str(item.get("name", ""))])
 		return
@@ -334,7 +334,7 @@ static func order(s: XState):
 	return p.order if p != null else null
 
 
-## 账本原样备份一次（不覆盖已有的备份）；没有账本文件不用备（O-待定 T616）
+## 账本原样备份一次（不覆盖已有的备份）；没有账本文件不用备（O-696 T616）
 static func backup_once() -> void:
 	var p := path()
 	var b := p + BACKUP_SUFFIX
@@ -359,7 +359,7 @@ static func after_load(s: XState, identity: String) -> void:
 			return
 	kept_on_load = []
 	if WAREHOUSE_KEEP:
-		backup_once()  # O-待定 T616：修复版第一次读档重放之前留一份原样（只备一次）
+		backup_once()  # O-696 T616：修复版第一次读档重放之前留一份原样（只备一次）
 	_loading = true
 	var ok := replay(s)
 	_loading = false
@@ -556,7 +556,7 @@ static func lost(s: XState, item: Dictionary) -> bool:
 	return uid != "" and transaction(s, func(p):
 		var op := {"remove": uid, "instance": str(item.get("instanceId", "")), "baseId": int(item.get("base", 0))}
 		if WAREHOUSE_KEEP:
-			op.src = "lose"  # O-待定 T616：修复后的真失去，读更早的档照旧移除
+			op.src = "lose"  # O-696 T616：修复后的真失去，读更早的档照旧移除
 		p.journal.append(op))
 
 

@@ -14,7 +14,7 @@ extends RefCounted
 ##   floor_ok_facts、窗口单独配 floor_rule.crown_window）；层数不够时这一场照常结算（settled、掉落照旧），只是不涨、不减。西游档不判。
 ## - 死亡（addNewState 死亡）：战斗中按「角色:第几次:uid」、战斗外按世界序号各记一次，b 减半。
 ## - 掉落：Map162、敌群 539～542、不朽的未知战斗（XYunshangOrders.immortal_clear），开战掷一次，胜利且 <3% 发一件，提示「获得了"头顶"！」。
-## - 得到数据库那件 7940（事件、商店）改由账本发；带 uid 的被直接失去（卖出、存仓库、分解）记 removed（O-待定 T616 起存仓库不记，见 WAREHOUSE_KEEP）。按底子扣（事件）不记，原版独立物品留在
+## - 得到数据库那件 7940（事件、商店）改由账本发；带 uid 的被直接失去（卖出、存仓库、分解）记 removed（O-696 T616 起存仓库不记，见 WAREHOUSE_KEEP）。按底子扣（事件）不记，原版独立物品留在
 ##   $dataArmors 里、重放找得到就不重发，重制用 flags._codexCrownKnown 记「本档建过的 uid」顶替。
 ## 编号：原版 crypto 16 字节，重制 Crypto 16 字节。开战掷点：原版 Math.random，重制取战斗规则流。
 ## 图标 290000 画整张 Codex_DemonCrown（icon_texture，XUI／大图标接）；说明行小数按 D.display 取整（desc_rows，RJO.HE.getDescParams 包装）；
@@ -50,7 +50,7 @@ const HINT_MARK := "※"  # T548 天启篇提示行的打头字（describe 重�
 static var COMPACT := true
 const DONE := "battlesDone"
 
-## O-待定（T616，玩家反馈 0.04.08「头顶存进仓库再取出就消失，读档也找不回」）：原版存仓库走 $gameParty.loseItem，被本包装当成「失去」
+## O-696（T616，玩家反馈 0.04.08「头顶存进仓库再取出就消失，读档也找不回」）：原版存仓库走 $gameParty.loseItem，被本包装当成「失去」
 ## 在账本里记 removed（同卖掉）；取出只放回背包、账本不改，下一次重放（存档、读档）按 removed 把它删掉。账本在存档外，读存仓库之前的档
 ## 同样被删。true（默认）：
 ## - 存进方桌仓库不算失去（XWarehouse.deposit 不再记账本）；重放也认仓库里的那件（成长照账本盖上，真失去的照样从仓库拿掉）。
@@ -280,7 +280,7 @@ static func _find(s: XState, uid: String) -> Dictionary:
 				return e
 	return {}
 
-## 方桌仓库（XState.warehouses）里的 7940 实例（O-待定 T616）
+## 方桌仓库（XState.warehouses）里的 7940 实例（O-696 T616）
 static func stored(s: XState) -> Array:
 	var out := []
 	for w in s.warehouses.values():
@@ -292,7 +292,7 @@ static func stored(s: XState) -> Array:
 					out.append(e)
 	return out
 
-## 修复前写下的 removed（没有 lost 标记）：分不清存过仓库还是真失去（O-待定 T616）
+## 修复前写下的 removed（没有 lost 标记）：分不清存过仓库还是真失去（O-696 T616）
 static func _legacy_removed(r) -> bool:
 	return r is Dictionary and bool(r.get("removed", false)) and not r.has(LOST_MARK)
 
@@ -305,7 +305,7 @@ static func backup_once() -> void:
 		if err != OK:
 			push_warning("\"头顶\"成长记录备份失败：%s" % error_string(err))
 
-## 修复前的 removed 指向本档里还在的那件（背包、身上、仓库）：以存档为准撤销 removed（O-待定 T616，口径 A）
+## 修复前的 removed 指向本档里还在的那件（背包、身上、仓库）：以存档为准撤销 removed（O-696 T616，口径 A）
 static func _heal(s: XState) -> bool:
 	if not WAREHOUSE_KEEP:
 		return true
@@ -340,7 +340,7 @@ static func _remove(s: XState, item: Dictionary) -> void:
 	var i := s.gear.find_custom(func(e): return is_same(e, item))
 	if i >= 0:
 		s.gear.remove_at(i)
-	if WAREHOUSE_KEEP:  # O-待定 T616：真失去的那件在仓库里（读失去之前的档）也拿掉
+	if WAREHOUSE_KEEP:  # O-696 T616：真失去的那件在仓库里（读失去之前的档）也拿掉
 		for w in s.warehouses.values():
 			if not w is Dictionary or not w.get("items") is Dictionary:
 				continue
@@ -375,7 +375,7 @@ static func replay(s: XState) -> bool:
 		var r: Dictionary = p.items[uid]
 		if bool(r.get("removed", false)):
 			if WAREHOUSE_KEEP and _legacy_removed(r):
-				continue  # O-待定 T616：修复前的 removed 以存档为准（在本档的由 _heal 撤销，不在的本来就没有可删的）
+				continue  # O-696 T616：修复前的 removed 以存档为准（在本档的由 _heal 撤销，不在的本来就没有可删的）
 			var it := _find(s, str(uid))
 			if not it.is_empty():
 				_remove(s, it)
@@ -509,7 +509,7 @@ static func lost(s: XState, item: Dictionary) -> bool:
 		if (p.items as Dictionary).has(uid):
 			p.items[uid].removed = true
 			if WAREHOUSE_KEEP:
-				p.items[uid][LOST_MARK] = true))  # O-待定 T616：修复后的真失去，读更早的档照旧移除
+				p.items[uid][LOST_MARK] = true))  # O-696 T616：修复后的真失去，读更早的档照旧移除
 
 ## startBattle 包装（原 startBattle 之前）：收编、记穿着的人；掉落战斗或有人穿着才建这一场的账（roll 只在新建且是掉落战斗时调）
 static func begin(s: XState, troop: int, roll: Callable, logic = null) -> void:
@@ -660,7 +660,7 @@ static func after_load(s: XState, identity: String) -> void:
 	if _idle(s):
 		return
 	if WAREHOUSE_KEEP:
-		backup_once()  # O-待定 T616：修复版第一次碰账本之前留一份原样（只备一次）
+		backup_once()  # O-696 T616：修复版第一次碰账本之前留一份原样（只备一次）
 	_safely(s, func(): return profile(s) != null and _heal(s) and _adopt(s) and replay(s))
 
 static func identity(text: String) -> String:

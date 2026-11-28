@@ -147,7 +147,7 @@ static func deposit(s: XState, cat: String, rec: Dictionary) -> bool:
 			w.items[cat].append(dup)
 			w.currentCapacity = int(w.currentCapacity) + 1
 			return true
-		# 原版 $gameParty.loseItem(item, 1)：魔冠、云裳天衣记进各自账本（当成失去）。O-待定（T616）：存仓库不是失去，
+		# 原版 $gameParty.loseItem(item, 1)：魔冠、云裳天衣记进各自账本（当成失去）。O-696（T616）：存仓库不是失去，
 		# 开关开着的那一种不记账本（XDemonCrown.WAREHOUSE_KEEP／XYunshangOrders.WAREHOUSE_KEEP，取出后不再被重放删掉）
 		var keep := (XDemonCrown.WAREHOUSE_KEEP and str(rec.get(XDemonCrown.UID, "")) != "") \
 			or (XYunshangOrders.WAREHOUSE_KEEP and str(rec.get("_yunUid", "")) != "")

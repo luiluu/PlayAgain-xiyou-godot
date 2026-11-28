@@ -129,13 +129,13 @@ func _run() -> void:
 	var l3: Dictionary = JSON.parse_string(ledger_at_save)
 	(l3.profiles[profile_id].journal as Array).append({"remove": worn_uid, "instance": "", "baseId": 0})
 	cases["newer_remove_worn"] = JSON.stringify(l3)
-	# 3b. 同上，但卖掉的是背包里那件：读档照原版从背包移除（防复制不受影响）。O-待定（T616）起修复后的真失去带 src "lose"
+	# 3b. 同上，但卖掉的是背包里那件：读档照原版从背包移除（防复制不受影响）。O-696（T616）起修复后的真失去带 src "lose"
 	var bag_uid := str(XYunshangOrders.owned(s)[0].get("_yunUid", "")) if not XYunshangOrders.owned(s).is_empty() else ""
 	check("setup.bag_robe", bag_uid != "" and bag_uid != worn_uid, [bag_uid, worn_uid])
 	var l3b: Dictionary = JSON.parse_string(ledger_at_save)
 	(l3b.profiles[profile_id].journal as Array).append({"remove": bag_uid, "instance": "", "baseId": 0, "src": "lose"})
 	cases["newer_remove_bag"] = JSON.stringify(l3b)
-	# 3c. O-待定（T616）：修复前写下的背包那件 remove（没有来源，可能是存进了方桌仓库）：读档以存档为准保留
+	# 3c. O-696（T616）：修复前写下的背包那件 remove（没有来源，可能是存进了方桌仓库）：读档以存档为准保留
 	var l3c: Dictionary = JSON.parse_string(ledger_at_save)
 	(l3c.profiles[profile_id].journal as Array).append({"remove": bag_uid, "instance": "", "baseId": 0})
 	cases["legacy_remove_bag"] = JSON.stringify(l3c)
@@ -197,7 +197,7 @@ func _run() -> void:
 	XYunshangOrders.KEEP_WORN_ON_LOAD = true
 	XState.current = s
 	XSave.save(1)
-	# 反向：关掉 WAREHOUSE_KEEP（O-待定 T616）回到原版，修复前的背包那件 remove 照旧把它移除
+	# 反向：关掉 WAREHOUSE_KEEP（O-696 T616）回到原版，修复前的背包那件 remove 照旧把它移除
 	XYunshangOrders.WAREHOUSE_KEEP = false
 	_write_ledger(cases["legacy_remove_bag"])
 	var r2 := _cold_load(true)
