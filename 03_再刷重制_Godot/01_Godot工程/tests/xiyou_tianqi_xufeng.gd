@@ -225,7 +225,8 @@ func _run() -> void:
 	var xy_sk9995 := XDB.rec("Skills", 9995)
 	var xy_sk9986 := XDB.rec("Skills", 9986)
 	var xy_sk9998 := XDB.rec("Skills", 9998)
-	check("xy.skills.orig", int(xy_sk9995.get("stypeId", 0)) == 4 and str(xy_sk9986.get("meta", {}).get("passiveIRUP", "")).strip_edges() == "300"
+	check("xy.skills.orig", int(xy_sk9995.get("stypeId", 0)) == (1 if XXufeng.JIAN9 else 4) and  # T586 西游档剑九改主动战技（XXufeng.JIAN9）
+		 str(xy_sk9986.get("meta", {}).get("passiveIRUP", "")).strip_edges() == "300"
 		and xy_sk9998.get("meta", {}).has("StartPushState2539"))
 	var xy_gear: Dictionary = XTianqiSkills.gear_view(XGear.template("armor", 143))
 	check("xy.gear143.orig", (xy_gear.get("traits", []) as Array).size() >= 10, (xy_gear.get("traits", []) as Array).size())

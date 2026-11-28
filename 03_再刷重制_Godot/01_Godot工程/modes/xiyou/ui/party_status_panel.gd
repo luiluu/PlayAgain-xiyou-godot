@@ -191,7 +191,7 @@ static func rows_for(b: XBattler) -> Array:
 	var seen := {}
 	for st in b.states():
 		var id := int(st.get("id", 0))
-		if seen.has(id) or not XSideStatus.visible_state(st):
+		if seen.has(id) or not XSideStatus.visible_state(st) or XXufeng.lijie_hidden(b, id):  # T586 R2：施放当回合不列力竭
 			continue
 		seen[id] = true
 		var passive := not b.state_ids.has(id)
