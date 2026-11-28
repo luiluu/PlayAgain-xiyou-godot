@@ -28,6 +28,8 @@ func _run() -> void:
 	var was_xf := XXufeng.REWORK
 	var was_fix := XXufeng.LOCK_FIX
 	var was_p4 := XTianqiBase.PHASE4
+	var was_j9 := XXufeng.JIAN9
+	XXufeng.JIAN9 = false  # T586 把剑一～剑三、剑九做成主动战技；本专项守 T585 口径（剑九不动、八剑纯被动）
 	XMessageBox.auto = true
 	XImportedBalance.RELEASE_XUFENG = true
 	XXufeng.REWORK = true
@@ -48,6 +50,7 @@ func _run() -> void:
 	XImportedBalance.RELEASE_XUFENG = was_rel
 	XXufeng.REWORK = was_xf
 	XXufeng.LOCK_FIX = was_fix
+	XXufeng.JIAN9 = was_j9
 	XXufeng.clear_cache()
 	XTianqiBase.PHASE4 = was_p4
 	XTianqiSkills.reload_table()

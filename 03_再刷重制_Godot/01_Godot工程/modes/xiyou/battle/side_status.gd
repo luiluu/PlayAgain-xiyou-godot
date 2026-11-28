@@ -149,7 +149,7 @@ static func _cell_rows_now(b: XBattler) -> Array:
 			continue
 		seen[id] = true
 		var icon := int(st.get("iconIndex", 0))
-		if icon <= 0:
+		if icon <= 0 or XXufeng.lijie_hidden(b, id):  # T586 R2：施放当回合不显示力竭格子
 			continue
 		if not CELL_FILTER:
 			out.append({"icon": icon, "stack": 1})

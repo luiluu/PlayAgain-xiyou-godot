@@ -20,6 +20,17 @@ static var REWORK := true
 ## 开战附伤状态 2530～2538、元素增伤与穿透照旧（D272 平衡不动）。只在 xiyou_save_on() 时经 rec 分派，天启篇不读。
 ## 回退：LOCK_FIX = false（回到 T440 口径：60 级起经验 −100%、基因锁可点但无事发生、剑一～剑八写「战斗专用」）。
 static var LOCK_FIX := true
+## 剑一·龙蛇、剑二·并蒂莲、剑三·三斤、剑九·六千里做成主动战技（T586，Kyo 11-27 事项 95「做成主动……避免徐凤年太超模，
+## 还是符合我们标定的强度」；同日改口径：剑一～剑三有名字的也做主动、剑九开场冷却 1 回合后冷却 2、
+## 「放完剑九当前回合就不能再行动了，下一回合全属性-50%」，O-695）。
+## 西游档副本：9987～9989、9995 改战技（stypeId 1、战斗中用），原被动加成标签（物理/寒冰伤、穿抗，D272）照留；
+## 剑四～剑八照旧被动。剑九放完给自己挂表外状态「收剑」ST_SHOUJIAN（本回合剩下的行动作废）与「力竭」ST_LIJIE（下一回合全属性 ×50%）。
+## 去掉 9995 的空公共事件 1704、Hide in Battle、空效果开战状态 2538。只在 xiyou_save_on() 时经 rec 分派，天启篇（skill_rework.json）不读。
+## 回退：JIAN9 = false（回到 T585 口径：剑一～剑三纯被动、9995 原样）。
+static var JIAN9 := true
+## T586 R2：力竭在属性最外层 ×50%（装备、被动等比率照乘，实际属性真减半），施放当回合状态栏只列收剑。
+## 设 false 回到 R1：力竭挂八项 −50% 能力值比率特性（与装备比率加算，全套时最大魔法只少约 25%）、收剑挂 +50% 抵消
+static var LIJIE_MUL := true
 
 const ACTOR := 152
 const SK_DAHUANGTING := 9985
@@ -33,6 +44,9 @@ const SK_GUNLONG := 9998
 const ST_SHENG_SRC := 2525      # 公共状态「神秘成圣」（9984/9997/10512 共用），原件不动
 const ST_TIANXIA := 19501       # 表外号段：西游档 9997 专属「神秘成圣」副本（仅西游档可读，不改 States 表长与 2525）
 const ST_TRUE_SWORD9 := 2539
+const ST_SHOUJIAN := 19502      # 表外号段：西游档剑九「收剑」（本回合不能再行动；复制自 29 眩晕改名，仅西游档可读）
+const ST_LIJIE := 19503         # 表外号段：西游档剑九「力竭」（下一回合全属性 ×50%；仅西游档可读）
+const ST_STUN_SRC := 29         # 原版「眩晕」（1 回合、回合末解除、不能行动）
 const WPN_XIUDONG := 76
 const ARM_CHUNLEI := 129
 const ARM_FABAO := 143
@@ -55,22 +69,22 @@ const SWORDS := {
 }
 
 ## 9997 天下第一（80 级被动）＋ 表外状态 ST_TIANXIA（19501，保留神秘成圣双步机制）
-const TIANXIA_STATE_PCT := 1     # 神秘成圣（19501）终伤 +1%、暴击再 +1%（原 2525 为 +70%/+70%）
-const TIANXIA_HARM := 1          # 终伤/爆伤 +%（原 200）
-const TIANXIA_ELUP := 1          # 全属性伤害 +%（原 180）
-const TIANXIA_DEHARM := 10       # 无视所有抵抗 %（原 30）
-const TIANXIA_STAT_PCT := 1      # 六维属性 +%（原 200）
-const TIANXIA_MHP_FLAT := 20000  # 最大生命 +（原 100000）
-const TIANXIA_MHP_PCT := 50      # 最大生命 +%（原 500）
-const TIANXIA_MMP_FLAT := 10000  # 最大魔法 +（原 30000）
-const TIANXIA_MMP_PCT := 50      # 最大魔法 +%（原 300）
-const TIANXIA_CRIT_HIT := 50     # 暴击/命中 +%（原 500）
-const TIANXIA_APLUS := 1         # 再次行动几率 %（原 100）
+const TIANXIA_STATE_PCT := 1  # 神秘成圣（19501）终伤、暴击各 +%（原 2525 70%；T440 1）（T586 v0.4 平摊）
+const TIANXIA_HARM := 6  # 终伤/爆伤 +%（原 200；T440 1）（T586 v0.4 平摊）
+const TIANXIA_ELUP := 5  # 全属性伤害 +%（原 180；T440 1）（T586 v0.4 平摊）
+const TIANXIA_DEHARM := 30  # 无视所有抵抗 %（原 30；T440 10）（T586 v0.4 平摊）
+const TIANXIA_STAT_PCT := 3  # 六维属性 +%（原 200；T440 1）（T586 v0.4 平摊）
+const TIANXIA_MHP_FLAT := 50000  # 最大生命 +（原 100000；T440 20000）（T586 v0.4 平摊）
+const TIANXIA_MHP_PCT := 250  # 最大生命 +%（原 500；T440 50）（T586 v0.4 平摊）
+const TIANXIA_MMP_FLAT := 15000  # 最大魔法 +（原 30000；T440 10000）（T586 v0.4 平摊）
+const TIANXIA_MMP_PCT := 150  # 最大魔法 +%（原 300；T440 50）（T586 v0.4 平摊）
+const TIANXIA_CRIT_HIT := 250  # 暴击/命中 +%（原 500；T440 50）（T586 v0.4 平摊）
+const TIANXIA_APLUS := 2  # 再次行动几率 %（原 100；T440 1）（T586 v0.4 平摊）
 
 ## 9998 剑气滚龙壁·封印（每段公式，去 b.hp*0.000015）与 State 2539 真·剑九
 const GUNLONG_BASE := 666666         # 保留原版固定底数
-const GUNLONG_ATK_MUL_888 := 130000  # 物攻整数系数（原 3000 + b.hp*0.000015；T468 法宝 99→888 折算开启口径）
-const GUNLONG_ATK_MUL_99 := 209000   # 物攻整数系数（T440 原 99 级法宝口径，SCALE_99_TO_888 关闭时联动回退）
+const GUNLONG_ATK_MUL_888 := 92000  # 物攻整数系数（原 3000 + b.hp*0.000015；T468 法宝 99→888 折算开启口径；T440 130000；T586 剑九多给、9998 抵回）
+const GUNLONG_ATK_MUL_99 := 139000  # 物攻整数系数（99 级法宝口径，SCALE_99_TO_888 关闭时联动回退；T440 209000）
 const ST2539_RATE := 2               # 真·剑九终伤加成整数倍（2 → +200%，原 5 → +500%）
 
 ## Armor 143 徐凤年·不朽法宝（保留全部 11 条 traits）
@@ -87,12 +101,36 @@ const XIUDONG_HARM := 120        # 终伤/爆伤 +120%（原 +450%）
 const XIUDONG_GROW := 4          # 绣冬 76 每级物攻/魔攻 +4（原 +10）
 
 ## Armor 129 春雷（75 级专属副手，方案 B：保留再动+1、完整生存成长 mhp*200/mmp*150/agi*25 与 2301 紫炎，配轻输出词条）
-const CHUNLEI_ATK_PCT := 105     # 物攻能力值 *105%（原 300%）
-const CHUNLEI_EL_AMP := 45       # 11 元素增幅 +45%（原 +600%）
-const CHUNLEI_HARM := 5          # 终伤/爆伤 +5%（原 +450%）
-const CHUNLEI_ATK_GROW := 1      # 每级物攻/魔攻 +1（原 +30；生命 +200、魔法 +150、敏捷 +25 保留原值）
+## T586 v0.4：春雷各项都有份（不再把终伤、成长压到 1%），物攻回 T440 的 105%
+const CHUNLEI_ATK_PCT_888 := 105  # 物攻能力值 *%（原 300%；T440 105%）（T586 v0.4 平摊）
+const CHUNLEI_ATK_PCT_99 := 105  # 物攻能力值 *%（SCALE_99_TO_888 关闭时联动回退；T440 105%）（T586 v0.4 平摊）
+const CHUNLEI_EL_AMP := 90  # 11 元素增幅 +%（原 +600%；T440 45）（T586 v0.4 平摊）
+const CHUNLEI_HARM := 25  # 终伤/爆伤 +%（原 +450%；T440 5）（T586 v0.4 平摊）
+const CHUNLEI_ATK_GROW := 5  # 每级物攻/魔攻 +（原 +30；T440 1；生命 +200、魔法 +150、敏捷 +25 保留原值）（T586 v0.4 平摊）
+
+## T586 主动四招：每段 (GUNLONG_BASE + 物攻×系数)×(1+熟练度)，与 9998 同形；系数整数、联动 SCALE_99_TO_888 [888 口径, 99 口径]
+## 9998 每段 92000／148000（T586 第 3 轮同比，原按 130000／209000 定）、五段，下面「约 X 次 9998」都按此折算
+const ACTIVE_SWORDS := {
+	9987: {"name": "剑一·龙蛇", "hits": 1, "scope": 6, "mul": [69000, 110000], "mp": 0, "tp": 0, "tp_gain": 5, "cd": 0},     # 随机敌人四段，合计约 0.6 次 9998；每段命中回 TP；1 级就学会、1 级最大魔法只有 1，不耗 MP（方案原写 500MP）
+	9988: {"name": "剑二·并蒂莲", "hits": 2, "scope": 2, "mul": [184000, 296000], "mp": 0, "tp": 20, "tp_gain": 0, "cd": 2},   # 敌方全体两段，每个敌人约 0.8 次
+	9989: {"name": "剑三·三斤", "hits": 1, "scope": 1, "mul": [368000, 592000], "mp": 0, "tp": 30, "tp_gain": 0, "cd": 3},     # 单体一击约 0.8 次，50% 眩晕 1 回合
+}
+const SWORD3_STUN_PCT := 50
+## T586 v0.4 平摊（Kyo 11-27「平摊一下削弱给其他地方」）：T440 没动的两条高档被动也分担削弱
+const SK_SHENGZHE := 9976            # 圣者境界（60 级）
+const SHENGZHE_HARM := 90            # 暴伤／终伤 +%（原 100）
+const SK_JIANDAO := 10085            # 剑道唯吾（75 级）
+const JIANDAO_ELUP := 275            # 物理伤 +%（原 350）
+const JIAN9_HITS := 9
+const JIAN9_ATK_MUL_888 := 384000  # 九段合计约 5.8 次 T440 的 9998（Kyo 11-28「剑9多给一点，因为背负的代价太大」）；T586 R2 力竭真减半后 361000→384000（+6.5%）拉回 D272 守线
+const JIAN9_ATK_MUL_99 := 580000  # 99 级法宝口径（T586 R2 545000→580000，同 +6.5%）
+const JIAN9_TP := 50
+const JIAN9_WARMUP := 2              # 预热：每回合开始减 1，到 0 才能用 → 2 即开场冷却 1 回合、第 2 回合起可用（T586 专项实测）
+const JIAN9_COOLDOWN := 2            # 之后冷却 2 回合（战后冷却 −10 必清零）
+const LIJIE_PARAM_PCT := 50          # 力竭：全属性 ×50%
 
 static var _st_tianxia_cache: Array = []  # [src_ref, copy_dict]
+static var _st_out_cache := {}            # 表外状态号 -> [src_ref, copy_dict]
 static var _rec_cache := {}               # "Table:id" -> [base_ref, copy_dict]
 static var _gear_tpl_cache := {}          # "kind:id" -> [orig_ref, rework_copy]
 
@@ -111,6 +149,21 @@ static func xiudong_atk_pct() -> int:
 	return XIUDONG_ATK_PCT_888 if XMagicWeapon.SCALE_99_TO_888 else XIUDONG_ATK_PCT_99
 
 
+## 129 春雷物攻能力值百分比：联动 XMagicWeapon.SCALE_99_TO_888（开 118，关 120）
+static func chunlei_atk_pct() -> int:
+	return CHUNLEI_ATK_PCT_888 if XMagicWeapon.SCALE_99_TO_888 else CHUNLEI_ATK_PCT_99
+
+
+## 9995 剑九物攻系数：联动 XMagicWeapon.SCALE_99_TO_888
+static func jian9_atk_mul() -> int:
+	return JIAN9_ATK_MUL_888 if XMagicWeapon.SCALE_99_TO_888 else JIAN9_ATK_MUL_99
+
+
+static func sword_atk_mul(id: int) -> int:
+	var m: Array = ACTIVE_SWORDS[id].mul
+	return int(m[0]) if XMagicWeapon.SCALE_99_TO_888 else int(m[1])
+
+
 ## 仅在已载入西游档（非天启篇、非无存档静态表校验）时生效的记录分派
 static func xiyou_save_on() -> bool:
 	return REWORK and XState.current != null and not XTianqi.active(XState.current)
@@ -125,6 +178,7 @@ static func original_data() -> void:
 ## 清掉本模块与 XActor 里受影响的缓存（共享原表 XDB._tables 从未被修改，无需驱逐）
 static func clear_cache() -> void:
 	_st_tianxia_cache.clear()
+	_st_out_cache.clear()
 	_rec_cache.clear()
 	_gear_tpl_cache.clear()
 	for suffix in ["", ":xy"]:
@@ -139,7 +193,7 @@ static func touches(table_name: String, id: int) -> bool:
 	match table_name:
 		"Skills":
 			return id == SK_DAHUANGTING or id == SK_TIANXIA or id == SK_GUNLONG or SWORDS.has(id) \
-				or (LOCK_FIX and id == SK_GENELOCK)
+				or (LOCK_FIX and id == SK_GENELOCK) or (JIAN9 and id == SK_SWORD9) or id == SK_SHENGZHE or id == SK_JIANDAO
 		"States":
 			return id == ST_TRUE_SWORD9
 		"Armors":
@@ -153,7 +207,7 @@ static func touches(table_name: String, id: int) -> bool:
 static func rec(table_name: String, id: int, base: Dictionary) -> Dictionary:
 	if not REWORK or base.is_empty():
 		return base
-	var scale_tag := (":s1" if XMagicWeapon.SCALE_99_TO_888 else ":s0") + (":L1" if LOCK_FIX else ":L0")
+	var scale_tag := (":s1" if XMagicWeapon.SCALE_99_TO_888 else ":s0") + (":L1" if LOCK_FIX else ":L0") + (":J1" if JIAN9 else ":J0")
 	var key := "%s:%d%s" % [table_name, id, scale_tag]
 	var cached = _rec_cache.get(key)
 	if cached is Array and cached.size() == 2 and is_same(cached[0], base):
@@ -167,8 +221,19 @@ static func rec(table_name: String, id: int, base: Dictionary) -> Dictionary:
 				_patch_sword(r, id, SWORDS[id])
 				if LOCK_FIX:
 					_fix_sword_passive(r)
+				if JIAN9 and ACTIVE_SWORDS.has(id):
+					_patch_active_sword(r, id)
 			elif id == SK_GENELOCK and LOCK_FIX:
 				_fix_genelock(r)
+			elif id == SK_SWORD9 and JIAN9:
+				_patch_jian9(r)
+			elif id == SK_SHENGZHE:
+				_replace_tag(r, "passiveHarmRi", str(SHENGZHE_HARM))
+				_replace_tag(r, "passiveCrHarmRi", str(SHENGZHE_HARM))
+				_replace_note_meta(r, "暴击伤害、最终伤害各＋100%", "暴击伤害、最终伤害各＋%d%%" % SHENGZHE_HARM)
+			elif id == SK_JIANDAO:
+				_replace_tag(r, "passiveELUP01", "%d%%" % JIANDAO_ELUP)
+				_replace_note_meta(r, "物理伤害+350%", "物理伤害+%d%%" % JIANDAO_ELUP)
 			elif id == SK_TIANXIA:
 				_patch_9997(r)
 				_redirect_9997_state(r)
@@ -207,6 +272,77 @@ static func tianxia_state_rec(t: Array) -> Dictionary:
 	r.note = str(r.get("note", "")).replace("var finalRate = 0.7;", "var finalRate = %.2f;" % k).replace("var bonusRate = 0.7;", "var bonusRate = %.2f;" % k)
 	_st_tianxia_cache = [src, r]
 	return r
+
+
+## 西游档表外状态（XDB.rec 分派入口）：19501 天下第一神秘成圣；T586 19502 收剑、19503 力竭
+static func has_out_state(id: int) -> bool:
+	return id == ST_TIANXIA or (JIAN9 and (id == ST_SHOUJIAN or id == ST_LIJIE))
+
+
+static func out_state_rec(id: int, t: Array) -> Dictionary:
+	if id == ST_TIANXIA:
+		return tianxia_state_rec(t)
+	if not REWORK or not JIAN9 or not (id == ST_SHOUJIAN or id == ST_LIJIE):
+		return {}
+	if ST_STUN_SRC >= t.size() or not (t[ST_STUN_SRC] is Dictionary):
+		return {}
+	var src: Dictionary = t[ST_STUN_SRC]
+	var cached = _st_out_cache.get(id)
+	if cached is Array and cached.size() == 2 and is_same(cached[0], src):
+		return cached[1]
+	var r: Dictionary = src.duplicate(true)
+	r.id = id
+	r.removeAtBattleEnd = true
+	r.autoRemovalTiming = 2
+	r.message3 = ""
+	r.message4 = ""
+	if id == ST_SHOUJIAN:
+		# 29 眩晕：不能行动、持续 1、回合末解除 → 放剑九的这一回合剩下的行动作废
+		r.name = "收剑"
+		r.message1 = "%1收剑了！"
+		r.message2 = "%1收剑了！"
+		r.minTurns = 1
+		r.maxTurns = 1
+		if not LIJIE_MUL:
+			var traits: Array = (r.get("traits", []) as Array).duplicate(true)
+			for pid in 8:
+				traits.append({"code": 21, "dataId": pid, "value": float(200 - LIJIE_PARAM_PCT) / 100.0})
+			r.traits = traits
+		r.note = "<BuffType:收剑>\n<StateNote>\n剑九已出，本回合不能再行动\n收剑期间属性不变，下一回合力竭：全属性-%d%%\n</StateNote>" % (100 - LIJIE_PARAM_PCT) if LIJIE_MUL else "<BuffType:收剑>\n<StateNote>\n剑九已出，本回合不能再行动\n</StateNote>"
+	else:
+		# 持续 2、回合末解除：挂上的这回合（收剑在，属性不变、状态栏不显示）＋下一整回合（八项属性 ×50%），能行动
+		# T586 R2：不挂能力值比率特性——比率是加算 1＋Σ(值−1)（XBattler.traits_pi），装备 +100% 时 −50% 只剩少 25%；
+		# 改在 XActor._param_now 最外层乘 lijie_param，同等条件下实际属性真减半
+		r.name = "力竭"
+		r.message1 = "%1力竭了！"
+		r.message2 = "%1力竭了！"
+		r.restriction = 0
+		r.motion = 0
+		r.minTurns = 2
+		r.maxTurns = 2
+		r.traits = []
+		if not LIJIE_MUL:
+			for pid in 8:
+				r.traits.append({"code": 21, "dataId": pid, "value": float(LIJIE_PARAM_PCT) / 100.0})
+		r.note = "<BuffType:减益>\n<StateNote>\n全属性-%d%%\n</StateNote>" % (100 - LIJIE_PARAM_PCT)
+	r.meta = XZhenqi.extract_meta(r.note)
+	_st_out_cache[id] = [src, r]
+	return r
+
+
+## T586 R2：力竭生效中（收剑已解除）＝八项属性在最外层 ×LIJIE_PARAM_PCT%；收剑还在的施放当回合不减
+static func lijie_active(b) -> bool:
+	return JIAN9 and LIJIE_MUL and b.state_ids.has(ST_LIJIE) and not b.state_ids.has(ST_SHOUJIAN)
+
+## XActor._param_now 最外层：力竭时属性乘 LIJIE_PARAM_PCT%（与装备、被动等各层相乘，不跟比率特性加算）
+static func lijie_param(b, _i: int, v: float) -> float:
+	if not lijie_active(b):
+		return v
+	return roundf(v * float(LIJIE_PARAM_PCT) / 100.0)
+
+## 状态栏与侧栏格子：施放当回合力竭还没生效，不显示（收剑的说明里写了下一回合力竭）
+static func lijie_hidden(b, id: int) -> bool:
+	return id == ST_LIJIE and JIAN9 and LIJIE_MUL and b.state_ids.has(ST_SHOUJIAN)
 
 
 # ---- 读档双向同步既有专属装备实例（P1-2） ----
@@ -666,6 +802,131 @@ static func _drop_aps_line(s: Dictionary, needle: String) -> void:
 				meta.erase(k)
 
 
+## 与 9998 同形的公式 (GUNLONG_BASE + a.atk×mul)×(1+熟练度)
+static func _set_atk_formula(s: Dictionary, id: int, atk_mul: int) -> void:
+	var src = s.get("damage", {}).get("formulaProgram", {}).get("source", {"table": "Skills", "id": id, "custom": false})
+	s.damage = {
+		"critical": true, "elementId": 1, "type": 1, "variance": 10, "custom": false,
+		"formula": "(%d+a.atk*%d)*(1+user.skillMasteryLevel(item.id))" % [GUNLONG_BASE, atk_mul],
+		"formulaGd": "(%d+a.atk*%d)*(1+a.skillMasteryLevel(%d))" % [GUNLONG_BASE, atk_mul, id],
+		"formulaProgram": {
+			"version": 1, "source": src, "status": "pure", "capabilities": ["read.battler"], "locals": [],
+			"steps": [{"op": "expr", "pos": 0, "value": {
+				"op": "binary", "pos": 0, "operator": "*",
+				"left": {"op": "binary", "pos": 1, "operator": "+",
+					"left": {"op": "literal", "pos": 1, "value": float(GUNLONG_BASE)},
+					"right": {"op": "binary", "pos": 8, "operator": "*",
+						"left": {"op": "property", "pos": 8, "receiver": "a", "name": "atk"},
+						"right": {"op": "literal", "pos": 14, "value": float(atk_mul)}}},
+				"right": {"op": "binary", "pos": 25, "operator": "+",
+					"left": {"op": "literal", "pos": 25, "value": 1.0},
+					"right": {"op": "read", "pos": 27, "receiver": "a", "name": "mastery",
+						"args": [{"op": "literal", "pos": 50, "value": id}]}}}}],
+			"result": "completion",
+		},
+	}
+
+
+## 行动序列：咏唱＋剑气动画，hits 段 action effect（目标写法 tgt），tail 追加在最后
+static func _set_seq(s: Dictionary, hits: int, tgt: String, tail: Array, effects := -1) -> PackedStringArray:
+	var target: Array = [["motion chant", ["user"]], ["Animation 1050", [tgt]]]
+	var lines := PackedStringArray(["<Target Action>", "motion chant: user", "Animation 1050: %s" % tgt])
+	for i in hits:
+		target.append(["wait", ["4"]])
+		target.append(["action effect", [tgt]])
+		lines.append("wait: 4")
+		lines.append("action effect: %s" % tgt)
+	for cmd in tail:
+		target.append([cmd[0], [cmd[1]]])
+		lines.append("%s: %s" % [cmd[0], cmd[1]])
+	lines.append("</Target Action>")
+	s.yepSeq = {
+		"setup": [["CLEAR BATTLE LOG"], ["DISPLAY ACTION"], ["IMMORTAL", ["TARGETS", "TRUE"]], ["PERFORM START"], ["WAIT FOR MOVEMENT"], ["CAST ANIMATION"], ["WAIT FOR ANIMATION"]],
+		"whole": [],
+		"target": target,
+		"follow": [],
+		"finish": [["IMMORTAL", ["TARGETS", "FALSE"]], ["WAIT FOR NEW LINE"], ["CLEAR BATTLE LOG"], ["PERFORM FINISH"], ["WAIT FOR MOVEMENT"], ["WAIT FOR EFFECT"], ["ACTION COMMON EVENT"]],
+	}
+	s.yepEffects = hits if effects < 0 else effects
+	return lines
+
+
+static func _aps(text: String) -> String:
+	return "<pos=APs text=%s size=18 color=rgba(255,255,255,1) line=false align=0>" % text
+
+
+## T586：剑一～剑三改战技（在 D272 _patch_sword 与 T585 _fix_sword_passive 之后）；被动加成标签与「物理/寒冰伤害+X%」卡面行照留
+static func _patch_active_sword(s: Dictionary, id: int) -> void:
+	var cfg: Dictionary = ACTIVE_SWORDS[id]
+	var hits := int(cfg.hits)
+	s.name = str(cfg.name)
+	s.stypeId = 1
+	s.occasion = 1
+	s.scope = int(cfg.scope)
+	s.mpCost = int(cfg.mp)
+	s.tpCost = int(cfg.tp)
+	s.tpGain = int(cfg.tp_gain)
+	s.successRate = 100
+	var flavor := str(s.get("description", "")).get_slice("\n", 1)
+	s.description = "战技\n" + flavor
+	_set_atk_formula(s, id, sword_atk_mul(id))
+	var seq := _set_seq(s, hits, "target", [])  # 行动序列按目标逐个跑（随机四个／全体），每个目标 hits 段
+	var desc := []
+	match id:
+		9987:
+			desc = ["对象:随机敌人四次", "\\c[1]效果:剑走龙蛇，四段剑气随机落在敌人身上，每段命中回复TP"]
+		9988:
+			desc = ["对象:敌方全体两次", "\\c[1]效果:一剑两花，同时斩向所有敌人"]
+		9989:
+			desc = ["对象:单体一次", "\\c[1]效果:剑重三斤，命中后有%d%%几率让目标眩晕1回合" % SWORD3_STUN_PCT]
+			s.effects = [{"code": 21, "dataId": ST_STUN_SRC, "value1": float(SWORD3_STUN_PCT) / 100.0, "value2": 0}]
+	if int(cfg.cd) > 0:
+		desc.append("\\c[1]冷却:%d回合" % int(cfg.cd))
+	# 原 note：开战状态、品质、卡面与被动标签照留，把行动序列与新卡面行插在「据说是剑九黄的绝学!」之后
+	var old_lines := str(s.get("note", "")).split("\n")
+	var out := PackedStringArray()
+	for ln in old_lines:
+		out.append(ln)
+		if ln.contains("据说是剑九黄的绝学!"):
+			out.append(_aps("伤害属性:物理"))
+			for d in desc:
+				out.append(_aps(d))
+	if int(cfg.cd) > 0:
+		out.insert(0, "<Cooldown: %d>" % int(cfg.cd))
+	out.append_array(seq)
+	s.note = "\n".join(out)
+	s.meta = XZhenqi.extract_meta(s.note)
+
+
+## T586：9995 剑九·六千里改战技（西游档副本）；卡面不写内部系数
+static func _patch_jian9(s: Dictionary) -> void:
+	s.stypeId = 1
+	s.occasion = 1
+	s.scope = 1
+	s.mpCost = 0
+	s.tpCost = JIAN9_TP
+	s.successRate = 100
+	s.description = "战技\n劣马黄酒六千里"
+	s.name = "剑九·六千里"
+	_drop_effect(s, 44, 1704)
+	_set_atk_formula(s, SK_SWORD9, jian9_atk_mul())
+	var seq := _set_seq(s, JIAN9_HITS, "target", [["Add State %d" % ST_SHOUJIAN, "user"], ["Add State %d" % ST_LIJIE, "user"]])  # P1-1：只打所选目标；先收剑再力竭，收剑在的当回合力竭不生效（lijie_active）
+	var lines := PackedStringArray([
+		"<quality:5>", "<ici:5>",
+		"<Warmup: %d>" % JIAN9_WARMUP,
+		"<Cooldown: %d>" % JIAN9_COOLDOWN,
+		_aps("\\c[1]据说是剑九黄的绝学!"),
+		_aps("伤害属性:物理"),
+		_aps("对象:单体攻击九次"),
+		_aps("\\c[1]效果:九段剑气，伤害随攻击力和技能等级提升，可以暴击"),
+		_aps("\\c[1]效果:战斗第%d回合起才能使用，冷却%d回合" % [JIAN9_WARMUP, JIAN9_COOLDOWN]),
+		_aps("\\c[1]代价:使出后本回合不能再行动，下一回合力竭，全属性降低%d%%" % (100 - LIJIE_PARAM_PCT)),
+	])
+	lines.append_array(seq)
+	s.note = "\n".join(lines)
+	s.meta = XZhenqi.extract_meta(s.note)
+
+
 static func _patch_9997(s) -> void:
 	if not (s is Dictionary):
 		return
@@ -756,9 +1017,11 @@ static func _patch_9998(s) -> void:
 		}],
 		"result": "completion",
 	}
+	# T586 文字审 P2-2：卡面不写内部公式和攻击系数（运行时公式照旧在 damage.formula）
 	_replace_note_meta(s,
 		"[666666+己·攻击力*3000+敌·生命值*0.00001]*[1+技能等级]",
-		"[%d+己·攻击力*%d]*[1+技能等级]" % [GUNLONG_BASE, atk_mul])
+		"连续攻击敌方全体五次，伤害随攻击力和技能等级提升。")
+	_replace_note_meta(s, "对象:单体攻击五次", "对象:敌方全体攻击五次")  # 原版序列就是打全体（D272 保留原版机制），卡面如实写
 	_replace_note_meta(s, "老剑神李淳罡的绝学,消耗15tp", "老剑神李淳罡的绝学,消耗10tp")
 
 
@@ -819,7 +1082,7 @@ static func _patch_chunlei_129(a: Dictionary) -> void:
 	var new_traits := []
 	for tr in a.get("traits", []):
 		if int(tr.get("code", 0)) == 21 and int(tr.get("dataId", 0)) == 2:
-			tr.value = float(CHUNLEI_ATK_PCT) / 100.0
+			tr.value = float(chunlei_atk_pct()) / 100.0
 			new_traits.append(tr)
 		elif int(tr.get("code", 0)) == 61 and int(tr.get("dataId", 0)) == 0:
 			aplus_seen += 1
@@ -849,7 +1112,7 @@ static func _patch_chunlei_129(a: Dictionary) -> void:
 	_replace_note_meta(a, "造成所有伤害结果*350%", "造成所有伤害结果*249%")
 	_replace_note_meta(a, "物理 、雷电 阴阳 混沌伤+600%", "物理 、雷电 阴阳 混沌伤+%d%%" % CHUNLEI_EL_AMP)
 	_replace_note_meta(a, "再动+2 ", "再动+1 ")
-	_replace_note_meta(a, "攻击力能力值*300%", "攻击力能力值*%d%%，爆伤+%d%%，伤害+%d%%" % [CHUNLEI_ATK_PCT, CHUNLEI_HARM, CHUNLEI_HARM])
+	_replace_note_meta(a, "攻击力能力值*300%", "攻击力能力值*%d%%，爆伤+%d%%，伤害+%d%%" % [chunlei_atk_pct(), CHUNLEI_HARM, CHUNLEI_HARM])
 
 
 # ---- 通用替换工具 ----

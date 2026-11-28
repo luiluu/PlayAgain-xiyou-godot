@@ -168,8 +168,8 @@ static func rec(name: String, id: int) -> Dictionary:
 		return XTianqiSkills.new_rec(id, t)  # 天启篇技能重构补的招（表外号段，按底号复制）
 	if name == "States" and id >= t.size() and XTianqiSkills.has_new_state(id):
 		return XTianqiSkills.new_state_rec(id, t)  # 天启篇技能重构新加的状态（表外号段 10801 起）
-	if name == "States" and id == XXufeng.ST_TIANXIA and XXufeng.xiyou_save_on():
-		return XXufeng.tianxia_state_rec(t)  # 西游档徐凤年 9997 专属神秘成圣副本（表外号段 19501，仅西游档可读，T440）
+	if name == "States" and XXufeng.has_out_state(id) and XXufeng.xiyou_save_on():
+		return XXufeng.out_state_rec(id, t)  # 西游档徐凤年表外状态：9997 神秘成圣副本 19501（T440）、剑九收剑 19502／力竭 19503（T586），仅西游档可读
 	if id >= t.size() and XTianqiElements.has_new(name, id):
 		return XTianqiElements.new_rec(name, id, t)  # 天启篇元素重做：新转换书道具/技能/公共事件
 	if id >= t.size() and (name == "Enemies" or name == "Troops" or name == "Skills") and XFestRoad.has(name, id):
