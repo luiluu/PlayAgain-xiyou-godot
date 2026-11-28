@@ -142,6 +142,7 @@ static func detail_rows(obj: Dictionary, width: float) -> Array:
 static func _content(obj: Dictionary, kind := "", skill_copy := false, power := true, elements := true) -> Array:
 	if obj.is_empty():
 		return []
+	obj = XTianqiCardVariance.view(obj)  # T590：天启篇改写过的招，伤害浮动幅度写成「浮动±N%」（只改显示）
 	obj = XTextFix.gear_actor_view(obj)  # T562 P2-3：旧天启档装备实例的原文模板行按新名显示
 	obj = XTianqiSkills.gear_view(obj)  # 天启篇技能重构：专属法宝、武器的说明按改写后的备注
 	obj = XTianqiGear.element_fabao_view(obj)  # 天启篇系别法宝（T442）：老档实例说明卡按改写视图显示
