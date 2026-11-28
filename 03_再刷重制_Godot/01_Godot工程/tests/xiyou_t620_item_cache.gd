@@ -1,5 +1,5 @@
 extends Node
-## T620（O-待定，XItemScene.CACHE_ITEM_ENTRIES）：物品页物品类列表记住后，得到／用掉物品、数量变、置顶、锁定、换存档之后
+## T620（O-697，XItemScene.CACHE_ITEM_ENTRIES）：物品页物品类列表记住后，得到／用掉物品、数量变、置顶、锁定、换存档之后
 ## 都与关掉缓存重算的结果逐项相同；没变时直接取同一份；回退（false）每次重算。
 const TestEnv = preload("res://tests/xiyou_test_env.gd")
 var results := []
