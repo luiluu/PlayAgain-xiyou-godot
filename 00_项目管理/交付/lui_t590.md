@@ -143,7 +143,7 @@
 ## 验证
 
 - 本机（Godot 一律 `--audio-driver Dummy`）：`xiyou_skill_help_fix` 36/36；`xiyou_tianqi_card_variance` 10/10；`xiyou_help_card` 1075/1075（对照原版，关掉两个通用开关）；`xiyou_help_card_sections` 35/35；语法检查 1281 个 .gd 0 问题；发行空壳 check 通过（`XTianqiCardVariance.view` 发行时原样返回）。全量检查没跑。
-- 云端选测：（待填）
+- 云端选测：✓ 通过，提交 ade8ff36ed，基准 38702d755d，60 个场景、2 片，https://github.com/luiluu/PlayAgain-xiyou-godot/actions/runs/46107426738 （`gh run watch` 前台等完）；其中 `xiyou_skill_help_fix` 36/36、`xiyou_tianqi_card_variance` 10/10、`xiyou_help_card` 1075/1075、`xiyou_help_card_sections` 35/35。之后只改交付单。
 
 ## 交接板
 
