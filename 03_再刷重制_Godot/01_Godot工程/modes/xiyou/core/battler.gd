@@ -517,7 +517,7 @@ func add_state(id: int, random: XRandomStream = null) -> void:
 	XGuyu.after_add_state(self, id)  # 谷雨 addState 包装（原 addState 之后）：谷雨自己倒下就归根
 	XTianqiElementEffects.after_add_state(self, id)  # 天启篇元素效果（T480）：旧停手、旧灼伤／麻痹挂上时顶掉元素标记
 
-## T584（O-待定·T584加状态夹上限）：原版 _Fix_StackOverflow 在 addState 期间把 Game_Battler.refresh 整个吞掉，角色加了压低上限的状态
+## T584（O-689）：原版 _Fix_StackOverflow 在 addState 期间把 Game_Battler.refresh 整个吞掉，角色加了压低上限的状态
 ## （如诛仙 162 舍身剑·燃血 10458 收尾挂的 2720，生命上限×0.01）生命／魔法不夹，要等下一次 setHp／gainHp 才夹，期间能凭旧血量多扛一击。
 ## 天启篇：锁放开后、这次加状态引发的结算全部跑完（含 XActor.add_state 里百厄成锦觉醒当场去掉减益，T584 R1 修小o P2-1）再看，
 ## 高于上限就夹回上限；嵌套在别的加状态里（锁还占着）不夹，留给最外层。调用处只在 XActor.add_state 最末。西游档照原版不动；敌人的 refresh 原版就会夹，不经这里。
