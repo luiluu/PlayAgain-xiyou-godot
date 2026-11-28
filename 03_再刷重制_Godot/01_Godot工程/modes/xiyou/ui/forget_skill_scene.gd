@@ -256,7 +256,9 @@ func skin_card() -> Dictionary:
 	var sk := XDB.rec("Skills", int(r.id))
 	XHelpCard.scene_actor = actor
 	var view := XGrowthHelp.skill_view(sk, actor)
+	XHelpCard.cost_actor = actor
 	var help := XHelpCard.content(view, "skill", bool(view.get("skill_copy", false)), 300.0)
+	XHelpCard.cost_actor = null
 	var secs := []
 	var desc := XSkinTemplatePage.help_rows(help)
 	if not desc.is_empty():
