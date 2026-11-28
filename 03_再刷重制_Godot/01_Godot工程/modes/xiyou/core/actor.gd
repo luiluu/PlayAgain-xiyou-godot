@@ -382,6 +382,8 @@ func add_state(id: int, random: XRandomStream = null) -> void:
 	XYunshang.state_added(self, id, not fresh)  # 云裳 stateAdded 包装：百厄成锦收录减益
 	if fresh and state_ids.has(id) and lifecycle_context.get("resources") == null:
 		release_to_party()
+	if not _adding_state:
+		_tq_clamp_after_add()  # T584 R1：天启篇补夹上限放在全部结算之后（百厄成锦醒着当场去掉降上限减益后不能少血）
 
 func remove_state(id: int) -> void:
 	var had := state_ids.has(id)
