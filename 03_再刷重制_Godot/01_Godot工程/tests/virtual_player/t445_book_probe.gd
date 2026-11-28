@@ -111,6 +111,11 @@ var k_scan := false  # T496：--k-scan 炼狱/证道配装不变，改用 K 探�
 var force_all := false  # T558（Kyo D292 补 11-27 事项 83 第 2 条）：--force-all-tiers 强者、弱者也像超强者一样强制量本角色全部改写伤害招（条件全中），六维输出用；缺省只超强者（平衡探针口径不变）
 var cond_full := false  # T558 R3（Kyo 11-27 事项 83：「条件全中」要乘卡面条件倍率 → 乘）：--cond-full 强制量时整次施放合计再乘落地招卡面 conds「条件全中÷当下条件」（同 k_calibrate eff_full／_coef_now），且自然放得出的招也强制量；缺省关（平衡探针口径不变）
 var act_tail := false  # T558 R4（修小o 核 P1-2）：--act-tail 每次施放 execute 之后再走 XBattleLogic.act 收尾的词条再释放、技能卡追加释放（battle_logic.gd 1457～1461），段数计进这次施放；缺省关（平衡探针口径不变）
+var module_tail := true  # T580（Kyo 11-27 事项 83「算，另开小卡补」）：--act-tail 时再收 XBattleLogic.act 收尾里的角色模块追加（渡鸦收割／回响、饿狼追击、宿傩追斩、镜流追加段、屠苏剑气、云裳复演等），次序照 act()；--no-module-tail 回 T558 R4 口径
+var race_tail := false  # T580 对照：--race-tail 再收种族收尾（XRaceBattle.finish：毒鸡汤、残响、反攻）；缺省不收（不是角色模块），只供交付单「若收会怎样」
+var weak_tail := false  # T580 对照：--weak-tail 开根（root_begin）并收弱者专属词条派生（XTianqiWeakAffix.root_end：反击、追击）；缺省不收，同上
+var module_prime := true  # T580（协调 11-27 选 A）：强制量条件全中时把模块收尾的触发状态按实战上限摆满（_prime_module）；--no-module-prime 关（对照用，分出摆状态带来的主招增量）
+const MODULE_SUSPECT_X := 10.0  # T580 保险（协调 11-27）：模块段单段超过被量主招单段 10 倍的单列 tail_suspect，不计入
 var bind_probe := true  # T502：炼狱/证道下对 176 屠苏（2 人化武）、177 璇（4 人列星＋2 人自律同调监控）启用编组探针；--no-bind-probe 回退单人对照
 
 
@@ -119,6 +124,10 @@ func _is_d271_build() -> bool:
 
 
 func _ready() -> void:
+	# T580（T591 a2ad33fc9）：本探针不经 TestEnv.isolate（k_calibrate 自己建档），本机开着测试模式时技能升满、经验 ×10；这里把测试模式指到测试目录（关）
+	var real_on := XTestMode.enabled()
+	preload("res://tests/xiyou_test_env.gd").isolate_test_mode("user://test_t445_book_probe")
+	print("T580_TEST_MODE real=%s isolated=%s" % [real_on, XTestMode.enabled()])
 	for arg in OS.get_cmdline_user_args():
 		if arg.begins_with("--book-build="):
 			book_build = arg.trim_prefix("--book-build=")
@@ -134,6 +143,14 @@ func _ready() -> void:
 			cond_full = true
 		elif arg == "--act-tail":
 			act_tail = true
+		elif arg == "--no-module-tail":
+			module_tail = false
+		elif arg == "--no-module-prime":
+			module_prime = false
+		elif arg == "--race-tail":
+			race_tail = true
+		elif arg == "--weak-tail":
+			weak_tail = true
 		elif arg == "--no-bind-probe":
 			bind_probe = false
 		elif arg == "--no-d287":  # T496：关掉 D287 收拢覆盖层（改前对照）；k_calibrate 也会读到同一开关
@@ -391,9 +408,11 @@ func _apply_cond(segs: Array, facs: Dictionary, a, e, landing: int) -> float:
 ## （劲夫开招前有怒拳，追加的乱打·再释放结算时怒拳已消费，不再乘 ×1.8）。
 ## 收尾落地招不在改写表、又不是被量的那招的（原版变体，如魔雷 5157／5158），那几段剔除并记 tail_dropped。
 ## 七印武器流派的收尾（放两次、再射等）照 _lianyu_battle 已屏蔽，不跑；击倒结算（followup_settle）木桩不倒，不跑。
-## 各角色模块的收尾追加（渡鸦收割／回响、饿狼追击、宿傩追斩、镜流追加段、屠苏剑气等）不是随机再放，照 T527 不收（交付单没核写明）。
+## T580 起各角色模块的收尾追加（渡鸦收割／回响、饿狼追击、宿傩追斩、镜流追加段、屠苏剑气、云裳复演等）也收，在词条再释放之前（_module_tail，照 act() 次序）；--no-module-tail 回 R4。
 func _cast_whole(logic, u, sk: Dictionary, e, facs: Dictionary, input_landing := false) -> Dictionary:
 	XStateEffects.force_critical = true
+	if act_tail and weak_tail:
+		XTianqiWeakAffix.root_begin(logic, u, sk)  # T580 对照：照 act() 开根，root_end 才有派生
 	var logs: Array = logic.execute(u, sk, e, true)
 	var segs := []
 	_collect_hits(logs, e, segs)
@@ -407,8 +426,17 @@ func _cast_whole(logic, u, sk: Dictionary, e, facs: Dictionary, input_landing :=
 	var cf := 1.0
 	if not facs.is_empty() and not segs.is_empty():
 		cf = _apply_cond(segs, facs, u, e, landing)
-	var out := {"segs": segs, "landing": landing, "landing_skill": landing_skill, "cf": cf, "tail": [], "tail_dropped": []}
+	var out := {"segs": segs, "landing": landing, "landing_skill": landing_skill, "cf": cf, "tail": [], "tail_dropped": [], "tail_suspect": []}
 	if act_tail:
+		var main_single := 0.0
+		for v in segs:
+			main_single = maxf(main_single, float(v))
+		if module_tail:
+			_module_add(out, _module_tail(logic, u, sk), e, facs, main_single, "module", landing)
+		if race_tail:
+			var race_logs := []
+			XRaceBattle.finish(logic, race_logs)
+			_module_add(out, race_logs, e, facs, main_single, "race")
 		var cond := not facs.is_empty()
 		XTianqiWeakAffix.set_kind(logic, XTianqiWeakAffix.FOLLOW)
 		var rfac := _cond_fac(u, e, int(sk.id)) if cond else 1.0
@@ -424,9 +452,91 @@ func _cast_whole(logic, u, sk: Dictionary, e, facs: Dictionary, input_landing :=
 		var flogs: Array = XTianqiSkills.end_action(logic, u, sk)
 		_tail_add(out, rlogs, e, u, sk, "recast", {int(sk.id): rfac}, cond, [])
 		_tail_add(out, flogs, e, u, sk, "follow", {}, cond, consumed)
+		if weak_tail:
+			_module_add(out, XTianqiWeakAffix.root_end(logic, u), e, facs, main_single, "weak")
 	XStateEffects.force_critical = false
 	XSukuna.cast = {}
 	return out
+
+
+## T580（协调 11-27 选 A：条件全中＝打满状态，同米拉黑龙／宿傩看破／五条悟苍赫印，不超过实战上限）：
+## 模块收尾有状态门槛的，强制量前摆满。渡鸦：残响 3（_add_residue 上限 3）、狩猎（残响满 3 且学会 10133 时才成立，同 _add_residue）、
+## 神话形态 3 回合（变身时原版就是置 3，要学会 10170／神话技才有回响）；饿狼：目标解析 3 层（add_analysis 上限 3，追击要 ==3）。
+## 其余模块（宿傩追斩、镜流追加段、云裳复演、屠苏剑气）不靠攒出的状态，不摆。饿狼进化层（evolution）不是收尾门槛，照开场 0（交付单没核）。
+func _prime_module(a, e) -> void:
+	if XRaven.own(a):
+		var st := XRaven._store()
+		if XRaven.has(a, XRaven.RESIDUE):
+			st["residue"] = 3
+			if XRaven.has(a, XRaven.HUNTER):
+				st["hunter"] = true
+		if XRaven.has(a, XRaven.MYTH) and not XRaven.is_myth(a):
+			st["myth"] = 3
+	if XGarou.own(a) and XGarou.passives(a).analysis:
+		XGarou.analysis[e] = 3
+
+
+## T580：XBattleLogic.act（battle_logic.gd 1424～1446）收尾里的角色模块，次序照 act()，在词条再释放、技能卡追加之前。
+## 不收：镜流 queue_extra、五条悟 queue_again（追加行动＝另一次施放，归速度）；七印武器流派、击倒结算（照 R4 屏蔽）；
+## 钥匙串追加普攻（奖励道具）；异化镜骸（敌方）；种族收尾、弱者专属词条派生（只在 --race-tail／--weak-tail 对照里收）。
+func _module_tail(logic, u, sk: Dictionary) -> Array:
+	var logs := []
+	logs.append_array(XTusu.end_action(logic, u, sk))  # 屠苏：持武者剑气／镇魂
+	logs.append_array(XXuanBattle.end_action(logic, u, sk))  # 璇：宿主攻击后棱光
+	XGuyu.end_action()
+	XGuyu.take_visuals()
+	XHubris.end_action(logic, u, false)
+	XHeartsteel.end_action(u, false)
+	logs.append_array(XGarou.finish(logic, u, sk))  # 饿狼：进化、解析、追击
+	logs.append_array(XSukuna.finish(logic, u, sk))  # 宿傩：追斩、看破
+	logs.append_array(XGojo.finish(logic, u, sk))  # 五条悟：加印、茈清印
+	XBlackFlash.finish(logic, u, sk)
+	logs.append_array(XYomiJingliu.j_finish(logic, u, sk))  # 镜流：追加段
+	XToji.finish(logic, u, sk)
+	logs.append_array(XRaven.finish(logic, u, sk))  # 渡鸦：冥界收割、回响
+	logs.append_array(XYunshang.finish(logic, u, sk))  # 云裳：一身两世复演
+	XCat.end_action(logic, u, sk)
+	XLiuying.end_action(logic, u, sk)
+	return logs
+
+
+## T580：模块（及对照的种族、弱者词条）收尾段全收、不按技能号剔；条件倍率：挂在已算过倍率的招（被量的招、它的变招、本角色改写招）上的照那招，其余记 1。
+## 单段超过主招单段 MODULE_SUSPECT_X 倍的单列 tail_suspect、不计入（防原版公式大数混进来）。
+## 不走 hit 日志的模块伤害（各模块日志类型全查过：只有这两种）：渡鸦收割／回响走 XRaven._direct（type regen 带 raven 键，基数是主招打出的伤害，记在主招上）；
+## 云裳派生（一身两世复演等）走 XYunshang.derived（type yunshang_derived，记在它带的技能号上）。
+## 对照（race／weak）：种族残响走 settled_damage（type regen 不带键），任何打到木桩的 regen 都记在主招上。
+static func _raven_direct(logs, e, out: Array, sid_main: int, any_regen := false) -> void:
+	for x in logs:
+		if x is Array:
+			_raven_direct(x, e, out, sid_main, any_regen)
+		elif x is Dictionary and is_same(x.get("target"), e) and float(x.get("hp", 0.0)) > 0.0:
+			var ty := str(x.get("type", ""))
+			if ty == "regen" and (x.has("raven") or any_regen):
+				out.append([sid_main, float(x.hp)])
+			elif ty == "yunshang_derived":
+				var ys = x.get("skill", {})
+				out.append([int(ys.get("id", sid_main)) if ys is Dictionary and not ys.is_empty() else sid_main, float(x.hp)])
+
+
+func _module_add(out: Dictionary, logs: Array, e, facs: Dictionary, main_single: float, kind: String, sid_main := 0) -> void:
+	var rows := []
+	_hits_skill(logs, e, rows)
+	_raven_direct(logs, e, rows, sid_main, kind != "module")
+	var sums := {}
+	for r in rows:
+		var sid := int(r[0])
+		var f := float(facs.get(sid, 1.0))
+		var v := float(r[1]) * f
+		if main_single > 0.0 and v > main_single * MODULE_SUSPECT_X:
+			out.tail_suspect.append({"kind": kind, "skill": sid, "hit": roundi(v), "main_single": roundi(main_single)})
+			continue
+		out.segs.append(v)
+		var key := "%d|%s" % [sid, f]
+		if not sums.has(key):
+			sums[key] = [sid, f, 0.0]
+		sums[key][2] = float(sums[key][2]) + v
+	for key in sums:
+		out.tail.append({"kind": kind, "skill": int(sums[key][0]), "sum": roundi(float(sums[key][2])), "fac": snappedf(float(sums[key][1]), 0.0001)})
 
 
 ## 收尾日志里打到木桩的段（按段上的技能号分），乘条件倍率后追加进 out.segs
@@ -482,6 +592,8 @@ func _sample_lianyu(snapshot: Dictionary, id: int, sk: Dictionary, sample_seed: 
 				a.add_state(2592)  # 米拉黑龙技要黑龙形态（XMira：重制以状态 2592 代替）
 			if XSukuna.own(a) and XSukuna.PRIMARY.has(int(sk.get("id", 0))):
 				XSukuna._layers(logic, e, 3)
+			if act_tail and module_tail and module_prime and cond_full:
+				_prime_module(a, e)
 		var facs := _cond_facs(a, e, sk) if forced and _prime_forced and cond_full else {}
 		var stats := {"atk": a.atk, "mat": a.mat, "mhp": a.mhp}
 		var whole := _cast_whole(logic, a, sk, e, facs)
@@ -500,6 +612,7 @@ func _sample_lianyu(snapshot: Dictionary, id: int, sk: Dictionary, sample_seed: 
 			if act_tail:
 				row["tail"] = whole.tail
 				row["tail_dropped"] = whole.tail_dropped
+				row["tail_suspect"] = whole.tail_suspect
 	logic.end_battle()
 	return row
 
@@ -820,7 +933,7 @@ func _sample_tusu_duo(snapshot: Dictionary, sk: Dictionary, sample_seed: int, mo
 			"segments": segs, "peak": roundi(total), "peak_single": roundi(float(segs.max())),
 			"variance": int(sk.get("damage", {}).get("variance", 0)),
 			"atk": stats.atk, "mat": stats.mat, "mhp": stats.mhp, "forced": true,
-			"bind_mode": mode, "weapon_phase": w, "cond_fac": snappedf(cf, 0.0001), "tail": whole.tail, "tail_dropped": whole.tail_dropped}
+			"bind_mode": mode, "weapon_phase": w, "cond_fac": snappedf(cf, 0.0001), "tail": whole.tail, "tail_dropped": whole.tail_dropped, "tail_suspect": whole.tail_suspect}
 	logic.end_battle()
 	return row
 
@@ -942,7 +1055,7 @@ func _sample_xuan_liexing(snapshot: Dictionary, sk: Dictionary, sample_seed: int
 			"segments": segs, "peak": roundi(total), "peak_single": roundi(float(segs.max())),
 			"variance": int(sk.get("damage", {}).get("variance", 0)),
 			"atk": stats.atk, "mat": stats.mat, "mhp": stats.mhp, "forced": true,
-			"shadows": shadow_n, "cond_fac": snappedf(cf, 0.0001), "tail": whole.tail, "tail_dropped": whole.tail_dropped}
+			"shadows": shadow_n, "cond_fac": snappedf(cf, 0.0001), "tail": whole.tail, "tail_dropped": whole.tail_dropped, "tail_suspect": whole.tail_suspect}
 	logic.end_battle()
 	return row
 
