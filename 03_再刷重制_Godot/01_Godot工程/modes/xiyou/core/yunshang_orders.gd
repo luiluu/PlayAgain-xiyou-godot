@@ -28,6 +28,7 @@ extends RefCounted
 ##   扣碎片、移除所选天衣、stage＋1，提示「云裳完成第N次进阶」。不走进阶表那一行的学技能、扣金钱（原版 onConfirmOk 包装不调旧的），技能由同步按等级与进阶学。
 ## - 失去天衣（gainItem 包装，第 200～204 行）：带 _yunUid 的天衣被直接失去（商店卖出、存进仓库、分解，走 XState.lose_gear）时记一条 remove，
 ##   读领取前的档时重放发了再移除，不能再领一次；穿上卸下、按底子扣（事件、合成材料、星级仓库）照原版不记。参照 p8.lose。
+##   O-待定（T616）起存进方桌仓库不再记（见 WAREHOUSE_KEEP）。
 ## 招募仍按存档旗标（一期），不进账本。
 
 const FILE := "yunshang_orders_v1.json"
@@ -194,6 +195,12 @@ static func find_uid(s: XState, uid: String) -> Dictionary:
 ## 进阶在同一个事务里写「人道意志碎片 −50／−188」紧跟恰好 3／9 条 remove（ADVANCE 表），卖出／分解的 remove 一次只写一条、前面不带碎片扣除。
 ## 卖出／分解的收益随旧档一起回滚，放过不算刷。false＝照原版连穿着的一起卸下移除。
 static var KEEP_WORN_ON_LOAD := true
+## O-待定（T616，玩家反馈 0.04.08 头顶存仓库消失，同类问题）：原版存仓库走 loseItem，天衣被记一条 remove（同卖掉）；读存仓库之前的档时
+## 重放这条把背包里那件删掉。true（默认）：存进方桌仓库不记 remove（XWarehouse.deposit）；修复后真失去的 remove 带 src "lose"；
+## 修复前写下、没有来源、又不是进阶消耗的 remove，读档时指向本档背包里那件就以存档为准保留（穿着的照旧归 KEEP_WORN_ON_LOAD 管）（口径 A，同头顶 XDemonCrown.WAREHOUSE_KEEP，
+## 卖掉的钱随旧档一起回滚，不算刷）。读档前把账本原样复制一份 FILE＋BACKUP_SUFFIX（只备一次，不覆盖）。false：照原版。
+static var WAREHOUSE_KEEP := true
+const BACKUP_SUFFIX := ".t616bak"
 ## 读档重放中（after_load 里置真）
 static var _loading := false
 ## 读档重放时放过的穿着天衣（_yunUid），给专项与日志看
@@ -209,7 +216,7 @@ static func _worn(s: XState, item: Dictionary) -> bool:
 
 
 ## removeUid：按 _yunUid（找不到再按记下的实例号且底子相同）移除；穿着的先卸下
-static func remove_uid(s: XState, uid: String, instance: String, base_id: int, consumed := false) -> void:
+static func remove_uid(s: XState, uid: String, instance: String, base_id: int, consumed := false, legacy := false) -> void:
 	var item := find_uid(s, uid)
 	if item.is_empty() and instance != "":
 		for e in s.gear:
@@ -222,6 +229,10 @@ static func remove_uid(s: XState, uid: String, instance: String, base_id: int, c
 	if _loading and KEEP_WORN_ON_LOAD and not consumed and _worn(s, item):
 		kept_on_load.append(uid)
 		print("云裳账本：读档重放的移除 %s 指向身上穿着的天衣「%s」，以存档为准保留" % [uid, str(item.get("name", ""))])
+		return
+	if _loading and WAREHOUSE_KEEP and legacy and not consumed and not _worn(s, item):  # O-待定 T616：修复前的 remove 分不清存仓库还是卖掉，背包里的以存档为准（穿着的归 O-472）
+		kept_on_load.append(uid)
+		print("云裳账本：读档重放的移除 %s 是修复前写的（可能是存仓库），指向本档的天衣「%s」，以存档为准保留" % [uid, str(item.get("name", ""))])
 		return
 	for a in s.actors.values():
 		for slot in range(a.equips.size()):
@@ -281,7 +292,7 @@ static func replay(s: XState) -> bool:
 		if op.get("grant") is Dictionary:
 			grant_spec(s, op.grant)
 		if op.has("remove"):
-			remove_uid(s, str(op.remove), str(op.get("instance", "")), int(op.get("baseId", 0)), consumed.has(j))
+			remove_uid(s, str(op.remove), str(op.get("instance", "")), int(op.get("baseId", 0)), consumed.has(j), not op.has("src"))
 		s.flags[SEQ_FLAG] = j + 1
 	if s.actors.has(XYunshang.ACTOR):
 		if int(p.stage) > 0:
@@ -323,6 +334,16 @@ static func order(s: XState):
 	return p.order if p != null else null
 
 
+## 账本原样备份一次（不覆盖已有的备份）；没有账本文件不用备（O-待定 T616）
+static func backup_once() -> void:
+	var p := path()
+	var b := p + BACKUP_SUFFIX
+	if FileAccess.file_exists(p) and not FileAccess.file_exists(b):
+		var err := DirAccess.copy_absolute(p, b)
+		if err != OK:
+			push_warning("云裳订单记录备份失败：%s" % error_string(err))
+
+
 # ---- 读档 ----
 ## extractSaveContents 包装：记下旧档身份（第几格＋文件的 sha256），重放；出错只记下、普通读档照常。
 ## 存档里没有编号、账本里也没有这个旧档身份时不新建（原版这里会建一条并写进 $gameSystem；重制的新局要到第一次用账本才建，
@@ -337,6 +358,8 @@ static func after_load(s: XState, identity: String) -> void:
 			storage_error = "" if l != null else error
 			return
 	kept_on_load = []
+	if WAREHOUSE_KEEP:
+		backup_once()  # O-待定 T616：修复版第一次读档重放之前留一份原样（只备一次）
 	_loading = true
 	var ok := replay(s)
 	_loading = false
@@ -531,7 +554,10 @@ static func lost(s: XState, item: Dictionary) -> bool:
 	error = ""
 	var uid := str(item.get("_yunUid", ""))
 	return uid != "" and transaction(s, func(p):
-		p.journal.append({"remove": uid, "instance": str(item.get("instanceId", "")), "baseId": int(item.get("base", 0))}))
+		var op := {"remove": uid, "instance": str(item.get("instanceId", "")), "baseId": int(item.get("base", 0))}
+		if WAREHOUSE_KEEP:
+			op.src = "lose"  # O-待定 T616：修复后的真失去，读更早的档照旧移除
+		p.journal.append(op))
 
 
 # ---- 进阶 ----

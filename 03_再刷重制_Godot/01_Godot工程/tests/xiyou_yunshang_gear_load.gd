@@ -129,12 +129,16 @@ func _run() -> void:
 	var l3: Dictionary = JSON.parse_string(ledger_at_save)
 	(l3.profiles[profile_id].journal as Array).append({"remove": worn_uid, "instance": "", "baseId": 0})
 	cases["newer_remove_worn"] = JSON.stringify(l3)
-	# 3b. 同上，但卖掉的是背包里那件：读档照原版从背包移除（防复制不受影响）
+	# 3b. 同上，但卖掉的是背包里那件：读档照原版从背包移除（防复制不受影响）。O-待定（T616）起修复后的真失去带 src "lose"
 	var bag_uid := str(XYunshangOrders.owned(s)[0].get("_yunUid", "")) if not XYunshangOrders.owned(s).is_empty() else ""
 	check("setup.bag_robe", bag_uid != "" and bag_uid != worn_uid, [bag_uid, worn_uid])
 	var l3b: Dictionary = JSON.parse_string(ledger_at_save)
-	(l3b.profiles[profile_id].journal as Array).append({"remove": bag_uid, "instance": "", "baseId": 0})
+	(l3b.profiles[profile_id].journal as Array).append({"remove": bag_uid, "instance": "", "baseId": 0, "src": "lose"})
 	cases["newer_remove_bag"] = JSON.stringify(l3b)
+	# 3c. O-待定（T616）：修复前写下的背包那件 remove（没有来源，可能是存进了方桌仓库）：读档以存档为准保留
+	var l3c: Dictionary = JSON.parse_string(ledger_at_save)
+	(l3c.profiles[profile_id].journal as Array).append({"remove": bag_uid, "instance": "", "baseId": 0})
+	cases["legacy_remove_bag"] = JSON.stringify(l3c)
 	# 4. 账本比存档旧（日志比 _yunSeq 短：账本回到了 .bak）
 	var l4: Dictionary = JSON.parse_string(ledger_at_save)
 	l4.profiles[profile_id].journal = (l4.profiles[profile_id].journal as Array).slice(0, maxi(0, seq - 3))
@@ -170,6 +174,8 @@ func _run() -> void:
 				continue
 			var got := _equips(t.actor(XYunshang.ACTOR))
 			check(tag + ".equips", got == want, {"got": got, "want": want, "bag_robes": XYunshangOrders.owned(t).size()})
+			if k == "legacy_remove_bag":
+				check(tag + ".legacy_kept_logged", XYunshangOrders.kept_on_load == [bag_uid], XYunshangOrders.kept_on_load)
 			if k == "newer_remove_worn":
 				check(tag + ".kept_logged", XYunshangOrders.kept_on_load == [worn_uid], XYunshangOrders.kept_on_load)
 				check(tag + ".seq_advanced", int(t.flags.get(XYunshangOrders.SEQ_FLAG, 0)) == seq + 1, t.flags.get(XYunshangOrders.SEQ_FLAG))
@@ -189,6 +195,14 @@ func _run() -> void:
 	var r := _cold_load(true)
 	check("switch_off.worn_removed", r != null and _equips(r.actor(XYunshang.ACTOR)) != want and _uids(r).is_empty(), _equips(r.actor(XYunshang.ACTOR)) if r != null else null)
 	XYunshangOrders.KEEP_WORN_ON_LOAD = true
+	XState.current = s
+	XSave.save(1)
+	# 反向：关掉 WAREHOUSE_KEEP（O-待定 T616）回到原版，修复前的背包那件 remove 照旧把它移除
+	XYunshangOrders.WAREHOUSE_KEEP = false
+	_write_ledger(cases["legacy_remove_bag"])
+	var r2 := _cold_load(true)
+	check("switch_off.legacy_bag_removed", r2 != null and XYunshangOrders.owned(r2).filter(func(e): return str(e.get("_yunUid", "")) == bag_uid).is_empty(), XYunshangOrders.kept_on_load)
+	XYunshangOrders.WAREHOUSE_KEEP = true
 	XState.current = s
 	XSave.save(1)
 	_advance_case()
