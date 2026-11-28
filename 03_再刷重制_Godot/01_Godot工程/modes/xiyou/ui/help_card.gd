@@ -73,6 +73,10 @@ static var LAYOUT_V043 := true
 static var KEEP_GAP_ROWS := true
 ## 打开说明卡的那一页的角色（Scene_Skill._actor／战斗技能窗的角色）；黑闪、甚尔说明卡用，别的页留空
 static var scene_actor = null
+## T590：说明卡上的消耗按谁算（XSkillHelpFix）；只在技能页、战斗、遗忘页出卡时设，别处为 null（scene_actor 离开场景不清，不能直接用）
+static var cost_actor = null
+## T590：战斗里出卡时的当前战斗（本场的消耗加费只认这个实例）；战斗外为 null
+static var cost_logic: XBattleLogic = null
 ## characterHelpView 的 listCosts（chars-gaps2）：原版 SceneManager._scene 是 Scene_Battle 或 Scene_Skill 时为真，技能列表里已经显示消耗，
 ## 说明卡就不再列消耗行。重制由 show_for 按卡片所在场景（祖先是 XBattleScene／XSkillScene）在出卡时设上，出完卡还原；静态调用 content 时为假。
 static var list_costs := false
@@ -138,6 +142,7 @@ static func detail_rows(obj: Dictionary, width: float) -> Array:
 static func _content(obj: Dictionary, kind := "", skill_copy := false, power := true, elements := true) -> Array:
 	if obj.is_empty():
 		return []
+	obj = XTianqiCardVariance.view(obj)  # T590：天启篇改写过的招，伤害浮动幅度写成「浮动±N%」（只改显示）
 	obj = XTextFix.gear_actor_view(obj)  # T562 P2-3：旧天启档装备实例的原文模板行按新名显示
 	obj = XTianqiSkills.gear_view(obj)  # 天启篇技能重构：专属法宝、武器的说明按改写后的备注
 	obj = XTianqiGear.element_fabao_view(obj)  # 天启篇系别法宝（T442）：老档实例说明卡按改写视图显示
@@ -148,6 +153,8 @@ static func _content(obj: Dictionary, kind := "", skill_copy := false, power := 
 	if kind == "":
 		kind = kind_of(obj)
 	var type: int = {"item": 0, "weapon": 1, "armor": 2, "skill": 3}.get(kind, 0)
+	if type == 3:
+		obj = XSkillHelpFix.view(obj, cost_actor, cost_logic)  # T590：随机倍率写成实际区间、消耗按实扣链（只改显示）
 	# 心钢／狂妄：H/U.helpView（XGrowthHelp）；原版里它重算 descParams，外层元素与战力包装的改动被冲掉（O-151 HELP_FIX 关时照原版）
 	var growth := type == 2 and XGrowthHelp.target(obj)
 	var rows := XGrowthHelp.rows(obj, type) if growth else desc_params(obj, type)
@@ -1499,7 +1506,12 @@ func show_for(obj, kind := "", with_extras := true) -> void:
 		obj = XAffixAbsorb.view(obj)  # Sprite_ItemHelp.setItem 包装：吸取过特效的专武显示效果视图
 	list_costs = _list_costs_scene()
 	_obj = obj
+	cost_actor = scene_actor if list_costs else null
+	var battle := _battle_scene()
+	cost_logic = battle.logic if battle != null else null
 	rows = content(obj, kind, skill_copy, note_width(obj, card_width) - PAD * 2)
+	cost_actor = null
+	cost_logic = null
 	quality = _quality(obj)
 	if quality > 0:
 		quality = XQuality.show_legacy(obj)  # T112：天启篇低档稀有坐骑边框跟显示品质
@@ -1524,6 +1536,15 @@ func cap_size(n: int) -> void:
 	for r in rows:
 		r[1] = mini(int(r[1]), n)
 	_apply(size.x)
+
+
+func _battle_scene() -> XBattleScene:
+	var n := get_parent()
+	while n != null:
+		if n is XBattleScene:
+			return n
+		n = n.get_parent()
+	return null
 
 
 func _list_costs_scene() -> bool:
