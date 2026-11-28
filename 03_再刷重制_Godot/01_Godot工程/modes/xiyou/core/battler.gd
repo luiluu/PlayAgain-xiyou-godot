@@ -402,10 +402,20 @@ func states_stamp() -> int:
 ## 侧栏格子的记忆（XSideStatus.CELL_MEMO）：[状态表版本, 层数, 强化弱化, 结果]
 var _cell_memo: Array = []
 
+## T581：键里加「西游档改写」——XDB.rec 只在西游档（XState.current 是西游档）把徐凤年 2539 等换成 XXufeng／XXiyouNerf 改写副本。
+## 读档时 XState.from_dict 在新档变成当前档之前就给角色算过一次（那时没有存档或是别的档），不带这一项会一直用原版记录（2539 终伤 +500%）。
+## 天启篇两项恒为 false，键不变。回退：STATES_MEMO_XIYOU_KEY = false（键里不带这一项，同 T581 之前）。
+static var STATES_MEMO_XIYOU_KEY := true
+
+static func _states_memo_xiyou_tag() -> int:
+	if not STATES_MEMO_XIYOU_KEY:
+		return 0
+	return (1 if XXufeng.xiyou_save_on() else 0) | (2 if XXiyouNerf.xiyou_save_on() else 0)
+
 func _states_memo_list() -> Array:
-	var key := [state_ids, zq_pojia_rate, XTianqiSkills.cards_on(), FIX_YINYUE_2521, XDB._tables.get("States")]
-	if _states_key.size() == 5 and _states_key[0] == state_ids and _states_key[1] == zq_pojia_rate and _states_key[2] == key[2] \
-			and _states_key[3] == FIX_YINYUE_2521 and is_same(_states_key[4], key[4]):
+	var key := [state_ids, zq_pojia_rate, XTianqiSkills.cards_on(), FIX_YINYUE_2521, XDB._tables.get("States"), _states_memo_xiyou_tag()]
+	if _states_key.size() == 6 and _states_key[0] == state_ids and _states_key[1] == zq_pojia_rate and _states_key[2] == key[2] \
+			and _states_key[3] == FIX_YINYUE_2521 and is_same(_states_key[4], key[4]) and _states_key[5] == key[5]:
 		if XActor.READ_VERIFY:
 			XActor.verify_memo("states", self, _states_list, _states_now())
 		return _states_list
