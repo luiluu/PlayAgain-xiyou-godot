@@ -240,10 +240,15 @@ func _check_rework_data_and_text() -> void:
 	var a143_lv99: Dictionary = XGear.template("armor", 143)
 	a143_lv99["level"] = 99
 	var a143_card := "\n".join(PackedStringArray(XHelpCard.content(a143_lv99).map(func(r): return XHelpCard.plain(str(r[0])).replace("\\lock[1]", ""))))
+	# T595 起卡面默认不写「法宝加成」行；成长数值开回退开关照原写法核
+	var no_bonus_row := XHelpCard.FABAO_NO_BONUS_ROW_T595
+	XHelpCard.FABAO_NO_BONUS_ROW_T595 = false
+	var a143_old := "\n".join(PackedStringArray(XHelpCard.content(a143_lv99).map(func(r): return XHelpCard.plain(str(r[0])).replace("\\lock[1]", ""))))
+	XHelpCard.FABAO_NO_BONUS_ROW_T595 = no_bonus_row
 	check("armor143.help_card_scaled99",
-		a143_card.contains("魔法+%d；其余全属性+%d" % [888 * (XXufeng.FABAO_GROW_ALL + XXufeng.FABAO_GROW_MMP_EXTRA), 888 * XXufeng.FABAO_GROW_ALL])
+		a143_card.contains("法宝等级：99/99") and not a143_card.contains("法宝加成") and a143_old.contains("魔法+%d；其余全属性+%d" % [888 * (XXufeng.FABAO_GROW_ALL + XXufeng.FABAO_GROW_MMP_EXTRA), 888 * XXufeng.FABAO_GROW_ALL])
 		and not a143_card.contains("法宝每级增加"),
-		a143_card)
+		[a143_card, a143_old])
 	var w76 := XDB.rec("Weapons", 76)
 	var n76 := str(w76.note)
 	check("weapon76.data_text",
