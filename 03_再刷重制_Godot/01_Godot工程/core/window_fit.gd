@@ -11,8 +11,18 @@ static func rectangle(usable: Rect2i) -> Rect2i:
 	var dims := Vector2i((BASE * scale).round())
 	return Rect2i(usable.position + (usable.size - dims) / 2, dims)
 
+## T587：移动端（安卓／iOS）不设窗口大小和位置。引擎在安卓上挪不动根窗口、也不让改大小，但 position 会照样记下，
+## 之后引擎换算鼠标坐标时把它多减一次，点地目的地整体往左上偏（见 MVPlayer.MOBILE_TAP_POS）。回退：MOBILE_SKIP = false（O-690）。
+static var MOBILE_SKIP := true
+
+static func mobile_skip() -> bool:
+	return MOBILE_SKIP and XPlatform.is_mobile()
+
+static func skips() -> bool:
+	return DisplayServer.get_name() == "headless" or mobile_skip()
+
 static func apply(window: Window) -> void:
-	if DisplayServer.get_name() == "headless":
+	if skips():
 		return
 	var rect := rectangle(DisplayServer.screen_get_usable_rect(DisplayServer.window_get_current_screen()))
 	window.size = rect.size
