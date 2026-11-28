@@ -45,6 +45,7 @@
 重做提交前的链留在 `refs/backup/t590-r1`（R2 报告里的提交号在那里）。截图 H、I 是补修前拍的，没重拍。
 
 本机：`xiyou_skill_help_fix` 43/43、`xiyou_tianqi_card_variance` 13/13；原基线只叠启封提交：浮动专项 13/13、`xiyou_help_card` 1075/1075、`xiyou_help_card_sections` 35/35。
+云端选测（补修后）：✓ 通过，提交 8da678caf9，基准 38702d755d，60 个场景、2 片，https://github.com/luiluu/PlayAgain-xiyou-godot/actions/runs/46109448253 （`gh run watch` 前台等完）；`xiyou_skill_help_fix` 43/43、`xiyou_tianqi_card_variance` 13/13、`xiyou_help_card` 1075/1075、`xiyou_help_card_sections` 35/35；`xiyou_tianqi_deck_phys_amp` 偶发（并行失败、单跑过）。下面「验证」节是补修前的数。之后只改交付单。
 
 ## 清单：西游档 62 条（原样附上）
 
