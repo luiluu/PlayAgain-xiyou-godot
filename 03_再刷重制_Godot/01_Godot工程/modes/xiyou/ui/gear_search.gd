@@ -28,6 +28,11 @@ static var SKIN_PAGE_V2 := true
 static var SKIN_PAGE_R9 := true
 ## T409：西游触屏使用可拖动的指定词条列表。桌面沿用 OptionButton。
 static var XIYOU_DRAG_TERM_PICKER := true
+## T621（Kyo 11-28「装备检索显示不全还不能滑动」，安卓横屏「部位」下拉从屏顶伸到屏底、下半截切掉、滑不动）：西游档六个下拉
+## （分类、部位、品质、位置、指定词条、排序）都放进可见区域。触屏一律用上面那种可拖动列表（原只有指定词条），下面／上面放不下就限高、
+## 拖动或滚轮滚；桌面 OptionButton 弹出时限高到窗口内（菜单自带滚动条，滚轮滚），下面放不下就翻到按钮上面。
+## false＝回到 T409：只有指定词条可拖，其余菜单不限高。启封档（天启篇）不走这里，照旧。
+static var XIYOU_SELECT_FIT := true
 ## 新皮肤版式：筛选面板开着没有（重建页面时保留）
 static var filters_open := false
 
@@ -329,7 +334,7 @@ func _render_gear() -> void:
 	items.append(_select("位置", XGearQuery.SCOPES, str(filter.scope), _on_field.bind("scope")))
 	items.append(_select("指定词条", term_options(source), str(filter.term), _on_term, true))
 	var sort_field := _select("排序", sort_options(source, filter), str(filter.sort), _on_sort)
-	_sort_select = sort_field.get_child(1)
+	_sort_select = sort_field.get_child(1) as OptionButton   # T621 触屏时是可拖动列表按钮，排序字由 _sort_text 照条件现取
 	items.append(sort_field)
 	items.append(_button("清空条件", _on_reset))
 	var y := 165.8
@@ -470,7 +475,7 @@ func _render_gear_skin() -> void:
 	fields.append(_select("位置", XGearQuery.SCOPES, str(filter.scope), _on_field.bind("scope")))
 	fields.append(_select("指定词条", term_options(source), str(filter.term), _on_term, true))
 	var sort_field := _select("排序", sort_options(source, filter), str(filter.sort), _on_sort)
-	_sort_select = sort_field.get_child(1)
+	_sort_select = sort_field.get_child(1) as OptionButton   # T621 触屏时是可拖动列表按钮，排序字由 _sort_text 照条件现取
 	fields.append(sort_field)
 	var col_w := floorf((CONTENT_W - XUiSkin.PAD_LG * 2 - XUiSkin.PAD_LG * 2) / 3.0)
 	for i in fields.size():
@@ -610,7 +615,8 @@ func _select(label: String, values: Array, value: String, cb: Callable, term_pic
 	var box := Control.new()
 	var l := _fixed(_label(label, 13, SYSTEM), 20.8)
 	box.add_child(l)
-	var use_drag := term_picker and XIYOU_DRAG_TERM_PICKER and XPlatform.is_touch() and not XTianqi.active(XState.current)
+	var fit := XIYOU_SELECT_FIT and not XTianqi.active(XState.current)
+	var use_drag := (term_picker or fit) and XIYOU_DRAG_TERM_PICKER and XPlatform.is_touch() and not XTianqi.active(XState.current)
 	var s: Button = Button.new() if use_drag else OptionButton.new()
 	s.add_theme_font_override("font", _font())
 	s.add_theme_font_size_override("font_size", 17)
@@ -646,6 +652,8 @@ func _select(label: String, values: Array, value: String, cb: Callable, term_pic
 		popup.add_theme_font_size_override("font_size", 17)
 		popup.add_theme_stylebox_override("panel", _box(Color("#1e1f2a"), BUTTON_EDGE, 4, 1, Vector2(4, 4)))
 		option.item_selected.connect(func(i): cb.call(str(option.get_item_metadata(i))))
+		if fit:
+			popup.about_to_popup.connect(_fit_popup_height.bind(option))
 	var lw := font.get_string_size(label, HORIZONTAL_ALIGNMENT_LEFT, -1, 13).x
 	s.size = Vector2(minf(260.0, ceilf(widest) + 42.0), 36)
 	s.position = Vector2(ceilf(lw) + 5, 0)
@@ -653,6 +661,30 @@ func _select(label: String, values: Array, value: String, cb: Callable, term_pic
 	box.add_child(s)
 	box.size = Vector2(s.position.x + s.size.x, 36)
 	return box
+
+
+## T621：弹出的下拉离窗口上下边留的空
+const SELECT_MARGIN := 8.0
+
+
+## T621：桌面 OptionButton 弹出前限高到按钮上下较空的一边（菜单超高时自带滚动条、滚轮滚），弹出后放不下就翻到按钮上面
+func _fit_popup_height(option: OptionButton) -> void:
+	var popup := option.get_popup()
+	var view := option.get_viewport().get_visible_rect().size
+	var target := option.get_global_rect()
+	var room := maxf(view.y - target.end.y, target.position.y) - SELECT_MARGIN
+	popup.max_size = Vector2i(int(view.x), maxi(int(room), 60))
+	_place_popup.call_deferred(popup, target, view)
+
+
+static func _place_popup(popup: PopupMenu, target: Rect2, view: Vector2) -> void:
+	if not popup.visible:
+		return
+	if popup.size.y > popup.max_size.y:
+		popup.size.y = popup.max_size.y
+	if popup.position.y + popup.size.y > view.y:
+		var below := target.end.y + popup.size.y <= view.y
+		popup.position.y = int(target.end.y) if below else maxi(0, int(target.position.y) - popup.size.y)
 
 
 func _install_term_picker(button: Button, values: Array, selected: int, cb: Callable) -> void:
@@ -678,6 +710,13 @@ func _install_term_picker(button: Button, values: Array, selected: int, cb: Call
 		var width := minf(maxf(320, target.size.x), view.x)
 		var height := mini(rows.size(), 9) * list.row_height + 8
 		var y := target.end.y if target.end.y + height <= view.y else maxf(0, target.position.y - height)
+		if XIYOU_SELECT_FIT and target.end.y + height > view.y and target.position.y < height:
+			# T621：上下都放不下整 9 行：挑空的一边，限到整行数（至少一行），列表照旧能拖
+			var below := view.y - target.end.y - SELECT_MARGIN
+			var above := target.position.y - SELECT_MARGIN
+			var room := maxf(below, above)
+			height = maxi(floori((room - 8) / list.row_height), 1) * list.row_height + 8
+			y = target.end.y if below >= above else target.position.y - height
 		popup.popup(Rect2i(Rect2(Vector2(minf(target.position.x, view.x - width), y), Vector2(width, height))))
 		list.position = Vector2(4, 4)
 		list.size = Vector2(width - 8, height - 8)

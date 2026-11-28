@@ -61,7 +61,8 @@ func _touch_dropdown(panel: XGearSearch, skin_v2 := false) -> void:
 		panel.filters_open = true
 	panel._render_gear()
 	await frames()
-	var popups := panel.find_children("*", "PopupPanel", true, false)
+	# T621：触屏时六个下拉都是可拖动列表，这里只取指定词条那个（项数＝词条选项数）
+	var popups := panel.find_children("*", "PopupPanel", true, false).filter(func(p): return (p.get_child(0) as XSkinList).items.size() == opts.size())
 	if skin_v2:
 		check("skin_v2_term_picker_laid_out", XGearSearch.skin_v2() and popups.size() == 1
 			and panel._filter_panel.is_ancestor_of(popups[0]) and (popups[0].get_parent() as Button).is_visible_in_tree())
