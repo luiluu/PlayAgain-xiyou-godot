@@ -1,11 +1,14 @@
 extends Node
 ## T620 量数探针（只量不改；不是回归测试，不进检查.sh）：真地图 → 主菜单 → 物品页，反复用伙伴号角（已有该队友，回地图跑事件再回物品页），
 ## 每次回来后在物品列表翻页 PAGES 次（每次＝_page＋_refresh＋下一帧），记耗时，以及节点数、对象数、孤儿节点、地图 ui 子节点数。
-## 跑法：godot --headless --audio-driver Dummy --path . res://tests/t620_horn_bag_probe.tscn -- [--uses=30] [--pages=10] [--set=res://…gd:开关=false]
+## 跑法：复制进 01_Godot工程/tests/，临时建一个挂它的 .tscn（不入库），
+##   godot --headless --audio-driver Dummy --path . res://tests/<临时>.tscn -- [--uses=30] [--pages=10] [--distinct 每次招新人] [--stick 推住摇杆翻页] [--set=res://…gd:开关=false]
 const TestEnv = preload("res://tests/xiyou_test_env.gd")
 var uses := 30
 var pages := 10
 var distinct := false
+var stick := false
+var tc: XTouchControls
 var horns: Array = []
 var map: XMapScene
 
@@ -20,6 +23,7 @@ func _ready() -> void:
 		if arg.begins_with("--uses="): uses = int(arg.substr(7))
 		elif arg.begins_with("--pages="): pages = int(arg.substr(8))
 		elif arg == "--distinct": distinct = true
+		elif arg == "--stick": stick = true
 	_switch_args()
 	_run.call_deferred()
 
@@ -114,6 +118,10 @@ func _run() -> void:
 	page._cat = 0
 	page._mode = "list"
 	page._refresh()
+	if stick:
+		tc = XTouchControls.new()
+		get_tree().root.add_child(tc)
+		await frames(2)
 	var base_nodes := _count(get_tree().root)
 	var base_paths := _paths(get_tree().root)
 	var base_obj := Performance.get_monitor(Performance.OBJECT_COUNT)
@@ -134,6 +142,8 @@ func _run() -> void:
 			tot += op + fr
 			optot += op
 			mx = maxf(mx, op + fr)
+		if stick:
+			await _stick_hold(u, page)
 		var idle := 0.0
 		for k in 5:
 			var t3 := Time.get_ticks_usec()
@@ -222,3 +232,41 @@ func _breakdown(page: XItemScene) -> void:
 	for k in parts:
 		line += " %s=%.2f" % [k, parts[k] / 20.0]
 	print(line)
+
+
+func _handlers(n: Node) -> int:
+	var c := 1 if (n.is_processing_input() or n.is_processing_unhandled_input() or n.is_processing_unhandled_key_input() or n.is_processing_shortcut_input()) else 0
+	for k in n.get_children(true):
+		c += _handlers(k)
+	return c
+
+
+## 推住摇杆往右：36 帧后每 24 帧翻一页；量推住期间每帧耗时（含输入分发、刷新）
+func _stick_hold(u: int, page: XItemScene) -> void:
+	var sent0 := tc.pages_sent
+	var top0 := page._top
+	var times := []
+	tc._stick_offset = Vector2(tc.stick_radius, 0)
+	tc._set_dir("ui_right")
+	for k in 36 + 24 * pages:
+		var t := Time.get_ticks_usec()
+		await get_tree().physics_frame
+		times.append((Time.get_ticks_usec() - t) / 1000.0)
+	tc._set_dir("")
+	tc._stick_offset = Vector2.ZERO
+	await frames(3)
+	var mx := 0.0
+	var sum := 0.0
+	for x in times:
+		sum += x
+		mx = maxf(mx, x)
+	print("STICK %d frame_mean=%.2f frame_max=%.2f pages_sent=%d top=%d->%d handlers=%d conns=%d" % [u, sum / times.size(), mx, tc.pages_sent - sent0, top0, page._top, _handlers(get_tree().root), _conns()])
+
+
+## 视口、场景树、触屏层、Input 单例上所有信号的连接数
+func _conns() -> int:
+	var c := 0
+	for o in [get_tree().root, get_tree(), tc, Input]:
+		for sig in o.get_signal_list():
+			c += o.get_signal_connection_list(sig.name).size()
+	return c
