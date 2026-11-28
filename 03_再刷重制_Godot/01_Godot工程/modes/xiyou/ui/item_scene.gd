@@ -512,6 +512,17 @@ func _paint_list(c: XMVCanvas) -> void:
 func _paint_info(c: XMVCanvas) -> void:
 	var item := _current() if _mode == "list" else (_item if _mode in ["action", "upgrade", "augment"] else {})
 	paint_info(c, item)
+	if _mode == "action":
+		_paint_fabao_feed(c, item)
+
+
+## T588：打开法宝操作菜单（吞噬升级的「喂入」几行）时，信息窗底部写当前法宝等级与这一级的最低装备品级（西游档；其他情形没有行）
+static func _paint_fabao_feed(c: XMVCanvas, item: Dictionary) -> void:
+	var lines := XHelpCard.fabao_feed_lines(item) if not item.is_empty() else []
+	var y := c.size.y - LH * lines.size()
+	for r in lines:
+		c.text(str(r[0]), 6.0, y, c.size.x - 12.0, "left", XQuality.parse_rgba(str(r[2])), XUI.FONT_SIZE, LH)
+		y += LH
 
 
 ## Window_ItemInfo（YEP_ItemCore＋YEP_X_ItemUpgradeSlots，正式版把插槽行右移 215）

@@ -74,6 +74,7 @@ func _ready() -> void:
 	XPower.SHOW_POWER_UI = true
 	XMagicWeapon.LEVEL_99 = false  # 参照是原版：法宝上限回 888（法宝重构的新上限由 xiyou_fabao_rework 核）
 	XMagicWeapon.FLOOR_CAP = false
+	XHelpCard.FABAO_FEED_GRADE_T588 = false  # 原版卡上没有「吞噬升级最低装备品级」行（T588，xiyou_fabao_card_t588 核）
 	XConfig.path_override = "user://xiyou_character_gear_help_none.json"  # 不读本机设置（正式默认：战力开）
 	check("template.count", data.templates.size() == 30, data.templates.size())
 	for c in data.templates:
