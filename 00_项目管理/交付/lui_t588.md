@@ -1,7 +1,7 @@
 # 交付：lui/t588
 
 - 车道／工作者：T588 界面小修（cc，Sonnet 5.5＋medium）
-- 状态：进行中
+- 状态：可合并
 
 ## 变更记录草稿
 
@@ -51,9 +51,12 @@
 ## 验证
 
 - 本机：`xiyou_fabao_card_t588`、`xiyou_fabao_99_scale`、`xiyou_gear_detail`、`xiyou_fabao_rework`、`xiyou_character_gear_help`、`xiyou_yunshang_shop`、`xiyou_help_card` 全部通过；语法检查、工具回归、`发行空壳.py check` 通过。
-- 旧测试调整：`xiyou_fabao_99_scale` 的卡面段关两个新开关量原写法；`xiyou_character_gear_help`、`xiyou_yunshang_shop` 和原版逐行比，关掉品级行。
-- 云端选测：待写
+- 旧测试调整：`xiyou_fabao_99_scale` 的卡面段关两个新开关量原写法；`xiyou_character_gear_help`、`xiyou_yunshang_shop`、`xiyou_cat_help` 和原版逐行比，关掉品级行。
+- `xiyou_fabao_card_t588` 62/62。
+- 云端选测通过：93 个场景、2 片，提交 ee21f81366，https://github.com/luiluu/PlayAgain-xiyou-godot/actions/runs/46102257227
+- 前一轮 https://github.com/luiluu/PlayAgain-xiyou-godot/actions/runs/46098581733 挂 1 个：`xiyou_cat_help`（和原版逐行比，多了品级行），已在对照里关掉品级行；同轮 `xiyou_tianqi_deck_phys_amp` 偶发一次（并行失败、单跑通过）。
 
 ## 本分支提交
 
 - 9eb155e1d 实现、专项、截图
+- ee21f8136 小猫说明卡对照、交付单
