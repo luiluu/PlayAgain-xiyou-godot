@@ -77,6 +77,8 @@ func set_item(e: Dictionary) -> void:
 	var k := "" if e.is_empty() else "%s:%s:%s:%s:%s:%s:%s" % [str(e.get("instanceId", e.get("id", ""))), str(e.get("note", "")),
 		JSON.stringify(e.get("params", [])), JSON.stringify(e.get("augmentSlotItems", [])), JSON.stringify(e.get("upgrades", [])),
 		str(e.get("upgradeSlots", "")), str(e.get("description", ""))]
+	if not e.is_empty() and XState.current != null and not XTianqi.active(XState.current):  # T588：喂升级后等级、经验变了要重排；天启篇照原缓存键
+		k += ":%s:%s" % [str(e.get("level", "")), str(e.get("exp", ""))]
 	if k == key:
 		return
 	key = k
