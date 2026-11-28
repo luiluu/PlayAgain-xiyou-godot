@@ -1,0 +1,44 @@
+{
+  "_note": "天启篇（启封）法宝浸染数值表（事项 96 设计稿 v0.5 第三、五、十节；T597 J1）。全表整数；百分数都写成整数百分比。XTianqiJinran 读。",
+  "version": 1,
+  "material_item": 0,
+  "_material_item": "异源的物品号，J4 建物品后填；0＝还没有（再浸一次、洗一条一律报材料不足）",
+  "tiers": ["yihen", "shiwen", "yitai", "yigou"],
+  "tier_names": ["异痕", "蚀纹", "异态", "异构"],
+  "slots_by_tier": [1, 2, 2, 3],
+  "steps": {
+    "2": {"base": 70, "per_fail": 15, "cost": 10},
+    "3": {"base": 50, "per_fail": 10, "cost": 20},
+    "4": {"base": 35, "per_fail": 5, "cost": 40}
+  },
+  "_steps": "键是冲到的品阶（2 蚀纹、3 异态、4 异构）：成功率％＝min(100, base＋本步残留×per_fail)；cost 每次要的异源",
+  "tier_mult_pct": [100, 115, 130, 150],
+  "coef_cap_pct": 0,
+  "_coef_cap_pct": "品阶后系数封顶（百分数），0＝不封（默认关，4.1 第 3 条最后手段）",
+  "wash": {"cost": 40, "cands": 3, "per_round": 3, "marks_need": 6},
+  "tone": {"nong_pct": 25, "nong_amp_pct": 125},
+  "amp_cap_pct": 50,
+  "hit_cap_pct": 300,
+  "dangzai_team_cap": 4,
+  "slot1_kinds": ["chushou", "huzhu"],
+  "slot1_extra": ["wuding"],
+  "_slot1": "第 1 格只出行为类：kind 在 slot1_kinds 里的，加上 slot1_extra（无定）；第 2、3 格十条都可出",
+  "affixes": {
+    "suiji": {"name": "随击", "kind": "chushou", "weight": 1, "amp": [30, 45, 60, 80]},
+    "suihen": {"name": "碎痕", "kind": "chushou", "weight": 1, "amp": [100, 150, 200, 250]},
+    "yishi": {"name": "溢噬", "kind": "chushou", "weight": 1, "amp": [20, 30, 40, 50]},
+    "canguang": {"name": "残光", "kind": "chushou", "weight": 1, "amp": [40, 60, 80, 100], "turns": [1, 2, 2, 3]},
+    "tunyan": {"name": "吞咽", "kind": "huzhu", "weight": 1, "amp": [1, 1, 2, 2]},
+    "dangzai": {"name": "挡灾", "kind": "huzhu", "weight": 1, "amp": [20, 30, 40, 50], "times": [1, 2, 2, 3]},
+    "buzhu": {"name": "哺主", "kind": "huzhu", "weight": 1, "amp": [5, 8, 10, 15]},
+    "manying": {"name": "满盈", "kind": "fabao", "weight": 1, "amp": [10, 15, 20, 30]},
+    "juyi": {"name": "聚异", "kind": "fabao", "weight": 1, "amp": [3, 4, 5, 6]},
+    "wuding": {"name": "无定", "kind": "fabao", "weight": 1, "amp": [20, 30, 40, 50]}
+  },
+  "_affixes": "amp 是四档幅度起点（异痕／蚀纹／异态／异构），浓的 ×nong_amp_pct÷100 向下取整；残光另有 turns、挡灾另有 times（不吃浓）。词条怎么生效归 J3",
+  "sources": {
+    "battle_permille": [8, 21, 42],
+    "dungeon_mult": [4, 6, 8, 10]
+  },
+  "_sources": "材料发放（J4 用，J1 不读）：普通战斗三档千分数、副本四档倍数；首胜各档 J4 补"
+}

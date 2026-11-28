@@ -21,6 +21,7 @@
 - guardian_params.json（守层者能力值重锚，T237／T245）：只有 B 组，ref_enemy 是正整数、stats 八项对 0～7、floors 只有 31～34 层、qiyin 行（可没有）和每层只写 stats 里的项（下划线开头的注释键除外）、取值是正整数百分比（附则 E）。
 - growth.json（渡鸦、奈叶、流萤无限成长，T256）：只有 B 组，全表整数（附则 E）、层价分段从 1 层起连续且份数不降、翻倍倍数 ≥2、拐点在分段里、Q6 判定四项范围、三人行齐全且角色号对、一份是正整数、平加只认能力编号 0～7 且渡鸦只加魔攻、奈叶只加生命魔法、流萤不走平加。
 - suit_template.json（原版套装模板，T515／T529）：只有 B 组，件数档、默认一排数（不出 4）、默认各档四阶取数是一排往前挪、values_by_kind（仅攻·本系稿定排放行 4，同 brand.json 先例；其余不出 4；逐阶逐档严格递增）、类型与 standalone／affix／drop 约束、掉率单件封顶 ≤10、样板套装号在 EquipSuits 且有多件档（转换产物不在就跳过这一项）。
+- jinran.json（法宝浸染，T597）：只有 B 组，全表整数、三步成功率／每败加成在 1～100、每步花费不降、品阶倍率异痕 100 且逐阶递增、词条四档幅度不降、第 1 格行为类和每轮候选数装得下（稿 3.6 每轮保证）。
 - six_dim.json（天启篇六维，T275）：只有 B 组，八档刻度、全整数（附则 E）、韧性抗控表 −10～+10 随档不降、R1～R3（SSS 唯一极化、SS 其余五维至少 2 项 ≤C、S 稀有度）逐份过，R4 分档总分只报告不拦（T280）、普通怪模板 8～10 个、样板角色号在 base_line.json、骑士键同 horsemen.json。\n有不一致就逐条打印「项、游戏数据、参数.json」，退出码 1；全过退出码 0。
 """
 import argparse
@@ -2198,6 +2199,92 @@ def reforge_rules(table: dict, affix: dict = None) -> list:
 
 def check_reforge(_args) -> bool:
     return _run_table('reforge.json', lambda t: reforge_rules(t, _load_opt('affix_table.json')))
+
+
+# jinran.json：XTianqiJinran（法宝浸染，T597 J1；设计稿 v0.5 第三、五、十节）。全表整数（附则 E）
+JINRAN_STEPS = ('2', '3', '4')
+
+
+def jinran_rules(t: dict) -> list:
+    bad = []
+
+    def is_int(v):
+        return isinstance(v, int) and not isinstance(v, bool)
+
+    def ints(path, v, lo=None, hi=None):
+        if not is_int(v):
+            bad.append('%s 要是整数：%r' % (path, v))
+        elif (lo is not None and v < lo) or (hi is not None and v > hi):
+            bad.append('%s 超出 %s～%s：%r' % (path, lo, hi, v))
+
+    ints('material_item', t.get('material_item'), 0)
+    names = t.get('tier_names')
+    if not (isinstance(names, list) and len(names) == 4 and all(isinstance(x, str) and x for x in names)):
+        bad.append('tier_names 要四个名字')
+    sb = t.get('slots_by_tier')
+    if sb != [1, 2, 2, 3]:
+        bad.append('slots_by_tier 要是 [1, 2, 2, 3]（稿 3.6；改格数要连代码一起改）：%r' % (sb,))
+    steps = t.get('steps', {})
+    last_cost = 0
+    for k in JINRAN_STEPS:
+        st = steps.get(k)
+        if not isinstance(st, dict):
+            bad.append('steps 缺 %s' % k)
+            continue
+        ints('steps.%s.base' % k, st.get('base'), 1, 100)
+        ints('steps.%s.per_fail' % k, st.get('per_fail'), 1, 100)
+        ints('steps.%s.cost' % k, st.get('cost'), 1)
+        if is_int(st.get('cost')) and st['cost'] < last_cost:
+            bad.append('steps.%s.cost 不能比上一步少（Kyo：每阶需求都要提高）' % k)
+        last_cost = st.get('cost') if is_int(st.get('cost')) else last_cost
+    mult = t.get('tier_mult_pct')
+    if not (isinstance(mult, list) and len(mult) == 4 and all(is_int(x) for x in mult) and mult[0] == 100
+            and all(mult[i] < mult[i + 1] for i in range(3))):
+        bad.append('tier_mult_pct 要四个整数、异痕 100、逐阶严格递增（C 案每阶都涨）：%r' % (mult,))
+    ints('coef_cap_pct', t.get('coef_cap_pct'), 0)
+    w = t.get('wash', {})
+    for k in ('cost', 'cands', 'per_round', 'marks_need'):
+        ints('wash.%s' % k, w.get(k), 1)
+    tone = t.get('tone', {})
+    ints('tone.nong_pct', tone.get('nong_pct'), 0, 100)
+    ints('tone.nong_amp_pct', tone.get('nong_amp_pct'), 100)
+    for k in ('amp_cap_pct', 'hit_cap_pct', 'dangzai_team_cap'):
+        ints(k, t.get(k), 0)
+    aff = {k: v for k, v in t.get('affixes', {}).items() if not k.startswith('_')}
+    if len(aff) < 2:
+        bad.append('affixes 太少')
+    kinds = t.get('slot1_kinds', [])
+    extra = t.get('slot1_extra', [])
+    for k, a in aff.items():
+        if not isinstance(a, dict):
+            bad.append('affixes.%s 要是表' % k)
+            continue
+        if not (isinstance(a.get('name'), str) and a['name']):
+            bad.append('affixes.%s 缺 name' % k)
+        ints('affixes.%s.weight' % k, a.get('weight'), 0)
+        for f in ('amp', 'turns', 'times'):
+            if f not in a and f != 'amp':
+                continue
+            v = a.get(f)
+            if not (isinstance(v, list) and len(v) == 4 and all(is_int(x) and x > 0 for x in v) and all(v[i] <= v[i + 1] for i in range(3))):
+                bad.append('affixes.%s.%s 要四档正整数、随品阶不降：%r' % (k, f, v))
+    for k in extra:
+        if k not in aff:
+            bad.append('slot1_extra 的 %s 不在 affixes' % k)
+    slot1 = [k for k, a in aff.items() if isinstance(a, dict) and (a.get('kind') in kinds or k in extra)]
+    cands = w.get('cands') if is_int(w.get('cands')) else 3
+    rounds = w.get('per_round') if is_int(w.get('per_round')) else 3
+    # 异构三格都满时第 1 格的合法池最少 = 行为类 − 别的两格；要装得下一次的候选数
+    if len(slot1) - 2 < cands:
+        bad.append('第 1 格行为类 %d 条，异构时去掉别的两格后装不下 %d 个候选' % (len(slot1), cands))
+    # 稿 3.6：每格合法池最多 8 条，一轮 cands×per_round 个候选一定装得下（每轮每条至少出现一次）
+    if len(aff) - 2 > cands * rounds:
+        bad.append('第 2、3 格合法池 %d 条，一轮 %d 个候选装不下（每轮保证会破）' % (len(aff) - 2, cands * rounds))
+    return bad
+
+
+def check_jinran(_args) -> bool:
+    return _run_table('jinran.json', jinran_rules)
 
 
 # alien_gear.json：XTianqiAlienGear（levels、level_order、late_only、costs、new_affixes）、XTianqiAlienAffix（effects）
@@ -4912,6 +4999,7 @@ def actor_names_leftover_rules(table: dict, rework) -> list:
 
 # 每张表一个检查函数：(名字, 函数(args) -> 是否通过)。词条表那张单加 affix_table 时往这里登记。
 CHECKS = [
+    ('jinran', check_jinran),
     ('balance_table', lambda args: check_balance_table(args.params)),
     ('horsemen', lambda args: check_horsemen(args.params)),
     ('war_line', check_war_line),

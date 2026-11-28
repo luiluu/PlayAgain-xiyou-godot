@@ -45,6 +45,7 @@ const SECTIONS := {
 	"sect_xin": {"v": 1, "owner": "XTianqiSect"},  # 教派包辛：31～33 层首杀（kills）、19／25／27 层升华（sublimed），键是层号
 	"brand": {"v": 1, "owner": "XTianqiBrand"},  # 烙印首胜表 firsts（稿里叫 brand_firsts）：战斗键 → 打赢时的最高档位（T117）
 	"secrets": {"v": 1, "owner": "XTianqiSecrets"},  # 秘籍格已封列表与老存档免费自选（T446 / T013-1b，D274②）
+	"jinran": {"v": 1, "owner": "XTianqiJinran"},  # 法宝浸染（T597 J1）：bound 角色号→本命实例号、got 异源首胜键；迁移与 after_load 接线归 J2，暂不进 WIRED
 }
 ## 已接进门面（section／after_load 管迁移）的分区（no_diff_passive 是 vkey 标记，由 sync_difficulty_after_load 在能力刷新前跑）
 const WIRED := [
@@ -74,6 +75,7 @@ const GEAR_KEYS := {
 	"tq_buy_price": {"owner": "XTianqiDrop", "copy": true},
 	"tq_seed_id": {"owner": "XTianqi", "copy": false},  # 随机身份（cc/tianqi-seed-fix）：复制品另拿新号
 	"tq_rng_n": {"owner": "XTianqi", "copy": false},  # 装备上的随机计数：复制品从 0 起
+	"jinran": {"owner": "XTianqiJinran", "copy": false},  # 法宝浸染（T597 J1）：本命一人一件，复制品不带品阶和词条
 }
 
 
