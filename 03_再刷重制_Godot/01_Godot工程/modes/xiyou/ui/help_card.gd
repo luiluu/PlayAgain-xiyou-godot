@@ -733,7 +733,7 @@ static func _fabao_format_stats(vals: Array) -> String:
 
 
 ## T588（Kyo 11-28「没必要写满级的信息，只需要写法宝等级: a/b，属性也不要重复写」）：西游档法宝说明卡
-## - 原来的两行绿字（法宝当前累计／满级累计）换成一行绿字「法宝等级：当前/本层上限」＋一行当前加成（白字）；
+## - 原来的两行绿字（法宝当前累计／满级累计）换成一行绿字「法宝等级：当前/本层上限」＋一行当前加成（白字，T595 起默认不写）；
 ## - 织神天梭顶部八项已含成长，不再另写加成行；它和破限之心原有的「当前等级」行换成同一行写法，不另加；
 ## - 「等级上限：99」「（已满级）」「（保留 N 级）」「（60级进化后加成翻倍）」不再显示。
 ## 只动西游档（这几处都在 scale_active／not XTianqi.active 之内）。回退 FABAO_BRIEF_T588 = false。
@@ -741,6 +741,8 @@ static var FABAO_BRIEF_T588 := true
 ## T588 追加（Kyo「吞噬升级的时候，显示最低要求装备品级」）：西游档法宝卡写当前这一级吞噬升级的最低装备品级，
 ## 门槛读喂入判定用的 XFabaoFeed.min_grade，名字、颜色用游戏现有七档品质；到本层上限时不写。回退 FABAO_FEED_GRADE_T588 = false。
 static var FABAO_FEED_GRADE_T588 := true
+## T595（Kyo 11-28 事项 101「也去掉」）：西游档法宝卡不再写「法宝加成：当前值」行。回退 FABAO_NO_BONUS_ROW_T595 = false。
+static var FABAO_NO_BONUS_ROW_T595 := true
 const FABAO_LEVEL_HEAD := "法宝等级："
 const FABAO_LEVEL_COLOR := "rgba(128,255,28,1)"  # 绿；不用 \c 码，免得被 sort_effects 当特效行挪走、和加成行拆开
 const FABAO_FEED_HEAD := "吞噬升级最低装备品级："
@@ -748,7 +750,7 @@ const FABAO_OVER_CAP_HINT := "超出本层上限的等级会在推进楼层后�
 
 
 ## 法宝实例自带平加（补天石等强化、原件基础属性）时，成长并进顶部八项、不另写「法宝加成」，同一项只出现一次（核查 P2-1）。
-## 没有平加的法宝照旧写一行「法宝加成」。织神天梭本来就走 relic_params，不在这里。
+## 没有平加的法宝顶部不并成长（「法宝加成」行见 FABAO_NO_BONUS_ROW_T595）。织神天梭本来就走 relic_params，不在这里。
 static func _fabao_merged(obj: Dictionary) -> bool:
 	if not FABAO_BRIEF_T588 or XYunshang.relic_item(obj) or not XMagicWeapon.scale_active(obj):
 		return false
@@ -907,7 +909,7 @@ static func _apply_fabao_scale_rows(obj: Dictionary, rows: Array) -> void:
 			var brief_rows := []
 			if not has_level_row:
 				brief_rows.append(_fabao_level_row(obj))
-			if cur_text != "" and not _fabao_merged(obj):
+			if not FABAO_NO_BONUS_ROW_T595 and cur_text != "" and not _fabao_merged(obj):
 				brief_rows.append(["法宝加成：" + cur_text, 18, "rgba(255,255,255,1)", false, 0])
 			for k in brief_rows.size():
 				kept.insert(insert_at + k, brief_rows[k])
