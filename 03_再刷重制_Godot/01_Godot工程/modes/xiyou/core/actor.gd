@@ -724,7 +724,7 @@ func _skills_key() -> Array:
 static func _skills_switches() -> int:
 	var bits := 0
 	for v in [XTianqi.RELEASE_OPEN, XTianqiSkills.ENABLED, XTianqiSkills.CARDS, XTianqiBase.PHASE4, XTianqiBase.REALM_OFF,
-			XTianqiSect.YI, XTianqiTrumpet.ENABLED, XGuardianRework.GROWTH_NERF, XXufeng.REWORK,
+			XTianqiSect.YI, XTianqiTrumpet.ENABLED, XGuardianRework.GROWTH_NERF, XXufeng.REWORK, XXufeng.LOCK_FIX,
 			XXiyouNerf.ENABLED, XTianqiElements.ENABLED, XTianqiElements.SKILL_SHIFTS,
 			XFestRoad.ENABLED, XFest.ENABLED, XTianqiGear.ENABLED, XTianqiWeakAffix.ENABLED,
 			XMagicWeapon.SCALE_99_TO_888, XTianqiElements.PHYSICAL_DUAL_KEEP_NEUTRAL, ReleaseEntry.is_release()]:  # 后三个 T546 R1：徐凤年 9998 系数、自然物攻单／双属性、发行（天启篇各层 on() 认 RELEASE_OPEN or not is_release）
