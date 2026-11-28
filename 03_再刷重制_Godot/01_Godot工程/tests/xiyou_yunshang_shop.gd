@@ -16,6 +16,7 @@ const Z := preload("res://tests/lib/zh_fwd.gd")
 ## - p9：图标格号（技能与天衣等走 HD 图集，32／128 两种大小、四边透明）、织神天梭说明（等级 1／5／888）、天衣说明的粉色与粉色窗口皮。
 ## - p8.lose.sell／.base：领取后穿上卸下（不记）、商店卖出（XItemMarks.sell，记移除）／按底子扣（s.gain_gear 负数，不记），再读领取前的档；
 ##   重制另比存进方桌仓库（XWarehouse.deposit＝原版 loseItem，同卖出）与星级仓库（直接改 _armors，同按底子扣）。
+##   O-696（T616）：方桌仓库默认不再记移除（存仓库不是失去，同按底子扣）——「warehouse」关掉 WAREHOUSE_KEEP 照原版比卖出，「warehouse_keep」开着比按底子扣。
 const FIXTURE := "res://tests/fixtures/yunshang_oracle.json"
 var checks := 0
 var failures: Array = []
@@ -233,8 +234,10 @@ func _run() -> void:
 	p8_clear()
 	await p8_advance()
 	await p8_fallback()
-	for how in ["sell", "base", "warehouse", "star"]:
+	for how in ["sell", "base", "warehouse", "warehouse_keep", "star"]:
+		XYunshangOrders.WAREHOUSE_KEEP = how != "warehouse"  # O-696 T616 回退支：照原版存仓库记移除
 		p8_lose(how)
+	XYunshangOrders.WAREHOUSE_KEEP = true
 	p9_display()
 	ledger_short_write()
 	ledger_backup()
@@ -647,10 +650,10 @@ func p8_lose(how: String) -> void:
 			XItemMarks.sell(s, robe)
 		"base":
 			s.gain_gear("armor", int(robe.base), -1)
-		"warehouse":
+		"warehouse", "warehouse_keep":
 			XWarehouse.create(s, "<仓库:999>")
-			check(id + ".warehouse.deposit", XWarehouse.deposit(s, "armor", robe))
-			check(id + ".warehouse.stored", XWarehouse.stored(s, "armor").any(func(e): return is_same(e, robe) or (e is Dictionary and e.get("rec") is Dictionary and is_same(e.rec, robe))), XWarehouse.stored(s, "armor"))
+			check(id + "." + how + ".deposit", XWarehouse.deposit(s, "armor", robe))
+			check(id + "." + how + ".stored", XWarehouse.stored(s, "armor").any(func(e): return is_same(e, robe) or (e is Dictionary and e.get("rec") is Dictionary and is_same(e.rec, robe))), XWarehouse.stored(s, "armor"))
 		"star":
 			check(id + ".star.deposit", XStarWarehouse.deposit_gear(s, robe) == "")
 	at.call("lost")
