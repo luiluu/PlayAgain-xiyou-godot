@@ -246,7 +246,9 @@ func _sync_card(a: XActor) -> void:
 	if sec_act.has("tag") and str(sec_act.tag) != "":
 		sub.append(str(sec_act.tag))
 	var soul := XRaven.ledger_help(a, sk)
+	XHelpCard.cost_actor = a
 	var help := XHelpCard.content(view, "skill", bool(view.get("skill_copy", false)), 300.0) if soul.is_empty() else []
+	XHelpCard.cost_actor = null
 	var rows: Array = soul.map(func(t): return {"text": str(t), "color": XUiSkin.TEXT_2}) if not soul.is_empty() else XSkinTemplatePage.help_rows(help)
 	# T288 卡 S：长说明卡分节（XHelpCard.SECTIONS 关＝照旧一节无标题）；牌头小字仍用本页的「类型 · 消耗」
 	var split := XHelpCard.SECTIONS and soul.is_empty()

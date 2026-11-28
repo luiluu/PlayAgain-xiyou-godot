@@ -18,6 +18,8 @@ func _ready() -> void:
 	TestEnv.isolate("xiyou_help_card")
 	XCanglong.original_data()  # 按原版比：漩涡二阶段、苍龙重做与解放（优化登记三条）关掉，新行为由 xiyou_rift2_canglong 核
 	XVegetaTune.original_data()  # 参照是原版：贝吉特优化调整的说明（9942／10568）关掉，新说明由 xiyou_vegeta_tune 核
+	XSkillHelpFix.RANGE_FIX = false  # T590 说明卡随机倍率、消耗修正（只改显示）：关掉比原版，新行为由 xiyou_skill_help_fix 核
+	XSkillHelpFix.COST_FIX = false
 	XPower.SHOW_POWER_UI = true  # 战力先藏（默认关）：本专项测战力显示，开着才与藏之前逐字一致
 	_run.call_deferred()
 
