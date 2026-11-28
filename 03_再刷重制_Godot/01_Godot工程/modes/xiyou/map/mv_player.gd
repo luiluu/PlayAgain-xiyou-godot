@@ -104,6 +104,13 @@ func click_cell(c: Vector2i) -> void:
 ## WindowFit.MOBILE_SKIP（同号）从根上不再给移动端设窗口位置。回退：MOBILE_TAP_POS = false（O-690）。
 static var MOBILE_TAP_POS := true
 
+## T621（玩家反馈 11-28「点一个地方，哪怕用轮盘控制方向强行走开，最后还是会奔着那个点去」，Kyo「同时碰到的话轮盘优先级更高」）：
+## 原版 Game_Player.moveByInput 有方向输入就 $gameTemp.clearDestination()，移植时漏了——方向键／轮盘只顶掉当步，点地目的地一直留着，
+## 一松手又奔回去。开着时：站定要走的那一帧只要有方向输入（键盘、手柄、触屏轮盘），先清掉点地目的地和长按跟手，按方向走，
+## 松开也不回头；同一帧刚点了地、排着的 D1／D2（点脚下／点面前）也作废，轮盘优先。T587 的点地坐标不动。
+## false＝回到移植原样（方向只顶当步，目的地留着）。
+static var STICK_CANCELS_TAP := true
+
 
 ## 点按落点（画布坐标）：移动端用事件自身坐标（同 ScreenTouch 分支），桌面照旧 get_global_mouse_position
 func _click_pos(e: InputEventMouseButton) -> Vector2:
@@ -185,11 +192,15 @@ func update_character() -> void:
 		return
 	if is_moving() or not input_enabled:
 		return
+	var d := _input_dir()
+	if STICK_CANCELS_TAP and d != 0 and (touch_kind != 0 or touch_target.x >= 0 or _hold_count > 0):
+		_touch_queued = 0
+		touch_kind = 0
+		clear_destination()
 	if touch_kind != 0:
 		_touch_queued = 0
 		touch_action.emit(touch_kind == 2)
 		return
-	var d := _input_dir()
 	if d == 0 and touch_target.x >= 0:
 		d = _toward(touch_target)
 		if d == 0:
