@@ -64,8 +64,11 @@
 - 以下云端两条是返工前的记录；返工后的结果见本节末尾。
 - 云端选测通过：93 个场景、2 片，提交 ee21f81366，https://github.com/luiluu/PlayAgain-xiyou-godot/actions/runs/46102257227
 - 前一轮 https://github.com/luiluu/PlayAgain-xiyou-godot/actions/runs/46098581733 挂 1 个：`xiyou_cat_help`（和原版逐行比，多了品级行），已在对照里关掉品级行；同轮 `xiyou_tianqi_deck_phys_amp` 偶发一次（并行失败、单跑通过）。
+- **返工后云端选测通过**：93 个场景、2 片，提交 20e6669963，https://github.com/luiluu/PlayAgain-xiyou-godot/actions/runs/46108876146 （`gh run watch` 前台等完；偶发一次 `xiyou_tianqi_deck_phys_amp`，并行失败、单跑通过）。
 
 ## 本分支提交
 
 - 9eb155e1d 实现、专项、截图
 - ee21f8136 小猫说明卡对照、交付单
+- f77d7c5cd 交付单补云端结果
+- 20e666996 核查返工（P2×3、P3×2）
