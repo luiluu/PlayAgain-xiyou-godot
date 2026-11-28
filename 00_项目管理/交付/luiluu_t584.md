@@ -1,7 +1,7 @@
 # 交付：luiluu/t584
 
 - 车道／工作者：T584 虚拟玩家 climb「生命高于上限」（角色 162）查因与修复／cc（Opus 5.5＋medium，职级 P8；`ctx_d47bc10c2079`）
-- 状态：可合并
+- 状态：可合并（R1 已修小o P2-1、补注 P3-1）
 
 ## 变更记录草稿
 
@@ -13,13 +13,15 @@
 - 做法（`03_再刷重制_Godot/01_Godot工程/modes/xiyou/core/battler.gd`）：新回退开关 `XBattler.TQ_ADD_CLAMP := true`（O-待定·T584加状态夹上限）。`add_state` 最外层在锁放开之后调 `_tq_clamp_after_add`：天启篇（`XTianqi.active`）、角色（不是敌人）、生命 > 0 时，生命高于上限就夹到上限，魔法同理。西游档、敌人、开关关都直接返回，不读上限。嵌套的 add_state 在锁里先返回，不走这一步。
 - 对 162 强度的影响（估）：天启篇燃血后少了「凭旧血量挡一击」。2720 期间攻击也 ×0.01，到期照样扣满血倒下（专项 `tq.on.add.leave_still_kills`），燃血本来就是自爆式一击，所以只少了两回合里多挡的一下，主要伤害不变。估六维的生存一维略降、输出不变；没有重算六维，交 T580 后续复核。
 - 测试：新专项 `tests/xiyou_t584_add_clamp`（15 项）：天启篇开关开，直接加 2720 和真放 10458 两条路之后生命 ≤ 上限、魔法 ≤ 上限，2720 到期仍倒下；天启篇开关关，照原版生命高于上限（证明专项咬得住）；西游档开关开／关两支生命、上限、魔法逐项相等，并且都照原版高于上限。
+- R1（小o 核 P2-1，返修单 `ctx_8399481d95b0`，Opus 5.5＋medium）：原做法在 `XBattler.add_state` 锁放开后立刻夹，早于 `XActor.add_state` 里 `XYunshang.state_added`——百厄成锦醒着时收录减益后当场去掉，去掉前已按临时上限扣血。实测（162、55 级、穿百厄成锦醒着、满血 73869 加 77 黝石重踏 ×0.8）：修前开关开生命 59095（少 20%），开关关 73869。改法：补夹从 `battler.gd` 挪到 `XActor.add_state` 最末（`XYunshang.state_added`、`release_to_party` 之后），`_adding_state` 锁占着（嵌套）时不夹；`battler.gd` 只剩开关和 `_tq_clamp_after_add` 定义，`XAlienBattle／XGuyu／XTianqiElementEffects.after_add_state` 也都在补夹之前跑完。专项加 3 项（`robe.ready`、`robe.on.full_hp_kept`、`robe.off.full_hp_kept`），把修复撤回能看到 `robe.on.full_hp_kept` 失败（生命 59095）。
+- R1 注（小o 核 P3-1）：地图 12 那条历史告警（T533 R2「生命高于上限 角色 162 [22690, 9062]」）当时没留技能／状态快照，本单不能证明那一次就是燃血 2720 造成的；专项只证明燃血能造成同类越界，补夹对任何压低上限的状态都生效。
 - 玩家可见：天启篇诛仙放「舍身剑·燃血」后，生命立即压到新上限（之前血条会显示超过上限，要挨一下才压回）；西游档不变。
 
 ## 优化登记草稿
 
 | 编号 | 位置 | 原版行为 | 优化 | 理由 | 恢复方法 | 执行者 | 状态 |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| O-待定·T584加状态夹上限 | `modes/xiyou/core/battler.gd` `XBattler.TQ_ADD_CLAMP`（`add_state` → `_tq_clamp_after_add`；只在 `XTianqi.active` 时、对角色生效） | `_Fix_StackOverflow.js` 在 addState 期间吞掉 Game_Battler.refresh，角色加压低上限的状态（如诛仙 2720，上限 ×0.01）后生命／魔法不夹，直到下一次 setHp／gainHp；期间凭旧血量多挡一击 | 天启篇角色加状态（最外层，锁放开后）生命／魔法高于上限就夹到上限；西游档、敌人不动 | 虚拟玩家 climb 报「生命高于上限」（T533 R2）；补丁的副作用不是设计；协调 11-28 定只修天启篇 | `XBattler.TQ_ADD_CLAMP = false` | cc（T584） | 保留 |
+| O-待定·T584加状态夹上限 | `modes/xiyou/core/battler.gd` `XBattler.TQ_ADD_CLAMP`（`XActor.add_state` 最末 → `_tq_clamp_after_add`，R1 挪到百厄成锦等结算之后；只在 `XTianqi.active` 时、对角色生效） | `_Fix_StackOverflow.js` 在 addState 期间吞掉 Game_Battler.refresh，角色加压低上限的状态（如诛仙 2720，上限 ×0.01）后生命／魔法不夹，直到下一次 setHp／gainHp；期间凭旧血量多挡一击 | 天启篇角色加状态（最外层，锁放开后）生命／魔法高于上限就夹到上限；西游档、敌人不动 | 虚拟玩家 climb 报「生命高于上限」（T533 R2）；补丁的副作用不是设计；协调 11-28 定只修天启篇 | `XBattler.TQ_ADD_CLAMP = false` | cc（T584） | 保留 |
 
 ## 交接板
 
@@ -35,11 +37,13 @@
 
 | 函数／开关 | 调用方 N 处（附 grep 命令） | 逐处结论 |
 | --- | --- | --- |
+| `XActor.add_state`（R1：补夹挪到这里最末；`XBattler.add_state` 恢复原样只少一行） | 同下 | 只在锁没占着时多一步 `_tq_clamp_after_add`，西游档、开关关开头返回；在它之前云裳 state_added、release_to_party、battler 三个 after_add_state 都已跑完 |
 | `XBattler.add_state` | 游戏代码 37 处（`git grep -nE '[^[:alnum:]_]add_state[[:space:]]*\(' -- '*.gd' \| grep -v /tests/`，含测试 620 处）；覆写 2 处：`XActor.add_state`（actor.gd:370，前置拦截后 `super`）、`XEnemy.add_state`（enemy.gd:95） | 改动只在最外层 add_state 末尾多一步 `_tq_clamp_after_add`。它在西游档（`XTianqi.active` 假）、敌人、开关关、生命 ≤ 0 时开头就返回，不读写任何东西，所以西游档 37 处调用行为不变（专项 `xiyou.*.on_equals_off` 证明）。天启篇角色只会在生命／魔法高于上限时被往下夹，不会抬高，也不会改阵亡状态（生命 > 0 才夹、夹到的上限 ≥ 1）。嵌套调用在 `_adding_state` 锁里先返回，不走这一步。`XState.members` 读取、存档不涉及。 |
 | `XBattler.TQ_ADD_CLAMP`（新） | 1 处（`git grep -n TQ_ADD_CLAMP -- '*.gd'`：定义、`_tq_clamp_after_add`、专项） | 新开关，默认开；专项设 false 覆盖回退支 |
 
 ## 测试
 
+- R1 本机：`xiyou_t584_add_clamp` 18/18（撤回修复 17/18，咬得住）。
 - 本机：`xiyou_t584_add_clamp` 15/15、`xiyou_state_effects` 32816/32816。
 - `发行空壳.py check`：通过（88 个脚本，879 个函数都有）。
 - 云端选测：通过，231 个场景、16 片（提交 c7b5cd054，基准 2e8cf9d74），https://github.com/luiluu/PlayAgain-xiyou-godot/actions/runs/46082656458
@@ -52,4 +56,5 @@
 
 - 1445a9598 WIP：T584 探针复现角色 162 加 2720 后生命不夹上限（探针在下一提交删除）
 - c7b5cd054 T584 天启篇角色加状态后补夹生命／魔法上限（XBattler.TQ_ADD_CLAMP），专项 15/15
-- （本提交）交付单
+- ed5f4b0d0 交付单
+- （R1 提交）补夹挪到 XActor.add_state 最末，专项 18/18；交付单补 R1
