@@ -507,18 +507,18 @@ func _t473_fixes() -> void:
 	XAlienBattle.finish(bl, [])
 	var cut4535: Dictionary = res_affix.breakdown.row.get("nineCap", {})
 	var affix_fd := float(XTianqiAffixTable.value("final_damage", 4, "perfect")) / 100.0
-	var elem7_eq := float(by4535.get("elementAmplify", {}).get(7, {}).get("equip", 0.0))
+	var elem7_eq := float(by4535.get("elementAmplify", {}).get(7, {}).get("equip", 0.0))  # T532：普通防具本体元素伤全身合计封 +20%，到不了旧九线元素顶 30%，元素那一刀为 0
 	var pools_ok := float(by4535.get("globalHarmRi", {}).get("tianqi", 0.0)) == 0.0 \
 		and float(by4535.get("critHarmRi", {}).get("tianqi", 0.0)) == 0.0 \
 		and float(by4535.get("elementAmplify", {}).get(7, {}).get("tianqi", 0.0)) == 0.0 \
 		and float(by4535.get("globalHarmRi", {}).get("equip", 0.0)) >= 1.75 - 1e-4 \
 		and float(by4535.get("critHarmRi", {}).get("equip", 0.0)) >= 3.00 - 1e-4 \
 		and float(by4535.get("skillTypeDvup", {}).get("A", {}).get("equip", 0.0)) >= 2.15 - 1e-4 \
-		and elem7_eq > 0.30 + 1e-4 \
+		and elem7_eq > 0.0 and elem7_eq <= XTianqiGear.armor_cap_pct() / 100.0 + 1e-6 \
 		and float(cut4535.get("bonus", 0.0)) >= 1.40 - 1e-4 \
 		and float(cut4535.get("crit", 0.0)) >= 2.70 - 1e-4 \
 		and float(cut4535.get("skill", 0.0)) >= 2.00 - 1e-4 \
-		and is_equal_approx(float(cut4535.get("element", {}).get(7, 0.0)), elem7_eq - 0.30) \
+		and is_equal_approx(float(cut4535.get("element", {}).get(7, 0.0)), maxf(0.0, elem7_eq - 0.30)) \
 		and is_equal_approx(float(res_affix.breakdown.row.terminal) - float(res_plain.breakdown.row.terminal), affix_fd) \
 		and is_equal_approx(float(res_affix.breakdown.row.critical), float(res_plain.breakdown.row.critical))
 	_check("t473_4535_affix_capped_all_pools", pools_ok, {

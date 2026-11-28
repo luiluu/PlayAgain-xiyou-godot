@@ -1722,6 +1722,42 @@ def actor_innate_cap_rules(table: dict, db_dir=None) -> list:
     return bad
 
 
+_RE_NEED_E = re.compile(r'e(\d+)')
+_RE_NEED_GEAR = re.compile(r'(weapon|armor):(\d+)')
+
+
+def need_gear_rules(table: dict) -> list:
+    """T579：条件「要有」的装备键。"e底号" 按 gear 表里这个底号登记的类别（武器／防具）比，所以底号在表里只能有一类；
+    两类都有的要写明 "weapon:底号"／"armor:底号"，写明的要在 gear 表里。"""
+    gear = {str(k) for k in table.get('gear', {}) if ':' in str(k)}
+    kinds = {}
+    for k in gear:
+        kind, _, base = k.partition(':')
+        kinds.setdefault(base, set()).add(kind)
+    bad, seen = [], set()
+
+    def walk(v, where):
+        if isinstance(v, dict):
+            for k, x in v.items():
+                walk(k, where)
+                walk(x, '%s/%s' % (where, k))
+        elif isinstance(v, list):
+            for x in v:
+                walk(x, where)
+        elif isinstance(v, str) and (where, v) not in seen:
+            seen.add((where, v))
+            m = _RE_NEED_E.fullmatch(v)
+            if m and len(kinds.get(m.group(1), ())) != 1:
+                bad.append('%s 要有 "%s"：gear 表里底号 %s 有 %s 类，要只有一类，不然写明 "weapon:%s"／"armor:%s"' % (
+                    where, v, m.group(1), len(kinds.get(m.group(1), ())), m.group(1), m.group(1)))
+            elif _RE_NEED_GEAR.fullmatch(v) and v not in gear:
+                bad.append('%s 要有 "%s"：gear 表里没有这件' % (where, v))
+
+    for sec in ('actors', 'skills', 'states', 'shared', 'rules'):
+        walk(table.get(sec, {}), sec)
+    return bad
+
+
 def check_skill_rework(_args) -> bool:
     path = DATA_DIR / 'skill_rework.json'
     if not path.is_file():
@@ -1729,7 +1765,7 @@ def check_skill_rework(_args) -> bool:
         return True
     try:
         table = _read_table('skill_rework.json')
-        bad = _with_tune(skill_rework_rules)(table) + coef_integer_rules(table) + forced_copy_rules(table) + actor_innate_cap_rules(table)
+        bad = _with_tune(skill_rework_rules)(table) + coef_integer_rules(table) + forced_copy_rules(table) + actor_innate_cap_rules(table) + need_gear_rules(table)
     except Exception as e:
         bad = ['能读表并跑完全部检查：%s: %s' % (type(e).__name__, e)]
     return _report('skill_rework.json', '规则自检', bad)
@@ -4459,6 +4495,20 @@ def gear_elem_amp_rules(table: dict, rework: dict = None, gear_table: dict = Non
 
     check('表头 version', _is_int(table.get('version')) and table['version'] >= 1, table.get('version'))
     check('表头 source', _text(table.get('source')), table.get('source'))
+    # T532（v0.16 九.2＋D290）：防具本体元素伤全身合计上限；终态单件重排（final，ARMOR_FINAL 开关默认关）
+    final_tiers = {}
+    if table.get('version', 1) >= 2:
+        ac = table.get('armor_cap')
+        check('armor_cap', isinstance(ac, dict) and _is_int(ac.get('pct')) and 1 <= ac['pct'] <= 100 and '4' not in str(ac['pct']) and _text(ac.get('source')), ac)
+        fr = table.get('armor_final_rule')
+        ok_fr = isinstance(fr, dict) and _text(fr.get('source')) and isinstance(fr.get('tiers'), dict)
+        check('armor_final_rule', ok_fr, fr)
+        if ok_fr:
+            for tk, rng in fr['tiers'].items():
+                if not (str(tk).isdigit() and isinstance(rng, list) and len(rng) == 2 and all(_is_int(x) and x >= 1 and '4' not in str(x) for x in rng) and rng[0] <= rng[1]):
+                    bad.append('armor_final_rule.tiers[%s]＝%r：要 [下, 上] 避 4 正整数' % (tk, rng))
+                else:
+                    final_tiers[int(tk)] = rng
     w_caps = {1: 10, 2: 15, 3: 25, 4: 35, 5: 50}
     a_caps = {1: 7, 2: 10, 3: 13, 4: 18, 5: 20}
     w_floors = {1: 5, 2: 10, 3: 15, 4: 20, 5: 35}
@@ -4514,6 +4564,24 @@ def gear_elem_amp_rules(table: dict, rework: dict = None, gear_table: dict = Non
                 subs = v['subs']
                 if not isinstance(subs, list) or not all(isinstance(p, list) and (len(p) == 2 or (len(p) == 3 and p[2] == 're')) and all(isinstance(s, str) for s in p) for p in subs):
                     bad.append('%s[%s].subs：要是 [旧, 新] 字符串对或 [正则, 换成, "re"] 列表' % (sec, k))
+            if 'final' in v:
+                fv = v['final']
+                if kind != 'armor' or not isinstance(fv, dict) or not isinstance(fv.get('amp'), dict):
+                    bad.append('%s[%s].final：只给防具，要 {amp, subs?}' % (sec, k))
+                else:
+                    if set(map(str, fv['amp'].keys())) != set(map(str, amp.keys())):
+                        bad.append('%s[%s].final.amp 元素键要和 amp 一致' % (sec, k))
+                    rng = final_tiers.get(t)
+                    for ek, val in fv['amp'].items():
+                        if not (_is_int(val) and val >= 1 and '4' not in str(val) and (not _is_int(amp.get(ek)) or val <= amp[ek])
+                                and (rng is None or rng[0] <= val <= rng[1] or val == amp.get(ek))):
+                            bad.append('%s[%s].final.amp[%s]＝%r：要避 4 正整数、不高于 T451 值、在本档 %r 内' % (sec, k, ek, val, rng))
+                    fs = fv.get('subs')
+                    if fs is not None and not (isinstance(fs, list) and isinstance(v.get('subs'), list) and len(fs) == len(v['subs'])
+                                               and all(isinstance(p, list) and len(p) == len(q) and p[0] == q[0] and all(isinstance(x, str) for x in p) for p, q in zip(fs, v['subs']))):
+                        bad.append('%s[%s].final.subs：要与 subs 逐对同旧串、同形' % (sec, k))
+            elif table.get('version', 1) >= 2 and kind == 'armor':
+                bad.append('%s[%s]：version 2 起防具要有 final' % (sec, k))
             gkey = '%s:%s' % (kind, k)
             if gkey in rw_gear:
                 bad.append('%s 与 skill_rework.gear 重叠' % gkey)

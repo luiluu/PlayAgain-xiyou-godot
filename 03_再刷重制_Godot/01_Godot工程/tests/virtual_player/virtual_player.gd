@@ -859,10 +859,10 @@ func _act_choice(obs: Dictionary) -> void:
 		if hit >= 0:
 			want = hit
 			break
-	if _intent == "zhenqi":
+	if mode == "climb" and n == 2 and str(obs.message._choices[0]) == "确定" and str(obs.message._choices[1]) == "再想想":
+		want = 0                     # 天启篇选线的确认：要通关就得选一条线（排在逛店、闭关前面：逛店／闭关的意图还留着时会选「再想想」兜圈子；T532 撞上闭关那一路）
+	elif _intent == "zhenqi":
 		want = _zhenqi_choice(obs.message._choices)
-	elif mode == "climb" and n == 2 and str(obs.message._choices[0]) == "确定" and str(obs.message._choices[1]) == "再想想":
-		want = 0                     # 天启篇选线的确认：要通关就得选一条线（排在逛店前面：逛店的意图还留着时会选「再想想」兜圈子）
 	elif _intent == "fragments":
 		want = _fragment_choice(obs.message._choices)
 	elif _intent == "shop":

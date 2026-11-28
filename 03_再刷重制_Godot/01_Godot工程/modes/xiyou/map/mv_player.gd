@@ -64,7 +64,7 @@ func _unhandled_input(event: InputEvent) -> void:
 	if not XTouchControls.map_tap_allowed() and (event is InputEventScreenTouch or (event is InputEventMouseButton and event.device == InputEvent.DEVICE_ID_EMULATION)):
 		return
 	if event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
-		_hold_cell = _touch_cell(get_global_mouse_position())
+		_hold_cell = _touch_cell(_click_pos(event as InputEventMouseButton))
 		_hold_count = 1
 		click_cell(_hold_cell)
 	elif event is InputEventScreenTouch and event.pressed and not (DEFER_CLICK_ACTION and _touch_emulates_mouse()):
@@ -97,6 +97,37 @@ func click_cell(c: Vector2i) -> void:
 		_touch_queued = 2
 
 
+## T587：安卓点地目的地整体往左上偏（20:9 手机约左 4.7 格、上 0.75 格），点右边几格走不过去、斜着走。根因是启动时
+## WindowFit.apply 给安卓根窗口记了个居中 position（引擎挪不动窗口，但值记下了），引擎算 get_global_mouse_position 时把它
+## 又减一次（安卓的鼠标坐标本来就是窗口内坐标）；T507 之前触屏分支用事件自身坐标把目的地改回正确格，掩盖了它。
+## 开着时移动端点地用事件自身坐标、长按跟手用最近一次鼠标事件自身坐标，不读窗口 position；桌面一行不变。
+## WindowFit.MOBILE_SKIP（同号）从根上不再给移动端设窗口位置。回退：MOBILE_TAP_POS = false（O-690）。
+static var MOBILE_TAP_POS := true
+
+
+## 点按落点（画布坐标）：移动端用事件自身坐标（同 ScreenTouch 分支），桌面照旧 get_global_mouse_position
+func _click_pos(e: InputEventMouseButton) -> Vector2:
+	if MOBILE_TAP_POS and XPlatform.is_mobile():
+		return get_canvas_transform().affine_inverse() * e.position
+	return get_global_mouse_position()
+
+
+## 移动端最近一次鼠标事件（触屏仿出）的视口坐标，长按跟手用；在 _input 里记，界面控件吃掉的拖动也记得到
+var _last_pointer := Vector2.ZERO
+
+
+func _input(event: InputEvent) -> void:
+	if MOBILE_TAP_POS and event is InputEventMouse and XPlatform.is_mobile():
+		_last_pointer = (event as InputEventMouse).position
+
+
+## 长按跟手时手指当前位置（画布坐标）：移动端用最近一次鼠标事件自身坐标，桌面照旧 get_global_mouse_position
+func _pointer_pos() -> Vector2:
+	if MOBILE_TAP_POS and XPlatform.is_mobile():
+		return get_canvas_transform().affine_inverse() * _last_pointer
+	return get_global_mouse_position()
+
+
 static func _touch_emulates_mouse() -> bool:
 	return bool(ProjectSettings.get_setting("input_devices/pointing/emulate_mouse_from_touch", true))
 
@@ -120,7 +151,7 @@ func _update_hold() -> void:
 		return
 	_hold_count += 1
 	if _hold_count >= 15:
-		var c := _touch_cell(get_global_mouse_position())
+		var c := _touch_cell(_pointer_pos())
 		if c != _hold_cell:
 			_hold_cell = c
 			touch_target = c if c != grid else Vector2i(-1, -1)
