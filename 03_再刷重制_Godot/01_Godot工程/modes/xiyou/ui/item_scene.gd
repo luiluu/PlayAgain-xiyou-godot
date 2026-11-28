@@ -79,6 +79,13 @@ static var DETAIL_V043 := true
 static var CACHE_GEAR_ENTRIES := true
 var _gear_cache: Array = []
 var _gear_key: Array = []
+## O-697（T620，玩家反馈 v0.04.08 安卓物品页翻页卡）：物品类（物品／消耗品／贵重物品）也记住。一次翻页要取七八遍列表
+## （翻页、行数、工具条、详情、说明卡、列表重画、信息窗），每遍遍历背包全部物品种类、逐个查置顶／锁定再复制，桌面约 1.3 ms／遍。
+## 开着：按（存档、分类、背包物品与数量的哈希、置顶表、锁定表、异化隐藏、天启篇宠物隐藏）记住，同样就直接取；
+## 得到／用掉物品、置顶、锁定都让键变，结果与每次重算相同。LIST_ONLY_NAMES 关（原版直接改数据库名字）时不缓存。false＝每次重算。
+static var CACHE_ITEM_ENTRIES := true
+var _item_cache: Array = []
+var _item_key: Array = []
 var bulk_win: XMVWindow
 var _bulk: Dictionary = {}          # 批量服用数量窗：{item, available, number, targets, for_friend}；空＝没开
 var _bulk_busy := false             # 正在逐颗服用（挡住输入）
@@ -197,6 +204,12 @@ func entries() -> Array:
 	var sym := _symbol()
 	var out := []
 	if sym in ["item", "consumable", "keyItem"]:
+		var ikey := []
+		if CACHE_ITEM_ENTRIES and XItemMarks.LIST_ONLY_NAMES:
+			ikey = [s.get_instance_id(), sym, s.items.size(), s.items.hash(), str(s.flags.get("TopItem", [])), str(s.flags.get("ItemSpLock", [])),
+				XAlienHide.active(), XTianqiPetHide.active(s)]
+			if ikey == _item_key:
+				return _item_cache
 		var ids := s.items.keys().map(func(k): return int(k))
 		ids.sort()
 		for id in ids:
@@ -206,6 +219,10 @@ func entries() -> Array:
 			var itype := int(rec.get("itypeId", 1))
 			if (sym == "item" and itype == 1) or (sym == "keyItem" and itype == 2) or (sym == "consumable" and bool(rec.get("consumable", false))):
 				out.append({"rec": rec, "count": s.item_count(id)})
+		if not ikey.is_empty():
+			_item_cache = XItemMarks.apply_list(s, out)
+			_item_key = ikey
+			return _item_cache
 		return XItemMarks.apply_list(s, out)
 	var key := []
 	if CACHE_GEAR_ENTRIES:
