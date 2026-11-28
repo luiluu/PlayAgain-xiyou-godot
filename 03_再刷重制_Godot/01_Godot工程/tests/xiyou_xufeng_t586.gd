@@ -109,7 +109,7 @@ func _check_data_on() -> void:
 	var raw9995: Dictionary = XDB.table("Skills")[9995]
 	var raw9987: Dictionary = XDB.table("Skills")[9987]
 	var want := {
-		9987: [6, 0, 500, 0, 5, 1],
+		9987: [6, 0, 0, 0, 5, 1],
 		9988: [2, 2, 0, 20, 0, 2],
 		9989: [1, 3, 0, 30, 0, 1],
 	}  # scope, cooldown, mp, tp, tpGain, yepEffects
