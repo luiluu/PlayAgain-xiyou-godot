@@ -48,6 +48,7 @@ func _compare(state: String, card: Dictionary) -> void:
 
 func _ready() -> void:
 	XMagicWeapon.SCALE_99_TO_888 = false  # 原版对照：西游档法宝 99→888 折算（T468）由 xiyou_fabao_99_scale 核
+	XHelpCard.FABAO_FEED_GRADE_T588 = false  # 原版卡上没有「吞噬升级最低装备品级」行（T588，xiyou_fabao_card_t588 核）
 	XPower.SHOW_POWER_UI = true  # 战力先藏（默认关）：本专项测战力显示，开着才与藏之前逐字一致
 	var ref: Dictionary = JSON.parse_string(FileAccess.get_file_as_string(ORACLE))
 	check("source", ref.sourceIdentity.runtimeInputs == XDB.load_json("manifest.json").runtimeInputs)

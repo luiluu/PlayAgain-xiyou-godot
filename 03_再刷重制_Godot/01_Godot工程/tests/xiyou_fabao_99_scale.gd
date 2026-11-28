@@ -665,6 +665,9 @@ func _test_caps_and_feed_unchanged() -> void:
 
 ## 6) 说明卡与右侧详情显示与实算一致、无旧静态误导行、不改写原件
 func _test_help_cards() -> void:
+	# 本段量的是 T468 原卡面写法（两行累计）：T588 关掉两个开关跑，现行卡面在 xiyou_fabao_card_t588
+	XHelpCard.FABAO_BRIEF_T588 = false
+	XHelpCard.FABAO_FEED_GRADE_T588 = false
 	var s := _make_xiyou(1)  # 1 层上限 12
 	# a) 诛仙剑 Lv.1（floor cap 12）
 	var zx := XGear.template("armor", 123)
@@ -803,6 +806,8 @@ func _test_help_cards() -> void:
 		and not gr37_f1.contains("高于满级"),
 		gr37_f1)
 	s.set_variable(20, 30)
+	XHelpCard.FABAO_BRIEF_T588 = true
+	XHelpCard.FABAO_FEED_GRADE_T588 = true
 
 
 ## 7) 开关回退与天启档隔离

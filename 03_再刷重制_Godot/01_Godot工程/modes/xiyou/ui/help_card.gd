@@ -236,6 +236,8 @@ static func desc_params(obj: Dictionary, type: int) -> Array:
 			pos[2] = rows.size()
 		1, 2:
 			var params: Array = XTianqiGear.effective_params(obj) if not XYunshang.relic_item(obj) else XYunshang.relic_params(obj)  # 期四装备八项（T104）：关着同 obj.params
+			if _fabao_merged(obj):
+				params = _fabao_merged_params(obj, params)
 			for i in range(params.size()):
 				if params[i] != null and float(params[i]) != 0.0:
 					rows.append([str(terms.get("params", [])[i]) + ":" + _num(params[i]), OTHER_SIZE, PARAM_COLORS[i], false, null])
@@ -259,6 +261,8 @@ static func desc_params(obj: Dictionary, type: int) -> Array:
 		_relic_rows(obj, rows, pos)
 	if (type == 1 or type == 2) and XMagicWeapon.scale_active(obj):
 		_apply_fabao_scale_rows(obj, rows)
+	if FABAO_FEED_GRADE_T588 and (type == 1 or type == 2):
+		_fabao_feed_row(obj, rows)
 	# ItemQuality：<pos=AD text=品质：名称 size=18 color=normalcolor line=false align=0>
 	_extra_row(rows, pos, "<pos=AD text=品质：%s size=18 color=normalcolor line=false align=0>" % XQuality.grade_name(obj), normal)
 	# 西游 v0.15 Q.labelRows：所有「品质：」行换成七档名称，装备带标签（品质：不朽（传家宝））
@@ -661,8 +665,13 @@ static func _relic_rows(obj: Dictionary, rows: Array, pos: Array) -> void:
 	at = at + 1 if at >= 0 else int(pos[3])
 	var keep_tag := "（保留%d级）" % mini(raw_lv, int(XMagicWeapon.top_level(obj))) if XMagicWeapon.scale_active(obj) and raw_lv > eff_lv else ""
 	var lines := ["当前等级：%d / %d%s" % [eff_lv, top, keep_tag], "法宝经验：%d" % xp + ("（已满级）" if raw_lv >= top else " / %d" % int(XMagicWeapon.next_level_exp(obj)))]
+	var brief := FABAO_BRIEF_T588 and XMagicWeapon.scale_active(obj)
+	if brief and raw_lv >= top:
+		lines[1] = "法宝经验：%d" % xp
 	for i in lines.size():
 		rows.insert(at + i, [lines[i], OTHER_SIZE, "rgba(255,255,255,1)", false, 0])
+	if brief:
+		rows[at] = _fabao_level_row(obj)
 
 
 const FABAO_STAT_NAMES := ["生命", "魔法", "物攻", "物防", "魔攻", "魔防", "敏捷", "幸运"]
@@ -717,6 +726,91 @@ static func _fabao_format_stats(vals: Array) -> String:
 	return "；".join(PackedStringArray(parts))
 
 
+## T588（Kyo 11-28「没必要写满级的信息，只需要写法宝等级: a/b，属性也不要重复写」）：西游档法宝说明卡
+## - 原来的两行绿字（法宝当前累计／满级累计）换成一行绿字「法宝等级：当前/本层上限」＋一行当前加成（白字）；
+## - 织神天梭顶部八项已含成长，不再另写加成行；它和破限之心原有的「当前等级」行换成同一行写法，不另加；
+## - 「等级上限：99」「（已满级）」「（保留 N 级）」「（60级进化后加成翻倍）」不再显示。
+## 只动西游档（这几处都在 scale_active／not XTianqi.active 之内）。回退 FABAO_BRIEF_T588 = false。
+static var FABAO_BRIEF_T588 := true
+## T588 追加（Kyo「吞噬升级的时候，显示最低要求装备品级」）：西游档法宝卡写当前这一级吞噬升级的最低装备品级，
+## 门槛读喂入判定用的 XFabaoFeed.min_grade，名字、颜色用游戏现有七档品质；到本层上限时不写。回退 FABAO_FEED_GRADE_T588 = false。
+static var FABAO_FEED_GRADE_T588 := true
+const FABAO_LEVEL_HEAD := "法宝等级："
+const FABAO_LEVEL_COLOR := "rgba(128,255,28,1)"  # 绿；不用 \c 码，免得被 sort_effects 当特效行挪走、和加成行拆开
+const FABAO_FEED_HEAD := "吞噬升级最低装备品级："
+const FABAO_OVER_CAP_HINT := "超出本层上限的等级会在推进楼层后恢复生效"
+
+
+## 法宝实例自带平加（补天石等强化、原件基础属性）时，成长并进顶部八项、不另写「法宝加成」，同一项只出现一次（核查 P2-1）。
+## 没有平加的法宝照旧写一行「法宝加成」。织神天梭本来就走 relic_params，不在这里。
+static func _fabao_merged(obj: Dictionary) -> bool:
+	if not FABAO_BRIEF_T588 or XYunshang.relic_item(obj) or not XMagicWeapon.scale_active(obj):
+		return false
+	var nonzero := func(v): return v != null and float(v) != 0.0
+	return (obj.get("params", []) as Array).any(nonzero) and XActor.magic_per_level(obj).any(nonzero)
+
+
+static func _fabao_merged_params(obj: Dictionary, params: Array) -> Array:
+	var out := []
+	for i in params.size():
+		out.append((float(params[i]) if params[i] != null else 0.0) + roundf(XActor.magic_param(obj, i)))
+	return out
+
+
+## 存档里的等级被本层上限压住时写一句（核查 P3-2）；顶到数据上限（99）的不写
+static func _fabao_over_cap(obj: Dictionary) -> bool:
+	return XMagicWeapon.level_of(obj) > XMagicWeapon.effective_level(obj) and XMagicWeapon.max_level(obj) < XMagicWeapon.top_level(obj)
+
+
+## 「法宝等级」行连同后面的加成、经验行之后的位置；没有等级行返回 -1
+static func _fabao_block_end(rows: Array) -> int:
+	for i in rows.size():
+		if not plain(str(rows[i][0])).begins_with(FABAO_LEVEL_HEAD):
+			continue
+		var at := i + 1
+		while at < rows.size():
+			var p := str(plain(str(rows[at][0])))
+			if not (p.begins_with("法宝加成：") or p.begins_with("法宝经验：") or p.begins_with("经验：")):
+				break
+			at += 1
+		return at
+	return -1
+
+
+static func _fabao_level_row(obj: Dictionary) -> Array:
+	return ["%s%d/%d" % [FABAO_LEVEL_HEAD, int(XMagicWeapon.effective_level(obj)), int(XMagicWeapon.max_level(obj))], 18, FABAO_LEVEL_COLOR, false, 0]
+
+
+## 物品页打开法宝操作菜单（「喂入」那几行在这里）时右侧信息窗底部写的两行：法宝等级与吞噬升级最低品级。不写的情形同说明卡，返回空
+static func fabao_feed_lines(obj: Dictionary) -> Array:
+	if not FABAO_FEED_GRADE_T588:
+		return []
+	var only := []
+	_fabao_feed_row(obj, only)
+	if only.is_empty():
+		return []
+	return ([_fabao_level_row(obj)] if FABAO_BRIEF_T588 else []) + only
+
+
+## 紧跟在「法宝等级」行（及其加成行）后面；没有等级行的法宝插在价格行前
+static func _fabao_feed_row(obj: Dictionary, rows: Array) -> void:
+	var s := XState.current
+	if s == null or XTianqi.active(s) or not XFabaoFeed.ENABLED or not XMagicWeapon.is_magic(obj):
+		return
+	if XMagicWeapon.level_of(obj) >= XMagicWeapon.max_level(obj):
+		return
+	var grade := XFabaoFeed.min_grade(XMagicWeapon.level_of(obj))
+	var cfg := XQuality.config()
+	var at := _fabao_block_end(rows)
+	if at < 0:
+		at = rows.size()
+		for i in range(2, rows.size()):
+			if _re("^(?:购买价格|出售价格|无法出售)", plain(str(rows[i][0]))):
+				at = i
+				break
+	rows.insert(at, [FABAO_FEED_HEAD + str(cfg.names[grade]), 18, str(cfg.colors[grade]), false, 0])
+
+
 ## 西游档法宝 99→888 折算（T468，仅显示层、不改写装备实例备注）：
 ## 隐藏备注／模块中未折算的静态每级成长误导行，按 XActor.magic_param 实算插入「当前法宝加成」与「满级（99级）总加成」。
 static func _apply_fabao_scale_rows(obj: Dictionary, rows: Array) -> void:
@@ -737,6 +831,8 @@ static func _apply_fabao_scale_rows(obj: Dictionary, rows: Array) -> void:
 	var top_lv := int(XMagicWeapon.top_level(obj))
 	var insert_at := -1
 	var kept := []
+	var level_end := -1
+	var has_level_row := FABAO_BRIEF_T588 and XYunshang.relic_item(obj)  # 织神天梭的等级行由 _relic_rows 写，顶部八项已含成长
 	for idx in rows.size():
 		var r: Array = rows[idx]
 		if idx < 2:
@@ -746,6 +842,8 @@ static func _apply_fabao_scale_rows(obj: Dictionary, rows: Array) -> void:
 		if p.contains("法宝形态：") and p.contains("等级上限：888"):
 			var nr := r.duplicate()
 			nr[0] = str(r[0]).replace("等级上限：888", "等级上限：%d" % top_lv)
+			if FABAO_BRIEF_T588:
+				nr[0] = str(r[0]).replace("；等级上限：888", "")
 			kept.append(nr)
 			continue
 		if p.begins_with("当前等级：") and p.contains(" / 888；经验："):
@@ -754,6 +852,17 @@ static func _apply_fabao_scale_rows(obj: Dictionary, rows: Array) -> void:
 			var tail := src.substr(src.find("；经验："))
 			var keep_tag := "（保留%d级）" % mini(raw_lv, top_lv) if raw_lv > eff_lv else ""
 			nr[0] = "当前等级：%d / %d%s%s" % [eff_lv, cap_lv, keep_tag, tail]
+			if FABAO_BRIEF_T588:
+				kept.append(_fabao_level_row(obj))
+				nr[0] = tail.trim_prefix("；")  # 经验照旧单独一行
+				has_level_row = true
+			kept.append(nr)
+			if has_level_row:
+				level_end = kept.size()  # 加成行跟在经验行后面
+			continue
+		if FABAO_BRIEF_T588 and p.begins_with("进化：") and not XThreeGrowth.spec_of(obj).is_empty() and p.contains("级时进化为"):
+			var nr := r.duplicate()
+			nr[0] = str(r[0]).replace("，获得", "，每级成长翻倍，并获得")  # 只改显示，不改实例备注（核查 P3-1）
 			kept.append(nr)
 			continue
 		if _fabao_kirin_re.search(p) != null:
@@ -768,6 +877,8 @@ static func _apply_fabao_scale_rows(obj: Dictionary, rows: Array) -> void:
 				insert_at = kept.size()
 			continue
 		kept.append(r)
+	if level_end >= 0:
+		insert_at = level_end
 	if insert_at < 0:
 		insert_at = kept.size()
 		for idx in range(2, kept.size()):
@@ -785,7 +896,16 @@ static func _apply_fabao_scale_rows(obj: Dictionary, rows: Array) -> void:
 	var is_three := not XThreeGrowth.spec_of(obj).is_empty() and (not obj.has("kind") or str(obj.get("kind", "")) == "armor")
 	var evo_hint := "（60级进化后加成翻倍）" if is_three and not XThreeGrowth.is_evolved(obj) else ""
 	var add := []
-	if eff_lv < top_lv:
+	if FABAO_BRIEF_T588:
+		if not XYunshang.relic_item(obj):
+			var brief_rows := []
+			if not has_level_row:
+				brief_rows.append(_fabao_level_row(obj))
+			if cur_text != "" and not _fabao_merged(obj):
+				brief_rows.append(["法宝加成：" + cur_text, 18, "rgba(255,255,255,1)", false, 0])
+			for k in brief_rows.size():
+				kept.insert(insert_at + k, brief_rows[k])
+	elif eff_lv < top_lv:
 		var lv_txt := ""
 		if cap_lv > 0 and cap_lv < top_lv:
 			lv_txt = "Lv.%d/本层上限%d" % [eff_lv, cap_lv] if raw_lv <= cap_lv else "Lv.%d/本层上限%d，保留%d级" % [eff_lv, cap_lv, mini(raw_lv, top_lv)]
@@ -800,6 +920,10 @@ static func _apply_fabao_scale_rows(obj: Dictionary, rows: Array) -> void:
 			add.append("\\c[3]加成：法宝满级（Lv.%d/%d）累计 %s%s" % [eff_lv, top_lv, cur_text, evo_hint])
 	for k in add.size():
 		kept.insert(insert_at + k, [add[k], 18, "rgba(255,255,255,1)", false, 0])
+	if FABAO_BRIEF_T588 and _fabao_over_cap(obj):
+		var end := _fabao_block_end(kept)
+		if end >= 0:
+			kept.insert(end, [FABAO_OVER_CAP_HINT, 18, "rgba(255,255,255,1)", false, 0])
 	rows.clear()
 	rows.append_array(kept)
 
