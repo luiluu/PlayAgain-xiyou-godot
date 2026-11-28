@@ -1,0 +1,97 @@
+# T620 号角回背包翻页量数（Mac Apple Silicon，工程版 Godot 4.7.2，--audio-driver Dummy，西游档新档＋背包 120 种物品）
+# 每行 USE n＝用了 n 次号角后；op_mean＝一次翻页 _page＋_refresh 的 GDScript 耗时（ms）；page_mean＝再加下一帧
+## 带窗口，每次招新人（--distinct，队伍 6→31），CACHE_ITEM_ENTRIES 开前（修前口径）
+USE 0 op_mean=9.97 page_mean=29.21 page_max=63.14 idle=10.45 nodes=379(+0) objs=3259(+24) orphans=0 ui_children=6 menu_children=6 page_children=14
+PARTY 6 actors=14
+USE 1 op_mean=9.71 page_mean=23.85 page_max=28.91 idle=8.74 nodes=387(+8) objs=3307(+72) orphans=0 ui_children=6 menu_children=6 page_children=14
+USE 2 op_mean=9.58 page_mean=23.80 page_max=28.61 idle=8.02 nodes=393(+14) objs=3338(+103) orphans=0 ui_children=6 menu_children=6 page_children=14
+USE 3 op_mean=9.71 page_mean=24.32 page_max=26.20 idle=8.51 nodes=399(+20) objs=3367(+132) orphans=0 ui_children=6 menu_children=6 page_children=14
+USE 4 op_mean=9.90 page_mean=24.20 page_max=26.04 idle=8.10 nodes=405(+26) objs=3398(+163) orphans=0 ui_children=6 menu_children=6 page_children=14
+USE 5 op_mean=9.72 page_mean=23.70 page_max=26.30 idle=7.02 nodes=411(+32) objs=3430(+195) orphans=0 ui_children=6 menu_children=6 page_children=14
+PARTY 11 actors=18
+USE 6 op_mean=11.66 page_mean=28.30 page_max=45.86 idle=8.60 nodes=417(+38) objs=3466(+231) orphans=0 ui_children=6 menu_children=6 page_children=14
+USE 7 op_mean=10.00 page_mean=25.01 page_max=33.86 idle=9.16 nodes=423(+44) objs=3492(+257) orphans=0 ui_children=6 menu_children=6 page_children=14
+USE 8 op_mean=9.97 page_mean=25.38 page_max=29.11 idle=13.15 nodes=426(+47) objs=3509(+274) orphans=0 ui_children=6 menu_children=6 page_children=14
+USE 9 op_mean=10.57 page_mean=25.84 page_max=36.23 idle=7.93 nodes=429(+50) objs=3530(+295) orphans=0 ui_children=6 menu_children=6 page_children=14
+USE 10 op_mean=9.78 page_mean=24.84 page_max=28.06 idle=8.86 nodes=429(+50) objs=3533(+298) orphans=0 ui_children=6 menu_children=6 page_children=14
+PARTY 16 actors=23
+USE 11 op_mean=9.79 page_mean=25.15 page_max=26.93 idle=8.82 nodes=429(+50) objs=3534(+299) orphans=0 ui_children=6 menu_children=6 page_children=14
+USE 12 op_mean=9.83 page_mean=25.89 page_max=31.91 idle=8.26 nodes=429(+50) objs=3535(+300) orphans=0 ui_children=6 menu_children=6 page_children=14
+USE 13 op_mean=9.41 page_mean=23.53 page_max=25.55 idle=6.78 nodes=429(+50) objs=3538(+303) orphans=0 ui_children=6 menu_children=6 page_children=14
+USE 14 op_mean=10.04 page_mean=24.87 page_max=27.68 idle=8.61 nodes=421(+42) objs=3521(+286) orphans=0 ui_children=6 menu_children=6 page_children=14
+USE 15 op_mean=11.20 page_mean=27.95 page_max=43.20 idle=7.68 nodes=421(+42) objs=3525(+290) orphans=0 ui_children=6 menu_children=6 page_children=14
+PARTY 21 actors=28
+USE 16 op_mean=11.14 page_mean=26.83 page_max=33.82 idle=7.51 nodes=421(+42) objs=3530(+295) orphans=0 ui_children=6 menu_children=6 page_children=14
+USE 17 op_mean=11.07 page_mean=26.96 page_max=31.57 idle=7.65 nodes=421(+42) objs=3527(+292) orphans=0 ui_children=6 menu_children=6 page_children=14
+USE 18 op_mean=11.10 page_mean=27.20 page_max=33.41 idle=8.86 nodes=421(+42) objs=3528(+293) orphans=0 ui_children=6 menu_children=6 page_children=14
+USE 19 op_mean=9.65 page_mean=24.25 page_max=29.25 idle=8.37 nodes=421(+42) objs=3534(+299) orphans=0 ui_children=6 menu_children=6 page_children=14
+USE 20 op_mean=9.76 page_mean=24.54 page_max=25.96 idle=6.85 nodes=421(+42) objs=3535(+300) orphans=0 ui_children=6 menu_children=6 page_children=14
+PARTY 26 actors=33
+USE 21 op_mean=9.55 page_mean=23.80 page_max=25.92 idle=8.52 nodes=421(+42) objs=3548(+313) orphans=0 ui_children=6 menu_children=6 page_children=14
+USE 22 op_mean=9.35 page_mean=23.11 page_max=24.68 idle=8.64 nodes=421(+42) objs=3541(+306) orphans=0 ui_children=6 menu_children=6 page_children=14
+USE 23 op_mean=9.35 page_mean=23.45 page_max=24.85 idle=8.29 nodes=421(+42) objs=3543(+308) orphans=0 ui_children=6 menu_children=6 page_children=14
+USE 24 op_mean=10.43 page_mean=26.30 page_max=37.60 idle=8.22 nodes=421(+42) objs=3545(+310) orphans=0 ui_children=6 menu_children=6 page_children=14
+USE 25 op_mean=9.38 page_mean=23.67 page_max=25.90 idle=8.90 nodes=424(+45) objs=3566(+331) orphans=0 ui_children=6 menu_children=6 page_children=14
+## 带窗口，同一号角 30 次，内存／纹理
+MEM 0 static=1052.1MB tex=194.9MB vmem=211.3MB
+MEM 1 static=1052.4MB tex=195.2MB vmem=213.6MB
+MEM 2 static=1052.5MB tex=195.2MB vmem=213.6MB
+MEM 3 static=1052.5MB tex=195.2MB vmem=213.6MB
+MEM 4 static=1052.6MB tex=195.2MB vmem=213.6MB
+MEM 5 static=1052.6MB tex=195.2MB vmem=213.6MB
+MEM 6 static=1052.7MB tex=195.2MB vmem=213.6MB
+MEM 7 static=1052.7MB tex=195.2MB vmem=213.6MB
+MEM 8 static=1052.8MB tex=195.2MB vmem=213.6MB
+MEM 9 static=1052.8MB tex=195.2MB vmem=213.6MB
+MEM 10 static=1052.9MB tex=195.2MB vmem=213.6MB
+MEM 11 static=1052.9MB tex=195.2MB vmem=213.6MB
+MEM 12 static=1052.9MB tex=195.2MB vmem=213.6MB
+MEM 13 static=1053.0MB tex=195.2MB vmem=213.6MB
+MEM 14 static=1053.1MB tex=195.2MB vmem=213.7MB
+MEM 15 static=1053.1MB tex=195.2MB vmem=213.7MB
+MEM 16 static=1053.2MB tex=195.2MB vmem=213.7MB
+MEM 17 static=1053.2MB tex=195.2MB vmem=213.7MB
+MEM 18 static=1053.2MB tex=195.2MB vmem=213.7MB
+MEM 19 static=1053.2MB tex=195.2MB vmem=213.6MB
+MEM 20 static=1053.1MB tex=195.2MB vmem=213.6MB
+MEM 21 static=1053.1MB tex=195.2MB vmem=213.6MB
+MEM 22 static=1053.1MB tex=195.2MB vmem=213.6MB
+MEM 23 static=1053.1MB tex=195.2MB vmem=213.6MB
+MEM 24 static=1053.1MB tex=195.2MB vmem=213.6MB
+MEM 25 static=1053.1MB tex=195.2MB vmem=213.6MB
+MEM 26 static=1053.1MB tex=195.2MB vmem=213.6MB
+MEM 27 static=1053.1MB tex=195.2MB vmem=213.6MB
+MEM 28 static=1053.1MB tex=195.2MB vmem=213.6MB
+MEM 29 static=1053.1MB tex=195.2MB vmem=213.6MB
+MEM 30 static=1053.1MB tex=195.2MB vmem=213.6MB
+## 无头，推住摇杆往右（--stick --distinct，每次 36＋24×6 物理帧，翻 6 页），开关开
+STICK 0 frame_mean=16.69 frame_max=25.11 pages_sent=6 top=0->81 handlers=11 conns=23
+STICK 1 frame_mean=16.65 frame_max=23.38 pages_sent=6 top=7->81 handlers=11 conns=22
+STICK 2 frame_mean=16.71 frame_max=31.64 pages_sent=6 top=8->81 handlers=11 conns=22
+STICK 3 frame_mean=16.71 frame_max=25.22 pages_sent=6 top=9->81 handlers=11 conns=22
+STICK 4 frame_mean=16.69 frame_max=32.38 pages_sent=6 top=10->81 handlers=11 conns=22
+STICK 5 frame_mean=16.64 frame_max=30.45 pages_sent=6 top=11->81 handlers=11 conns=22
+STICK 6 frame_mean=16.57 frame_max=27.23 pages_sent=6 top=12->81 handlers=11 conns=22
+STICK 7 frame_mean=16.72 frame_max=34.66 pages_sent=6 top=13->81 handlers=11 conns=22
+STICK 8 frame_mean=16.75 frame_max=27.34 pages_sent=6 top=14->81 handlers=11 conns=22
+STICK 9 frame_mean=16.70 frame_max=31.65 pages_sent=6 top=15->81 handlers=11 conns=22
+STICK 10 frame_mean=16.69 frame_max=32.79 pages_sent=6 top=16->81 handlers=11 conns=22
+STICK 11 frame_mean=16.64 frame_max=28.29 pages_sent=6 top=17->81 handlers=11 conns=22
+STICK 12 frame_mean=16.63 frame_max=26.58 pages_sent=6 top=18->81 handlers=11 conns=22
+## 同上，开关关（修前）
+STICK 0 frame_mean=16.69 frame_max=37.99 pages_sent=6 top=0->81 handlers=11 conns=23
+STICK 1 frame_mean=16.59 frame_max=33.45 pages_sent=6 top=7->81 handlers=11 conns=22
+STICK 2 frame_mean=16.69 frame_max=38.24 pages_sent=6 top=8->81 handlers=11 conns=22
+STICK 3 frame_mean=16.68 frame_max=39.17 pages_sent=6 top=9->81 handlers=11 conns=22
+STICK 4 frame_mean=16.71 frame_max=37.68 pages_sent=6 top=10->81 handlers=11 conns=22
+STICK 5 frame_mean=16.61 frame_max=39.34 pages_sent=6 top=11->81 handlers=11 conns=22
+STICK 6 frame_mean=16.64 frame_max=37.66 pages_sent=6 top=12->81 handlers=11 conns=22
+STICK 7 frame_mean=16.53 frame_max=45.40 pages_sent=6 top=13->81 handlers=11 conns=22
+STICK 8 frame_mean=16.48 frame_max=40.01 pages_sent=6 top=14->81 handlers=11 conns=22
+STICK 9 frame_mean=16.65 frame_max=40.43 pages_sent=6 top=15->81 handlers=11 conns=22
+STICK 10 frame_mean=16.64 frame_max=36.01 pages_sent=6 top=16->81 handlers=11 conns=22
+STICK 11 frame_mean=16.60 frame_max=33.77 pages_sent=6 top=17->81 handlers=11 conns=22
+STICK 12 frame_mean=16.69 frame_max=42.26 pages_sent=6 top=18->81 handlers=11 conns=22
+## 无头，同一号角 10 次，开关开／关（op_mean 与刷新分项 BREAK，ms）
+开：USE 0 op_mean=1.34 / USE 10 op_mean=1.24；BREAK entries=0.01 help=0.64 gear=0.01 whole=0.58
+关：USE 0 op_mean=8.83 / USE 10 op_mean=8.77；BREAK entries=1.26 help=3.19 gear=1.24 whole=6.81
